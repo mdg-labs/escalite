@@ -11,6 +11,47 @@ import (
 	"github.com/google/uuid"
 )
 
+const acknowledgeAlert = `-- name: AcknowledgeAlert :one
+UPDATE alerts
+SET status = 'acknowledged',
+    acknowledged_at = now(),
+    escalation_state = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+  AND status = 'triggered'
+RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, closed_at, created_at, updated_at
+`
+
+type AcknowledgeAlertParams struct {
+	ID              uuid.UUID `json:"id"`
+	OrganizationID  uuid.UUID `json:"organization_id"`
+	EscalationState []byte    `json:"escalation_state"`
+}
+
+func (q *Queries) AcknowledgeAlert(ctx context.Context, arg AcknowledgeAlertParams) (Alert, error) {
+	row := q.db.QueryRow(ctx, acknowledgeAlert, arg.ID, arg.OrganizationID, arg.EscalationState)
+	var i Alert
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.ServiceID,
+		&i.IntegrationKeyID,
+		&i.Status,
+		&i.DedupKey,
+		&i.Summary,
+		&i.Description,
+		&i.Priority,
+		&i.EventCount,
+		&i.EscalationState,
+		&i.AcknowledgedAt,
+		&i.ClosedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getAlertByID = `-- name: GetAlertByID :one
 SELECT id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, closed_at, created_at, updated_at
 FROM alerts

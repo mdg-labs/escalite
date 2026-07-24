@@ -3,9 +3,12 @@ package escalation
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
@@ -55,9 +58,8 @@ func ScheduleStep1Notifications(
 		return fmt.Errorf("no escalation policy for service %s", alert.ServiceID)
 	}
 
-	policy := policies[0]
 	step, err := q.GetEscalationStepByPolicyAndOrder(ctx, db.GetEscalationStepByPolicyAndOrderParams{
-		EscalationPolicyID: policy.ID,
+		EscalationPolicyID: policies[0].ID,
 		OrganizationID:     organizationID,
 		StepOrder:          1,
 	})
@@ -65,25 +67,72 @@ func ScheduleStep1Notifications(
 		return fmt.Errorf("load step 1: %w", err)
 	}
 
+	if err := scheduleStepNotifications(ctx, q, inserter, alert, 1); err != nil {
+		return err
+	}
+
+	if _, err := q.GetEscalationStepByPolicyAndOrder(ctx, db.GetEscalationStepByPolicyAndOrderParams{
+		EscalationPolicyID: policies[0].ID,
+		OrganizationID:     organizationID,
+		StepOrder:          2,
+	}); err == nil {
+		timerState := State{CurrentStep: 1}
+		return scheduleEscalationTimer(ctx, q, inserter, alertID, organizationID, timerState, step.DelayMinutes)
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("load step 2: %w", err)
+	}
+
+	return nil
+}
+
+func scheduleStepNotifications(
+	ctx context.Context,
+	q db.Querier,
+	inserter JobInserter,
+	alert db.Alert,
+	stepOrder int,
+) error {
+	policies, err := q.ListEscalationPoliciesByServiceID(ctx, db.ListEscalationPoliciesByServiceIDParams{
+		ServiceID:      alert.ServiceID,
+		OrganizationID: alert.OrganizationID,
+	})
+	if err != nil {
+		return fmt.Errorf("list escalation policies: %w", err)
+	}
+	if len(policies) == 0 {
+		return fmt.Errorf("no escalation policy for service %s", alert.ServiceID)
+	}
+
+	step, err := q.GetEscalationStepByPolicyAndOrder(ctx, db.GetEscalationStepByPolicyAndOrderParams{
+		EscalationPolicyID: policies[0].ID,
+		OrganizationID:     alert.OrganizationID,
+		StepOrder:          int32(stepOrder),
+	})
+	if err != nil {
+		return fmt.Errorf("load step %d: %w", stepOrder, err)
+	}
+
 	targets, err := q.ListEscalationStepTargetsByStepID(ctx, db.ListEscalationStepTargetsByStepIDParams{
 		EscalationStepID: step.ID,
-		OrganizationID:   organizationID,
+		OrganizationID:   alert.OrganizationID,
 	})
 	if err != nil {
 		return fmt.Errorf("list step targets: %w", err)
 	}
 	if len(targets) == 0 {
-		return fmt.Errorf("step 1 has no targets")
+		return fmt.Errorf("step %d has no targets", stepOrder)
 	}
 
-	escalationState, err := json.Marshal(map[string]int{"current_step": 1})
+	state := State{CurrentStep: stepOrder}
+	raw, err := marshalState(state)
 	if err != nil {
-		return fmt.Errorf("marshal escalation state: %w", err)
+		return err
 	}
 	if _, err := q.UpdateAlertEscalationState(ctx, db.UpdateAlertEscalationStateParams{
-		ID:              alertID,
-		OrganizationID:  organizationID,
-		EscalationState: escalationState,
+		ID:              alert.ID,
+		OrganizationID:  alert.OrganizationID,
+		EscalationState: raw,
 	}); err != nil {
 		return fmt.Errorf("update escalation state: %w", err)
 	}
@@ -91,7 +140,7 @@ func ScheduleStep1Notifications(
 	stepID := pgtype.UUID{Bytes: step.ID, Valid: true}
 
 	for _, target := range targets {
-		channels, recipient, err := resolveTarget(ctx, q, organizationID, target)
+		channels, recipient, err := resolveTarget(ctx, q, alert.OrganizationID, target)
 		if err != nil {
 			return err
 		}
@@ -105,8 +154,8 @@ func ScheduleStep1Notifications(
 
 			if _, err := q.CreateNotificationAttempt(ctx, db.CreateNotificationAttemptParams{
 				ID:               attemptID,
-				OrganizationID:   organizationID,
-				AlertID:          alertID,
+				OrganizationID:   alert.OrganizationID,
+				AlertID:          alert.ID,
 				EscalationStepID: stepID,
 				Channel:          channel,
 				Status:           statusPending,
@@ -117,11 +166,50 @@ func ScheduleStep1Notifications(
 
 			if _, err := inserter.Insert(ctx, jobs.NotifyArgs{
 				NotificationAttemptID: attemptID,
-				OrganizationID:        organizationID,
+				OrganizationID:      alert.OrganizationID,
 			}, nil); err != nil {
 				return fmt.Errorf("enqueue notify job: %w", err)
 			}
 		}
+	}
+
+	return nil
+}
+
+func scheduleEscalationTimer(
+	ctx context.Context,
+	q db.Querier,
+	inserter JobInserter,
+	alertID, organizationID uuid.UUID,
+	state State,
+	delayMinutes int32,
+) error {
+	nextAt := time.Now().Add(time.Duration(delayMinutes) * time.Minute)
+	result, err := inserter.Insert(ctx, jobs.EscalationStepArgs{
+		AlertID:        alertID,
+		OrganizationID: organizationID,
+		FromStep:       state.CurrentStep,
+	}, &river.InsertOpts{
+		ScheduledAt: nextAt,
+	})
+	if err != nil {
+		return fmt.Errorf("enqueue escalation step job: %w", err)
+	}
+
+	jobID := result.Job.ID
+	state.NextEscalationAt = &nextAt
+	state.PendingEscalationJobID = &jobID
+
+	raw, err := marshalState(state)
+	if err != nil {
+		return err
+	}
+	if _, err := q.UpdateAlertEscalationState(ctx, db.UpdateAlertEscalationStateParams{
+		ID:              alertID,
+		OrganizationID:  organizationID,
+		EscalationState: raw,
+	}); err != nil {
+		return fmt.Errorf("update escalation state: %w", err)
 	}
 
 	return nil

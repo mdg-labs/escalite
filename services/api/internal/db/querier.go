@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	AcknowledgeAlert(ctx context.Context, arg AcknowledgeAlertParams) (Alert, error)
 	BootstrapOrganizationWithAdmin(ctx context.Context, arg BootstrapOrganizationWithAdminParams) (BootstrapOrganizationWithAdminRow, error)
 	CoreSchemaReady(ctx context.Context) (bool, error)
 	CountNotificationAttemptsByAlertID(ctx context.Context, arg CountNotificationAttemptsByAlertIDParams) (int64, error)

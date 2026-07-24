@@ -52,3 +52,12 @@ func (w *EscalationTriggerWorker) Work(ctx context.Context, job *river.Job[jobs.
 func (c *Client) Insert(ctx context.Context, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error) {
 	return c.river.Insert(ctx, args, opts)
 }
+
+// CancelJob implements escalation.JobCanceller.
+func (c *Client) CancelJob(ctx context.Context, jobID int64) error {
+	_, err := c.river.JobCancel(ctx, jobID)
+	if err != nil {
+		return fmt.Errorf("cancel river job: %w", err)
+	}
+	return nil
+}

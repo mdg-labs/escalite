@@ -4,6 +4,7 @@ import "github.com/google/uuid"
 
 const (
 	EscalationTriggerKind = "escalation_trigger"
+	EscalationStepKind    = "escalation_step"
 	NotifyKind            = "notify"
 )
 
@@ -14,6 +15,15 @@ type EscalationTriggerArgs struct {
 }
 
 func (EscalationTriggerArgs) Kind() string { return EscalationTriggerKind }
+
+// EscalationStepArgs fires after a step delay to advance escalation.
+type EscalationStepArgs struct {
+	AlertID        uuid.UUID `json:"alert_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	FromStep       int       `json:"from_step"`
+}
+
+func (EscalationStepArgs) Kind() string { return EscalationStepKind }
 
 // NotifyArgs delivers a single notification attempt.
 type NotifyArgs struct {
