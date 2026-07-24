@@ -11,6 +11,9 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/web/package.json apps/web/
 COPY packages/config/package.json packages/config/
+COPY packages/ui/package.json packages/ui/
+COPY packages/ts-types/package.json packages/ts-types/
+COPY packages/schema/package.json packages/schema/
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS dev

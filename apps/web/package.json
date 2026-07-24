@@ -4,15 +4,30 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node -e \"const fs=require('fs'); fs.mkdirSync('dist',{recursive:true}); fs.writeFileSync('dist/index.html','<!DOCTYPE html><html><head><title>Escalite</title></head><body><h1>Escalite</h1><p>Web shell placeholder — Vite lands in a later task.</p></body></html>')\"",
-    "dev": "node -e \"const http=require('http'); const server=http.createServer((_req,res)=>{res.writeHead(200,{'Content-Type':'text/html'}); res.end('<!DOCTYPE html><html><body><h1>Escalite web (dev)</h1></body></html>');}); server.listen(5173,'0.0.0.0',()=>console.log('escalite web dev listening on :5173'));\"",
+    "build": "vite build",
+    "dev": "vite",
     "lint": "eslint .",
-    "test:unit": "node -e \"console.log('@escalite/web test placeholder')\"",
-    "typecheck": "tsc --noEmit"
+    "test:unit": "node --test test/*.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@escalite/ts-types": "workspace:*",
+    "@escalite/ui": "workspace:*",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router": "^7.6.3",
+    "urql": "^4.2.2"
   },
   "devDependencies": {
     "@escalite/config": "workspace:*",
+    "@tailwindcss/vite": "^4.1.17",
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.5.2",
     "eslint": "^9.28.0",
-    "typescript": "^5.8.3"
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
   }
 }

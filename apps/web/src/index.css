@@ -1,0 +1,3 @@
+@import '@escalite/ui/tokens/globals.css';
+
+@source "../../packages/ui/**/*.{ts,tsx}";

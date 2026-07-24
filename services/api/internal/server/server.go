@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/mdg-labs/escalite/services/api/internal/config"
+	"github.com/mdg-labs/escalite/services/api/internal/cors"
 	"github.com/mdg-labs/escalite/services/api/internal/email"
 	"github.com/mdg-labs/escalite/services/api/internal/graphql"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
@@ -24,6 +25,7 @@ type Dependencies struct {
 	OIDC          *OIDCServices
 	Mail          email.Sender
 	PublicURL     string
+	AppOrigin     string
 	PasswordReset *PasswordResetOptions
 	GraphQL       graphql.Options
 }
@@ -48,6 +50,9 @@ func New(deps Dependencies) http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
+	if deps.AppOrigin != "" {
+		r.Use(cors.Middleware(deps.AppOrigin))
+	}
 
 	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

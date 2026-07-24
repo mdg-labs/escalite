@@ -61,6 +61,7 @@ type Config struct {
 	LogLevel       string
 	EncryptionKey  []byte
 	PublicURL      string
+	AppOrigin      string
 	Environment    string
 	OIDC           *OIDCConfig
 	SMTP           *SMTPConfig
@@ -103,6 +104,7 @@ func Load(opts Options) (Config, error) {
 	cfg.SMTP = smtpCfg
 
 	cfg.PublicURL = strings.TrimSpace(os.Getenv("ESCALITE_PUBLIC_URL"))
+	cfg.AppOrigin = strings.TrimSuffix(strings.TrimSpace(os.Getenv("ESCALITE_APP_ORIGIN")), "/")
 	cfg.PasswordReset = loadPasswordResetRateLimit()
 	cfg.Environment = loadEnvironment()
 	cfg.GraphQL = loadGraphQLConfig()

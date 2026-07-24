@@ -76,6 +76,7 @@ func run() int {
 		OIDC:      server.NewOIDCServices(pool, logger, cfg.OIDC, oidcProvider),
 		Mail:      newMailSender(cfg, logger),
 		PublicURL: cfg.PublicURL,
+		AppOrigin: cfg.AppOrigin,
 		PasswordReset: &server.PasswordResetOptions{
 			EmailLimiter: ratelimit.NewMemoryLimiter(
 				cfg.PasswordReset.EmailLimit,
