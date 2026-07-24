@@ -7,22 +7,28 @@
       "skillPath": "orchestrator/SKILL.md",
       "computedHash": ""
     },
-    "kaneo-intake": {
+    "phasical-intake": {
       "source": "mdg-labs/skills",
       "sourceType": "github",
-      "skillPath": "kaneo-intake/SKILL.md",
+      "skillPath": "phasical-intake/SKILL.md",
       "computedHash": ""
     },
-    "kaneo-triage": {
+    "phasical-triage": {
       "source": "mdg-labs/skills",
       "sourceType": "github",
-      "skillPath": "kaneo-triage/SKILL.md",
+      "skillPath": "phasical-triage/SKILL.md",
       "computedHash": ""
     },
     "dependabot-triage": {
       "source": "mdg-labs/skills",
       "sourceType": "github",
       "skillPath": "dependabot-triage/SKILL.md",
+      "computedHash": ""
+    },
+    "customer-docs": {
+      "source": "mdg-labs/skills",
+      "sourceType": "github",
+      "skillPath": "customer-docs/SKILL.md",
       "computedHash": ""
     }
   }

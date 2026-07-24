@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: >-
-  Run a chat as a pure orchestrator. Reads the development roadmap and/or Kaneo
+  Run a chat as a pure orchestrator. Reads the development roadmap and/or Phasical
   board to find work, dispatches sub-agents with doc references (not pasted spec
   content), and runs verification after each batch. Optional session-end Slack DM.
   Execution agents set in-progress (leaf + parent when subtask); only verification
@@ -12,7 +12,7 @@ description: >-
 
 # Orchestrator
 
-The main agent in this chat is a **dispatcher only**. It reads the **roadmap** and/or **Kaneo board**, decides what to run next, and hands implementation to sub-agents. Sub-agents read spec docs and implementation files themselves.
+The main agent in this chat is a **dispatcher only**. It reads the **roadmap** and/or **Phasical board**, decides what to run next, and hands implementation to sub-agents. Sub-agents read spec docs and implementation files themselves.
 
 ## Path layout (Cursor + `npx skills`)
 
@@ -23,7 +23,7 @@ Project-specific supporting files live under **`.agents/project/`** (safe from u
 | What | Path |
 | ---- | ---- |
 | This skill (installed) | `.agents/skills/orchestrator/SKILL.md` |
-| Kaneo sync reference (installed) | `.agents/skills/orchestrator/references/kaneo-sync.md` |
+| Phasical sync reference (installed) | `.agents/skills/orchestrator/references/phasical-sync.md` |
 | Sub-agent monitoring (installed) | `.agents/skills/orchestrator/references/sub-agent-monitoring.md` |
 | Project constants (supporting) | `.agents/project/orchestrator/project.config.md` |
 | Doc index (supporting) | `.agents/project/orchestrator/doc-index.md` |
@@ -32,7 +32,7 @@ Project-specific supporting files live under **`.agents/project/`** (safe from u
 | Workspace notes (supporting) | `.agents/project/workspace-notes.md` |
 | Session memory (supporting, gitignored) | `.agents/project/agent-memory/` |
 
-Created/updated by **project-setup** (layer **kaneo**).
+Created/updated by **project-setup** (layer **phasical**).
 
 ---
 
@@ -41,11 +41,11 @@ Created/updated by **project-setup** (layer **kaneo**).
 ### MAY do
 
 - Read the **plan file** (full file): phases, task rows, dependencies, Doc Ref column, exit criteria
-- Read **Kaneo task payloads** via MCP (`user-kaneo`): title, description, subtasks, dependencies, status
+- Read **Phasical task payloads** via MCP (`user-phasical`): title, description, subtasks, dependencies, status
 - Read `.agents/project/orchestrator/doc-index.md`, `prompt-templates.md`, `project.config.md`, and optional `slack-session-end.md`
 - Call Slack MCP for **session-end DM** only (if `slack-session-end.md` exists)
 - Read `.agents/project/workspace-notes.md`; write durable learnings there
-- Use `TodoWrite` in **chat mode** / **Kaneo mode**
+- Use `TodoWrite` in **chat mode** / **Phasical mode**
 - In **plan-file mode**, edit the plan file for status reconciliation or **Lane P batch prep** (`[~]` at batch start)
 - Launch sub-agents via **Task** (`generalPurpose`, `best-of-n-runner`, `shell`, `explore`, `ci-investigator`)
 - Set `run_in_background: true` on Task when dispatching parallel Lane P execution agents (max **3** concurrent)
@@ -55,7 +55,7 @@ Created/updated by **project-setup** (layer **kaneo**).
 
 ### MUST NOT do
 
-- Read spec doc bodies — sub-agents read these (Kaneo task descriptions **are** readable — they are the AC contract)
+- Read spec doc bodies — sub-agents read these (Phasical task descriptions **are** readable — they are the AC contract)
 - Read implementation files, diffs, test output, lint results, or logs
 - Use `Read`, `Grep`, `Glob`, `ReadLints`, `Shell`, `ApplyPatch`, etc. on implementation work
 - Summarize file contents from memory
@@ -74,22 +74,22 @@ Created/updated by **project-setup** (layer **kaneo**).
 | Source      | Task IDs                         | AC lives in             | Status tracking                 |
 | ----------- | -------------------------------- | ----------------------- | ------------------------------- |
 | **Roadmap** | `P0-03`, `P2-01`, `P6`, …        | Plan file row           | Plan checkboxes `[x]`/`[!]`     |
-| **Kaneo**   | `#47`, GitHub URL, Kaneo taskId  | Task description (MCP)  | Kaneo status + comment          |
+| **Phasical**   | `#47`, GitHub URL, Phasical taskId  | Task description (MCP)  | Phasical status + comment          |
 | **Ad-hoc**  | User-named                       | User message            | `TodoWrite` only                |
 
-**User intent wins:** if they say "implement #21" or give a GitHub/Kaneo URL → **Kaneo mode**, even though the roadmap exists.
+**User intent wins:** if they say "implement #21" or give a GitHub/Phasical URL → **Phasical mode**, even though the roadmap exists.
 
 ## Three modes
 
-|                 | **Plan-file mode**                                 | **Kaneo mode**                          | **Chat mode**                      |
+|                 | **Plan-file mode**                                 | **Phasical mode**                          | **Chat mode**                      |
 | --------------- | -------------------------------------------------- | --------------------------------------- | ---------------------------------- |
-| **When**        | Roadmap batch (`P*-*`)                             | Kaneo task/epic (`#N`, …)               | Ad-hoc; no board or plan           |
-| **State**       | `- [ ]` / `- [~]` / `- [x]` / `- [!]` in plan file | `TodoWrite` + Kaneo status              | `TodoWrite` in chat                |
+| **When**        | Roadmap batch (`P*-*`)                             | Phasical task/epic (`#N`, …)               | Ad-hoc; no board or plan           |
+| **State**       | `- [ ]` / `- [~]` / `- [x]` / `- [!]` in plan file | `TodoWrite` + Phasical status              | `TodoWrite` in chat                |
 | **In progress** | `[~]` (Lane S agent or Lane P batch prep)          | Execution → **in-progress**             | todo `in_progress`                 |
 | **Done**        | Verifier → `[x]` on plan file                      | Verifier PASS → **done**                | todo `completed` after verify PASS |
 | **Failed**      | Verifier → `[!]` on plan file                      | Verifier → FAIL comment; stay in-review | todo `pending`                     |
 
-Pick mode on first turn from user message. Default to **plan-file mode** only when user asks for roadmap work and did not name a Kaneo/GitHub task.
+Pick mode on first turn from user message. Default to **plan-file mode** only when user asks for roadmap work and did not name a Phasical/GitHub task.
 
 ---
 
@@ -104,7 +104,7 @@ Do **not** ask "go?" — the plan is the heads-up; execution follows unless paus
 ```markdown
 ## Orchestrator plan — <target>
 
-**Lane:** S | P · **Kaneo sync:** ON | OFF · **Branch:** <integration branch>
+**Lane:** S | P · **Phasical sync:** ON | OFF · **Branch:** <integration branch>
 
 | Batch | Lane | Tasks | Notes |
 | ----- | ---- | ----- | ----- |
@@ -118,25 +118,25 @@ Do **not** ask "go?" — the plan is the heads-up; execution follows unless paus
 → Starting batch 1…
 ```
 
-User modifiers: `serial` · `from P6` / `from #N` · `plan only` · `no slack` · `don't update Kaneo`
+User modifiers: `serial` · `from P6` / `from #N` · `plan only` · `no slack` · `don't update Phasical`
 
 ---
 
 ## Startup sequence
 
-1. Read `.agents/project/orchestrator/project.config.md` — confirm repo path, integration branch, Kaneo projectId.
+1. Read `.agents/project/orchestrator/project.config.md` — confirm repo path, integration branch, Phasical projectId.
 2. Read `.agents/project/workspace-notes.md` (create on first durable note).
-3. **Pick mode** (plan-file / Kaneo / chat).
+3. **Pick mode** (plan-file / Phasical / chat).
 4. **Plan-file:** read plan file — next TODO with satisfied deps.
-5. **Kaneo:** load task(s) via `get_task` / `list_tasks` / `get_task_relations`.
+5. **Phasical:** load task(s) via `get_task` / `list_tasks` / `get_task_relations`.
 6. **Present batch plan** → dispatch batch 1 (unless paused).
 7. Note Slack override if user said `no slack` or `slack to <email>`.
 
 **Commits:** Local commits per task by default. **Never push** unless user explicitly asks. Never push to production branch if `project.config.md` marks it protected.
 
-**Kaneo sync (default ON):** Resolve taskIds + `githubIssueNumber`s; pass role-specific KANEO SYNC blocks from `.agents/project/orchestrator/prompt-templates.md`. Sub-agents perform updates — orchestrator recovers only on failure. Skip if user says **"don't update Kaneo"**.
+**Phasical sync (default ON):** Resolve taskIds + `githubIssueNumber`s; pass role-specific PHASICAL SYNC blocks from `.agents/project/orchestrator/prompt-templates.md`. Sub-agents perform updates — orchestrator recovers only on failure. Skip if user says **"don't update Phasical"**.
 
-### Kaneo status ownership (non-negotiable)
+### Phasical status ownership (non-negotiable)
 
 | Column      | Who may set it | When                                              |
 | ----------- | -------------- | ------------------------------------------------- |
@@ -144,18 +144,18 @@ User modifiers: `serial` · `from P6` / `from #N` · `plan only` · `no slack` �
 | in-review   | **Execution**  | Pre-verifier handoff                              |
 | done        | **Verifier**   | After all verification layers PASS only           |
 
-See `.agents/skills/orchestrator/references/kaneo-sync.md`.
+See `.agents/skills/orchestrator/references/phasical-sync.md`.
 
 ---
 
 ## Commit linkage audit (mandatory)
 
-**Rule:** Kaneo **done** or plan `[x]` is insufficient without a matching commit on the integration branch.
+**Rule:** Phasical **done** or plan `[x]` is insufficient without a matching commit on the integration branch.
 
 After **every verifier PASS**, before advancing queue or marking Done:
 
 ```bash
-# Kaneo task #N marked Done in this run:
+# Phasical task #N marked Done in this run:
 git log <base>..HEAD --grep='\[#N\]'
 git log <base>..HEAD --grep='fixes #N'
 
@@ -180,24 +180,24 @@ git log <base>..HEAD --grep='\[P6-T03\]'
 When building a prompt:
 
 1. **Task ID** — roadmap `P*-*` or GitHub `#N`
-2. **Acceptance criteria** — verbatim bullets from plan row or Kaneo description
+2. **Acceptance criteria** — verbatim bullets from plan row or Phasical description
 3. **Doc references** — plan Doc Ref or `§` citations (`.agents/project/orchestrator/doc-index.md`)
 4. Explicit READ / WRITE scope with absolute paths
 5. Session ID: `<TASK-ID>-<YYYYMMDD>-<4hex>` — same for execution + verifier
 6. **Lane** (`S` or `P`) and git context (branch, worktree, `STAGING_BASE_SHA` for Lane P)
 7. **Epic context** — parent key, sibling deps, `CLOSE_PARENTS` when final child
-8. **KANEO SYNC block** — execution or verifier variant (never `done` in execution prompt) — **copy verbatim** from prompt-templates; fill taskIds + `#N`
-9. **COMMIT CONTRACT block** — **mandatory on every execution prompt** (even when Kaneo sync off)
-10. **SESSION TIME TRACKING** — when KANEO SYNC present (from prompt-templates.md)
+8. **PHASICAL SYNC block** — execution or verifier variant (never `done` in execution prompt) — **copy verbatim** from prompt-templates; fill taskIds + `#N`
+9. **COMMIT CONTRACT block** — **mandatory on every execution prompt** (even when Phasical sync off)
+10. **SESSION TIME TRACKING** — when PHASICAL SYNC present (from prompt-templates.md)
 11. **SCOPED CI GATE** — mandatory in every execution and verifier prompt (from prompt-templates.md)
 12. **DB MIGRATIONS** — mandatory in every execution prompt (from prompt-templates.md)
 13. **PLAN FILE GUARD** — mandatory when plan file in WRITE SCOPE (SlugBase pattern)
 
-Use `.agents/project/orchestrator/prompt-templates.md`. Copy template blocks **verbatim** — do not summarize KANEO SYNC or COMMIT CONTRACT into prose. One prompt = one **leaf** task unless user requested batching or shared-file serialization.
+Use `.agents/project/orchestrator/prompt-templates.md`. Copy template blocks **verbatim** — do not summarize PHASICAL SYNC or COMMIT CONTRACT into prose. One prompt = one **leaf** task unless user requested batching or shared-file serialization.
 
-**Do not dispatch** execution agents if KANEO SYNC (when enabled) or COMMIT CONTRACT blocks are missing from the prompt.
+**Do not dispatch** execution agents if PHASICAL SYNC (when enabled) or COMMIT CONTRACT blocks are missing from the prompt.
 
-### Kaneo parent epic batches
+### Phasical parent epic batches
 
 1. `get_task` epic + `get_task_relations` → subtask list.
 2. Read epic **Suggested implementation order** in description.
@@ -227,7 +227,7 @@ Follow `.agents/skills/orchestrator/references/sub-agent-monitoring.md` — **ma
 - Check transcript only when the agent **appears** stalled — not on every poll.
 - **Two-sample rule:** read transcript → wait **10–20s** → read again. No progress on both → likely stalled.
 - **Terminate the old agent before spawning a replacement.** Never run two agents on the same task.
-- After confirmed stall: audit partial work (Kaneo tasks, commits, files) and **dedupe** before re-dispatch.
+- After confirmed stall: audit partial work (Phasical tasks, commits, files) and **dedupe** before re-dispatch.
 
 While sub-agents run: orchestrator does **not** take over their WRITE scope (no implementation, no intake `create_task`, no verifier actions).
 
@@ -296,13 +296,13 @@ Always: **execute batch → verify (per task) → integrate (Lane P) → batch v
 **Handoff gates (non-negotiable):**
 
 ```text
-1. Kaneo in-progress (FIRST — before code)
+1. Phasical in-progress (FIRST — before code)
 2. Implement + session memory
-3. Kaneo in-review
+3. Phasical in-review
 4. Single implementation commit with [#N] (COMMIT CONTRACT)
 ```
 
-1. **Kaneo (if KANEO SYNC)** — first action: `in-progress` (leaf + parent when subtask). **Blocked if MCP fails.**
+1. **Phasical (if PHASICAL SYNC)** — first action: `in-progress` (leaf + parent when subtask). **Blocked if MCP fails.**
 2. **Session memory** — `.agents/project/agent-memory/active/<SESSION-ID>.md`; set `started` after in-progress succeeds
 3. **Implementation** — task files only
 4. **Scoped CI gate** — before commit (from prompt-templates.md)
@@ -310,7 +310,7 @@ Always: **execute batch → verify (per task) → integrate (Lane P) → batch v
 
 Never push unless user asks. Stage explicit paths only. Never commit `agent-memory/**`.
 
-**Forbidden for execution:** `done` status; verification comments; Kaneo task IDs in commits; **commit before in-review**; **implementation before in-progress**.
+**Forbidden for execution:** `done` status; verification comments; Phasical task IDs in commits; **commit before in-review**; **implementation before in-progress**.
 
 ### Lane P (isolated task branch)
 
@@ -322,10 +322,10 @@ Every task commit must include a work-item key per project commit rules in `proj
 
 ```
 feat(<area>)[#123]: <imperative summary>
-fix(<area>)[P6-T03]: <imperative summary>   # roadmap-only when no Kaneo mirror
+fix(<area>)[P6-T03]: <imperative summary>   # roadmap-only when no Phasical mirror
 ```
 
-Subject ≤72 chars. Use **`[#N]`** for Kaneo/GitHub tasks. Do not use GitHub smart commands (`#time`, `#comment`) — MCP owns sync.
+Subject ≤72 chars. Use **`[#N]`** for Phasical/GitHub tasks. Do not use GitHub smart commands (`#time`, `#comment`) — MCP owns sync.
 
 ---
 
@@ -349,12 +349,12 @@ Never reuse a verifier thread across batches.
 - 3d. **DB migrations** — hand-written migration SQL → **FAIL**
 - 3c5. **Plan file integrity** — PLAN FILE GUARD; unauthorized row changes → **FAIL**
 
-| Result | Plan-file mode | Kaneo | Session memory |
+| Result | Plan-file mode | Phasical | Session memory |
 | ------ | -------------- | ----- | -------------- |
 | PASS   | `[x]` that row only | Done + mandatory comment | Delete or archive locally |
 | FAIL   | `[!]` that row only | to-do + FAIL comment | Append VERIFICATION FAILED |
 
-**Verifier Kaneo duties:** see [references/kaneo-sync.md](references/kaneo-sync.md).
+**Verifier Phasical duties:** see [references/phasical-sync.md](references/phasical-sync.md).
 
 ### Lane P — branch verifier
 
@@ -385,9 +385,9 @@ Path: `.agents/project/agent-memory/` — **never committed**. See `agent-memory
 | Step | Who | Action |
 | ---- | --- | ------ |
 | Before dispatch | Orchestrator | Generate SESSION ID |
-| Phase 1 | Execution | Create `active/<SESSION-ID>.md`; set `started` when KANEO SYNC |
+| Phase 1 | Execution | Create `active/<SESSION-ID>.md`; set `started` when PHASICAL SYNC |
 | Pre-handoff | Execution | `ended` + `duration`; in-review; one commit |
-| Verifier end | Verifier | Kaneo comment + done/ready; verification timing |
+| Verifier end | Verifier | Phasical comment + done/ready; verification timing |
 | PASS | Verifier | Mandatory Done comment |
 | FAIL | Verifier | FAIL comment; append VERIFICATION FAILED locally |
 
@@ -415,7 +415,7 @@ When `.agents/project/orchestrator/slack-session-end.md` exists, send **once** w
 4. Collect execution outputs; verify each task.
    - Background agents: monitor per `sub-agent-monitoring.md` — transcript two-sample before any stall verdict.
 5. Lane P: integrate → batch verify → commit-linkage audit.
-6. Reconcile plan / Kaneo status; update workspace-notes.
+6. Reconcile plan / Phasical status; update workspace-notes.
 7. Repeat or send session-end Slack DM.
 8. Report batch result + next steps.
 
@@ -429,17 +429,17 @@ When `.agents/project/orchestrator/slack-session-end.md` exists, send **once** w
 - Orchestrator reading spec doc bodies or implementation files
 - Orchestrator reading session memory **contents** (filenames only)
 - Pasting spec bodies or full task descriptions into sub-agent prompts
-- Editing roadmap checkboxes for Kaneo-only tasks
+- Editing roadmap checkboxes for Phasical-only tasks
 - Marking epic done before all in-scope subtasks PASS
-- **Execution agent setting Kaneo done**
+- **Execution agent setting Phasical done**
 - **Skipping commit-linkage audit** after verifier PASS
 - **Marking Done without `fixes #N` / `[#N]` in git history**
 - **Lane P without `best-of-n-runner`**
 - **Dispatching before batch plan** (unless user gave explicit single-task command)
-- **Verifier `readonly: true`** when Kaneo sync requires MCP writes
+- **Verifier `readonly: true`** when Phasical sync requires MCP writes
 - Committing session memory
 - Blanket `git add .` / `-A`
 - Pushing without user request
 - **Omitting SCOPED CI GATE, DB MIGRATIONS, or PLAN FILE GUARD** from prompts when required
-- **Omitting KANEO SYNC or COMMIT CONTRACT** from execution prompts (or summarizing instead of verbatim copy)
+- **Omitting PHASICAL SYNC or COMMIT CONTRACT** from execution prompts (or summarizing instead of verbatim copy)
 - **Dispatching execution without filled `githubIssueNumber` / `[#N]`** in COMMIT CONTRACT

@@ -13,11 +13,17 @@
       "skillPath": "apps/ui/skills/coss-particles/SKILL.md",
       "computedHash": "44c9d1c501a8f76c5332740795a2fa0f07dc814cd1a2c4a6103a971eb982db79"
     },
+    "customer-docs": {
+      "source": "mdg-labs/skills",
+      "sourceType": "github",
+      "skillPath": "customer-docs/SKILL.md",
+      "computedHash": "73c56da2477ab0f2ef83f3e251f133e72a0cd761f2d8bdcda7a710945ab15eca"
+    },
     "dependabot-triage": {
       "source": "mdg-labs/skills",
       "sourceType": "github",
       "skillPath": "dependabot-triage/SKILL.md",
-      "computedHash": "00104fcc06927cf547ffcd25031660c5bf0957df87837d524890238e774f81a6"
+      "computedHash": "5f23a55b76c788ba59653948f8205d771d645bc4f7fcbc315a6f584925640644"
     },
     "kaneo-intake": {
       "source": "mdg-labs/skills",
@@ -35,13 +41,13 @@
       "source": "mdg-labs/skills",
       "sourceType": "github",
       "skillPath": "orchestrator/SKILL.md",
-      "computedHash": "33a9fe9d93e2ce30d7404e189723a74aca2d859f0fc435aef3c5c182150c3038"
+      "computedHash": "e5e13875d2b467fa493cab0c177bd75d52c7e333bd20c526337b0641ce6e4498"
     },
     "project-setup": {
       "source": "mdg-labs/skills",
       "sourceType": "github",
       "skillPath": "project-setup/SKILL.md",
-      "computedHash": "0277d147ca96fde44af84ea1449262bc3b6dc00360bb2e75a6109da023257670"
+      "computedHash": "f3629fb67fdf7bb124fbfcf6acdb999492fdc0c65c65688344b93bff72f3fd5d"
     }
   }
 }

@@ -38,7 +38,7 @@ Tool: `slack_send_message` with `channel_id` = operator **recipient** user_id
 ```markdown
 **{PROJECT_NAME} orchestrator — run complete**
 
-- **Mode:** <plan-file | Kaneo | chat>
+- **Mode:** <plan-file | Phasical | chat>
 - **Scope:** <e.g. P1-03–P1-05 | #12 epic>
 - **Result:** <N passed · M failed · K blocked>
 

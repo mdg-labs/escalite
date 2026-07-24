@@ -1,11 +1,11 @@
 ---
 name: project-setup
 description: >-
-  Bootstrap or update MDG Labs Cursor project agent config: Kaneo orchestrator
+  Bootstrap or update MDG Labs Cursor project agent config: Phasical orchestrator
   supporting files (project.config, doc-index, prompt-templates, skills-lock)
   under .agents/project/, Cursor rules (numbered .mdc set from central templates),
   and central skill installs. Supports create and update modes per layer. Use when
-  onboarding a repo, changing Kaneo IDs/branches, refreshing shared rules from
+  onboarding a repo, changing Phasical IDs/branches, refreshing shared rules from
   mdg-labs/skills, or migrating from per-project orchestrator/Linear/GitLab board skills.
 ---
 
@@ -15,11 +15,11 @@ Bootstrap **or update** consumer-project agent configuration. Three independent 
 
 | Layer | What it manages | Manifest |
 | ----- | --------------- | -------- |
-| **kaneo** | `.agents/project/orchestrator/*`, `workspace-notes.md`, `agent-memory/`, `skills-lock.json` | `skills-lock.json` |
+| **phasical** | `.agents/project/orchestrator/*`, `workspace-notes.md`, `agent-memory/`, `skills-lock.json` | `skills-lock.json` |
 | **rules** | `.cursor/rules/*.mdc` (numbered MDG Labs convention) | `rules-manifest.json` |
 | **skills** | Installed skills under `.agents/skills/` from `mdg-labs/skills` | `skills-lock.json` |
 
-**Templates:** [templates/](templates/) (kaneo + rules).  
+**Templates:** [templates/](templates/) (phasical + rules).  
 **Repo guide:** [../README.md](../README.md).
 
 This skill is **not** the orchestrator, intake, or triage runtime — it only materializes and updates local config.
@@ -44,8 +44,9 @@ Parse user intent on first turn:
 | Mode | User says | Action |
 | ---- | --------- | ------ |
 | **create** | "set up", "bootstrap", "initialize" | Write missing files; install skills |
-| **update** | "update", "refresh", "change Kaneo project", "sync rules" | Merge/sync per layer rules below |
-| **layer:kaneo** | "update Kaneo config", "change projectId" | Kaneo layer only |
+| **update** | "update", "refresh", "change Phasical project", "sync rules" | Merge/sync per layer rules below |
+| **layer:phasical** | "update Phasical config", "change projectId" | Phasical layer only |
+| **layer:kaneo** | *(legacy alias)* same as `layer:phasical` | Phasical layer only |
 | **layer:rules** | "update rules", "refresh cursor rules" | Rules layer only |
 | **layer:skills** | "update skills", "reinstall skills" | Run `npx skills update -p` |
 | **full** | "full project setup" | All layers, create or update as needed |
@@ -70,7 +71,7 @@ Setup skills are **idempotent operators**, not one-shot installers.
 | ---- | ------ | ------ |
 | **Shared rules** (`managed: shared` in manifest) | Copy from central template | Overwrite from central **only if** user confirms refresh OR file matches prior manifest hash |
 | **Generated rules** (`managed: generated`) | Render template with placeholders | Re-render **only fields user asked to change**; preserve other sections |
-| **project.config.md** | Render template | Patch named fields (Kaneo IDs, branches, paths); keep comments |
+| **project.config.md** | Render template | Patch named fields (Phasical IDs, branches, paths); keep comments |
 | **doc-index.md** | Render template | **Merge** — never delete user-added rows |
 | **prompt-templates.md** | Render template | **Merge** — preserve project CI commands unless user asks full refresh |
 | **workspace-notes.md** | Create stub if missing | **Never overwrite** body |
@@ -85,7 +86,7 @@ Report: files created · updated · skipped · manual follow-ups.
 
 ---
 
-## Layer: kaneo
+## Layer: phasical
 
 ### Targets
 
@@ -100,7 +101,7 @@ repo-root/skills-lock.json
 .agents/project/agent-memory/archive/.gitkeep
 ```
 
-Templates: [templates/kaneo/](templates/kaneo/).
+Templates: [templates/phasical/](templates/phasical/).
 
 ### Gather inputs
 
@@ -109,7 +110,7 @@ Templates: [templates/kaneo/](templates/kaneo/).
 | Project name | project.config, 00-project rule |
 | Repo path | project.config |
 | GitHub owner/repo | project.config |
-| Kaneo workspaceId, projectId, display name | project.config |
+| Phasical workspaceId, projectId, display name | project.config |
 | Integration / production branch | project.config, 01-git-workflow |
 | Plan file, spec glob, primary spec | project.config, doc-index |
 | Worktree pattern | project.config |
@@ -118,7 +119,7 @@ Templates: [templates/kaneo/](templates/kaneo/).
 | Slack session-end? | slack-session-end.md |
 | Allowed commit scopes | project.config, 01-git-workflow |
 
-If Kaneo project missing, offer `user-kaneo` `create_project` (user confirms).
+If Phasical project missing, offer `user-phasical` `create_project` (user confirms).
 
 ### Migration from legacy layout
 
@@ -126,16 +127,16 @@ If old files exist:
 
 | Legacy | Action |
 | ------ | ------ |
-| `orchestrator/kaneo-board.md` | Extract constants → `project.config.md` |
+| `orchestrator/phasical-board.md` | Extract constants → `project.config.md` |
 | `.agents/skills/orchestrator/project.config.md` (and siblings) | **Move** → `.agents/project/orchestrator/` — old path is wiped by `npx skills update` |
 | `.cursor/skills/**` supporting files | Move → `.agents/project/` |
 | `orchestrator/SKILL.md` (local copy under `.cursor/` or repo root) | Remove after `skills` layer install |
-| `linear-*`, `gitlab-*`, `github-intake` skills | List for removal after Kaneo migration |
+| `linear-*`, `gitlab-*`, `github-intake` skills | List for removal after Phasical migration |
 | `12-linear-board.mdc`, `12-github-project-board.mdc` | Deprecate — remove on rules refresh |
 
 ### .gitignore snippet
 
-Append [templates/kaneo/gitignore-snippet.txt](templates/kaneo/gitignore-snippet.txt) if missing.
+Append [templates/phasical/gitignore-snippet.txt](templates/phasical/gitignore-snippet.txt) if missing.
 
 ### Customizing `prompt-templates.md`
 
@@ -143,7 +144,7 @@ Rendered to `.agents/project/orchestrator/prompt-templates.md`. Orchestrator cop
 
 | Placeholder | Fill from |
 | ----------- | --------- |
-| `{PROJECT_ID}` | Kaneo projectId |
+| `{PROJECT_ID}` | Phasical projectId |
 | `{INTEGRATION_BRANCH}` | project.config integration branch |
 | `{ALLOWED_SCOPES}` | Gathered commit scopes (comma-separated) |
 | `{EXAMPLE_SCOPE}` | Primary scope for examples |
@@ -152,12 +153,12 @@ Rendered to `.agents/project/orchestrator/prompt-templates.md`. Orchestrator cop
 
 **Never remove or shorten:**
 
-- **KANEO SYNC — EXECUTION** / **VERIFIER** — gate sections (`FIRST ACTIONS`, `LAST ACTIONS`, `FORBIDDEN`, `REQUIRED OUTPUT`)
+- **PHASICAL SYNC — EXECUTION** / **VERIFIER** — gate sections (`FIRST ACTIONS`, `LAST ACTIONS`, `FORBIDDEN`, `REQUIRED OUTPUT`)
 - **COMMIT CONTRACT — EXECUTION** — subject format, staging rules, handoff order
 
-**On update:** merge user CI command tweaks; preserve custom examples. Full refresh only when user confirms — KANEO/COMMIT blocks must stay intact.
+**On update:** merge user CI command tweaks; preserve custom examples. Full refresh only when user confirms — PHASICAL/COMMIT blocks must stay intact.
 
-**Validate after render:** execution prompt template includes both KANEO SYNC and COMMIT CONTRACT; verifier template includes KANEO SYNC with Layer 3c3 reference.
+**Validate after render:** execution prompt template includes both PHASICAL SYNC and COMMIT CONTRACT; verifier template includes PHASICAL SYNC with Layer 3c3 reference.
 
 ---
 
@@ -171,7 +172,7 @@ Rendered to `.agents/project/orchestrator/prompt-templates.md`. Orchestrator cop
 | `01-git-workflow` | Branches, scopes, never-push | generated |
 | `02-orchestrator` | Pointer to orchestrator skill | shared |
 | `06-local-ci-before-commit` | Scoped vs full CI gate | generated |
-| `07-kaneo-commit-linking` | `[#N]` commit subjects | shared |
+| `07-phasical-commit-linking` | `[#N]` commit subjects | shared |
 | `08-dependabot-alerts` | Never dismiss | shared |
 | `13-no-amend-pushed` | No amend after push | shared |
 
@@ -190,7 +191,7 @@ Templates: [templates/rules/shared/](templates/rules/shared/) · [templates/rule
 Write or update at repo root from [rules-manifest.example.json](rules-manifest.example.json).
 
 - **shared** rules: byte-copy from central repo templates (path in manifest)
-- **generated** rules: render placeholders from kaneo gather inputs (same session)
+- **generated** rules: render placeholders from phasical gather inputs (same session)
 
 ### Update rules workflow
 
@@ -207,7 +208,7 @@ Rules update progress:
 
 ### Deprecated rules to remove on request
 
-- `07-issue-commit-linking.mdc` (Linear) → replaced by `07-kaneo-commit-linking.mdc`
+- `07-issue-commit-linking.mdc` (Linear) → replaced by `07-phasical-commit-linking.mdc`
 - `12-linear-board.mdc`, `12-github-project-board.mdc` → board logic in skills
 
 ---
@@ -228,12 +229,13 @@ npx skills experimental_install -a cursor -y
 npx skills update -p -y
 ```
 
-Default skills (in [templates/kaneo/skills-lock.json](templates/kaneo/skills-lock.json)):
+Default skills (in [templates/phasical/skills-lock.json](templates/phasical/skills-lock.json)):
 
 - orchestrator
-- kaneo-intake
-- kaneo-triage
+- phasical-intake
+- phasical-triage
 - dependabot-triage
+- customer-docs
 
 **Do not** install `project-setup` into consumer projects — use globally (`-g`) or invoke from the skills repo checkout.
 
@@ -244,10 +246,10 @@ Verify: `npx skills list -p`
 ## Full bootstrap workflow
 
 ```text
-1. Pick mode (create | update) and layers (kaneo | rules | skills | full)
+1. Pick mode (create | update) and layers (phasical | rules | skills | full)
 2. Gather inputs (minimal set for selected layers)
 3. Detect existing files → change plan → user confirms if overwrites
-4. kaneo layer → write/merge supporting files under `.agents/skills/`
+4. phasical layer → write/merge supporting files under `.agents/skills/`
 5. rules layer → copy shared + render generated → write rules-manifest.json
 6. skills layer → experimental_install or update
 7. .gitignore snippet
@@ -261,9 +263,9 @@ Verify: `npx skills list -p`
 ```markdown
 ## Project setup — {MODE} ({LAYERS})
 
-**Kaneo config:** `.agents/project/orchestrator/project.config.md`
+**Phasical config:** `.agents/project/orchestrator/project.config.md`
 **Rules:** {N} managed rules · manifest `rules-manifest.json`
-**Skills:** orchestrator, kaneo-intake, kaneo-triage, dependabot-triage
+**Skills:** orchestrator, phasical-intake, phasical-triage, dependabot-triage, customer-docs
 
 ### Changed
 - created: …
@@ -278,7 +280,7 @@ Verify: `npx skills list -p`
 
 ### Try
 - "project-setup update rules" — refresh shared rules
-- "project-setup layer:kaneo — change integration branch to dev"
+- "project-setup layer:phasical — change integration branch to dev"
 - "orchestrate #N"
 ```
 
@@ -286,7 +288,7 @@ Verify: `npx skills list -p`
 
 ## Forbidden
 
-- Running orchestrator, intake, triage, or creating Kaneo tasks during setup
+- Running orchestrator, intake, triage, or creating Phasical tasks during setup
 - Blind-overwriting `workspace-notes.md`, `learned/`, or `doc-index.md` user content
 - Embedding project-specific IDs in the central `mdg-labs/skills` repo
 - Editing installed skill copies in `.agents/skills/orchestrator/SKILL.md` — change upstream + `npx skills update`

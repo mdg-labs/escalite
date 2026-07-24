@@ -1,6 +1,6 @@
 # Project config — {PROJECT_NAME}
 
-> Supporting file — created by project-setup (layer **kaneo**). Lives under `.agents/project/` — **not** inside `.agents/skills/` (`npx skills update` wipes skill directories).
+> Supporting file — created by project-setup (layer **phasical**). Lives under `.agents/project/` — **not** inside `.agents/skills/` (`npx skills update` wipes skill directories).
 
 ## Repository
 
@@ -16,17 +16,17 @@
 | Plan file | `{PLAN_FILE}` |
 | Spec doc glob | `{SPEC_GLOB}` |
 
-## Kaneo
+## Phasical
 
 | Field | Value |
 | ----- | ----- |
-| MCP server | `user-kaneo` |
+| MCP server | `user-phasical` |
 | Workspace | {WORKSPACE_NAME} (`{WORKSPACE_ID}`) |
-| Project | {KANEO_PROJECT_NAME} (`{PROJECT_ID}`) |
+| Project | {PHASICAL_PROJECT_NAME} (`{PROJECT_ID}`) |
 | Ready status slug | `to-do` |
 | GitHub MCP (read) | `user-github` |
 
-**Commits:** use GitHub `[#N]` from `externalLinks.externalId`. Never Kaneo task IDs in git.
+**Commits:** use GitHub `[#N]` from `externalLinks.externalId`. Never Phasical task IDs in git.
 
 ## Domain labels
 
@@ -40,8 +40,8 @@
 
 ## Commit conventions
 
-- Kaneo/GitHub tasks: `[#N]` in subject
-- Roadmap-only (no Kaneo mirror): `[P*-*]` in subject
+- Phasical/GitHub tasks: `[#N]` in subject
+- Roadmap-only (no Phasical mirror): `[P*-*]` in subject
 - Body: `fixes #N` when project rules require it (see `.cursor/rules/`)
 
 ## Optional

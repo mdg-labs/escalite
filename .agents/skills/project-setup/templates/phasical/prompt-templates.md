@@ -1,45 +1,45 @@
 # Prompt templates — {PROJECT_NAME}
 
 > **Orchestrator:** copy blocks below **verbatim** into sub-agent prompts (fill `<placeholders>` per task).  
-> **project-setup:** customize `{PLACEHOLDERS}` for this repo — **never remove** KANEO SYNC or COMMIT CONTRACT blocks.  
-> Reference: `.agents/skills/orchestrator/references/kaneo-sync.md`
+> **project-setup:** customize `{PLACEHOLDERS}` for this repo — **never remove** PHASICAL SYNC or COMMIT CONTRACT blocks.  
+> Reference: `.agents/skills/orchestrator/references/phasical-sync.md`
 
 ## How to assemble an execution prompt
 
 **Required block order** (orchestrator — do not reorder):
 
 1. Task ID, AC, doc refs, READ/WRITE scope, SESSION ID, lane/git context
-2. **KANEO SYNC — EXECUTION** (unless user opted out)
-3. **COMMIT CONTRACT — EXECUTION** (always — even when Kaneo sync off)
-4. SESSION TIME TRACKING (when KANEO SYNC present)
+2. **PHASICAL SYNC — EXECUTION** (unless user opted out)
+3. **COMMIT CONTRACT — EXECUTION** (always — even when Phasical sync off)
+4. SESSION TIME TRACKING (when PHASICAL SYNC present)
 5. SCOPED CI GATE
 6. DB MIGRATIONS
 7. PLAN FILE GUARD (when plan file in WRITE SCOPE)
 8. WORKTREE ISOLATION (Lane P only)
 
-**Verifier prompts:** KANEO SYNC — VERIFIER + SCOPED CI GATE (+ PLAN FILE GUARD when applicable).
+**Verifier prompts:** PHASICAL SYNC — VERIFIER + SCOPED CI GATE (+ PLAN FILE GUARD when applicable).
 
-**Enforcement:** Missing KANEO SYNC or COMMIT CONTRACT → orchestrator must not dispatch. Sub-agent skipping either → verifier **FAIL** + orchestrator recovery.
+**Enforcement:** Missing PHASICAL SYNC or COMMIT CONTRACT → orchestrator must not dispatch. Sub-agent skipping either → verifier **FAIL** + orchestrator recovery.
 
 ---
 
-## KANEO SYNC — EXECUTION
+## PHASICAL SYNC — EXECUTION
 
 ```text
-KANEO SYNC — EXECUTION (MANDATORY — skip ONLY if user said "don't update Kaneo"):
-Reference: .agents/skills/orchestrator/references/kaneo-sync.md
+PHASICAL SYNC — EXECUTION (MANDATORY — skip ONLY if user said "don't update Phasical"):
+Reference: .agents/skills/orchestrator/references/phasical-sync.md
 
-MCP server: user-kaneo
+MCP server: user-phasical
 projectId: {PROJECT_ID}
 
 tasks:
-  - taskId: <kaneo-cuid>              # leaf — REQUIRED
+  - taskId: <phasical-cuid>              # leaf — REQUIRED
     githubIssueNumber: <N>             # from externalLinks.externalId — REQUIRED for commits
     title: <task title>
   - taskId: <parent-cuid>              # epic parent — include when leaf is subtask
 
 ━━━ GATE: FIRST ACTIONS (before Read/Grep/implementation/session memory) ━━━
-CallMcpTool user-kaneo / update_task_status
+CallMcpTool user-phasical / update_task_status
   → status: in-progress
   → for EVERY taskId listed above (leaf + parent in same batch)
 If ANY transition fails → status: blocked — report error — do NOT touch repo files.
@@ -51,7 +51,7 @@ Session memory: create .agents/project/agent-memory/active/<SESSION-ID>.md after
 
 ━━━ GATE: LAST ACTIONS (strict order — do NOT commit before step 2) ━━━
 1. Session memory header: set ended + duration (wall-clock from started)
-2. CallMcpTool user-kaneo / update_task_status → in-review for each LEAF taskId
+2. CallMcpTool user-phasical / update_task_status → in-review for each LEAF taskId
 3. Single implementation commit (see COMMIT CONTRACT below) — subject MUST include [#<N>]
 
 ━━━ FORBIDDEN ━━━
@@ -60,7 +60,7 @@ Session memory: create .agents/project/agent-memory/active/<SESSION-ID>.md after
 - create_task_comment (verifier only)
 - Committing before in-review transition
 - Committing session memory or agent-memory/**
-- Kaneo taskId in any commit message
+- Phasical taskId in any commit message
 
 ━━━ REQUIRED OUTPUT (end of run) ━━━
 Report per task: taskId, githubIssueNumber, in-progress ✓, in-review ✓, commit <sha> with subject line.
@@ -85,7 +85,7 @@ Subject format (≤72 chars):
 
   <type>: feat | fix | chore | refactor | docs | test | ci | build | perf
   <scope>: one of — {ALLOWED_SCOPES}
-  [#<N>]: githubIssueNumber from KANEO SYNC block — square brackets REQUIRED
+  [#<N>]: githubIssueNumber from PHASICAL SYNC block — square brackets REQUIRED
   Roadmap-only (no GitHub mirror): use [P*-*] instead of [#N]
 
 Body (when project requires auto-close):
@@ -104,24 +104,24 @@ Pre-commit:
   - Run SCOPED CI GATE (below) — failure → blocked, no commit
   - DB changes → {MIGRATION_CMD} only (see DB MIGRATIONS)
 
-Handoff order (with KANEO SYNC):
+Handoff order (with PHASICAL SYNC):
   in-progress → implement → session ended → in-review → THEN commit
   Commit without in-review → FAIL. in-review without commit → FAIL.
 
 Never push unless user explicitly asked.
 ```
 
-## KANEO SYNC — VERIFIER
+## PHASICAL SYNC — VERIFIER
 
 ```text
-KANEO SYNC — VERIFIER (MANDATORY — skip ONLY if user said "don't update Kaneo"):
-Reference: .agents/skills/orchestrator/references/kaneo-sync.md
+PHASICAL SYNC — VERIFIER (MANDATORY — skip ONLY if user said "don't update Phasical"):
+Reference: .agents/skills/orchestrator/references/phasical-sync.md
 
-MCP server: user-kaneo
+MCP server: user-phasical
 projectId: {PROJECT_ID}
 
 tasks:
-  - taskId: <kaneo-cuid>
+  - taskId: <phasical-cuid>
     githubIssueNumber: <N>
   - taskId: <parent-cuid>              # epic — done only when final child completes epic
 
@@ -130,7 +130,7 @@ Layer 1–3 verification must PASS (including 3c3 commit linkage — git log con
 
 ━━━ AFTER PASS (strict order) ━━━
 1. Session memory: verification ended + duration
-2. create_task_comment — mandatory structured Done summary (see kaneo-sync.md § Verifier Done comment)
+2. create_task_comment — mandatory structured Done summary (see phasical-sync.md § Verifier Done comment)
 3. update_task_status → done for each leaf taskId
 4. If parent listed and epic complete → done on parent
 5. Optionally archive/delete local session memory (never commit)
@@ -149,7 +149,7 @@ Layer 1–3 verification must PASS (including 3c3 commit linkage — git log con
 ## SESSION TIME TRACKING
 
 ```text
-SESSION TIME TRACKING (when KANEO SYNC present):
+SESSION TIME TRACKING (when PHASICAL SYNC present):
 - Record started at Phase 1 in session memory header (after in-progress succeeds)
 - Record ended + duration pre-handoff (execution) or before Done/Ready (verifier)
 - Session memory is local only — never commit

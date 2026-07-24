@@ -1,10 +1,10 @@
-# Kaneo sync reference (universal)
+# Phasical sync reference (universal)
 
-Orchestrator and sub-agents use this when a prompt includes a **KANEO SYNC** block. Project IDs live in `.agents/project/orchestrator/project.config.md` (supporting file).
+Orchestrator and sub-agents use this when a prompt includes a **PHASICAL SYNC** block. Project IDs live in `.agents/project/orchestrator/project.config.md` (supporting file).
 
 ## GitHub external linkage
 
-Kaneo auto-creates a GitHub issue per task. After sync (typically a few seconds), resolve the GitHub number from `externalLinks`:
+Phasical auto-creates a GitHub issue per task. After sync (typically a few seconds), resolve the GitHub number from `externalLinks`:
 
 | MCP call     | `externalLinks` location                               |
 | ------------ | ------------------------------------------------------ |
@@ -16,7 +16,7 @@ Kaneo auto-creates a GitHub issue per task. After sync (typically a few seconds)
   "resourceType": "issue",
   "externalId": "36",
   "url": "https://github.com/mdg-labs/example/issues/36",
-  "metadata": { "state": "open", "createdFrom": "kaneo" }
+  "metadata": { "state": "open", "createdFrom": "phasical" }
 }
 ```
 
@@ -24,8 +24,8 @@ Kaneo auto-creates a GitHub issue per task. After sync (typically a few seconds)
 | ---------------- | ------------------------------------------------------------ |
 | `externalId`     | GitHub issue number → commit subject `[#N]`                  |
 | `url`            | Human link in prompts and handoff                            |
-| Kaneo `taskId`   | `update_task_status`, `create_task_comment`, `update_task`   |
-| Kaneo `number`   | Project-scoped task number (not used in commits)             |
+| Phasical `taskId`   | `update_task_status`, `create_task_comment`, `update_task`   |
+| Phasical `number`   | Project-scoped task number (not used in commits)             |
 
 Resolve after `create_task`: wait ~3–5s, then `get_task` or `list_tasks` until `externalLinks` is populated.
 
@@ -45,12 +45,12 @@ Resolve after `create_task`: wait ~3–5s, then `get_task` or `list_tasks` until
 | Status          | Who sets it                                               | When                                |
 | --------------- | --------------------------------------------------------- | ----------------------------------- |
 | Backlog         | Anyone (creation default)                                 | Unrefined                           |
-| Ready (`to-do`) | **kaneo-intake** / **kaneo-triage** / orchestrator / user | After intake/triage                 |
+| Ready (`to-do`) | **phasical-intake** / **phasical-triage** / orchestrator / user | After intake/triage                 |
 | In Progress     | **Execution agent**                                       | First action, before session memory |
 | In Review       | **Execution agent**                                       | Last action before verifier handoff |
 | Done            | **Verifier**                                              | After all layers PASS               |
 
-**Planning skills → Ready:** kaneo-intake moves tasks to `to-do`. kaneo-triage moves **backlog → to-do** after triage.
+**Planning skills → Ready:** phasical-intake moves tasks to `to-do`. phasical-triage moves **backlog → to-do** after triage.
 
 ### Failure path
 
@@ -58,13 +58,13 @@ Verifier FAIL → `update_task_status` → `to-do` (Ready) + `create_task_commen
 
 ## Status sync — sub-agent duties (mandatory)
 
-Skip only when user said **"don't update Kaneo"** or prompt has no KANEO SYNC block.
+Skip only when user said **"don't update Phasical"** or prompt has no PHASICAL SYNC block.
 
 ### Execution agent — first action (before session memory)
 
 ```text
-CallMcpTool user-kaneo / update_task_status
-  taskId: <each leaf kaneoTaskId>
+CallMcpTool user-phasical / update_task_status
+  taskId: <each leaf phasicalTaskId>
   status: in-progress
 ```
 
@@ -75,7 +75,7 @@ CallMcpTool user-kaneo / update_task_status
 
 ### Execution agent — last actions (before verifier handoff)
 
-When the prompt includes **KANEO SYNC**, perform these in order:
+When the prompt includes **PHASICAL SYNC**, perform these in order:
 
 ```text
 1. Session memory (local): set ended + duration in header (wall-clock from started → now)
@@ -152,12 +152,12 @@ Post via `create_task_comment` on each **leaf** taskId before transitioning to d
 
 ### Orchestrator role
 
-- Resolve Kaneo taskIds + GitHub issue numbers; include in every execution + verifier prompt.
+- Resolve Phasical taskIds + GitHub issue numbers; include in every execution + verifier prompt.
 - Confirm sub-agents report sync in REQUIRED OUTPUT.
 - **Recovery only** if sub-agent skipped sync.
 - After verifier PASS: optionally **re-query** `get_task` to confirm `done` (Pipewatch pattern — orchestrator is source of truth).
 
-## KANEO SYNC blocks (orchestrator copies from prompt-templates.md)
+## PHASICAL SYNC blocks (orchestrator copies from prompt-templates.md)
 
 **Canonical copy-paste blocks live in `.agents/project/orchestrator/prompt-templates.md`** — copy verbatim, do not paraphrase. This section summarizes; templates enforce gates and REQUIRED OUTPUT.
 
@@ -165,7 +165,7 @@ Use **two variants** — never pass `done` status to execution agents. Fill `pro
 
 ### Execution variant (summary)
 
-See prompt-templates § **KANEO SYNC — EXECUTION**. Key gates:
+See prompt-templates § **PHASICAL SYNC — EXECUTION**. Key gates:
 
 1. **FIRST:** `in-progress` on every listed taskId before any implementation
 2. **LAST:** session ended → `in-review` → **then** commit with `[#N]`
@@ -173,14 +173,14 @@ See prompt-templates § **KANEO SYNC — EXECUTION**. Key gates:
 
 ### Verifier variant (summary)
 
-See prompt-templates § **KANEO SYNC — VERIFIER**. Commit linkage (Layer 3c3) must PASS before `done`.
+See prompt-templates § **PHASICAL SYNC — VERIFIER**. Commit linkage (Layer 3c3) must PASS before `done`.
 
 ## Task lookup (orchestrator)
 
 | User says                 | MCP call                                                                            |
 | ------------------------- | ----------------------------------------------------------------------------------- |
 | GitHub `#36` or issue URL | `list_tasks` + match `externalLinks.externalId`, or `user-github` `issue_read`      |
-| Kaneo task title          | `list_tasks` with `projectId`, filter by title                                      |
+| Phasical task title          | `list_tasks` with `projectId`, filter by title                                      |
 | Roadmap ID in description | `list_tasks` + search description for `Roadmap ID: P*`                              |
 | Ready queue               | `list_tasks` `status: to-do`                                                        |
 | Subtasks                  | `get_task_relations` `taskId` → `relationType: subtask`                             |
@@ -206,18 +206,18 @@ Feature work with **2+ tasks** uses a parent task + `create_task_relation` (`rel
 | `create_task_comment`  | —                             | —                          | On PASS and FAIL |
 | `create_task_relation` | Intake skill                  | —                          | —                |
 
-## Roadmap vs Kaneo
+## Roadmap vs Phasical
 
-|                      | Roadmap (`P*-*`)               | Kaneo + GitHub (`#N`)                                |
+|                      | Roadmap (`P*-*`)               | Phasical + GitHub (`#N`)                                |
 | -------------------- | ------------------------------ | ---------------------------------------------------- |
 | Plan file checkboxes | Verifier                       | No (unless linked via Roadmap ID in description)     |
 | Board status         | No                             | Execution → in-progress → in-review; Verifier → done |
-| Commit subject       | `[P*-*]` when no Kaneo mirror  | `[#N]` — **required** when Kaneo sync in scope      |
+| Commit subject       | `[P*-*]` when no Phasical mirror  | `[#N]` — **required** when Phasical sync in scope      |
 
 ## Commit → GitHub linking
 
-GitHub links commits when the message contains `#N` (e.g. `[#36]` in subject). Kaneo task IDs must **never** appear in commit messages.
+GitHub links commits when the message contains `#N` (e.g. `[#36]` in subject). Phasical task IDs must **never** appear in commit messages.
 
 ## Time tracking
 
-When KANEO SYNC is present, execution and verifier agents record `started`, `ended`, and `duration` in local session memory headers. Session memory is never committed.
+When PHASICAL SYNC is present, execution and verifier agents record `started`, `ended`, and `duration` in local session memory headers. Session memory is never committed.

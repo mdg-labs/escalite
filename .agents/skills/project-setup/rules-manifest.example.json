@@ -8,9 +8,9 @@
       "managed": "shared",
       "computedHash": ""
     },
-    "07-kaneo-commit-linking": {
-      "installPath": ".cursor/rules/07-kaneo-commit-linking.mdc",
-      "templatePath": "project-setup/templates/rules/shared/07-kaneo-commit-linking.mdc",
+    "07-phasical-commit-linking": {
+      "installPath": ".cursor/rules/07-phasical-commit-linking.mdc",
+      "templatePath": "project-setup/templates/rules/shared/07-phasical-commit-linking.mdc",
       "managed": "shared",
       "computedHash": ""
     },

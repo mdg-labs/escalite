@@ -1,21 +1,21 @@
 ---
 name: dependabot-triage
 description: >-
-  Fetch a Dependabot security alert from a GitHub repo via gh CLI, search Kaneo for
-  a duplicate Bug, and create a Kaneo Bug if no open duplicate exists. Records
+  Fetch a Dependabot security alert from a GitHub repo via gh CLI, search Phasical for
+  a duplicate Bug, and create a Phasical Bug if no open duplicate exists. Records
   githubIssueNumber after sync. Use when the user references a Dependabot alert
   number, CVE/GHSA ID, or asks to triage a dependency vulnerability.
 ---
 
 # Dependabot triage
 
-Fetch alert details from GitHub, search Kaneo for duplicates, create a Kaneo Bug if none found. Kaneo sync creates the GitHub mirror issue.
+Fetch alert details from GitHub, search Phasical for duplicates, create a Phasical Bug if none found. Phasical sync creates the GitHub mirror issue.
 
 | What | Path |
 | ---- | ---- |
 | This skill (installed) | `.agents/skills/dependabot-triage/SKILL.md` |
 | Project constants (supporting) | `.agents/project/orchestrator/project.config.md` |
-| Intake patterns (installed) | `.agents/skills/kaneo-intake/SKILL.md` |
+| Intake patterns (installed) | `.agents/skills/phasical-intake/SKILL.md` |
 | Sub-agent monitoring (installed) | `.agents/skills/orchestrator/references/sub-agent-monitoring.md` |
 
 If dispatched as a sub-agent: parent must follow `sub-agent-monitoring.md` — no duplicate `create_task` while this skill is in-flight.
@@ -34,14 +34,14 @@ If dispatched as a sub-agent: parent must follow `sub-agent-monitoring.md` — n
 1. **Never** dismiss alerts via GitHub API — follow project Dependabot rule (e.g. `08-dependabot-alerts.mdc`).
 2. **No code changes** during triage.
 3. **Do not** set in-progress or done — leave at backlog or to-do after create.
-4. **Kaneo-first** create via `create_task`; record `githubIssueNumber` after sync.
+4. **Phasical-first** create via `create_task`; record `githubIssueNumber` after sync.
 
 ## Constants
 
 Read from `.agents/project/orchestrator/project.config.md`:
 
 ```text
-MCP server: user-kaneo
+MCP server: user-phasical
 projectId: <from project.config.md>
 GitHub: <owner/repo from project.config.md>
 ```
@@ -50,8 +50,8 @@ GitHub: <owner/repo from project.config.md>
 
 ```
 - [ ] Phase 1: Fetch alert (gh api REST)
-- [ ] Phase 2: Search Kaneo duplicates (list_tasks)
-- [ ] Phase 3: Create Kaneo Bug (if no open duplicate)
+- [ ] Phase 2: Search Phasical duplicates (list_tasks)
+- [ ] Phase 3: Create Phasical Bug (if no open duplicate)
 - [ ] Phase 4: Summarise #N + taskId in chat
 ```
 
@@ -116,7 +116,7 @@ update_task_status → to-do
 
 ### Phase 4 — Summarise
 
-Report alert details, duplicate status, new `#N` + Kaneo taskId, suggested next step (`implement #N` via orchestrator).
+Report alert details, duplicate status, new `#N` + Phasical taskId, suggested next step (`implement #N` via orchestrator).
 
 ## Tools
 

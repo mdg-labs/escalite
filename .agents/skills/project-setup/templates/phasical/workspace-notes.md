@@ -4,8 +4,8 @@ Durable project learnings for the orchestrator. Not session-specific.
 
 ## Conventions
 
-- Kaneo is the board source of truth; GitHub issues mirror via sync.
-- Commits use `[#N]` from Kaneo `externalLinks`.
+- Phasical is the board source of truth; GitHub issues mirror via sync.
+- Commits use `[#N]` from Phasical `externalLinks`.
 
 ---
 
