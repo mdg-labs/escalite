@@ -23,6 +23,14 @@ WHERE id = $1
   AND expires_at > now()
 LIMIT 1;
 
+-- name: GetActiveSessionByID :one
+SELECT *
+FROM sessions
+WHERE id = $1
+  AND revoked_at IS NULL
+  AND expires_at > now()
+LIMIT 1;
+
 -- name: RevokeSession :exec
 UPDATE sessions
 SET revoked_at = now(),

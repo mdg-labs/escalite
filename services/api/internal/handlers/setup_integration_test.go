@@ -53,22 +53,31 @@ func startPostgres(t *testing.T) (string, func()) {
 	return databaseURL, cleanup
 }
 
-func TestSetupIntegration(t *testing.T) {
+func newTestHandler(t *testing.T) (http.Handler, *pgxpool.Pool, func()) {
+	t.Helper()
+
 	databaseURL, cleanup := startPostgres(t)
-	defer cleanup()
 
 	ctx := context.Background()
 	require.NoError(t, migrate.Up(ctx, databaseURL, slog.Default()))
 
 	pool, err := pgxpool.New(ctx, databaseURL)
 	require.NoError(t, err)
-	t.Cleanup(pool.Close)
 
-	logger := slog.Default()
 	handler := server.New(server.Dependencies{
-		Logger: logger,
+		Logger: slog.Default(),
 		Pool:   pool,
 	})
+
+	return handler, pool, func() {
+		pool.Close()
+		cleanup()
+	}
+}
+
+func TestSetupIntegration(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
 
 	body := map[string]string{
 		"organizationName": "Acme On-Call",
@@ -121,6 +130,7 @@ func TestSetupIntegration(t *testing.T) {
 	orgID := uuid.MustParse(resp.Organization.ID)
 	sessionID := uuid.MustParse(sessionCookie.Value)
 
+	ctx := context.Background()
 	queries := db.New(pool)
 	session, err := queries.GetSessionByID(ctx, db.GetSessionByIDParams{
 		ID:             sessionID,
@@ -158,15 +168,8 @@ func TestSetupIntegration(t *testing.T) {
 }
 
 func TestSetupHandlerValidation(t *testing.T) {
-	databaseURL, cleanup := startPostgres(t)
+	_, pool, cleanup := newTestHandler(t)
 	defer cleanup()
-
-	ctx := context.Background()
-	require.NoError(t, migrate.Up(ctx, databaseURL, slog.Default()))
-
-	pool, err := pgxpool.New(ctx, databaseURL)
-	require.NoError(t, err)
-	t.Cleanup(pool.Close)
 
 	setup := handlers.NewSetupHandler(pool, slog.Default())
 

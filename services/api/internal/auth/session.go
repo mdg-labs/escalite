@@ -27,3 +27,16 @@ func SetSessionCookie(w http.ResponseWriter, sessionID uuid.UUID, expiresAt time
 		SameSite: http.SameSiteLaxMode,
 	})
 }
+
+// ClearSessionCookie removes the session cookie from the browser.
+func ClearSessionCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	})
+}

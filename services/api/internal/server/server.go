@@ -37,7 +37,18 @@ func New(deps Dependencies) http.Handler {
 
 	if deps.Pool != nil {
 		setup := handlers.NewSetupHandler(deps.Pool, deps.Logger)
+		login := handlers.NewLoginHandler(deps.Pool, deps.Logger)
+		logout := handlers.NewLogoutHandler(deps.Pool, deps.Logger)
+		me := handlers.NewMeHandler()
+
 		r.Post("/api/v1/setup", setup.ServeHTTP)
+		r.Post("/api/v1/login", login.ServeHTTP)
+
+		r.Group(func(r chi.Router) {
+			r.Use(handlers.RequireSession(deps.Pool, deps.Logger))
+			r.Post("/api/v1/logout", logout.ServeHTTP)
+			r.Get("/api/v1/me", me.ServeHTTP)
+		})
 	}
 
 	deps.Logger.Info("router initialized")

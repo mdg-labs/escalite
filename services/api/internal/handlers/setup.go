@@ -51,20 +51,15 @@ type setupResponse struct {
 	User         setupUser         `json:"user"`
 }
 
-type apiError struct {
-	Error string `json:"error"`
-	Code  string `json:"code"`
-}
-
 func (h *SetupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeAPIError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		WriteAPIError(w, http.StatusMethodNotAllowed, CodeMethodNotAllowed, "method not allowed")
 		return
 	}
 
 	var req setupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeAPIError(w, http.StatusBadRequest, "VALIDATION", "invalid JSON body")
+		WriteAPIError(w, http.StatusBadRequest, CodeValidation, "invalid JSON body")
 		return
 	}
 
@@ -73,19 +68,19 @@ func (h *SetupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	password := req.Password
 
 	if orgName == "" {
-		writeAPIError(w, http.StatusBadRequest, "VALIDATION", "organizationName is required")
+		WriteAPIError(w, http.StatusBadRequest, CodeValidation, "organizationName is required")
 		return
 	}
 	if email == "" {
-		writeAPIError(w, http.StatusBadRequest, "VALIDATION", "email is required")
+		WriteAPIError(w, http.StatusBadRequest, CodeValidation, "email is required")
 		return
 	}
 	if _, err := mail.ParseAddress(email); err != nil {
-		writeAPIError(w, http.StatusBadRequest, "VALIDATION", "email is invalid")
+		WriteAPIError(w, http.StatusBadRequest, CodeValidation, "email is invalid")
 		return
 	}
 	if len(password) < minPasswordLength {
-		writeAPIError(w, http.StatusBadRequest, "VALIDATION", "password must be at least 8 characters")
+		WriteAPIError(w, http.StatusBadRequest, CodeValidation, "password must be at least 8 characters")
 		return
 	}
 
@@ -95,18 +90,18 @@ func (h *SetupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	userCount, err := queries.CountUsers(ctx)
 	if err != nil {
 		h.logger.Error("count users failed", "error", err)
-		writeAPIError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
 	if userCount > 0 {
-		writeAPIError(w, http.StatusForbidden, "FORBIDDEN", "setup is disabled after the first admin exists")
+		WriteAPIError(w, http.StatusForbidden, CodeForbidden, "setup is disabled after the first admin exists")
 		return
 	}
 
 	passwordHash, err := auth.HashPassword(password)
 	if err != nil {
 		h.logger.Error("hash password failed", "error", err)
-		writeAPIError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
 
@@ -119,7 +114,7 @@ func (h *SetupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tx, err := h.pool.Begin(ctx)
 	if err != nil {
 		h.logger.Error("begin transaction failed", "error", err)
-		writeAPIError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
 	defer func() {
@@ -137,7 +132,7 @@ func (h *SetupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		h.logger.Error("bootstrap organization failed", "error", err)
-		writeAPIError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
 
@@ -150,13 +145,13 @@ func (h *SetupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		h.logger.Error("create session failed", "error", err)
-		writeAPIError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		h.logger.Error("commit transaction failed", "error", err)
-		writeAPIError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
 
@@ -174,14 +169,5 @@ func (h *SetupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Email: bootstrap.UserEmail,
 			Role:  bootstrap.UserRole,
 		},
-	})
-}
-
-func writeAPIError(w http.ResponseWriter, status int, code, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(apiError{
-		Error: message,
-		Code:  code,
 	})
 }
