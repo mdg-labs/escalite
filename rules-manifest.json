@@ -6,13 +6,13 @@
       "installPath": ".cursor/rules/02-orchestrator.mdc",
       "templatePath": "project-setup/templates/rules/shared/02-orchestrator.mdc",
       "managed": "shared",
-      "computedHash": "b1e9ff226c30395bb4f5de5da6145bfe121e41f381db5b0f108a10c5510bc8cc"
+      "computedHash": "eeb3afb8fdaea112e6097ec618dfd7b1c766ca34f6aea7a836ab064b4a8792da"
     },
-    "07-kaneo-commit-linking": {
-      "installPath": ".cursor/rules/07-kaneo-commit-linking.mdc",
-      "templatePath": "project-setup/templates/rules/shared/07-kaneo-commit-linking.mdc",
+    "07-phasical-commit-linking": {
+      "installPath": ".cursor/rules/07-phasical-commit-linking.mdc",
+      "templatePath": "project-setup/templates/rules/shared/07-phasical-commit-linking.mdc",
       "managed": "shared",
-      "computedHash": "250572b44787aba4928cc0998a518020f2311ed7ca56eb14689a152b76d31c0e"
+      "computedHash": "3a214fcac383b0fa901a6e63e6f114e09d739240b548d28250f546c1a85aaeed"
     },
     "08-dependabot-alerts": {
       "installPath": ".cursor/rules/08-dependabot-alerts.mdc",
@@ -30,13 +30,13 @@
       "installPath": ".cursor/rules/00-project.mdc",
       "templatePath": "project-setup/templates/rules/generated/00-project.mdc",
       "managed": "generated",
-      "computedHash": "59ccbe00d0cb74f0898dae2ad84758093e340458b1095d63024a30f3d0bd68e9"
+      "computedHash": "d4df493dc31c087c0653f14dff07f54964fd697748b9916a099d29d015f0cd90"
     },
     "01-git-workflow": {
       "installPath": ".cursor/rules/01-git-workflow.mdc",
       "templatePath": "project-setup/templates/rules/generated/01-git-workflow.mdc",
       "managed": "generated",
-      "computedHash": "6f00dfb96df8b537acaa478be1602093b991506981b19cfdaa5039b0d61e552e"
+      "computedHash": "a02d1c467d2b2b5b86ea25f94e0ceee24d22248fca2e943f65ba2d2524c23ab0"
     },
     "06-local-ci-before-commit": {
       "installPath": ".cursor/rules/06-local-ci-before-commit.mdc",

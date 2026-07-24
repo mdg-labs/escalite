@@ -25,23 +25,23 @@
       "skillPath": "dependabot-triage/SKILL.md",
       "computedHash": "5f23a55b76c788ba59653948f8205d771d645bc4f7fcbc315a6f584925640644"
     },
-    "kaneo-intake": {
-      "source": "mdg-labs/skills",
-      "sourceType": "github",
-      "skillPath": "kaneo-intake/SKILL.md",
-      "computedHash": "716abb8eed0893121ef0b8500d4e405eb6d1ea9d06f5bf79b5bf7aef9abfef43"
-    },
-    "kaneo-triage": {
-      "source": "mdg-labs/skills",
-      "sourceType": "github",
-      "skillPath": "kaneo-triage/SKILL.md",
-      "computedHash": "26d496d55fde62d1a70bd42cb26541d47382ffaa62f9b5dca0d51d3206f9c08d"
-    },
     "orchestrator": {
       "source": "mdg-labs/skills",
       "sourceType": "github",
       "skillPath": "orchestrator/SKILL.md",
       "computedHash": "e5e13875d2b467fa493cab0c177bd75d52c7e333bd20c526337b0641ce6e4498"
+    },
+    "phasical-intake": {
+      "source": "mdg-labs/skills",
+      "sourceType": "github",
+      "skillPath": "phasical-intake/SKILL.md",
+      "computedHash": "1f2aa985e6c40cb99f174fcfac2e0fcb74c8845017e43395c3fc7256a4c693cd"
+    },
+    "phasical-triage": {
+      "source": "mdg-labs/skills",
+      "sourceType": "github",
+      "skillPath": "phasical-triage/SKILL.md",
+      "computedHash": "36e88f5c7aa7335608629c76b8b721c689a43c0bd1f9e641e74aa7c6201d8875"
     },
     "project-setup": {
       "source": "mdg-labs/skills",

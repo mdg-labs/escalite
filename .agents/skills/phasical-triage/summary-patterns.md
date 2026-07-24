@@ -1,6 +1,6 @@
-# Issue title patterns (Kaneo)
+# Issue title patterns (Phasical)
 
-Single source of truth for **task title** conventions. Both kaneo-triage and kaneo-intake must follow this table.
+Single source of truth for **task title** conventions. Both phasical-triage and phasical-intake must follow this table.
 
 ## Pattern table
 
@@ -36,5 +36,5 @@ Cross-check domain labels — area prefix and label should not contradict.
 
 | Skill            | When                                                                                           |
 | ---------------- | ---------------------------------------------------------------------------------------------- |
-| **kaneo-triage** | After investigation, when rewrite rules apply — include in `update_task` alongside description |
-| **kaneo-intake** | On `create_task`; on enrich when draft title is vague                                          |
+| **phasical-triage** | After investigation, when rewrite rules apply — include in `update_task` alongside description |
+| **phasical-intake** | On `create_task`; on enrich when draft title is vague                                          |

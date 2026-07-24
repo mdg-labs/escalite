@@ -18,12 +18,12 @@ alwaysApply: true
 
 ## Commit messages (Conventional Commits)
 
-Subject ≤72 chars, imperative mood, **scoped**. Task commits link work items per `07-kaneo-commit-linking.mdc`.
+Subject ≤72 chars, imperative mood, **scoped**. Task commits link work items per `07-phasical-commit-linking.mdc`.
 
 ```
 feat(<scope>)[#123]: <summary>
 fix(<scope>)[#123]: <summary>
-chore(<scope>)[P2-01]: <summary>   # roadmap-only when no Kaneo mirror
+chore(<scope>)[P2-01]: <summary>   # roadmap-only when no Phasical mirror
 ```
 
 **Allowed scopes**: api, web, mobile, shared, infra, docs, roadmap, ci

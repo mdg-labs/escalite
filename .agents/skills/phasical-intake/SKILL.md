@@ -1,37 +1,37 @@
 ---
-name: kaneo-intake
+name: phasical-intake
 description: >-
-  Create or enrich Kaneo tasks from a feature description, codebase change, roadmap
+  Create or enrich Phasical tasks from a feature description, codebase change, roadmap
   item, or user-drafted issue. Single task for small work; parent + subtasks for
   multi-task features. Dual mode: create net-new or enrich existing (never when
   done/closed). Always presents a written issue proposal and waits for explicit
-  user approval before any Kaneo MCP writes. Stops at Ready (to-do). Use when the user
+  user approval before any Phasical MCP writes. Stops at Ready (to-do). Use when the user
   asks to plan or ticket work, flesh out a draft issue, import roadmap epics, or
   break a change into board tasks before implementation.
 ---
 
-# Kaneo intake
+# Phasical intake
 
-Turn a feature request, codebase change, roadmap epic, or rough draft into **Ready** (`to-do`) tasks in the project's Kaneo board. Kaneo auto-syncs each task to a GitHub issue.
+Turn a feature request, codebase change, roadmap epic, or rough draft into **Ready** (`to-do`) tasks in the project's Phasical board. Phasical auto-syncs each task to a GitHub issue.
 
-**Every run:** investigate → **written proposal in chat** → wait for your approval → then create in Kaneo.
+**Every run:** investigate → **written proposal in chat** → wait for your approval → then create in Phasical.
 
 ## Path layout
 
 | What | Path |
 | ---- | ---- |
-| This skill (installed) | `.agents/skills/kaneo-intake/SKILL.md` |
-| Templates (installed) | `.agents/skills/kaneo-intake/templates.md` |
-| Summary patterns (installed) | `.agents/skills/kaneo-triage/summary-patterns.md` |
+| This skill (installed) | `.agents/skills/phasical-intake/SKILL.md` |
+| Templates (installed) | `.agents/skills/phasical-intake/templates.md` |
+| Summary patterns (installed) | `.agents/skills/phasical-triage/summary-patterns.md` |
 | Project constants (supporting) | `.agents/project/orchestrator/project.config.md` |
-| Kaneo sync (installed) | `.agents/skills/orchestrator/references/kaneo-sync.md` |
+| Phasical sync (installed) | `.agents/skills/orchestrator/references/phasical-sync.md` |
 | Doc index (supporting) | `.agents/project/orchestrator/doc-index.md` |
-| Intake plan drafts (supporting, gitignored) | `.agents/project/kaneo-intake/plans/` |
+| Intake plan drafts (supporting, gitignored) | `.agents/project/phasical-intake/plans/` |
 | Sub-agent monitoring (installed) | `.agents/skills/orchestrator/references/sub-agent-monitoring.md` |
 
 ## Parent agents: do not take over intake
 
-If you dispatched **kaneo-intake** as a sub-agent (Task), **do not** create or enrich Kaneo tasks yourself while it may still be running — even if git is quiet. MCP writes produce no commits.
+If you dispatched **phasical-intake** as a sub-agent (Task), **do not** create or enrich Phasical tasks yourself while it may still be running — even if git is quiet. MCP writes produce no commits.
 
 Follow `.agents/skills/orchestrator/references/sub-agent-monitoring.md`:
 
@@ -39,7 +39,7 @@ Follow `.agents/skills/orchestrator/references/sub-agent-monitoring.md`:
 2. Read sub-agent **transcript** → wait **10–20s** → read again.
 3. Still no progress → **terminate** the intake sub-agent → `list_tasks` for partial creates → **dedupe** → then re-dispatch once.
 
-Taking over intake while the sub-agent is alive causes **duplicate tasks** on Kaneo/GitHub.
+Taking over intake while the sub-agent is alive causes **duplicate tasks** on Phasical/GitHub.
 
 ## When to use
 
@@ -48,14 +48,14 @@ Taking over intake while the sub-agent is alive causes **duplicate tasks** on Ka
 | Feature or change needing **2+ tasks**    | **Parent task** + child subtasks (`create_task_relation`) |
 | Single task sufficient                    | **One** task — no parent                                  |
 | Bug fix (one task)                        | Bug-style title; `bug` label if useful                      |
-| User provides Kaneo taskId or GitHub `#N` | **Enrich mode** — only if status is not done/closed       |
+| User provides Phasical taskId or GitHub `#N` | **Enrich mode** — only if status is not done/closed       |
 | **Full roadmap import**                   | See [Roadmap import](#roadmap-import) below               |
-| User says "don't create issues"           | Skip MCP; written proposal only — no Kaneo writes        |
+| User says "don't create issues"           | Skip MCP; written proposal only — no Phasical writes        |
 | Greenfield roadmap (no ticketing)         | **Do not use intake** — orchestrator reads plan file directly |
 
 ## Approval gate (mandatory — no exceptions)
 
-**Phase 1 — investigate + written proposal only.** No Kaneo MCP writes (`create_task`, `update_task`, `update_task_status`, `create_task_relation`, `attach_label_to_task`).
+**Phase 1 — investigate + written proposal only.** No Phasical MCP writes (`create_task`, `update_task`, `update_task_status`, `create_task_relation`, `attach_label_to_task`).
 
 **Phase 2 — MCP writes** only after the user explicitly approves the proposal in chat (e.g. **approve**, **yes create them**, **go ahead**, **LGTM**).
 
@@ -63,7 +63,7 @@ Taking over intake while the sub-agent is alive causes **duplicate tasks** on Ka
 | ---- | ------ |
 | **Always propose first** | Single task, multi-task epic, enrich, roadmap import — every run |
 | **Never skip Phase 1** | Even if the user said "create issues", "ticket this", or "import roadmap" upfront |
-| **Wait for reply** | End Phase 1 with a clear ask: *"Approve to create in Kaneo, or tell me what to change."* |
+| **Wait for reply** | End Phase 1 with a clear ask: *"Approve to create in Phasical, or tell me what to change."* |
 | **Re-propose after edits** | If the user requests changes, show an updated proposal; do not write until they approve again |
 | **Sub-agent same rule** | Parent agents must not create tasks while intake is waiting for approval |
 
@@ -71,7 +71,7 @@ Taking over intake while the sub-agent is alive causes **duplicate tasks** on Ka
 
 Ask clarifying questions during Phase 1 if priority, owning domain, or product rules are unclear — still no MCP writes until approved.
 
-## Kaneo status vs enrich guard
+## Phasical status vs enrich guard
 
 | Status | Action |
 | ------ | ------ |
@@ -83,11 +83,11 @@ Ask clarifying questions during Phase 1 if priority, owning domain, or product r
 
 ### Mode A — Create net-new
 
-User describes work with no existing Kaneo task.
+User describes work with no existing Phasical task.
 
 ### Mode B — Enrich existing
 
-User names Kaneo `taskId`, GitHub `#N`, or URL. Fetch via `get_task` / `list_tasks`. If **done** or **closed** → stop; propose new issues instead.
+User names Phasical `taskId`, GitHub `#N`, or URL. Fetch via `get_task` / `list_tasks`. If **done** or **closed** → stop; propose new issues instead.
 
 ## Domain routing (labels)
 
@@ -97,7 +97,7 @@ Parent task gets the **owning** domain. Each child gets its own label.
 
 ## Assignee (mandatory on create)
 
-Every **new** task must be assigned to the **current operator** (the Kaneo user running this session).
+Every **new** task must be assigned to the **current operator** (the Phasical user running this session).
 
 1. Call `whoami` once before the first `create_task` in this run (reuse `user.id` for all creates).
 2. Pass `userId: <user.id>` on every `create_task` (parent, children, single-task, roadmap import).
@@ -117,22 +117,22 @@ Two phases — **never skip Phase 1**.
 5. **Present the written proposal** (format below) — full titles, domains, dependencies, and description outlines.
 6. **Stop and wait** for explicit user approval. Do not call `whoami` or `create_task` yet.
 
-### Phase 2 — Create in Kaneo (after approval only)
+### Phase 2 — Create in Phasical (after approval only)
 
 Proceed only when the user explicitly approved the proposal in their latest message.
 
 1. `whoami` → `OPERATOR_USER_ID`
 2. Execute MCP creates/updates per mode (steps below)
-3. Report handoff with GitHub URLs + Kaneo taskIds
+3. Report handoff with GitHub URLs + Phasical taskIds
 
 ---
 
 ### Written proposal format (required every run)
 
-Post this in chat before any Kaneo writes. For **single-task** work, omit the children table but still include title, domain, priority, and full description draft.
+Post this in chat before any Phasical writes. For **single-task** work, omit the children table but still include title, domain, priority, and full description draft.
 
 ```markdown
-## Proposed Kaneo issues — {feature or change name}
+## Proposed Phasical issues — {feature or change name}
 
 **Mode:** create net-new | enrich #N | roadmap import
 **Duplicates checked:** {none | link to existing #N — why not duplicating}
@@ -159,10 +159,10 @@ Post this in chat before any Kaneo writes. For **single-task** work, omit the ch
 **Open questions:** {any — or "none"}
 
 ---
-**Approve to create these in Kaneo** (or tell me what to change).
+**Approve to create these in Phasical** (or tell me what to change).
 ```
 
-**Large plans (5+ issues):** also save the same content to `.agents/project/kaneo-intake/plans/YYYY-MM-DD-<slug>.md` (gitignored) for reference — **approval in chat is still required** before Phase 2.
+**Large plans (5+ issues):** also save the same content to `.agents/project/phasical-intake/plans/YYYY-MM-DD-<slug>.md` (gitignored) for reference — **approval in chat is still required** before Phase 2.
 
 ### 3. Create parent task (Mode A only — Phase 2)
 
@@ -265,12 +265,12 @@ Re-read every created description. Assert:
 ## After creation — handoff
 
 ```markdown
-Created in Kaneo ({project name from project.config.md}):
+Created in Phasical ({project name from project.config.md}):
 
 - Parent: https://github.com/{owner}/{repo}/issues/<N>
 - #<N2> … / #<N3> … (all leaf GitHub URLs)
 
-Kaneo taskIds: <cuid> … (for orchestrator MCP)
+Phasical taskIds: <cuid> … (for orchestrator MCP)
 
 Suggested order: #N2 → #N3 → #N4
 Ready for orchestrator: "implement #N3" or "orchestrate epic #N"
@@ -281,7 +281,7 @@ Ready for orchestrator: "implement #N3" or "orchestrate epic #N"
 ```
 Phase 1 (no writes):
 - [ ] Read project.config.md for workspaceId, projectId, GitHub repo
-- [ ] Read MCP tool schemas under user-kaneo
+- [ ] Read MCP tool schemas under user-phasical
 - [ ] list_tasks (avoid duplicates)
 - [ ] Written proposal posted (titles + description outlines)
 - [ ] User explicitly approved proposal in chat
@@ -296,12 +296,12 @@ Phase 2 (after approval):
 - [ ] Patch Depends on lines with real #N
 - [ ] Resolve externalLinks → githubIssueNumber for each task
 - [ ] update_task_status → to-do on parent + leaves
-- [ ] Report GitHub URLs + Kaneo taskIds + suggested order
+- [ ] Report GitHub URLs + Phasical taskIds + suggested order
 ```
 
 ## Forbidden
 
-- **Any Kaneo MCP write before explicit user approval** of the written proposal (no "create now" bypass)
+- **Any Phasical MCP write before explicit user approval** of the written proposal (no "create now" bypass)
 - **Skipping the written proposal** — including single-task and roadmap import
 - Proceeding to Phase 2 in the same turn as Phase 1 without user reply
 - Enriching **done** / **closed** tasks
@@ -309,6 +309,6 @@ Phase 2 (after approval):
 - Inventing product behaviour not in spec docs — ask first
 - Pasting secrets into task descriptions
 - Creating a multi-task feature without a parent task
-- Using Kaneo taskId in commit messages (use `[#N]` only)
+- Using Phasical taskId in commit messages (use `[#N]` only)
 - Leaving bare `P*.*` in `Depends on:` lines after all tasks exist
 - Creating tasks without `userId` (unassigned)

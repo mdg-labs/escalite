@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Orchestrator & roadmap
 
-This project is built **task-by-task** from the plan file (see `project.config.md` § Plan file). Sub-agents implement tasks; a verifier checks them; progress is tracked on Kaneo and/or plan checkboxes.
+This project is built **task-by-task** from the plan file (see `project.config.md` § Plan file). Sub-agents implement tasks; a verifier checks them; progress is tracked on Phasical and/or plan checkboxes.
 
 ## Use the orchestrator skill when
 
@@ -44,16 +44,16 @@ If you're the orchestrator chat: do not edit checkboxes during normal flow excep
 
 **Parallel batches (Lane P):** execution on isolated worktrees (`best-of-n-runner`); integration merges to the integration branch. See `.agents/skills/orchestrator/SKILL.md` § Parallelism.
 
-## Kaneo board status (when orchestrating)
+## Phasical board status (when orchestrating)
 
 | Column | Who sets it |
 |--------|-------------|
-| Ready (`to-do`) | intake / triage / user |
+| Ready (`ready`) | intake / triage / user |
 | In Progress | **execution agent** (first action) |
 | In Review | **execution agent** (pre-verifier) |
 | Done | **verifier** after PASS |
 
-See `.agents/skills/orchestrator/references/kaneo-sync.md` and `07-kaneo-commit-linking.mdc`.
+See `.agents/skills/orchestrator/references/phasical-sync.md` and `07-phasical-commit-linking.mdc`.
 
 ## Project config
 

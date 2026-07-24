@@ -1,6 +1,6 @@
 # Project config — Escalite
 
-> Supporting file — created by project-setup (layer **kaneo**). Lives under `.agents/project/` — **not** inside `.agents/skills/` (`npx skills update` wipes skill directories).
+> Supporting file — created by project-setup (layer **phasical**). Lives under `.agents/project/` — **not** inside `.agents/skills/` (`npx skills update` wipes skill directories).
 
 ## Repository
 
@@ -16,17 +16,17 @@
 | Plan file | `docs/roadmap/ROADMAP.md` |
 | Spec doc glob | `docs/specs/*.md` |
 
-## Kaneo
+## Phasical
 
 | Field | Value |
 | ----- | ----- |
-| MCP server | `user-kaneo` |
+| MCP server | `user-phasical` |
 | Workspace | MDG-Labs (`X3VbytvC7pKgazK2dAsOQIFtdGYRzdGH`) |
 | Project | Escalite (`bkbnmftqdr54r9gcgrgtndbw`) |
 | Ready status slug | `ready` |
 | GitHub MCP (read) | `user-github` |
 
-**Commits:** use GitHub `[#N]` from `externalLinks.externalId`. Never Kaneo task IDs in git.
+**Commits:** use GitHub `[#N]` from `externalLinks.externalId`. Never Phasical task IDs in git.
 
 ## Domain labels
 
@@ -50,8 +50,8 @@
 
 ## Commit conventions
 
-- Kaneo/GitHub tasks: `[#N]` in subject
-- Roadmap-only (no Kaneo mirror): `[P*-*]` in subject
+- Phasical/GitHub tasks: `[#N]` in subject
+- Roadmap-only (no Phasical mirror): `[P*-*]` in subject
 - Body: `fixes #N` when project rules require it (see `.cursor/rules/`)
 
 ## Optional
