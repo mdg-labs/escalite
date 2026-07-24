@@ -5,3 +5,23 @@
 .agents/project/kaneo-intake/plans/
 .env
 .env.local
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.turbo/
+
+# Go
+bin/
+*.exe
+*.test
+*.out
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
