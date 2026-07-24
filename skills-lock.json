@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "skills": {
+    "coss": {
+      "source": "cosscom/coss",
+      "sourceType": "github",
+      "skillPath": "apps/ui/skills/coss/SKILL.md",
+      "computedHash": "b49756caf38599acce96b54faa58c887a9e4dcfc5433ea36b7ab469157e35d17"
+    },
+    "coss-particles": {
+      "source": "cosscom/coss",
+      "sourceType": "github",
+      "skillPath": "apps/ui/skills/coss-particles/SKILL.md",
+      "computedHash": "44c9d1c501a8f76c5332740795a2fa0f07dc814cd1a2c4a6103a971eb982db79"
+    },
+    "dependabot-triage": {
+      "source": "mdg-labs/skills",
+      "sourceType": "github",
+      "skillPath": "dependabot-triage/SKILL.md",
+      "computedHash": "00104fcc06927cf547ffcd25031660c5bf0957df87837d524890238e774f81a6"
+    },
+    "kaneo-intake": {
+      "source": "mdg-labs/skills",
+      "sourceType": "github",
+      "skillPath": "kaneo-intake/SKILL.md",
+      "computedHash": "716abb8eed0893121ef0b8500d4e405eb6d1ea9d06f5bf79b5bf7aef9abfef43"
+    },
+    "kaneo-triage": {
+      "source": "mdg-labs/skills",
+      "sourceType": "github",
+      "skillPath": "kaneo-triage/SKILL.md",
+      "computedHash": "26d496d55fde62d1a70bd42cb26541d47382ffaa62f9b5dca0d51d3206f9c08d"
+    },
+    "orchestrator": {
+      "source": "mdg-labs/skills",
+      "sourceType": "github",
+      "skillPath": "orchestrator/SKILL.md",
+      "computedHash": "33a9fe9d93e2ce30d7404e189723a74aca2d859f0fc435aef3c5c182150c3038"
+    },
+    "project-setup": {
+      "source": "mdg-labs/skills",
+      "sourceType": "github",
+      "skillPath": "project-setup/SKILL.md",
+      "computedHash": "0277d147ca96fde44af84ea1449262bc3b6dc00360bb2e75a6109da023257670"
+    }
+  }
+}
