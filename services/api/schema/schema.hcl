@@ -1,5 +1,6 @@
 // Canonical Escalite database schema (Atlas HCL).
 // Core domain entities: organizations, teams, users, team_memberships (#39).
+// Scheduling tables: schedules, rotations, overrides (#41).
 // Service + integration key tables (#40).
 // Escalation policies, alerts, notification_attempts (#42).
 
@@ -195,6 +196,267 @@ table "team_memberships" {
 
   index "team_memberships_user_id_idx" {
     columns = [column.user_id]
+  }
+}
+
+table "schedules" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "team_id" {
+    null = false
+    type = uuid
+  }
+  column "name" {
+    null = false
+    type = text
+  }
+  column "timezone" {
+    null = false
+    type = text
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "schedules_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "schedules_team_id_organization_id_fkey" {
+    columns     = [column.team_id, column.organization_id]
+    ref_columns = [table.teams.column.id, table.teams.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "schedules_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "schedules_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  index "schedules_team_id_idx" {
+    columns = [column.team_id]
+  }
+
+  check "schedules_timezone_check" {
+    expr = "(timezone(timezone, TIMESTAMPTZ '2000-01-01 00:00:00+00') IS NOT NULL)"
+  }
+}
+
+table "rotations" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "schedule_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "name" {
+    null = false
+    type = text
+  }
+  column "layer" {
+    null = false
+    type = integer
+  }
+  column "rrule" {
+    null = false
+    type = text
+  }
+  column "participants" {
+    null    = false
+    type    = jsonb
+    default = sql("'[]'::jsonb")
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "rotations_schedule_id_organization_id_fkey" {
+    columns     = [column.schedule_id, column.organization_id]
+    ref_columns = [table.schedules.column.id, table.schedules.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "rotations_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  unique "rotations_schedule_id_layer_key" {
+    columns = [column.schedule_id, column.layer]
+  }
+
+  index "rotations_schedule_id_idx" {
+    columns = [column.schedule_id]
+  }
+
+  index "rotations_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+}
+
+table "overrides" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "schedule_id" {
+    null = false
+    type = uuid
+  }
+  column "rotation_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "user_id" {
+    null = false
+    type = uuid
+  }
+  column "replaced_user_id" {
+    null = true
+    type = uuid
+  }
+  column "starts_at" {
+    null = false
+    type = timestamptz
+  }
+  column "ends_at" {
+    null = false
+    type = timestamptz
+  }
+  column "created_by_user_id" {
+    null = false
+    type = uuid
+  }
+  column "approved_by_user_id" {
+    null = true
+    type = uuid
+  }
+  column "deleted_at" {
+    null = true
+    type = timestamptz
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "overrides_schedule_id_organization_id_fkey" {
+    columns     = [column.schedule_id, column.organization_id]
+    ref_columns = [table.schedules.column.id, table.schedules.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "overrides_rotation_id_organization_id_fkey" {
+    columns     = [column.rotation_id, column.organization_id]
+    ref_columns = [table.rotations.column.id, table.rotations.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "overrides_user_id_organization_id_fkey" {
+    columns     = [column.user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "overrides_replaced_user_id_organization_id_fkey" {
+    columns     = [column.replaced_user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = SET_NULL
+  }
+
+  foreign_key "overrides_created_by_user_id_organization_id_fkey" {
+    columns     = [column.created_by_user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = RESTRICT
+  }
+
+  foreign_key "overrides_approved_by_user_id_organization_id_fkey" {
+    columns     = [column.approved_by_user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = SET_NULL
+  }
+
+  unique "overrides_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "overrides_schedule_id_idx" {
+    columns = [column.schedule_id]
+  }
+
+  index "overrides_rotation_id_idx" {
+    columns = [column.rotation_id]
+  }
+
+  index "overrides_schedule_id_starts_at_ends_at_idx" {
+    columns = [column.schedule_id, column.starts_at, column.ends_at]
+  }
+
+  index "overrides_active_idx" {
+    columns = [column.schedule_id, column.starts_at, column.ends_at]
+    where   = "(deleted_at IS NULL)"
+  }
+
+  check "overrides_window_check" {
+    expr = "(ends_at > starts_at)"
   }
 }
 
