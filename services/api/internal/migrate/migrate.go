@@ -65,8 +65,7 @@ func applyAtlasMigrations(ctx context.Context, databaseURL string) error {
 	}
 
 	_, err = client.MigrateApply(ctx, &atlasexec.MigrateApplyParams{
-		URL:      databaseURL,
-		LockName: "escalite_migrate",
+		URL: databaseURL,
 	})
 	if err != nil {
 		return fmt.Errorf("apply migrations: %w", err)
