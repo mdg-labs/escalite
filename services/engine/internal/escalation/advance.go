@@ -36,6 +36,9 @@ func AdvanceEscalationStep(
 	if state.CurrentStep < 1 {
 		return fmt.Errorf("alert %s has no current escalation step", alertID)
 	}
+	if state.EscalatedExhausted {
+		return nil
+	}
 
 	policies, err := q.ListEscalationPoliciesByServiceID(ctx, db.ListEscalationPoliciesByServiceIDParams{
 		ServiceID:      alert.ServiceID,
@@ -49,15 +52,10 @@ func AdvanceEscalationStep(
 	}
 	policyID := policies[0].ID
 
-	nextStepOrder := state.CurrentStep + 1
-	if err := scheduleStepNotifications(ctx, q, inserter, alert, nextStepOrder); err != nil {
-		return err
-	}
-
 	currentStep, err := q.GetEscalationStepByPolicyAndOrder(ctx, db.GetEscalationStepByPolicyAndOrderParams{
 		EscalationPolicyID: policyID,
 		OrganizationID:     organizationID,
-		StepOrder:          int32(nextStepOrder),
+		StepOrder:          int32(state.CurrentStep),
 	})
 	if err != nil {
 		return fmt.Errorf("load current step: %w", err)
@@ -66,15 +64,50 @@ func AdvanceEscalationStep(
 	_, err = q.GetEscalationStepByPolicyAndOrder(ctx, db.GetEscalationStepByPolicyAndOrderParams{
 		EscalationPolicyID: policyID,
 		OrganizationID:     organizationID,
-		StepOrder:          int32(nextStepOrder + 1),
+		StepOrder:          int32(state.CurrentStep + 1),
 	})
-	if err == nil {
-		timerState := State{CurrentStep: nextStepOrder}
-		return scheduleEscalationTimer(ctx, q, inserter, alertID, organizationID, timerState, currentStep.DelayMinutes)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return handleLastStepRepeat(ctx, q, inserter, alert, state, currentStep)
 	}
-	if !errors.Is(err, pgx.ErrNoRows) {
+	if err != nil {
 		return fmt.Errorf("load next step: %w", err)
 	}
 
-	return nil
+	nextStepOrder := state.CurrentStep + 1
+	if err := scheduleStepNotifications(ctx, q, inserter, alert, state, nextStepOrder); err != nil {
+		return err
+	}
+
+	nextStep, err := q.GetEscalationStepByPolicyAndOrder(ctx, db.GetEscalationStepByPolicyAndOrderParams{
+		EscalationPolicyID: policyID,
+		OrganizationID:     organizationID,
+		StepOrder:          int32(nextStepOrder),
+	})
+	if err != nil {
+		return fmt.Errorf("load advanced step: %w", err)
+	}
+
+	_, err = q.GetEscalationStepByPolicyAndOrder(ctx, db.GetEscalationStepByPolicyAndOrderParams{
+		EscalationPolicyID: policyID,
+		OrganizationID:     organizationID,
+		StepOrder:          int32(nextStepOrder + 1),
+	})
+	if err == nil {
+		timerState := State{
+			CurrentStep:        nextStepOrder,
+			RepeatCount:        state.RepeatCount,
+			EscalatedExhausted: state.EscalatedExhausted,
+		}
+		return scheduleEscalationTimer(ctx, q, inserter, alertID, organizationID, timerState, nextStep.DelayMinutes)
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("load step after advance: %w", err)
+	}
+
+	timerState := State{
+		CurrentStep:        nextStepOrder,
+		RepeatCount:        state.RepeatCount,
+		EscalatedExhausted: state.EscalatedExhausted,
+	}
+	return scheduleAfterStep(ctx, q, inserter, alertID, organizationID, timerState, nextStep, false)
 }

@@ -266,6 +266,153 @@ func bootstrapTwoStepEscalation(t *testing.T, ctx context.Context, queries *db.Q
 	}
 }
 
+func TestEscalationRepeatExhaustedAtMaxRepeats(t *testing.T) {
+	ctx := context.Background()
+	databaseURL, cleanup, err := testutil.StartPostgres(ctx)
+	require.NoError(t, err)
+	defer cleanup()
+
+	require.NoError(t, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+
+	queueClient, err := queue.New(ctx, queue.Options{
+		DatabaseURL: databaseURL,
+		Logger:      slog.Default(),
+	})
+	require.NoError(t, err)
+	defer queueClient.Close()
+
+	require.NoError(t, queueClient.Start(ctx))
+	defer func() {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = queueClient.Stop(stopCtx)
+	}()
+
+	queries := db.New(queueClient.Pool())
+	fixture := bootstrapSingleStepRepeatEscalation(t, ctx, queries, 0, 1)
+
+	alertID := uuid.Must(uuid.NewV7())
+	_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
+		AlertID:        alertID,
+		OrganizationID: fixture.orgID,
+		ServiceID:      fixture.serviceID,
+		DedupKey:       "repeat-cap",
+		Summary:        "Repeat boundary",
+		Priority:       "high",
+	})
+	require.NoError(t, err)
+
+	waitForNotificationCount(t, ctx, queries, alertID, fixture.orgID, 1)
+
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		alert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+			ID:             alertID,
+			OrganizationID: fixture.orgID,
+		})
+		require.NoError(t, err)
+
+		var state escalation.State
+		require.NoError(t, json.Unmarshal(alert.EscalationState, &state))
+		if state.EscalatedExhausted {
+			require.Equal(t, 1, state.RepeatCount)
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("expected escalated_exhausted within 10s, got state %+v", state)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+		AlertID:        alertID,
+		OrganizationID: fixture.orgID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, int64(2), count)
+}
+
+func bootstrapSingleStepRepeatEscalation(
+	t *testing.T,
+	ctx context.Context,
+	queries *db.Queries,
+	stepDelayMinutes int32,
+	maxRepeats int32,
+) escalationFixture {
+	t.Helper()
+
+	orgID := uuid.Must(uuid.NewV7())
+	adminID := uuid.Must(uuid.NewV7())
+	teamID := uuid.Must(uuid.NewV7())
+	serviceID := uuid.Must(uuid.NewV7())
+	policyID := uuid.Must(uuid.NewV7())
+	stepID := uuid.Must(uuid.NewV7())
+
+	_, err := queries.BootstrapOrganizationWithAdmin(ctx, db.BootstrapOrganizationWithAdminParams{
+		OrgID:        orgID,
+		OrgName:      "Acme",
+		UserID:       adminID,
+		Email:        "admin@example.com",
+		PasswordHash: pgtype.Text{String: "hash", Valid: true},
+	})
+	require.NoError(t, err)
+
+	_, err = queries.CreateTeam(ctx, db.CreateTeamParams{
+		ID:             teamID,
+		OrganizationID: orgID,
+		Name:           "Platform",
+	})
+	require.NoError(t, err)
+
+	_, err = queries.CreateService(ctx, db.CreateServiceParams{
+		ID:             serviceID,
+		OrganizationID: orgID,
+		TeamID:         teamID,
+		Name:           "checkout-api",
+	})
+	require.NoError(t, err)
+
+	_, err = queries.CreateEscalationPolicy(ctx, db.CreateEscalationPolicyParams{
+		ID:             policyID,
+		OrganizationID: orgID,
+		ServiceID:      serviceID,
+		Name:           "Default",
+	})
+	require.NoError(t, err)
+
+	_, err = queries.CreateEscalationStep(ctx, db.CreateEscalationStepParams{
+		ID:                 stepID,
+		EscalationPolicyID: policyID,
+		OrganizationID:     orgID,
+		StepOrder:          1,
+		DelayMinutes:       stepDelayMinutes,
+		RepeatLastStep:     true,
+		MaxRepeats:         pgtype.Int4{Int32: maxRepeats, Valid: true},
+	})
+	require.NoError(t, err)
+
+	channels, err := json.Marshal([]string{"email"})
+	require.NoError(t, err)
+
+	_, err = queries.CreateEscalationStepTarget(ctx, db.CreateEscalationStepTargetParams{
+		ID:               uuid.Must(uuid.NewV7()),
+		EscalationStepID: stepID,
+		OrganizationID:   orgID,
+		TargetType:       "user",
+		UserID:           pgtype.UUID{Bytes: adminID, Valid: true},
+		ScheduleID:       pgtype.UUID{},
+		WebhookUrl:       pgtype.Text{},
+		Channels:         channels,
+	})
+	require.NoError(t, err)
+
+	return escalationFixture{
+		orgID:     orgID,
+		serviceID: serviceID,
+		step2ID:   stepID,
+	}
+}
+
 func waitForNotificationCount(
 	t *testing.T,
 	ctx context.Context,

@@ -67,23 +67,25 @@ func ScheduleStep1Notifications(
 		return fmt.Errorf("load step 1: %w", err)
 	}
 
-	if err := scheduleStepNotifications(ctx, q, inserter, alert, 1); err != nil {
+	if err := scheduleStepNotifications(ctx, q, inserter, alert, State{}, 1); err != nil {
 		return err
 	}
 
-	if _, err := q.GetEscalationStepByPolicyAndOrder(ctx, db.GetEscalationStepByPolicyAndOrderParams{
+	_, step2Err := q.GetEscalationStepByPolicyAndOrder(ctx, db.GetEscalationStepByPolicyAndOrderParams{
 		EscalationPolicyID: policies[0].ID,
 		OrganizationID:     organizationID,
 		StepOrder:          2,
-	}); err == nil {
+	})
+	if step2Err == nil {
 		timerState := State{CurrentStep: 1}
 		return scheduleEscalationTimer(ctx, q, inserter, alertID, organizationID, timerState, step.DelayMinutes)
 	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		return fmt.Errorf("load step 2: %w", err)
+	if !errors.Is(step2Err, pgx.ErrNoRows) {
+		return fmt.Errorf("load step 2: %w", step2Err)
 	}
 
-	return nil
+	timerState := State{CurrentStep: 1}
+	return scheduleAfterStep(ctx, q, inserter, alertID, organizationID, timerState, step, false)
 }
 
 func scheduleStepNotifications(
@@ -91,6 +93,7 @@ func scheduleStepNotifications(
 	q db.Querier,
 	inserter JobInserter,
 	alert db.Alert,
+	priorState State,
 	stepOrder int,
 ) error {
 	policies, err := q.ListEscalationPoliciesByServiceID(ctx, db.ListEscalationPoliciesByServiceIDParams{
@@ -124,7 +127,11 @@ func scheduleStepNotifications(
 		return fmt.Errorf("step %d has no targets", stepOrder)
 	}
 
-	state := State{CurrentStep: stepOrder}
+	state := State{
+		CurrentStep:        stepOrder,
+		RepeatCount:        priorState.RepeatCount,
+		EscalatedExhausted: priorState.EscalatedExhausted,
+	}
 	raw, err := marshalState(state)
 	if err != nil {
 		return err
