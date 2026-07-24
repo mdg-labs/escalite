@@ -1,0 +1,48 @@
+/**
+ * Escalite severity tokens — colorblind-safe (Okabe–Ito inspired).
+ * See tokens/README.md for usage guidance: always pair color with icon + label.
+ */
+@theme inline {
+  --color-severity-critical: var(--severity-critical);
+  --color-severity-critical-foreground: var(--severity-critical-foreground);
+  --color-severity-high: var(--severity-high);
+  --color-severity-high-foreground: var(--severity-high-foreground);
+  --color-severity-medium: var(--severity-medium);
+  --color-severity-medium-foreground: var(--severity-medium-foreground);
+  --color-severity-low: var(--severity-low);
+  --color-severity-low-foreground: var(--severity-low-foreground);
+  --color-severity-resolved: var(--severity-resolved);
+  --color-severity-resolved-foreground: var(--severity-resolved-foreground);
+  --color-severity-info: var(--severity-info);
+  --color-severity-info-foreground: var(--severity-info-foreground);
+}
+
+:root {
+  --severity-critical: #d55e00;
+  --severity-critical-foreground: #7a2e00;
+  --severity-high: #e69f00;
+  --severity-high-foreground: #8a5a00;
+  --severity-medium: #0072b2;
+  --severity-medium-foreground: #004a75;
+  --severity-low: #56b4e9;
+  --severity-low-foreground: #1f6f99;
+  --severity-resolved: #009e73;
+  --severity-resolved-foreground: #005c44;
+  --severity-info: #0072b2;
+  --severity-info-foreground: #004a75;
+}
+
+.dark {
+  --severity-critical: #f0a070;
+  --severity-critical-foreground: #ffd8c2;
+  --severity-high: #f5c842;
+  --severity-high-foreground: #fff0b8;
+  --severity-medium: #6eb8e8;
+  --severity-medium-foreground: #d4ecff;
+  --severity-low: #9ad4f5;
+  --severity-low-foreground: #e4f6ff;
+  --severity-resolved: #5fd4a4;
+  --severity-resolved-foreground: #d2f5e6;
+  --severity-info: #6eb8e8;
+  --severity-info-foreground: #d4ecff;
+}
