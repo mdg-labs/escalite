@@ -14,6 +14,7 @@ type Querier interface {
 	BootstrapOrganizationWithAdmin(ctx context.Context, arg BootstrapOrganizationWithAdminParams) (BootstrapOrganizationWithAdminRow, error)
 	CoreSchemaReady(ctx context.Context) (bool, error)
 	CountOrganizations(ctx context.Context) (int64, error)
+	CountUsers(ctx context.Context) (int64, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)

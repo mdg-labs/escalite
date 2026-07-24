@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/mdg-labs/escalite/services/api/internal/config"
 	"github.com/mdg-labs/escalite/services/api/internal/log"
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
@@ -42,7 +44,17 @@ func run() int {
 		return 1
 	}
 
-	handler := server.New(logger)
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		logger.Error("database pool failed", "error", err)
+		return 1
+	}
+	defer pool.Close()
+
+	handler := server.New(server.Dependencies{
+		Logger: logger,
+		Pool:   pool,
+	})
 	httpServer := &http.Server{
 		Addr:              cfg.ListenAddr,
 		Handler:           handler,

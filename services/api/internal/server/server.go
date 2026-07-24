@@ -7,10 +7,19 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 )
 
-// New returns an HTTP server with health and readiness stubs.
-func New(logger *slog.Logger) http.Handler {
+// Dependencies holds runtime services wired into the HTTP router.
+type Dependencies struct {
+	Logger *slog.Logger
+	Pool   *pgxpool.Pool
+}
+
+// New returns an HTTP server with health, readiness, and API routes.
+func New(deps Dependencies) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -26,6 +35,11 @@ func New(logger *slog.Logger) http.Handler {
 		_, _ = w.Write([]byte("escalite api\n"))
 	})
 
-	logger.Info("router initialized")
+	if deps.Pool != nil {
+		setup := handlers.NewSetupHandler(deps.Pool, deps.Logger)
+		r.Post("/api/v1/setup", setup.ServeHTTP)
+	}
+
+	deps.Logger.Info("router initialized")
 	return r
 }

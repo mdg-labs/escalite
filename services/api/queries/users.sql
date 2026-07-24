@@ -1,3 +1,7 @@
+-- name: CountUsers :one
+SELECT count(*)::bigint AS count
+FROM users;
+
 -- name: GetUserByID :one
 SELECT *
 FROM users
