@@ -13,9 +13,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/mdg-labs/escalite/services/api/internal/config"
+	"github.com/mdg-labs/escalite/services/api/internal/email"
 	"github.com/mdg-labs/escalite/services/api/internal/log"
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
 	"github.com/mdg-labs/escalite/services/api/internal/oidc"
+	"github.com/mdg-labs/escalite/services/api/internal/ratelimit"
 	"github.com/mdg-labs/escalite/services/api/internal/server"
 )
 
@@ -68,9 +70,21 @@ func run() int {
 	}
 
 	handler := server.New(server.Dependencies{
-		Logger: logger,
-		Pool:   pool,
-		OIDC:   server.NewOIDCServices(pool, logger, cfg.OIDC, oidcProvider),
+		Logger:    logger,
+		Pool:      pool,
+		OIDC:      server.NewOIDCServices(pool, logger, cfg.OIDC, oidcProvider),
+		Mail:      newMailSender(cfg, logger),
+		PublicURL: cfg.PublicURL,
+		PasswordReset: &server.PasswordResetOptions{
+			EmailLimiter: ratelimit.NewMemoryLimiter(
+				cfg.PasswordReset.EmailLimit,
+				cfg.PasswordReset.EmailWindow,
+			),
+			IPLimiter: ratelimit.NewMemoryLimiter(
+				cfg.PasswordReset.IPLimit,
+				cfg.PasswordReset.IPWindow,
+			),
+		},
 	})
 	httpServer := &http.Server{
 		Addr:              cfg.ListenAddr,
@@ -106,4 +120,20 @@ func run() int {
 
 	logger.Info("service stopped")
 	return 0
+}
+
+func newMailSender(cfg config.Config, logger *slog.Logger) email.Sender {
+	if cfg.SMTP == nil {
+		logger.Info("smtp not configured; password reset emails are discarded")
+		return email.NoopSender{}
+	}
+
+	logger.Info("smtp configured for outbound email", "host", cfg.SMTP.Host, "port", cfg.SMTP.Port)
+	return email.NewSMTPSender(email.SMTPConfig{
+		Host:     cfg.SMTP.Host,
+		Port:     cfg.SMTP.Port,
+		Username: cfg.SMTP.Username,
+		Password: cfg.SMTP.Password,
+		From:     cfg.SMTP.From,
+	})
 }

@@ -10,6 +10,7 @@ const (
 	CodeValidation       = "VALIDATION"
 	CodeForbidden        = "FORBIDDEN"
 	CodeNotFound         = "NOT_FOUND"
+	CodeRateLimited      = "RATE_LIMITED"
 	CodeInternal         = "INTERNAL"
 	CodeMethodNotAllowed = "METHOD_NOT_ALLOWED"
 )

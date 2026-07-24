@@ -20,6 +20,7 @@ import (
 
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
+	"github.com/mdg-labs/escalite/services/api/internal/email"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
 	"github.com/mdg-labs/escalite/services/api/internal/server"
@@ -53,7 +54,17 @@ func startPostgres(t *testing.T) (string, func()) {
 	return databaseURL, cleanup
 }
 
+type testServerOptions struct {
+	Mail          email.Sender
+	PublicURL     string
+	PasswordReset *server.PasswordResetOptions
+}
+
 func newTestHandler(t *testing.T) (http.Handler, *pgxpool.Pool, func()) {
+	return newTestHandlerWithOptions(t, testServerOptions{})
+}
+
+func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handler, *pgxpool.Pool, func()) {
 	t.Helper()
 
 	databaseURL, cleanup := startPostgres(t)
@@ -65,8 +76,11 @@ func newTestHandler(t *testing.T) (http.Handler, *pgxpool.Pool, func()) {
 	require.NoError(t, err)
 
 	handler := server.New(server.Dependencies{
-		Logger: slog.Default(),
-		Pool:   pool,
+		Logger:        slog.Default(),
+		Pool:          pool,
+		Mail:          opts.Mail,
+		PublicURL:     opts.PublicURL,
+		PasswordReset: opts.PasswordReset,
 	})
 
 	return handler, pool, func() {

@@ -101,3 +101,50 @@ func TestLoadRejectsInvalidLogLevel(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "ESCALITE_LOG_LEVEL")
 }
+
+func TestLoadSMTPOptional(t *testing.T) {
+	setRequiredEnv(t)
+
+	cfg, err := Load(Options{
+		ServiceName:       "api",
+		DefaultListenAddr: ":8080",
+		RequireDatabase:   true,
+	})
+	require.NoError(t, err)
+	assert.Nil(t, cfg.SMTP)
+}
+
+func TestLoadSMTPRequiresFromWhenHostSet(t *testing.T) {
+	setRequiredEnv(t)
+	t.Setenv("ESCALITE_SMTP_HOST", "smtp.example.com")
+
+	_, err := Load(Options{
+		ServiceName:       "api",
+		DefaultListenAddr: ":8080",
+		RequireDatabase:   true,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "ESCALITE_SMTP_FROM")
+}
+
+func TestLoadSMTPParsesConfig(t *testing.T) {
+	setRequiredEnv(t)
+	t.Setenv("ESCALITE_SMTP_HOST", "smtp.example.com")
+	t.Setenv("ESCALITE_SMTP_PORT", "2525")
+	t.Setenv("ESCALITE_SMTP_USERNAME", "user")
+	t.Setenv("ESCALITE_SMTP_PASSWORD", "secret")
+	t.Setenv("ESCALITE_SMTP_FROM", "noreply@example.com")
+
+	cfg, err := Load(Options{
+		ServiceName:       "api",
+		DefaultListenAddr: ":8080",
+		RequireDatabase:   true,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, cfg.SMTP)
+	assert.Equal(t, "smtp.example.com", cfg.SMTP.Host)
+	assert.Equal(t, 2525, cfg.SMTP.Port)
+	assert.Equal(t, "user", cfg.SMTP.Username)
+	assert.Equal(t, "secret", cfg.SMTP.Password)
+	assert.Equal(t, "noreply@example.com", cfg.SMTP.From)
+}

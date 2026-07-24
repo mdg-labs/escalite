@@ -16,6 +16,7 @@ type Querier interface {
 	CountOrganizations(ctx context.Context) (int64, error)
 	CountUsers(ctx context.Context) (int64, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
+	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetToken, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateTeam(ctx context.Context, arg CreateTeamParams) (Team, error)
 	CreateTeamMembership(ctx context.Context, arg CreateTeamMembershipParams) (TeamMembership, error)
@@ -24,16 +25,20 @@ type Querier interface {
 	GetActiveSessionByID(ctx context.Context, id uuid.UUID) (Session, error)
 	GetFirstOrganization(ctx context.Context) (Organization, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
+	GetPasswordResetTokenByHash(ctx context.Context, tokenHash string) (PasswordResetToken, error)
 	GetSessionByID(ctx context.Context, arg GetSessionByIDParams) (Session, error)
 	GetTeamByID(ctx context.Context, arg GetTeamByIDParams) (Team, error)
 	GetUserByEmail(ctx context.Context, arg GetUserByEmailParams) (User, error)
 	GetUserByEmailForAuth(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, arg GetUserByIDParams) (User, error)
 	HasTeamMembership(ctx context.Context, arg HasTeamMembershipParams) (bool, error)
+	InvalidateUnusedPasswordResetTokensForUser(ctx context.Context, userID uuid.UUID) error
+	MarkPasswordResetTokenUsed(ctx context.Context, id uuid.UUID) error
 	PingDatabase(ctx context.Context) (int32, error)
 	RevokeAllUserSessions(ctx context.Context, arg RevokeAllUserSessionsParams) error
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
 	SessionsSchemaReady(ctx context.Context) (bool, error)
+	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
 }
 
 var _ Querier = (*Queries)(nil)

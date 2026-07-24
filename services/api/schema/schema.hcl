@@ -4,6 +4,7 @@
 // Service + integration key tables (#40).
 // Escalation policies, alerts, notification_attempts (#42).
 // Sessions, audit_events, refresh_tokens (#43).
+// Password reset tokens (#51).
 
 schema "public" {
 }
@@ -1056,6 +1057,77 @@ table "audit_events" {
 
   index "audit_events_created_at_idx" {
     columns = [column.created_at]
+  }
+}
+
+table "password_reset_tokens" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "user_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "token_hash" {
+    null = false
+    type = text
+  }
+  column "expires_at" {
+    null = false
+    type = timestamptz
+  }
+  column "used_at" {
+    null = true
+    type = timestamptz
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "password_reset_tokens_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "password_reset_tokens_user_id_organization_id_fkey" {
+    columns     = [column.user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "password_reset_tokens_token_hash_key" {
+    columns = [column.token_hash]
+  }
+
+  unique "password_reset_tokens_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "password_reset_tokens_user_id_idx" {
+    columns = [column.user_id]
+  }
+
+  index "password_reset_tokens_expires_at_idx" {
+    columns = [column.expires_at]
   }
 }
 

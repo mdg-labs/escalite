@@ -4,7 +4,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // Options controls which environment variables are required at startup.
@@ -29,13 +31,33 @@ type OIDCConfig struct {
 	SuccessURL   string
 }
 
+// SMTPConfig holds optional outbound SMTP settings. Nil means email is not sent (noop sender).
+type SMTPConfig struct {
+	Host     string
+	Port     int
+	Username string
+	Password string
+	From     string
+}
+
+// PasswordResetRateLimitConfig controls password reset request throttling.
+type PasswordResetRateLimitConfig struct {
+	EmailLimit  int
+	EmailWindow time.Duration
+	IPLimit     int
+	IPWindow    time.Duration
+}
+
 // Config holds parsed ESCALITE_* environment configuration.
 type Config struct {
-	ListenAddr    string
-	DatabaseURL   string
-	LogLevel      string
-	EncryptionKey []byte
-	OIDC          *OIDCConfig
+	ListenAddr     string
+	DatabaseURL    string
+	LogLevel       string
+	EncryptionKey  []byte
+	PublicURL      string
+	OIDC           *OIDCConfig
+	SMTP           *SMTPConfig
+	PasswordReset  PasswordResetRateLimitConfig
 }
 
 // Load reads and validates configuration from the environment.
@@ -65,6 +87,15 @@ func Load(opts Options) (Config, error) {
 		return Config{}, err
 	}
 	cfg.OIDC = oidcCfg
+
+	smtpCfg, err := loadSMTP()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.SMTP = smtpCfg
+
+	cfg.PublicURL = strings.TrimSpace(os.Getenv("ESCALITE_PUBLIC_URL"))
+	cfg.PasswordReset = loadPasswordResetRateLimit()
 
 	if err := validateLogLevel(cfg.LogLevel); err != nil {
 		return Config{}, err
@@ -117,6 +148,68 @@ func loadOIDC() (*OIDCConfig, error) {
 		RedirectURL:  redirectURL,
 		SuccessURL:   successURL,
 	}, nil
+}
+
+func loadSMTP() (*SMTPConfig, error) {
+	host := strings.TrimSpace(os.Getenv("ESCALITE_SMTP_HOST"))
+	if host == "" {
+		return nil, nil
+	}
+
+	from := strings.TrimSpace(os.Getenv("ESCALITE_SMTP_FROM"))
+	if from == "" {
+		return nil, fmt.Errorf("ESCALITE_SMTP_FROM is required when ESCALITE_SMTP_HOST is set")
+	}
+
+	port := 587
+	if rawPort := strings.TrimSpace(os.Getenv("ESCALITE_SMTP_PORT")); rawPort != "" {
+		parsed, err := strconv.Atoi(rawPort)
+		if err != nil || parsed < 1 || parsed > 65535 {
+			return nil, fmt.Errorf("invalid ESCALITE_SMTP_PORT %q: use a port between 1 and 65535", rawPort)
+		}
+		port = parsed
+	}
+
+	return &SMTPConfig{
+		Host:     host,
+		Port:     port,
+		Username: strings.TrimSpace(os.Getenv("ESCALITE_SMTP_USERNAME")),
+		Password: os.Getenv("ESCALITE_SMTP_PASSWORD"),
+		From:     from,
+	}, nil
+}
+
+func loadPasswordResetRateLimit() PasswordResetRateLimitConfig {
+	return PasswordResetRateLimitConfig{
+		EmailLimit:  envIntOrDefault("ESCALITE_PASSWORD_RESET_RATE_LIMIT_EMAIL", 5),
+		EmailWindow: envDurationOrDefault("ESCALITE_PASSWORD_RESET_RATE_LIMIT_EMAIL_WINDOW", time.Hour),
+		IPLimit:     envIntOrDefault("ESCALITE_PASSWORD_RESET_RATE_LIMIT_IP", 20),
+		IPWindow:    envDurationOrDefault("ESCALITE_PASSWORD_RESET_RATE_LIMIT_IP_WINDOW", time.Hour),
+	}
+}
+
+func envIntOrDefault(key string, fallback int) int {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return fallback
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil || value < 1 {
+		return fallback
+	}
+	return value
+}
+
+func envDurationOrDefault(key string, fallback time.Duration) time.Duration {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return fallback
+	}
+	value, err := time.ParseDuration(raw)
+	if err != nil || value <= 0 {
+		return fallback
+	}
+	return value
 }
 
 func requireEnv(key, hint string) (string, error) {
