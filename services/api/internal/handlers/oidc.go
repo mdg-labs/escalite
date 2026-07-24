@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/mdg-labs/escalite/services/api/internal/audit"
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/authz"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
@@ -33,6 +34,7 @@ type OIDCHandler struct {
 	logger      *slog.Logger
 	provider    OIDCAuthenticator
 	successURL  string
+	audit       *audit.Recorder
 }
 
 // NewOIDCHandler returns a handler for OIDC login and callback routes.
@@ -42,6 +44,7 @@ func NewOIDCHandler(pool *pgxpool.Pool, logger *slog.Logger, provider OIDCAuthen
 		logger:     logger,
 		provider:   provider,
 		successURL: successURL,
+		audit:      audit.NewRecorder(logger),
 	}
 }
 
@@ -173,5 +176,6 @@ func (h *OIDCHandler) createSession(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	auth.SetSessionCookie(w, sessionID, expiresAt)
+	h.audit.Login(ctx, queries, user.OrganizationID, user.ID, audit.RequestMetaFromHTTP(r))
 	return nil
 }

@@ -15,6 +15,7 @@ type Querier interface {
 	CoreSchemaReady(ctx context.Context) (bool, error)
 	CountOrganizations(ctx context.Context) (int64, error)
 	CountUsers(ctx context.Context) (int64, error)
+	CreateAuditEvent(ctx context.Context, arg CreateAuditEventParams) (AuditEvent, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
 	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetToken, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
@@ -33,6 +34,7 @@ type Querier interface {
 	GetUserByID(ctx context.Context, arg GetUserByIDParams) (User, error)
 	HasTeamMembership(ctx context.Context, arg HasTeamMembershipParams) (bool, error)
 	InvalidateUnusedPasswordResetTokensForUser(ctx context.Context, userID uuid.UUID) error
+	ListAuditEventsByOrganization(ctx context.Context, organizationID uuid.UUID) ([]AuditEvent, error)
 	MarkPasswordResetTokenUsed(ctx context.Context, id uuid.UUID) error
 	PingDatabase(ctx context.Context) (int32, error)
 	RevokeAllUserSessions(ctx context.Context, arg RevokeAllUserSessionsParams) error

@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/mdg-labs/escalite/services/api/internal/audit"
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 )
@@ -22,11 +23,12 @@ const minPasswordLength = 8
 type SetupHandler struct {
 	pool   *pgxpool.Pool
 	logger *slog.Logger
+	audit  *audit.Recorder
 }
 
 // NewSetupHandler returns a handler for POST /api/v1/setup.
 func NewSetupHandler(pool *pgxpool.Pool, logger *slog.Logger) *SetupHandler {
-	return &SetupHandler{pool: pool, logger: logger}
+	return &SetupHandler{pool: pool, logger: logger, audit: audit.NewRecorder(logger)}
 }
 
 type setupRequest struct {
@@ -148,6 +150,9 @@ func (h *SetupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
+
+	requestMeta := audit.RequestMetaFromHTTP(r)
+	h.audit.Login(ctx, txQueries, orgID, userID, requestMeta)
 
 	if err := tx.Commit(ctx); err != nil {
 		h.logger.Error("commit transaction failed", "error", err)
