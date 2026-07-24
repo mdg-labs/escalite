@@ -6,6 +6,7 @@
     "build": "turbo run build",
     "codegen": "turbo run codegen",
     "dev": "turbo run dev",
+    "e2e": "turbo run e2e --filter=@escalite/web",
     "lint": "turbo run lint",
     "test": "turbo run test:unit",
     "typecheck": "turbo run typecheck"
