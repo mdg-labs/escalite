@@ -12,6 +12,7 @@ import (
 
 	"github.com/mdg-labs/escalite/services/api/internal/config"
 	"github.com/mdg-labs/escalite/services/api/internal/log"
+	"github.com/mdg-labs/escalite/services/api/internal/migrate"
 	"github.com/mdg-labs/escalite/services/api/internal/server"
 )
 
@@ -34,6 +35,12 @@ func run() int {
 
 	logger := log.NewJSONLogger(serviceName, cfg.LogLevel)
 	logger.Info("starting service", "listen_addr", cfg.ListenAddr)
+
+	ctx := context.Background()
+	if err := migrate.Up(ctx, cfg.DatabaseURL, logger); err != nil {
+		logger.Error("database migration failed", "error", err)
+		return 1
+	}
 
 	handler := server.New(logger)
 	httpServer := &http.Server{
