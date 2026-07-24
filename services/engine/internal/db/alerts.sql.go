@@ -9,28 +9,36 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const acknowledgeAlert = `-- name: AcknowledgeAlert :one
 UPDATE alerts
 SET status = 'acknowledged',
     acknowledged_at = now(),
+    acknowledged_by_user_id = $4,
     escalation_state = $3,
     updated_at = now()
 WHERE id = $1
   AND organization_id = $2
   AND status = 'triggered'
-RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, closed_at, created_at, updated_at
+RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
 `
 
 type AcknowledgeAlertParams struct {
-	ID              uuid.UUID `json:"id"`
-	OrganizationID  uuid.UUID `json:"organization_id"`
-	EscalationState []byte    `json:"escalation_state"`
+	ID                   uuid.UUID   `json:"id"`
+	OrganizationID       uuid.UUID   `json:"organization_id"`
+	EscalationState      []byte      `json:"escalation_state"`
+	AcknowledgedByUserID pgtype.UUID `json:"acknowledged_by_user_id"`
 }
 
 func (q *Queries) AcknowledgeAlert(ctx context.Context, arg AcknowledgeAlertParams) (Alert, error) {
-	row := q.db.QueryRow(ctx, acknowledgeAlert, arg.ID, arg.OrganizationID, arg.EscalationState)
+	row := q.db.QueryRow(ctx, acknowledgeAlert,
+		arg.ID,
+		arg.OrganizationID,
+		arg.EscalationState,
+		arg.AcknowledgedByUserID,
+	)
 	var i Alert
 	err := row.Scan(
 		&i.ID,
@@ -45,6 +53,49 @@ func (q *Queries) AcknowledgeAlert(ctx context.Context, arg AcknowledgeAlertPara
 		&i.EventCount,
 		&i.EscalationState,
 		&i.AcknowledgedAt,
+		&i.AcknowledgedByUserID,
+		&i.ClosedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const closeAlert = `-- name: CloseAlert :one
+UPDATE alerts
+SET status = 'closed',
+    closed_at = now(),
+    escalation_state = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+  AND status IN ('triggered', 'acknowledged')
+RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
+`
+
+type CloseAlertParams struct {
+	ID              uuid.UUID `json:"id"`
+	OrganizationID  uuid.UUID `json:"organization_id"`
+	EscalationState []byte    `json:"escalation_state"`
+}
+
+func (q *Queries) CloseAlert(ctx context.Context, arg CloseAlertParams) (Alert, error) {
+	row := q.db.QueryRow(ctx, closeAlert, arg.ID, arg.OrganizationID, arg.EscalationState)
+	var i Alert
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.ServiceID,
+		&i.IntegrationKeyID,
+		&i.Status,
+		&i.DedupKey,
+		&i.Summary,
+		&i.Description,
+		&i.Priority,
+		&i.EventCount,
+		&i.EscalationState,
+		&i.AcknowledgedAt,
+		&i.AcknowledgedByUserID,
 		&i.ClosedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -53,7 +104,7 @@ func (q *Queries) AcknowledgeAlert(ctx context.Context, arg AcknowledgeAlertPara
 }
 
 const getAlertByID = `-- name: GetAlertByID :one
-SELECT id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, closed_at, created_at, updated_at
+SELECT id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
 FROM alerts
 WHERE id = $1
   AND organization_id = $2
@@ -81,6 +132,7 @@ func (q *Queries) GetAlertByID(ctx context.Context, arg GetAlertByIDParams) (Ale
 		&i.EventCount,
 		&i.EscalationState,
 		&i.AcknowledgedAt,
+		&i.AcknowledgedByUserID,
 		&i.ClosedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -94,7 +146,7 @@ SET escalation_state = $3,
     updated_at = now()
 WHERE id = $1
   AND organization_id = $2
-RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, closed_at, created_at, updated_at
+RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
 `
 
 type UpdateAlertEscalationStateParams struct {
@@ -119,6 +171,7 @@ func (q *Queries) UpdateAlertEscalationState(ctx context.Context, arg UpdateAler
 		&i.EventCount,
 		&i.EscalationState,
 		&i.AcknowledgedAt,
+		&i.AcknowledgedByUserID,
 		&i.ClosedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,

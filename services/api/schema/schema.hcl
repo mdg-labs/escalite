@@ -858,6 +858,10 @@ table "alerts" {
     null = true
     type = timestamptz
   }
+  column "acknowledged_by_user_id" {
+    null = true
+    type = uuid
+  }
   column "closed_at" {
     null = true
     type = timestamptz
@@ -892,6 +896,12 @@ table "alerts" {
   foreign_key "alerts_integration_key_id_fkey" {
     columns     = [column.integration_key_id]
     ref_columns = [table.integration_keys.column.id]
+    on_delete   = SET_NULL
+  }
+
+  foreign_key "alerts_acknowledged_by_user_id_organization_id_fkey" {
+    columns     = [column.acknowledged_by_user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
     on_delete   = SET_NULL
   }
 

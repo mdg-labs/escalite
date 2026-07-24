@@ -10,21 +10,22 @@ import (
 )
 
 type Alert struct {
-	ID               uuid.UUID          `json:"id"`
-	OrganizationID   uuid.UUID          `json:"organization_id"`
-	ServiceID        uuid.UUID          `json:"service_id"`
-	IntegrationKeyID pgtype.UUID        `json:"integration_key_id"`
-	Status           string             `json:"status"`
-	DedupKey         string             `json:"dedup_key"`
-	Summary          string             `json:"summary"`
-	Description      pgtype.Text        `json:"description"`
-	Priority         string             `json:"priority"`
-	EventCount       int32              `json:"event_count"`
-	EscalationState  []byte             `json:"escalation_state"`
-	AcknowledgedAt   pgtype.Timestamptz `json:"acknowledged_at"`
-	ClosedAt         pgtype.Timestamptz `json:"closed_at"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	ID                   uuid.UUID          `json:"id"`
+	OrganizationID       uuid.UUID          `json:"organization_id"`
+	ServiceID            uuid.UUID          `json:"service_id"`
+	IntegrationKeyID     pgtype.UUID        `json:"integration_key_id"`
+	Status               string             `json:"status"`
+	DedupKey             string             `json:"dedup_key"`
+	Summary              string             `json:"summary"`
+	Description          pgtype.Text        `json:"description"`
+	Priority             string             `json:"priority"`
+	EventCount           int32              `json:"event_count"`
+	EscalationState      []byte             `json:"escalation_state"`
+	AcknowledgedAt       pgtype.Timestamptz `json:"acknowledged_at"`
+	AcknowledgedByUserID pgtype.UUID        `json:"acknowledged_by_user_id"`
+	ClosedAt             pgtype.Timestamptz `json:"closed_at"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
 }
 
 type AuditEvent struct {

@@ -5,3 +5,20 @@ enum UserRole {
   ADMIN
   MEMBER
 }
+
+"""
+Alert lifecycle status (doc 02).
+"""
+enum AlertStatus {
+  TRIGGERED
+  ACKNOWLEDGED
+  CLOSED
+}
+
+"""
+Alert priority levels (doc 02).
+"""
+enum AlertPriority {
+  LOW
+  HIGH
+}

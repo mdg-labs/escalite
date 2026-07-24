@@ -82,3 +82,64 @@ func escalationStepFromDB(step db.EscalationStep) *model.EscalationStep {
 		UpdatedAt:          timeFromDB(step.UpdatedAt),
 	}
 }
+
+func alertFromDB(alert db.Alert, acknowledgedBy *db.User) *model.Alert {
+	var description *string
+	if alert.Description.Valid {
+		description = &alert.Description.String
+	}
+
+	var acknowledgedAt *time.Time
+	if alert.AcknowledgedAt.Valid {
+		t := alert.AcknowledgedAt.Time.UTC()
+		acknowledgedAt = &t
+	}
+
+	var closedAt *time.Time
+	if alert.ClosedAt.Valid {
+		t := alert.ClosedAt.Time.UTC()
+		closedAt = &t
+	}
+
+	var ackBy *model.User
+	if acknowledgedBy != nil {
+		ackBy = userFromDB(*acknowledgedBy)
+	}
+
+	return &model.Alert{
+		ID:             alert.ID.String(),
+		OrganizationID: alert.OrganizationID.String(),
+		ServiceID:      alert.ServiceID.String(),
+		Status:         alertStatusFromDB(alert.Status),
+		DedupKey:       alert.DedupKey,
+		Summary:        alert.Summary,
+		Description:    description,
+		Priority:       alertPriorityFromDB(alert.Priority),
+		EventCount:     int(alert.EventCount),
+		AcknowledgedAt: acknowledgedAt,
+		AcknowledgedBy: ackBy,
+		ClosedAt:       closedAt,
+		CreatedAt:      timeFromDB(alert.CreatedAt),
+		UpdatedAt:      timeFromDB(alert.UpdatedAt),
+	}
+}
+
+func alertStatusFromDB(status string) model.AlertStatus {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "acknowledged":
+		return model.AlertStatusAcknowledged
+	case "closed":
+		return model.AlertStatusClosed
+	default:
+		return model.AlertStatusTriggered
+	}
+}
+
+func alertPriorityFromDB(priority string) model.AlertPriority {
+	switch strings.ToLower(strings.TrimSpace(priority)) {
+	case "low":
+		return model.AlertPriorityLow
+	default:
+		return model.AlertPriorityHigh
+	}
+}

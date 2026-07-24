@@ -65,3 +65,20 @@ type SetupPayload {
   organization: Organization!
   user: User!
 }
+
+type Alert {
+  id: ID!
+  organizationId: ID!
+  serviceId: ID!
+  status: AlertStatus!
+  dedupKey: String!
+  summary: String!
+  description: String
+  priority: AlertPriority!
+  eventCount: Int!
+  acknowledgedAt: DateTime
+  acknowledgedBy: User
+  closedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

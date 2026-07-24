@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/mdg-labs/escalite/services/engine/internal/db"
 )
@@ -57,7 +58,7 @@ func AcknowledgeAlert(
 	ctx context.Context,
 	q db.Querier,
 	canceller JobCanceller,
-	alertID, organizationID uuid.UUID,
+	alertID, organizationID, acknowledgedBy uuid.UUID,
 ) (db.Alert, error) {
 	if err := CancelPendingEscalation(ctx, q, canceller, alertID, organizationID); err != nil {
 		return db.Alert{}, err
@@ -83,9 +84,10 @@ func AcknowledgeAlert(
 	}
 
 	acknowledged, err := q.AcknowledgeAlert(ctx, db.AcknowledgeAlertParams{
-		ID:              alertID,
-		OrganizationID:  organizationID,
-		EscalationState: raw,
+		ID:                   alertID,
+		OrganizationID:       organizationID,
+		EscalationState:      raw,
+		AcknowledgedByUserID: pgtype.UUID{Bytes: acknowledgedBy, Valid: true},
 	})
 	if err != nil {
 		return db.Alert{}, fmt.Errorf("acknowledge alert: %w", err)

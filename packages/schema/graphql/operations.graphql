@@ -45,4 +45,14 @@ type Mutation {
   Delete an escalation policy and its steps (org admin only).
   """
   deleteEscalationPolicy(id: ID!): Boolean!
+
+  """
+  Acknowledge an alert; stops escalation but does not close.
+  """
+  acknowledgeAlert(id: ID!): Alert!
+
+  """
+  Close an alert.
+  """
+  closeAlert(id: ID!): Alert!
 }

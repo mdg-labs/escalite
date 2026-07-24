@@ -11,6 +11,7 @@ import (
 type Querier interface {
 	AcknowledgeAlert(ctx context.Context, arg AcknowledgeAlertParams) (Alert, error)
 	BootstrapOrganizationWithAdmin(ctx context.Context, arg BootstrapOrganizationWithAdminParams) (BootstrapOrganizationWithAdminRow, error)
+	CloseAlert(ctx context.Context, arg CloseAlertParams) (Alert, error)
 	CountNotificationAttemptsByAlertID(ctx context.Context, arg CountNotificationAttemptsByAlertIDParams) (int64, error)
 	CreateEscalationPolicy(ctx context.Context, arg CreateEscalationPolicyParams) (EscalationPolicy, error)
 	CreateEscalationStep(ctx context.Context, arg CreateEscalationStepParams) (EscalationStep, error)

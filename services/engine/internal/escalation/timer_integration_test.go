@@ -131,7 +131,7 @@ func TestAcknowledgedAlertCancelsPendingEscalation(t *testing.T) {
 	require.NoError(t, json.Unmarshal(alert.EscalationState, &beforeAck))
 	require.NotNil(t, beforeAck.PendingEscalationJobID)
 
-	acknowledged, err := escalation.AcknowledgeAlert(ctx, queries, queueClient, alertID, fixture.orgID)
+	acknowledged, err := escalation.AcknowledgeAlert(ctx, queries, queueClient, alertID, fixture.orgID, fixture.adminID)
 	require.NoError(t, err)
 	require.Equal(t, "acknowledged", acknowledged.Status)
 	require.NotNil(t, acknowledged.AcknowledgedAt.Valid)
@@ -153,6 +153,7 @@ func TestAcknowledgedAlertCancelsPendingEscalation(t *testing.T) {
 
 type escalationFixture struct {
 	orgID     uuid.UUID
+	adminID   uuid.UUID
 	serviceID uuid.UUID
 	step2ID   uuid.UUID
 }
@@ -261,6 +262,7 @@ func bootstrapTwoStepEscalation(t *testing.T, ctx context.Context, queries *db.Q
 
 	return escalationFixture{
 		orgID:     orgID,
+		adminID:   adminID,
 		serviceID: serviceID,
 		step2ID:   step2ID,
 	}
@@ -408,6 +410,7 @@ func bootstrapSingleStepRepeatEscalation(
 
 	return escalationFixture{
 		orgID:     orgID,
+		adminID:   adminID,
 		serviceID: serviceID,
 		step2ID:   stepID,
 	}

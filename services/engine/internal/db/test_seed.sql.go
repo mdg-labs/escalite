@@ -279,7 +279,7 @@ INSERT INTO alerts (
     $8,
     $9
 )
-RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, closed_at, created_at, updated_at
+RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
 `
 
 type CreateTriggeredAlertParams struct {
@@ -320,6 +320,7 @@ func (q *Queries) CreateTriggeredAlert(ctx context.Context, arg CreateTriggeredA
 		&i.EventCount,
 		&i.EscalationState,
 		&i.AcknowledgedAt,
+		&i.AcknowledgedByUserID,
 		&i.ClosedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,

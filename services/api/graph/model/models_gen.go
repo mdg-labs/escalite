@@ -10,6 +10,23 @@ import (
 	"time"
 )
 
+type Alert struct {
+	ID             string        `json:"id"`
+	OrganizationID string        `json:"organizationId"`
+	ServiceID      string        `json:"serviceId"`
+	Status         AlertStatus   `json:"status"`
+	DedupKey       string        `json:"dedupKey"`
+	Summary        string        `json:"summary"`
+	Description    *string       `json:"description,omitempty"`
+	Priority       AlertPriority `json:"priority"`
+	EventCount     int           `json:"eventCount"`
+	AcknowledgedAt *time.Time    `json:"acknowledgedAt,omitempty"`
+	AcknowledgedBy *User         `json:"acknowledgedBy,omitempty"`
+	ClosedAt       *time.Time    `json:"closedAt,omitempty"`
+	CreatedAt      time.Time     `json:"createdAt"`
+	UpdatedAt      time.Time     `json:"updatedAt"`
+}
+
 type CreateEscalationPolicyInput struct {
 	ServiceID string                 `json:"serviceId"`
 	Name      string                 `json:"name"`
@@ -112,6 +129,120 @@ type User struct {
 	OrganizationID string    `json:"organizationId"`
 	CreatedAt      time.Time `json:"createdAt"`
 	UpdatedAt      time.Time `json:"updatedAt"`
+}
+
+// Alert priority levels (doc 02).
+type AlertPriority string
+
+const (
+	AlertPriorityLow  AlertPriority = "LOW"
+	AlertPriorityHigh AlertPriority = "HIGH"
+)
+
+var AllAlertPriority = []AlertPriority{
+	AlertPriorityLow,
+	AlertPriorityHigh,
+}
+
+func (e AlertPriority) IsValid() bool {
+	switch e {
+	case AlertPriorityLow, AlertPriorityHigh:
+		return true
+	}
+	return false
+}
+
+func (e AlertPriority) String() string {
+	return string(e)
+}
+
+func (e *AlertPriority) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AlertPriority(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AlertPriority", str)
+	}
+	return nil
+}
+
+func (e AlertPriority) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AlertPriority) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AlertPriority) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+// Alert lifecycle status (doc 02).
+type AlertStatus string
+
+const (
+	AlertStatusTriggered    AlertStatus = "TRIGGERED"
+	AlertStatusAcknowledged AlertStatus = "ACKNOWLEDGED"
+	AlertStatusClosed       AlertStatus = "CLOSED"
+)
+
+var AllAlertStatus = []AlertStatus{
+	AlertStatusTriggered,
+	AlertStatusAcknowledged,
+	AlertStatusClosed,
+}
+
+func (e AlertStatus) IsValid() bool {
+	switch e {
+	case AlertStatusTriggered, AlertStatusAcknowledged, AlertStatusClosed:
+		return true
+	}
+	return false
+}
+
+func (e AlertStatus) String() string {
+	return string(e)
+}
+
+func (e *AlertStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AlertStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AlertStatus", str)
+	}
+	return nil
+}
+
+func (e AlertStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AlertStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AlertStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // Organization-level role for RBAC (doc 07).
