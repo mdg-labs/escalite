@@ -1,0 +1,318 @@
+-- Create "organizations" table
+CREATE TABLE "organizations" (
+  "id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id")
+);
+-- Create "teams" table
+CREATE TABLE "teams" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "teams_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "teams_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "teams_organization_id_idx" to table: "teams"
+CREATE INDEX "teams_organization_id_idx" ON "teams" ("organization_id");
+-- Create "services" table
+CREATE TABLE "services" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "team_id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "services_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "services_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "services_team_id_organization_id_fkey" FOREIGN KEY ("team_id", "organization_id") REFERENCES "teams" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "services_organization_id_idx" to table: "services"
+CREATE INDEX "services_organization_id_idx" ON "services" ("organization_id");
+-- Create index "services_team_id_idx" to table: "services"
+CREATE INDEX "services_team_id_idx" ON "services" ("team_id");
+-- Create "integration_keys" table
+CREATE TABLE "integration_keys" (
+  "id" uuid NOT NULL,
+  "service_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "token" text NOT NULL,
+  "prefix" text NOT NULL,
+  "plugin_name" text NOT NULL,
+  "config" jsonb NOT NULL DEFAULT '{}',
+  "revoked_at" timestamptz NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "integration_keys_token_key" UNIQUE ("token"),
+  CONSTRAINT "integration_keys_service_id_organization_id_fkey" FOREIGN KEY ("service_id", "organization_id") REFERENCES "services" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "integration_keys_plugin_name_idx" to table: "integration_keys"
+CREATE INDEX "integration_keys_plugin_name_idx" ON "integration_keys" ("plugin_name");
+-- Create index "integration_keys_service_id_idx" to table: "integration_keys"
+CREATE INDEX "integration_keys_service_id_idx" ON "integration_keys" ("service_id");
+-- Create "alerts" table
+CREATE TABLE "alerts" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "service_id" uuid NOT NULL,
+  "integration_key_id" uuid NULL,
+  "status" text NOT NULL,
+  "dedup_key" text NOT NULL,
+  "summary" text NOT NULL,
+  "description" text NULL,
+  "priority" text NOT NULL DEFAULT 'high',
+  "event_count" integer NOT NULL DEFAULT 1,
+  "escalation_state" jsonb NOT NULL DEFAULT '{}',
+  "acknowledged_at" timestamptz NULL,
+  "closed_at" timestamptz NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "alerts_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "alerts_integration_key_id_fkey" FOREIGN KEY ("integration_key_id") REFERENCES "integration_keys" ("id") ON UPDATE NO ACTION ON DELETE SET NULL,
+  CONSTRAINT "alerts_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "alerts_service_id_organization_id_fkey" FOREIGN KEY ("service_id", "organization_id") REFERENCES "services" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "alerts_priority_check" CHECK (priority = ANY (ARRAY['low'::text, 'high'::text])),
+  CONSTRAINT "alerts_status_check" CHECK (status = ANY (ARRAY['triggered'::text, 'acknowledged'::text, 'closed'::text]))
+);
+-- Create index "alerts_organization_id_idx" to table: "alerts"
+CREATE INDEX "alerts_organization_id_idx" ON "alerts" ("organization_id");
+-- Create index "alerts_service_id_dedup_key_idx" to table: "alerts"
+CREATE INDEX "alerts_service_id_dedup_key_idx" ON "alerts" ("service_id", "dedup_key");
+-- Create index "alerts_service_id_idx" to table: "alerts"
+CREATE INDEX "alerts_service_id_idx" ON "alerts" ("service_id");
+-- Create index "alerts_status_idx" to table: "alerts"
+CREATE INDEX "alerts_status_idx" ON "alerts" ("status");
+-- Create "users" table
+CREATE TABLE "users" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "email" text NOT NULL,
+  "password_hash" text NULL,
+  "role" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "users_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "users_organization_id_email_key" UNIQUE ("organization_id", "email"),
+  CONSTRAINT "users_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "users_role_check" CHECK (role = ANY (ARRAY['admin'::text, 'member'::text]))
+);
+-- Create index "users_organization_id_idx" to table: "users"
+CREATE INDEX "users_organization_id_idx" ON "users" ("organization_id");
+-- Create "audit_events" table
+CREATE TABLE "audit_events" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "actor_id" uuid NULL,
+  "action" text NOT NULL,
+  "target_type" text NULL,
+  "target_id" uuid NULL,
+  "metadata" jsonb NOT NULL DEFAULT '{}',
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "audit_events_actor_id_organization_id_fkey" FOREIGN KEY ("actor_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE SET NULL,
+  CONSTRAINT "audit_events_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "audit_events_actor_id_idx" to table: "audit_events"
+CREATE INDEX "audit_events_actor_id_idx" ON "audit_events" ("actor_id");
+-- Create index "audit_events_created_at_idx" to table: "audit_events"
+CREATE INDEX "audit_events_created_at_idx" ON "audit_events" ("created_at");
+-- Create index "audit_events_organization_id_idx" to table: "audit_events"
+CREATE INDEX "audit_events_organization_id_idx" ON "audit_events" ("organization_id");
+-- Create index "audit_events_target_type_target_id_idx" to table: "audit_events"
+CREATE INDEX "audit_events_target_type_target_id_idx" ON "audit_events" ("target_type", "target_id");
+-- Create "escalation_policies" table
+CREATE TABLE "escalation_policies" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "service_id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "escalation_policies_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "escalation_policies_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "escalation_policies_service_id_organization_id_fkey" FOREIGN KEY ("service_id", "organization_id") REFERENCES "services" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "escalation_policies_organization_id_idx" to table: "escalation_policies"
+CREATE INDEX "escalation_policies_organization_id_idx" ON "escalation_policies" ("organization_id");
+-- Create index "escalation_policies_service_id_idx" to table: "escalation_policies"
+CREATE INDEX "escalation_policies_service_id_idx" ON "escalation_policies" ("service_id");
+-- Create "escalation_steps" table
+CREATE TABLE "escalation_steps" (
+  "id" uuid NOT NULL,
+  "escalation_policy_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "step_order" integer NOT NULL,
+  "delay_minutes" integer NOT NULL DEFAULT 0,
+  "repeat_last_step" boolean NOT NULL DEFAULT false,
+  "max_repeats" integer NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "escalation_steps_escalation_policy_id_step_order_key" UNIQUE ("escalation_policy_id", "step_order"),
+  CONSTRAINT "escalation_steps_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "escalation_steps_escalation_policy_id_organization_id_fkey" FOREIGN KEY ("escalation_policy_id", "organization_id") REFERENCES "escalation_policies" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "escalation_steps_escalation_policy_id_idx" to table: "escalation_steps"
+CREATE INDEX "escalation_steps_escalation_policy_id_idx" ON "escalation_steps" ("escalation_policy_id");
+-- Create "notification_attempts" table
+CREATE TABLE "notification_attempts" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "alert_id" uuid NOT NULL,
+  "escalation_step_id" uuid NULL,
+  "channel" text NOT NULL,
+  "status" text NOT NULL,
+  "recipient" jsonb NOT NULL DEFAULT '{}',
+  "error_message" text NULL,
+  "sent_at" timestamptz NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "notification_attempts_alert_id_organization_id_fkey" FOREIGN KEY ("alert_id", "organization_id") REFERENCES "alerts" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "notification_attempts_escalation_step_id_organization_id_fkey" FOREIGN KEY ("escalation_step_id", "organization_id") REFERENCES "escalation_steps" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE SET NULL,
+  CONSTRAINT "notification_attempts_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "notification_attempts_status_check" CHECK (status = ANY (ARRAY['pending'::text, 'sent'::text, 'failed'::text]))
+);
+-- Create index "notification_attempts_alert_id_idx" to table: "notification_attempts"
+CREATE INDEX "notification_attempts_alert_id_idx" ON "notification_attempts" ("alert_id");
+-- Create index "notification_attempts_organization_id_idx" to table: "notification_attempts"
+CREATE INDEX "notification_attempts_organization_id_idx" ON "notification_attempts" ("organization_id");
+-- Create "schedules" table
+CREATE TABLE "schedules" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "team_id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "timezone" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "schedules_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "schedules_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "schedules_team_id_organization_id_fkey" FOREIGN KEY ("team_id", "organization_id") REFERENCES "teams" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "schedules_timezone_check" CHECK (timezone(timezone, '2000-01-01 00:00:00+00'::timestamp with time zone) IS NOT NULL)
+);
+-- Create index "schedules_organization_id_idx" to table: "schedules"
+CREATE INDEX "schedules_organization_id_idx" ON "schedules" ("organization_id");
+-- Create index "schedules_team_id_idx" to table: "schedules"
+CREATE INDEX "schedules_team_id_idx" ON "schedules" ("team_id");
+-- Create "rotations" table
+CREATE TABLE "rotations" (
+  "id" uuid NOT NULL,
+  "schedule_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "layer" integer NOT NULL,
+  "rrule" text NOT NULL,
+  "participants" jsonb NOT NULL DEFAULT '[]',
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "rotations_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "rotations_schedule_id_layer_key" UNIQUE ("schedule_id", "layer"),
+  CONSTRAINT "rotations_schedule_id_organization_id_fkey" FOREIGN KEY ("schedule_id", "organization_id") REFERENCES "schedules" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "rotations_organization_id_idx" to table: "rotations"
+CREATE INDEX "rotations_organization_id_idx" ON "rotations" ("organization_id");
+-- Create index "rotations_schedule_id_idx" to table: "rotations"
+CREATE INDEX "rotations_schedule_id_idx" ON "rotations" ("schedule_id");
+-- Create "overrides" table
+CREATE TABLE "overrides" (
+  "id" uuid NOT NULL,
+  "schedule_id" uuid NOT NULL,
+  "rotation_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "user_id" uuid NOT NULL,
+  "replaced_user_id" uuid NULL,
+  "starts_at" timestamptz NOT NULL,
+  "ends_at" timestamptz NOT NULL,
+  "created_by_user_id" uuid NOT NULL,
+  "approved_by_user_id" uuid NULL,
+  "deleted_at" timestamptz NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "overrides_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "overrides_approved_by_user_id_organization_id_fkey" FOREIGN KEY ("approved_by_user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE SET NULL,
+  CONSTRAINT "overrides_created_by_user_id_organization_id_fkey" FOREIGN KEY ("created_by_user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE RESTRICT,
+  CONSTRAINT "overrides_replaced_user_id_organization_id_fkey" FOREIGN KEY ("replaced_user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE SET NULL,
+  CONSTRAINT "overrides_rotation_id_organization_id_fkey" FOREIGN KEY ("rotation_id", "organization_id") REFERENCES "rotations" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "overrides_schedule_id_organization_id_fkey" FOREIGN KEY ("schedule_id", "organization_id") REFERENCES "schedules" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "overrides_user_id_organization_id_fkey" FOREIGN KEY ("user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "overrides_window_check" CHECK (ends_at > starts_at)
+);
+-- Create index "overrides_active_idx" to table: "overrides"
+CREATE INDEX "overrides_active_idx" ON "overrides" ("schedule_id", "starts_at", "ends_at") WHERE (deleted_at IS NULL);
+-- Create index "overrides_rotation_id_idx" to table: "overrides"
+CREATE INDEX "overrides_rotation_id_idx" ON "overrides" ("rotation_id");
+-- Create index "overrides_schedule_id_idx" to table: "overrides"
+CREATE INDEX "overrides_schedule_id_idx" ON "overrides" ("schedule_id");
+-- Create index "overrides_schedule_id_starts_at_ends_at_idx" to table: "overrides"
+CREATE INDEX "overrides_schedule_id_starts_at_ends_at_idx" ON "overrides" ("schedule_id", "starts_at", "ends_at");
+-- Create "refresh_tokens" table
+CREATE TABLE "refresh_tokens" (
+  "id" uuid NOT NULL,
+  "user_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "token_hash" text NOT NULL,
+  "user_agent" text NULL,
+  "revoked_at" timestamptz NULL,
+  "expires_at" timestamptz NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "refresh_tokens_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "refresh_tokens_token_hash_key" UNIQUE ("token_hash"),
+  CONSTRAINT "refresh_tokens_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "refresh_tokens_user_id_organization_id_fkey" FOREIGN KEY ("user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "refresh_tokens_organization_id_idx" to table: "refresh_tokens"
+CREATE INDEX "refresh_tokens_organization_id_idx" ON "refresh_tokens" ("organization_id");
+-- Create index "refresh_tokens_user_id_idx" to table: "refresh_tokens"
+CREATE INDEX "refresh_tokens_user_id_idx" ON "refresh_tokens" ("user_id");
+-- Create "sessions" table
+CREATE TABLE "sessions" (
+  "id" uuid NOT NULL,
+  "user_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "expires_at" timestamptz NOT NULL,
+  "user_agent" text NULL,
+  "revoked_at" timestamptz NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "sessions_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "sessions_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "sessions_user_id_organization_id_fkey" FOREIGN KEY ("user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "sessions_expires_at_idx" to table: "sessions"
+CREATE INDEX "sessions_expires_at_idx" ON "sessions" ("expires_at");
+-- Create index "sessions_organization_id_idx" to table: "sessions"
+CREATE INDEX "sessions_organization_id_idx" ON "sessions" ("organization_id");
+-- Create index "sessions_user_id_idx" to table: "sessions"
+CREATE INDEX "sessions_user_id_idx" ON "sessions" ("user_id");
+-- Create "team_memberships" table
+CREATE TABLE "team_memberships" (
+  "id" uuid NOT NULL,
+  "team_id" uuid NOT NULL,
+  "user_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "team_memberships_team_id_user_id_key" UNIQUE ("team_id", "user_id"),
+  CONSTRAINT "team_memberships_team_id_organization_id_fkey" FOREIGN KEY ("team_id", "organization_id") REFERENCES "teams" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "team_memberships_user_id_organization_id_fkey" FOREIGN KEY ("user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "team_memberships_team_id_idx" to table: "team_memberships"
+CREATE INDEX "team_memberships_team_id_idx" ON "team_memberships" ("team_id");
+-- Create index "team_memberships_user_id_idx" to table: "team_memberships"
+CREATE INDEX "team_memberships_user_id_idx" ON "team_memberships" ("user_id");
