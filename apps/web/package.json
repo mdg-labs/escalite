@@ -2,11 +2,17 @@
   "name": "@escalite/web",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "node -e \"console.log('@escalite/web build placeholder')\"",
     "dev": "node -e \"console.log('@escalite/web dev placeholder — Vite shell lands in a later task')\"",
-    "lint": "node -e \"console.log('@escalite/web lint placeholder')\"",
+    "lint": "eslint .",
     "test:unit": "node -e \"console.log('@escalite/web test placeholder')\"",
-    "typecheck": "node -e \"console.log('@escalite/web typecheck placeholder')\""
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@escalite/config": "workspace:*",
+    "eslint": "^9.28.0",
+    "typescript": "^5.8.3"
   }
 }
