@@ -3,6 +3,7 @@
 // Scheduling tables: schedules, rotations, overrides (#41).
 // Service + integration key tables (#40).
 // Escalation policies, alerts, notification_attempts (#42).
+// Sessions, audit_events, refresh_tokens (#43).
 
 schema "public" {
 }
@@ -913,5 +914,222 @@ table "notification_attempts" {
 
   check "notification_attempts_status_check" {
     expr = "(status = ANY (ARRAY['pending'::text, 'sent'::text, 'failed'::text]))"
+  }
+}
+
+table "sessions" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "user_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "expires_at" {
+    null = false
+    type = timestamptz
+  }
+  column "user_agent" {
+    null = true
+    type = text
+  }
+  column "revoked_at" {
+    null = true
+    type = timestamptz
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "sessions_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "sessions_user_id_organization_id_fkey" {
+    columns     = [column.user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "sessions_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "sessions_user_id_idx" {
+    columns = [column.user_id]
+  }
+
+  index "sessions_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  index "sessions_expires_at_idx" {
+    columns = [column.expires_at]
+  }
+}
+
+table "audit_events" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "actor_id" {
+    null = true
+    type = uuid
+  }
+  column "action" {
+    null = false
+    type = text
+  }
+  column "target_type" {
+    null = true
+    type = text
+  }
+  column "target_id" {
+    null = true
+    type = uuid
+  }
+  column "metadata" {
+    null    = false
+    type    = jsonb
+    default = sql("'{}'::jsonb")
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "audit_events_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "audit_events_actor_id_organization_id_fkey" {
+    columns     = [column.actor_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = SET_NULL
+  }
+
+  index "audit_events_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  index "audit_events_actor_id_idx" {
+    columns = [column.actor_id]
+  }
+
+  index "audit_events_target_type_target_id_idx" {
+    columns = [column.target_type, column.target_id]
+  }
+
+  index "audit_events_created_at_idx" {
+    columns = [column.created_at]
+  }
+}
+
+table "refresh_tokens" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "user_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "token_hash" {
+    null = false
+    type = text
+  }
+  column "user_agent" {
+    null = true
+    type = text
+  }
+  column "revoked_at" {
+    null = true
+    type = timestamptz
+  }
+  column "expires_at" {
+    null = false
+    type = timestamptz
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "refresh_tokens_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "refresh_tokens_user_id_organization_id_fkey" {
+    columns     = [column.user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "refresh_tokens_token_hash_key" {
+    columns = [column.token_hash]
+  }
+
+  unique "refresh_tokens_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "refresh_tokens_user_id_idx" {
+    columns = [column.user_id]
+  }
+
+  index "refresh_tokens_organization_id_idx" {
+    columns = [column.organization_id]
   }
 }
