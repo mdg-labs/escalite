@@ -35,9 +35,6 @@ func New(ctx context.Context, opts Options) (*Client, error) {
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
 	}
-	if opts.Workers == nil {
-		opts.Workers = NewWorkers(opts.Logger)
-	}
 
 	pool, err := pgxpool.New(ctx, opts.DatabaseURL)
 	if err != nil {
@@ -49,11 +46,21 @@ func New(ctx context.Context, opts Options) (*Client, error) {
 		return nil, err
 	}
 
+	client := &Client{
+		pool:   pool,
+		logger: opts.Logger,
+	}
+
+	workers := opts.Workers
+	if workers == nil {
+		workers = NewWorkers(opts.Logger, pool, client)
+	}
+
 	riverClient, err := river.NewClient(riverpgxv5.New(pool), &river.Config{
 		Queues: map[string]river.QueueConfig{
 			river.QueueDefault: {MaxWorkers: defaultQueueWorkers},
 		},
-		Workers:      opts.Workers,
+		Workers:      workers,
 		PeriodicJobs: NewPeriodicJobs(opts.HeartbeatScanInterval),
 		Middleware: []rivertype.Middleware{
 			NewWorkerLoggingMiddleware(opts.Logger),
@@ -64,11 +71,13 @@ func New(ctx context.Context, opts Options) (*Client, error) {
 		return nil, fmt.Errorf("create river client: %w", err)
 	}
 
-	return &Client{
-		pool:   pool,
-		river:  riverClient,
-		logger: opts.Logger,
-	}, nil
+	client.river = riverClient
+	return client, nil
+}
+
+// Pool exposes the underlying pgx pool for tests and callers.
+func (c *Client) Pool() *pgxpool.Pool {
+	return c.pool
 }
 
 // Start begins processing jobs.

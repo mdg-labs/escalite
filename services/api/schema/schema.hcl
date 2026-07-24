@@ -717,6 +717,93 @@ table "escalation_steps" {
   }
 }
 
+table "escalation_step_targets" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "escalation_step_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "target_type" {
+    null = false
+    type = text
+  }
+  column "user_id" {
+    null = true
+    type = uuid
+  }
+  column "schedule_id" {
+    null = true
+    type = uuid
+  }
+  column "webhook_url" {
+    null = true
+    type = text
+  }
+  column "channels" {
+    null    = false
+    type    = jsonb
+    default = sql("'[\"email\"]'::jsonb")
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "escalation_step_targets_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "escalation_step_targets_escalation_step_id_organization_id_fkey" {
+    columns     = [column.escalation_step_id, column.organization_id]
+    ref_columns = [table.escalation_steps.column.id, table.escalation_steps.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "escalation_step_targets_user_id_organization_id_fkey" {
+    columns     = [column.user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "escalation_step_targets_schedule_id_organization_id_fkey" {
+    columns     = [column.schedule_id, column.organization_id]
+    ref_columns = [table.schedules.column.id, table.schedules.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "escalation_step_targets_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "escalation_step_targets_escalation_step_id_idx" {
+    columns = [column.escalation_step_id]
+  }
+
+  index "escalation_step_targets_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  check "escalation_step_targets_target_type_check" {
+    expr = "(target_type = ANY (ARRAY['user'::text, 'rotation'::text, 'webhook'::text]))"
+  }
+}
+
 table "alerts" {
   schema = schema.public
 

@@ -25,6 +25,14 @@ WHERE escalation_policy_id = $1
   AND organization_id = $2
 ORDER BY step_order;
 
+-- name: GetEscalationStepByPolicyAndOrder :one
+SELECT *
+FROM escalation_steps
+WHERE escalation_policy_id = $1
+  AND organization_id = $2
+  AND step_order = $3
+LIMIT 1;
+
 -- name: DeleteEscalationStepsByPolicyID :exec
 DELETE FROM escalation_steps
 WHERE escalation_policy_id = $1

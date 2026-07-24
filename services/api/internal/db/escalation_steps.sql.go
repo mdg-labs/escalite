@@ -84,6 +84,38 @@ func (q *Queries) DeleteEscalationStepsByPolicyID(ctx context.Context, arg Delet
 	return err
 }
 
+const getEscalationStepByPolicyAndOrder = `-- name: GetEscalationStepByPolicyAndOrder :one
+SELECT id, escalation_policy_id, organization_id, step_order, delay_minutes, repeat_last_step, max_repeats, created_at, updated_at
+FROM escalation_steps
+WHERE escalation_policy_id = $1
+  AND organization_id = $2
+  AND step_order = $3
+LIMIT 1
+`
+
+type GetEscalationStepByPolicyAndOrderParams struct {
+	EscalationPolicyID uuid.UUID `json:"escalation_policy_id"`
+	OrganizationID     uuid.UUID `json:"organization_id"`
+	StepOrder          int32     `json:"step_order"`
+}
+
+func (q *Queries) GetEscalationStepByPolicyAndOrder(ctx context.Context, arg GetEscalationStepByPolicyAndOrderParams) (EscalationStep, error) {
+	row := q.db.QueryRow(ctx, getEscalationStepByPolicyAndOrder, arg.EscalationPolicyID, arg.OrganizationID, arg.StepOrder)
+	var i EscalationStep
+	err := row.Scan(
+		&i.ID,
+		&i.EscalationPolicyID,
+		&i.OrganizationID,
+		&i.StepOrder,
+		&i.DelayMinutes,
+		&i.RepeatLastStep,
+		&i.MaxRepeats,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listEscalationStepsByPolicyID = `-- name: ListEscalationStepsByPolicyID :many
 SELECT id, escalation_policy_id, organization_id, step_order, delay_minutes, repeat_last_step, max_repeats, created_at, updated_at
 FROM escalation_steps

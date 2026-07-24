@@ -40,7 +40,6 @@ func run() int {
 	queueClient, err := queue.New(ctx, queue.Options{
 		DatabaseURL:           cfg.DatabaseURL,
 		Logger:                logger,
-		Workers:               queue.NewWorkers(logger),
 		HeartbeatScanInterval: cfg.HeartbeatScanInterval,
 	})
 	if err != nil {
