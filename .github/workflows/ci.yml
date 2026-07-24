@@ -56,6 +56,32 @@ jobs:
 
       - run: go test ./services/api/... ./services/engine/... ./services/integrations/...
 
+  atlas:
+    name: Atlas migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ariga/setup-atlas@v0
+        with:
+          version: v1.2.3
+
+      - name: Validate migrations
+        working-directory: services/api
+        run: atlas migrate validate --env local --dev-url "docker://postgres/16/dev?search_path=public"
+
+      - name: Check schema drift
+        working-directory: services/api
+        run: |
+          if atlas schema diff \
+            --from "file://migrations" \
+            --to "file://schema" \
+            --dev-url "docker://postgres/16/dev?search_path=public" \
+            --format '{{ if .Changes }}drift{{ end }}' | grep -q drift; then
+            echo "Schema drift detected between migrations/ and schema/"
+            exit 1
+          fi
+
   security:
     name: Security
     runs-on: ubuntu-latest

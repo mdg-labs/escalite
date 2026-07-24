@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"os"
+	"os/exec"
 
+	"ariga.io/atlas/atlasexec"
 	"github.com/mdg-labs/escalite/services/api/migrations"
-	"github.com/pressly/goose/v3"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -15,7 +17,7 @@ import (
 // advisoryLockKey serializes concurrent migration runners on a single Postgres instance.
 const advisoryLockKey int64 = 738573851
 
-// Up applies embedded goose migrations guarded by a Postgres advisory lock.
+// Up applies embedded Atlas migrations guarded by a Postgres advisory lock.
 func Up(ctx context.Context, databaseURL string, logger *slog.Logger) error {
 	if logger == nil {
 		logger = slog.Default()
@@ -34,20 +36,56 @@ func Up(ctx context.Context, databaseURL string, logger *slog.Logger) error {
 	logger.Info("acquiring migration advisory lock")
 	if err := withAdvisoryLock(ctx, db, advisoryLockKey, func() error {
 		logger.Info("running database migrations")
-		goose.SetBaseFS(migrations.Files)
-		if err := goose.SetDialect("postgres"); err != nil {
-			return fmt.Errorf("set goose dialect: %w", err)
-		}
-		if err := goose.UpContext(ctx, db, "."); err != nil {
-			return fmt.Errorf("apply migrations: %w", err)
-		}
-		return nil
+		return applyAtlasMigrations(ctx, databaseURL)
 	}); err != nil {
 		return err
 	}
 
 	logger.Info("database migrations complete")
 	return nil
+}
+
+func applyAtlasMigrations(ctx context.Context, databaseURL string) error {
+	workdir, err := atlasexec.NewWorkingDir(
+		atlasexec.WithMigrations(migrations.Files),
+	)
+	if err != nil {
+		return fmt.Errorf("prepare migration working dir: %w", err)
+	}
+	defer workdir.Close()
+
+	atlasBin, err := resolveAtlasBin()
+	if err != nil {
+		return err
+	}
+
+	client, err := atlasexec.NewClient(workdir.Path(), atlasBin)
+	if err != nil {
+		return fmt.Errorf("create atlas client: %w", err)
+	}
+
+	_, err = client.MigrateApply(ctx, &atlasexec.MigrateApplyParams{
+		URL:      databaseURL,
+		LockName: "escalite_migrate",
+	})
+	if err != nil {
+		return fmt.Errorf("apply migrations: %w", err)
+	}
+
+	return nil
+}
+
+func resolveAtlasBin() (string, error) {
+	if path := os.Getenv("ESCALITE_ATLAS_BIN"); path != "" {
+		return path, nil
+	}
+	if path, err := exec.LookPath("atlas"); err == nil {
+		return path, nil
+	}
+	if _, err := os.Stat("/app/atlas"); err == nil {
+		return "/app/atlas", nil
+	}
+	return "", fmt.Errorf("atlas CLI not found: install atlas or set ESCALITE_ATLAS_BIN")
 }
 
 func withAdvisoryLock(ctx context.Context, db *sql.DB, key int64, fn func() error) error {
