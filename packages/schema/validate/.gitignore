@@ -1,3 +1,4 @@
 exec.go
 models_gen.go
+resolver.go
 *.resolvers.go

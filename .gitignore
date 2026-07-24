@@ -25,3 +25,7 @@ bin/
 .vscode/
 *.swp
 .DS_Store
+
+# Test-Results
+apps/web/test-results/.last-run.json
+apps/web/playwright-report/index.html
