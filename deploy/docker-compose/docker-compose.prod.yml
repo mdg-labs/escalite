@@ -2,9 +2,20 @@
 services:
   api:
     volumes: !reset []
+    healthcheck:
+      test: ["CMD", "/wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
 
   engine:
     volumes: !reset []
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
 
   web:
     volumes: !reset []

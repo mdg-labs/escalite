@@ -13,7 +13,8 @@
       "persistent": true
     },
     "e2e": {
-      "cache": false
+      "cache": false,
+      "env": ["CI", "ESCALITE_API_URL", "ESCALITE_APP_ORIGIN"]
     },
     "lint": {
       "dependsOn": ["^lint"]

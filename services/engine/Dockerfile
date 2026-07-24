@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Multi-stage engine image — distroless nonroot runtime (doc 07 supply-chain).
-FROM golang:1.23-bookworm@sha256:167053a2bb901972bf2c1611f8f52c44d5fe7e762e5cab213708d82c421614db AS base
+FROM golang:1.26-bookworm@sha256:1ecb7edf62a0408027bd5729dfd6b1b8766e578e8df93995b225dfd0944eb651 AS base
 WORKDIR /src
 ENV CGO_ENABLED=0
 

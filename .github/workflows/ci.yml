@@ -85,26 +85,10 @@ jobs:
   e2e:
     name: E2E smoke
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: escalite
-          POSTGRES_PASSWORD: escalite
-          POSTGRES_DB: escalite
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U escalite -d escalite"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
     env:
-      ESCALITE_DATABASE_URL: postgres://escalite:escalite@localhost:5432/escalite?sslmode=disable
       ESCALITE_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
       ESCALITE_APP_ORIGIN: http://localhost:5173
       ESCALITE_API_URL: http://localhost:8080
-      ESCALITE_API_PROXY_TARGET: http://localhost:8080
       CI: true
     steps:
       - uses: actions/checkout@v4
@@ -118,37 +102,14 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: services/api/go.mod
-          cache-dependency-path: |
-            services/api/go.sum
-            services/engine/go.sum
-            services/integrations/go.sum
-
-      - uses: ariga/setup-atlas@v0
-        with:
-          version: v1.2.3
-
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
 
       - name: Install Playwright browsers
         working-directory: apps/web
         run: pnpm e2e:install
 
-      - name: Start API
-        run: |
-          go run ./services/api/cmd/api &
-          echo $! > /tmp/escalite-api.pid
-
-      - name: Start web dev server
-        run: |
-          pnpm --filter @escalite/web dev &
-          echo $! > /tmp/escalite-web.pid
-
-      - name: Run E2E smoke tests
-        run: pnpm e2e
+      - name: Compose up, E2E smoke, tear down
+        run: bash scripts/ci-compose-e2e.sh
 
       - name: Upload Playwright report
         if: failure()
@@ -159,12 +120,6 @@ jobs:
             apps/web/playwright-report/
             apps/web/test-results/
           retention-days: 7
-
-      - name: Stop background services
-        if: always()
-        run: |
-          if [ -f /tmp/escalite-api.pid ]; then kill "$(cat /tmp/escalite-api.pid)" || true; fi
-          if [ -f /tmp/escalite-web.pid ]; then kill "$(cat /tmp/escalite-web.pid)" || true; fi
 
   security:
     name: Security
