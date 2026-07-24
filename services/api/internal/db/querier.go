@@ -17,14 +17,18 @@ type Querier interface {
 	CountUsers(ctx context.Context) (int64, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
+	CreateTeam(ctx context.Context, arg CreateTeamParams) (Team, error)
+	CreateTeamMembership(ctx context.Context, arg CreateTeamMembershipParams) (TeamMembership, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteSession(ctx context.Context, arg DeleteSessionParams) error
 	GetActiveSessionByID(ctx context.Context, id uuid.UUID) (Session, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
 	GetSessionByID(ctx context.Context, arg GetSessionByIDParams) (Session, error)
+	GetTeamByID(ctx context.Context, arg GetTeamByIDParams) (Team, error)
 	GetUserByEmail(ctx context.Context, arg GetUserByEmailParams) (User, error)
 	GetUserByEmailForAuth(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, arg GetUserByIDParams) (User, error)
+	HasTeamMembership(ctx context.Context, arg HasTeamMembershipParams) (bool, error)
 	PingDatabase(ctx context.Context) (int32, error)
 	RevokeAllUserSessions(ctx context.Context, arg RevokeAllUserSessionsParams) error
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error

@@ -40,6 +40,7 @@ func New(deps Dependencies) http.Handler {
 		login := handlers.NewLoginHandler(deps.Pool, deps.Logger)
 		logout := handlers.NewLogoutHandler(deps.Pool, deps.Logger)
 		me := handlers.NewMeHandler()
+		team := handlers.NewTeamHandler()
 
 		r.Post("/api/v1/setup", setup.ServeHTTP)
 		r.Post("/api/v1/login", login.ServeHTTP)
@@ -48,6 +49,11 @@ func New(deps Dependencies) http.Handler {
 			r.Use(handlers.RequireSession(deps.Pool, deps.Logger))
 			r.Post("/api/v1/logout", logout.ServeHTTP)
 			r.Get("/api/v1/me", me.ServeHTTP)
+
+			r.Route("/api/v1/teams/{teamID}", func(r chi.Router) {
+				r.Use(handlers.RequireTeamAccess(deps.Pool, deps.Logger))
+				r.Get("/", team.ServeHTTP)
+			})
 		})
 	}
 

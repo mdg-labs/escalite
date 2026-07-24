@@ -9,6 +9,7 @@ const (
 	CodeUnauthenticated  = "UNAUTHENTICATED"
 	CodeValidation       = "VALIDATION"
 	CodeForbidden        = "FORBIDDEN"
+	CodeNotFound         = "NOT_FOUND"
 	CodeInternal         = "INTERNAL"
 	CodeMethodNotAllowed = "METHOD_NOT_ALLOWED"
 )

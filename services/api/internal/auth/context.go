@@ -10,7 +10,10 @@ import (
 
 type contextKey int
 
-const sessionContextKey contextKey = iota
+const (
+	sessionContextKey contextKey = iota
+	teamContextKey
+)
 
 // SessionContext holds the authenticated session and user loaded by session middleware.
 type SessionContext struct {
@@ -36,4 +39,15 @@ func UserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 		return uuid.UUID{}, false
 	}
 	return sc.User.ID, true
+}
+
+// WithTeamContext stores the authorized team on the request context.
+func WithTeamContext(ctx context.Context, team db.Team) context.Context {
+	return context.WithValue(ctx, teamContextKey, team)
+}
+
+// TeamFromContext returns the team authorized by team-access middleware.
+func TeamFromContext(ctx context.Context) (db.Team, bool) {
+	team, ok := ctx.Value(teamContextKey).(db.Team)
+	return team, ok
 }
