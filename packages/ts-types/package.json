@@ -1,0 +1,31 @@
+{
+  "name": "@escalite/ts-types",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Codegen'd GraphQL types and urql hooks for web and mobile",
+  "exports": {
+    ".": "./src/index.ts",
+    "./generated": "./src/generated/graphql.ts"
+  },
+  "scripts": {
+    "codegen": "graphql-codegen --config codegen.ts",
+    "build": "pnpm run codegen",
+    "lint": "eslint .",
+    "test:unit": "node --test test/codegen.test.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "graphql": "^16.11.0",
+    "urql": "^4.2.2"
+  },
+  "devDependencies": {
+    "@escalite/config": "workspace:*",
+    "@graphql-codegen/cli": "^5.0.7",
+    "@graphql-codegen/typescript": "^4.1.6",
+    "@graphql-codegen/typescript-operations": "^4.6.1",
+    "@graphql-codegen/typescript-urql": "^4.0.1",
+    "eslint": "^9.28.0",
+    "typescript": "^5.8.3"
+  }
+}

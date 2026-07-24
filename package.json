@@ -4,6 +4,7 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "build": "turbo run build",
+    "codegen": "turbo run codegen",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test:unit",

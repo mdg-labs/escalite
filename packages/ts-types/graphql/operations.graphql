@@ -1,0 +1,42 @@
+query Me {
+  me {
+    id
+    email
+    role
+    organizationId
+    createdAt
+    updatedAt
+  }
+}
+
+query Health {
+  health {
+    status
+  }
+}
+
+mutation Login($input: LoginInput!) {
+  login(input: $input) {
+    user {
+      id
+      email
+      role
+      organizationId
+    }
+  }
+}
+
+mutation Setup($input: SetupInput!) {
+  setup(input: $input) {
+    organization {
+      id
+      name
+    }
+    user {
+      id
+      email
+      role
+      organizationId
+    }
+  }
+}
