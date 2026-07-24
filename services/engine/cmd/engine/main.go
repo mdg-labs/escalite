@@ -12,6 +12,7 @@ import (
 
 	"github.com/mdg-labs/escalite/services/engine/internal/config"
 	"github.com/mdg-labs/escalite/services/engine/internal/log"
+	"github.com/mdg-labs/escalite/services/engine/internal/queue"
 	"github.com/mdg-labs/escalite/services/engine/internal/server"
 )
 
@@ -34,6 +35,23 @@ func run() int {
 
 	logger := log.NewJSONLogger(serviceName, cfg.LogLevel)
 	logger.Info("starting service", "listen_addr", cfg.ListenAddr)
+
+	ctx := context.Background()
+	queueClient, err := queue.New(ctx, queue.Options{
+		DatabaseURL: cfg.DatabaseURL,
+		Logger:      logger,
+		Workers:     queue.NewWorkers(),
+	})
+	if err != nil {
+		logger.Error("queue client failed", "error", err)
+		return 1
+	}
+	defer queueClient.Close()
+
+	if err := queueClient.Start(ctx); err != nil {
+		logger.Error("queue client start failed", "error", err)
+		return 1
+	}
 
 	handler := server.New(logger)
 	httpServer := &http.Server{
@@ -60,11 +78,16 @@ func run() int {
 		logger.Info("shutdown signal received", "signal", sig.String())
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := httpServer.Shutdown(ctx); err != nil {
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
 		logger.Error("graceful shutdown failed", "error", err)
+		return 1
+	}
+
+	if err := queueClient.Stop(shutdownCtx); err != nil {
+		logger.Error("queue client stop failed", "error", err)
 		return 1
 	}
 
