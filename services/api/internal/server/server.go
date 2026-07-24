@@ -15,6 +15,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/email"
 	"github.com/mdg-labs/escalite/services/api/internal/graphql"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
+	"github.com/mdg-labs/escalite/services/api/internal/queue"
 	"github.com/mdg-labs/escalite/services/api/internal/ratelimit"
 )
 
@@ -22,6 +23,7 @@ import (
 type Dependencies struct {
 	Logger        *slog.Logger
 	Pool          *pgxpool.Pool
+	Jobs          *queue.Producer
 	OIDC          *OIDCServices
 	Mail          email.Sender
 	PublicURL     string
@@ -113,7 +115,7 @@ func New(deps Dependencies) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(handlers.WithRequestMiddleware)
 			r.Use(handlers.AttachSession(deps.Pool, deps.Logger))
-			r.Handle("/graphql", graphql.NewHandler(deps.Pool, deps.Logger, deps.GraphQL))
+			r.Handle("/graphql", graphql.NewHandler(deps.Pool, deps.Logger, deps.Jobs, deps.GraphQL))
 		})
 	}
 

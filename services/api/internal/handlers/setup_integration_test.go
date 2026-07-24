@@ -23,6 +23,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/email"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
+	"github.com/mdg-labs/escalite/services/api/internal/queue"
 	"github.com/mdg-labs/escalite/services/api/internal/server"
 )
 
@@ -75,9 +76,13 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 	pool, err := pgxpool.New(ctx, databaseURL)
 	require.NoError(t, err)
 
+	jobs, err := queue.NewProducer(ctx, pool, slog.Default())
+	require.NoError(t, err)
+
 	handler := server.New(server.Dependencies{
 		Logger:        slog.Default(),
 		Pool:          pool,
+		Jobs:          jobs,
 		Mail:          opts.Mail,
 		PublicURL:     opts.PublicURL,
 		PasswordReset: opts.PasswordReset,

@@ -23,10 +23,13 @@ const (
 	ActionEscalationPolicyCreated = "escalation_policy.created"
 	ActionEscalationPolicyUpdated = "escalation_policy.updated"
 	ActionEscalationPolicyDeleted = "escalation_policy.deleted"
+	ActionAlertEscalationSnoozed   = "alert.escalation_snoozed"
+	ActionAlertReEscalated         = "alert.re_escalated"
 
 	targetTypeUser             = "user"
 	targetTypeIntegrationKey   = "integration_key"
 	targetTypeEscalationPolicy = "escalation_policy"
+	targetTypeAlert            = "alert"
 )
 
 // RequestMeta captures HTTP request context stored in audit metadata.
@@ -193,6 +196,49 @@ func (r *Recorder) EscalationPolicyDeleted(ctx context.Context, q db.Querier, or
 		TargetType:     pgtype.Text{String: targetTypeEscalationPolicy, Valid: true},
 		TargetID:       pgtype.UUID{Bytes: policyID, Valid: true},
 		Metadata:       []byte("{}"),
+	})
+}
+
+// AlertEscalationSnoozed records a manual escalation snooze.
+func (r *Recorder) AlertEscalationSnoozed(ctx context.Context, q db.Querier, orgID, actorID, alertID uuid.UUID, durationMinutes int32, nextEscalationAt string) {
+	meta, err := json.Marshal(map[string]any{
+		"duration_minutes":     durationMinutes,
+		"next_escalation_at":   nextEscalationAt,
+	})
+	if err != nil {
+		r.logger.Error("marshal snooze audit metadata failed", "error", err)
+		return
+	}
+
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionAlertEscalationSnoozed,
+		TargetType:     pgtype.Text{String: targetTypeAlert, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: alertID, Valid: true},
+		Metadata:       meta,
+	})
+}
+
+// AlertReEscalated records a manual re-escalation to step 1.
+func (r *Recorder) AlertReEscalated(ctx context.Context, q db.Querier, orgID, actorID, alertID uuid.UUID) {
+	meta, err := json.Marshal(map[string]any{
+		"reset_to_step": 1,
+	})
+	if err != nil {
+		r.logger.Error("marshal re-escalate audit metadata failed", "error", err)
+		return
+	}
+
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionAlertReEscalated,
+		TargetType:     pgtype.Text{String: targetTypeAlert, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: alertID, Valid: true},
+		Metadata:       meta,
 	})
 }
 

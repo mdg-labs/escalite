@@ -55,4 +55,14 @@ type Mutation {
   Close an alert.
   """
   closeAlert(id: ID!): Alert!
+
+  """
+  Snooze the escalation timer for a triggered alert by the requested duration.
+  """
+  snoozeAlert(id: ID!, durationMinutes: Int!): Alert!
+
+  """
+  Reset escalation to step 1 and enqueue step-1 notifications.
+  """
+  reEscalateAlert(id: ID!): Alert!
 }

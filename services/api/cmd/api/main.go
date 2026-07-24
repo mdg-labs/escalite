@@ -18,6 +18,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/log"
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
 	"github.com/mdg-labs/escalite/services/api/internal/oidc"
+	"github.com/mdg-labs/escalite/services/api/internal/queue"
 	"github.com/mdg-labs/escalite/services/api/internal/ratelimit"
 	"github.com/mdg-labs/escalite/services/api/internal/server"
 )
@@ -55,6 +56,12 @@ func run() int {
 	}
 	defer pool.Close()
 
+	jobs, err := queue.NewProducer(ctx, pool, logger)
+	if err != nil {
+		logger.Error("river producer failed", "error", err)
+		return 1
+	}
+
 	var oidcProvider *oidc.Provider
 	if cfg.OIDC != nil {
 		oidcProvider, err = oidc.NewProvider(ctx, oidc.Config{
@@ -73,6 +80,7 @@ func run() int {
 	handler := server.New(server.Dependencies{
 		Logger:    logger,
 		Pool:      pool,
+		Jobs:      jobs,
 		OIDC:      server.NewOIDCServices(pool, logger, cfg.OIDC, oidcProvider),
 		Mail:      newMailSender(cfg, logger),
 		PublicURL: cfg.PublicURL,

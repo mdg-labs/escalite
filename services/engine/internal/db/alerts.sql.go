@@ -140,6 +140,49 @@ func (q *Queries) GetAlertByID(ctx context.Context, arg GetAlertByIDParams) (Ale
 	return i, err
 }
 
+const reEscalateAlert = `-- name: ReEscalateAlert :one
+UPDATE alerts
+SET status = 'triggered',
+    acknowledged_at = NULL,
+    acknowledged_by_user_id = NULL,
+    escalation_state = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+  AND status IN ('triggered', 'acknowledged')
+RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
+`
+
+type ReEscalateAlertParams struct {
+	ID              uuid.UUID `json:"id"`
+	OrganizationID  uuid.UUID `json:"organization_id"`
+	EscalationState []byte    `json:"escalation_state"`
+}
+
+func (q *Queries) ReEscalateAlert(ctx context.Context, arg ReEscalateAlertParams) (Alert, error) {
+	row := q.db.QueryRow(ctx, reEscalateAlert, arg.ID, arg.OrganizationID, arg.EscalationState)
+	var i Alert
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.ServiceID,
+		&i.IntegrationKeyID,
+		&i.Status,
+		&i.DedupKey,
+		&i.Summary,
+		&i.Description,
+		&i.Priority,
+		&i.EventCount,
+		&i.EscalationState,
+		&i.AcknowledgedAt,
+		&i.AcknowledgedByUserID,
+		&i.ClosedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const updateAlertEscalationState = `-- name: UpdateAlertEscalationState :one
 UPDATE alerts
 SET escalation_state = $3,

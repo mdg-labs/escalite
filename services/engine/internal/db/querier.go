@@ -28,6 +28,7 @@ type Querier interface {
 	ListEscalationPoliciesByServiceID(ctx context.Context, arg ListEscalationPoliciesByServiceIDParams) ([]EscalationPolicy, error)
 	ListEscalationStepTargetsByStepID(ctx context.Context, arg ListEscalationStepTargetsByStepIDParams) ([]EscalationStepTarget, error)
 	ListNotificationAttemptsByAlertID(ctx context.Context, arg ListNotificationAttemptsByAlertIDParams) ([]NotificationAttempt, error)
+	ReEscalateAlert(ctx context.Context, arg ReEscalateAlertParams) (Alert, error)
 	UpdateAlertEscalationState(ctx context.Context, arg UpdateAlertEscalationStateParams) (Alert, error)
 }
 

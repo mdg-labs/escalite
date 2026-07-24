@@ -56,6 +56,7 @@ type Querier interface {
 	ListNotificationAttemptsByAlertID(ctx context.Context, arg ListNotificationAttemptsByAlertIDParams) ([]NotificationAttempt, error)
 	MarkPasswordResetTokenUsed(ctx context.Context, id uuid.UUID) error
 	PingDatabase(ctx context.Context) (int32, error)
+	ReEscalateAlert(ctx context.Context, arg ReEscalateAlertParams) (Alert, error)
 	RevokeAllUserSessions(ctx context.Context, arg RevokeAllUserSessionsParams) error
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
 	SessionsSchemaReady(ctx context.Context) (bool, error)

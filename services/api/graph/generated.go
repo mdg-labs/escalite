@@ -90,7 +90,9 @@ type ComplexityRoot struct {
 		CreateEscalationPolicy func(childComplexity int, input model.CreateEscalationPolicyInput) int
 		DeleteEscalationPolicy func(childComplexity int, id string) int
 		Login                  func(childComplexity int, input model.LoginInput) int
+		ReEscalateAlert        func(childComplexity int, id string) int
 		Setup                  func(childComplexity int, input model.SetupInput) int
+		SnoozeAlert            func(childComplexity int, id string, durationMinutes int) int
 		UpdateEscalationPolicy func(childComplexity int, input model.UpdateEscalationPolicyInput) int
 	}
 
@@ -152,6 +154,8 @@ type MutationResolver interface {
 	DeleteEscalationPolicy(ctx context.Context, id string) (bool, error)
 	AcknowledgeAlert(ctx context.Context, id string) (*model.Alert, error)
 	CloseAlert(ctx context.Context, id string) (*model.Alert, error)
+	SnoozeAlert(ctx context.Context, id string, durationMinutes int) (*model.Alert, error)
+	ReEscalateAlert(ctx context.Context, id string) (*model.Alert, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
@@ -430,6 +434,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.Login(childComplexity, args["input"].(model.LoginInput)), true
+	case "Mutation.reEscalateAlert":
+		if e.ComplexityRoot.Mutation.ReEscalateAlert == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_reEscalateAlert_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.ReEscalateAlert(childComplexity, args["id"].(string)), true
 	case "Mutation.setup":
 		if e.ComplexityRoot.Mutation.Setup == nil {
 			break
@@ -441,6 +456,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.Setup(childComplexity, args["input"].(model.SetupInput)), true
+	case "Mutation.snoozeAlert":
+		if e.ComplexityRoot.Mutation.SnoozeAlert == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_snoozeAlert_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SnoozeAlert(childComplexity, args["id"].(string), args["durationMinutes"].(int)), true
 	case "Mutation.updateEscalationPolicy":
 		if e.ComplexityRoot.Mutation.UpdateEscalationPolicy == nil {
 			break
@@ -832,6 +858,16 @@ type Mutation {
   Close an alert.
   """
   closeAlert(id: ID!): Alert!
+
+  """
+  Snooze the escalation timer for a triggered alert by the requested duration.
+  """
+  snoozeAlert(id: ID!, durationMinutes: Int!): Alert!
+
+  """
+  Reset escalation to step 1 and enqueue step-1 notifications.
+  """
+  reEscalateAlert(id: ID!): Alert!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/scalars.graphql", Input: `"""
@@ -1258,6 +1294,20 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_reEscalateAlert_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_setup_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1269,6 +1319,28 @@ func (ec *executionContext) field_Mutation_setup_args(ctx context.Context, rawAr
 		return nil, err
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_snoozeAlert_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "durationMinutes",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNInt2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["durationMinutes"] = arg1
 	return args, nil
 }
 
@@ -2453,6 +2525,94 @@ func (ec *executionContext) fieldContext_Mutation_closeAlert(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_closeAlert_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_snoozeAlert(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_snoozeAlert(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SnoozeAlert(ctx, fc.Args["id"].(string), fc.Args["durationMinutes"].(int))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Alert) graphql.Marshaler {
+			return ec.marshalNAlert2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlert(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_snoozeAlert(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Alert(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_snoozeAlert_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_reEscalateAlert(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_reEscalateAlert(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().ReEscalateAlert(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Alert) graphql.Marshaler {
+			return ec.marshalNAlert2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlert(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_reEscalateAlert(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Alert(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_reEscalateAlert_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4915,6 +5075,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "closeAlert":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_closeAlert(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "snoozeAlert":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_snoozeAlert(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "reEscalateAlert":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_reEscalateAlert(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
