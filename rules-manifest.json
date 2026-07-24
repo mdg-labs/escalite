@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "source": "mdg-labs/skills",
+  "rules": {
+    "02-orchestrator": {
+      "installPath": ".cursor/rules/02-orchestrator.mdc",
+      "templatePath": "project-setup/templates/rules/shared/02-orchestrator.mdc",
+      "managed": "shared",
+      "computedHash": "b1e9ff226c30395bb4f5de5da6145bfe121e41f381db5b0f108a10c5510bc8cc"
+    },
+    "07-kaneo-commit-linking": {
+      "installPath": ".cursor/rules/07-kaneo-commit-linking.mdc",
+      "templatePath": "project-setup/templates/rules/shared/07-kaneo-commit-linking.mdc",
+      "managed": "shared",
+      "computedHash": "250572b44787aba4928cc0998a518020f2311ed7ca56eb14689a152b76d31c0e"
+    },
+    "08-dependabot-alerts": {
+      "installPath": ".cursor/rules/08-dependabot-alerts.mdc",
+      "templatePath": "project-setup/templates/rules/shared/08-dependabot-alerts.mdc",
+      "managed": "shared",
+      "computedHash": "96b1c1cb18bc46e37fd6378101417dcf295531a6d86956beecb23a950ab4042f"
+    },
+    "13-no-amend-pushed": {
+      "installPath": ".cursor/rules/13-no-amend-pushed.mdc",
+      "templatePath": "project-setup/templates/rules/shared/13-no-amend-pushed.mdc",
+      "managed": "shared",
+      "computedHash": "a22da8082641de03353d3f2c0c09101cf3446170d8536fdbfe5b3e21e8f20afc"
+    },
+    "00-project": {
+      "installPath": ".cursor/rules/00-project.mdc",
+      "templatePath": "project-setup/templates/rules/generated/00-project.mdc",
+      "managed": "generated",
+      "computedHash": "59ccbe00d0cb74f0898dae2ad84758093e340458b1095d63024a30f3d0bd68e9"
+    },
+    "01-git-workflow": {
+      "installPath": ".cursor/rules/01-git-workflow.mdc",
+      "templatePath": "project-setup/templates/rules/generated/01-git-workflow.mdc",
+      "managed": "generated",
+      "computedHash": "6f00dfb96df8b537acaa478be1602093b991506981b19cfdaa5039b0d61e552e"
+    },
+    "06-local-ci-before-commit": {
+      "installPath": ".cursor/rules/06-local-ci-before-commit.mdc",
+      "templatePath": "project-setup/templates/rules/generated/06-local-ci-before-commit.mdc",
+      "managed": "generated",
+      "computedHash": "cc6c966becd108f9e2d51b985ec86593873a6fac47e33451805f381e8e7d6246"
+    }
+  }
+}

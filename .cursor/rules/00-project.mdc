@@ -1,0 +1,41 @@
+---
+description: Escalite project identity, doc precedence, and current-phase awareness
+alwaysApply: true
+---
+
+# Escalite
+
+Open-core, self-hostable on-call, alerting, and incident-response platform (AGPL CE).
+
+## Tech stack
+
+- **API** (`services/api`): Go — chi, gqlgen, pgx, sqlc, goose, river
+- **Web** (`apps/web`): React, Vite, urql, shadcn/Tailwind
+- **Mobile** (`apps/mobile`): Expo (later phases)
+- **Monorepo**: pnpm workspaces + Turborepo + `go.work`
+- **Data**: PostgreSQL; `docker compose up` for local/MVP deploy
+- **CI**: GitHub Actions
+
+## Repository state
+
+Pre-Phase 0 — specs and roadmap in `docs/`; monorepo scaffold pending (`p0-scaffold-monorepo`).
+
+## Spec doc precedence (when docs conflict)
+
+1. **Outline MCP** (Escalite collection) — authoritative spec bodies
+2. `docs/specs/*.md` — pointers and index (fetch Outline before implementing)
+3. `docs/roadmap/roadmap.yaml` / generated `docs/roadmap/ROADMAP.md` — implementation sequence
+4. `docs/specs/08-implementation-decisions-and-conventions.md` — pinned tooling, DoD, bootstrap order
+
+## Hard rules
+
+- If behaviour is not defined in a spec doc, **ask before guessing**.
+- Never invent fields, endpoints, or IDs not in the spec.
+- Player/user-facing strings use i18n keys when the project uses i18n — no hardcoded copy in UI code.
+
+## Agent config
+
+- Orchestrator: `.agents/skills/orchestrator/SKILL.md` (from `mdg-labs/skills`)
+- Sub-agent monitoring: `.agents/skills/orchestrator/references/sub-agent-monitoring.md` — mandatory when dispatching Task sub-agents
+- Project constants: `.agents/project/orchestrator/project.config.md`
+- Plan file: `docs/roadmap/ROADMAP.md`
