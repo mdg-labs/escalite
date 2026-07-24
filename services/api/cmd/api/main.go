@@ -14,6 +14,7 @@ import (
 
 	"github.com/mdg-labs/escalite/services/api/internal/config"
 	"github.com/mdg-labs/escalite/services/api/internal/email"
+	"github.com/mdg-labs/escalite/services/api/internal/graphql"
 	"github.com/mdg-labs/escalite/services/api/internal/log"
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
 	"github.com/mdg-labs/escalite/services/api/internal/oidc"
@@ -84,6 +85,11 @@ func run() int {
 				cfg.PasswordReset.IPLimit,
 				cfg.PasswordReset.IPWindow,
 			),
+		},
+		GraphQL: graphql.Options{
+			Production:    cfg.IsProduction(),
+			MaxDepth:      cfg.GraphQL.MaxDepth,
+			MaxComplexity: cfg.GraphQL.MaxComplexity,
 		},
 	})
 	httpServer := &http.Server{

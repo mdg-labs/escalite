@@ -48,6 +48,12 @@ type PasswordResetRateLimitConfig struct {
 	IPWindow    time.Duration
 }
 
+// GraphQLConfig controls GraphQL transport hardening limits.
+type GraphQLConfig struct {
+	MaxDepth      int
+	MaxComplexity int
+}
+
 // Config holds parsed ESCALITE_* environment configuration.
 type Config struct {
 	ListenAddr     string
@@ -55,9 +61,11 @@ type Config struct {
 	LogLevel       string
 	EncryptionKey  []byte
 	PublicURL      string
+	Environment    string
 	OIDC           *OIDCConfig
 	SMTP           *SMTPConfig
 	PasswordReset  PasswordResetRateLimitConfig
+	GraphQL        GraphQLConfig
 }
 
 // Load reads and validates configuration from the environment.
@@ -96,6 +104,8 @@ func Load(opts Options) (Config, error) {
 
 	cfg.PublicURL = strings.TrimSpace(os.Getenv("ESCALITE_PUBLIC_URL"))
 	cfg.PasswordReset = loadPasswordResetRateLimit()
+	cfg.Environment = loadEnvironment()
+	cfg.GraphQL = loadGraphQLConfig()
 
 	if err := validateLogLevel(cfg.LogLevel); err != nil {
 		return Config{}, err
@@ -186,6 +196,26 @@ func loadPasswordResetRateLimit() PasswordResetRateLimitConfig {
 		IPLimit:     envIntOrDefault("ESCALITE_PASSWORD_RESET_RATE_LIMIT_IP", 20),
 		IPWindow:    envDurationOrDefault("ESCALITE_PASSWORD_RESET_RATE_LIMIT_IP_WINDOW", time.Hour),
 	}
+}
+
+func loadEnvironment() string {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("ESCALITE_ENV"))) {
+	case "production", "prod":
+		return "production"
+	default:
+		return "development"
+	}
+}
+
+func loadGraphQLConfig() GraphQLConfig {
+	return GraphQLConfig{
+		MaxDepth:      envIntOrDefault("ESCALITE_GRAPHQL_MAX_DEPTH", 15),
+		MaxComplexity: envIntOrDefault("ESCALITE_GRAPHQL_MAX_COMPLEXITY", 100),
+	}
+}
+
+func (c Config) IsProduction() bool {
+	return c.Environment == "production"
 }
 
 func envIntOrDefault(key string, fallback int) int {

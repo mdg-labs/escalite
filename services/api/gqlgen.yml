@@ -1,0 +1,27 @@
+# gqlgen config for services/api — SDL lives in packages/schema.
+# Run: cd services/api && go run github.com/99designs/gqlgen generate
+
+schema:
+  - ../../packages/schema/graphql/*.graphql
+
+exec:
+  filename: graph/generated.go
+  package: graph
+
+model:
+  filename: graph/model/models_gen.go
+  package: model
+
+resolver:
+  layout: follow-schema
+  dir: graph
+  package: graph
+  filename_template: "{name}.resolvers.go"
+
+models:
+  DateTime:
+    model:
+      - github.com/99designs/gqlgen/graphql.Time
+  ID:
+    model:
+      - github.com/99designs/gqlgen/graphql.ID

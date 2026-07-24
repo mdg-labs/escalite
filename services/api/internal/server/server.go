@@ -12,6 +12,7 @@ import (
 
 	"github.com/mdg-labs/escalite/services/api/internal/config"
 	"github.com/mdg-labs/escalite/services/api/internal/email"
+	"github.com/mdg-labs/escalite/services/api/internal/graphql"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/api/internal/ratelimit"
 )
@@ -24,6 +25,7 @@ type Dependencies struct {
 	Mail          email.Sender
 	PublicURL     string
 	PasswordReset *PasswordResetOptions
+	GraphQL       graphql.Options
 }
 
 // PasswordResetOptions overrides password reset wiring (primarily for tests).
@@ -101,6 +103,12 @@ func New(deps Dependencies) http.Handler {
 				r.Use(handlers.RequireTeamAccess(deps.Pool, deps.Logger))
 				r.Get("/", team.ServeHTTP)
 			})
+		})
+
+		r.Group(func(r chi.Router) {
+			r.Use(handlers.WithRequestMiddleware)
+			r.Use(handlers.AttachSession(deps.Pool, deps.Logger))
+			r.Handle("/graphql", graphql.NewHandler(deps.Pool, deps.Logger, deps.GraphQL))
 		})
 	}
 
