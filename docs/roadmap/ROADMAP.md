@@ -90,47 +90,55 @@ step 1.
 
 #### Epic: Postgres schema v1 (`phase-0-schema`)
 
-Goose migrations and sqlc foundation for core domain tables per doc 08 bootstrap step 3.
+Atlas declarative schema, generated migrations, and sqlc foundation for core domain tables per doc
+08 bootstrap step 3.
 
-- **`p0-goose-migrations-setup`** — Wire goose migrations with advisory lock on API startup
+- **`p0-atlas-migrations-setup`** — Wire Atlas declarative schema and migration tooling on API startup
   - Size: S | Depends on: `p0-compose-dev-prod`
   - Acceptance criteria:
-    - goose up applies all SQL migrations idempotently
+    - services/api/schema/ is canonical; zero hand-written DDL in migrations/
+    - atlas migrate apply applies all migrations idempotently
     - Concurrent API starts do not corrupt migrations (advisory lock)
     - task migrate runs migrations locally without starting full stack
+    - CI atlas migrate lint / schema drift gate passes
 
-- **`p0-schema-core-entities`** — Migration: organizations, teams, users, team_memberships
-  - Size: M | Depends on: `p0-goose-migrations-setup`
+- **`p0-schema-core-entities`** — Schema: organizations, teams, users, team_memberships
+  - Size: M | Depends on: `p0-atlas-migrations-setup`
   - Acceptance criteria:
     - All PKs are UUID (v7 generated in app layer)
     - users.email unique per organization
     - team_memberships enforces user belongs to org of team
+    - Migration generated via atlas migrate diff from schema change (zero hand-written DDL)
 
-- **`p0-schema-service-integration`** — Migration: services, integration_keys
+- **`p0-schema-service-integration`** — Schema: services, integration_keys
   - Size: M | Depends on: `p0-schema-core-entities`
   - Acceptance criteria:
     - integration_keys.token stores only hash; prefix column for UI last-4 style
     - integration_keys.plugin_name references compile-time registry names
+    - Migration generated via atlas migrate diff from schema change (zero hand-written DDL)
 
-- **`p0-schema-scheduling`** — Migration: schedules, rotations, overrides
+- **`p0-schema-scheduling`** — Schema: schedules, rotations, overrides
   - Size: M | Depends on: `p0-schema-core-entities`
   - Acceptance criteria:
     - schedules.timezone stores valid IANA zone string
     - overrides support soft-delete with deleted_at where product requires audit retention
+    - Migration generated via atlas migrate diff from schema change (zero hand-written DDL)
 
-- **`p0-schema-escalation-alerts`** — Migration: escalation_policies, steps, alerts, notification_attempts
+- **`p0-schema-escalation-alerts`** — Schema: escalation_policies, steps, alerts, notification_attempts
   - Size: M | Depends on: `p0-schema-service-integration`
   - Acceptance criteria:
     - alerts.status enum: triggered, acknowledged, closed
     - alerts.dedup_key indexed per service_id
     - escalation_steps.order unique per policy
+    - Migration generated via atlas migrate diff from schema change (zero hand-written DDL)
 
-- **`p0-schema-sessions-audit`** — Migration: sessions, audit_events, refresh_tokens
+- **`p0-schema-sessions-audit`** — Schema: sessions, audit_events, refresh_tokens
   - Size: M | Depends on: `p0-schema-core-entities`
   - Acceptance criteria:
     - sessions store expires_at and user_agent fingerprint
     - audit_events capture actor_id, action, target_type, target_id, metadata JSON
     - refresh_tokens individually revocable
+    - Migration generated via atlas migrate diff from schema change (zero hand-written DDL)
 
 - **`p0-sqlc-foundation`** — sqlc queries for auth, org, and health checks
   - Size: M | Depends on: `p0-schema-sessions-audit`, `p0-schema-escalation-alerts`
@@ -242,7 +250,7 @@ SDL, gqlgen, codegen to ts-types, packages/ui primitives, Vite web shell per doc
 Prove Postgres-backed job queue path per doc 08 bootstrap step 6.
 
 - **`p0-river-client-setup`** — river client and worker registration in engine service
-  - Size: M | Depends on: `p0-goose-migrations-setup`, `p0-go-service-skeletons`
+  - Size: M | Depends on: `p0-atlas-migrations-setup`, `p0-go-service-skeletons`
   - Acceptance criteria:
     - river migrations applied on engine startup
     - Worker logs job start/finish with structured slog fields

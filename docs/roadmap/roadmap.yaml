@@ -164,18 +164,22 @@ phases:
       - 07-security-and-auth#dependency-supply-chain
   - id: phase-0-schema
     title: Postgres schema v1
-    description: Goose migrations and sqlc foundation for core domain tables per doc 08 bootstrap step 3.
+    description: Atlas declarative schema, generated migrations, and sqlc foundation for core domain tables per doc 08 bootstrap
+      step 3.
     spec_refs:
     - 08-implementation-decisions-and-conventions#bootstrap-order
     tasks:
-    - id: p0-goose-migrations-setup
-      title: Wire goose migrations with advisory lock on API startup
-      description: Add services/api/migrations/ with goose; API runs migrations on startup guarded by Postgres advisory lock
-        (single-node MVP).
+    - id: p0-atlas-migrations-setup
+      title: Wire Atlas declarative schema and migration tooling on API startup
+      description: Add services/api/schema/ (canonical Atlas HCL) and services/api/migrations/ (generated via atlas migrate
+        diff); API applies migrations on startup guarded by Postgres advisory lock (single-node MVP). Replace prior goose
+        bootstrap.
       acceptance_criteria:
-      - goose up applies all SQL migrations idempotently
+      - services/api/schema/ is canonical; zero hand-written DDL in migrations/
+      - atlas migrate apply applies all migrations idempotently
       - Concurrent API starts do not corrupt migrations (advisory lock)
       - task migrate runs migrations locally without starting full stack
+      - CI atlas migrate lint / schema drift gate passes
       depends_on:
       - p0-compose-dev-prod
       definition_of_done:
@@ -188,16 +192,18 @@ phases:
       - migrations
       spec_refs:
       - 08-implementation-decisions-and-conventions#pinned-tool-choices
+      - 08-implementation-decisions-and-conventions#database-schema-workflow
     - id: p0-schema-core-entities
-      title: 'Migration: organizations, teams, users, team_memberships'
-      description: 'Create tables: organizations, teams, users, team_memberships with UUIDv7 PKs, timestamptz created_at/updated_at,
-        snake_case naming.'
+      title: 'Schema: organizations, teams, users, team_memberships'
+      description: 'Add tables to canonical Atlas schema: organizations, teams, users, team_memberships with UUIDv7 PKs, timestamptz
+        created_at/updated_at, snake_case naming. Generate migration via atlas migrate diff — no hand-written DDL.'
       acceptance_criteria:
       - All PKs are UUID (v7 generated in app layer)
       - users.email unique per organization
       - team_memberships enforces user belongs to org of team
+      - Migration generated via atlas migrate diff from schema change (zero hand-written DDL)
       depends_on:
-      - p0-goose-migrations-setup
+      - p0-atlas-migrations-setup
       definition_of_done:
       - Follows the DoD checklist in 08-implementation-decisions-and-conventions
       - Follows the DoD checklist in 08-implementation-decisions-and-conventions; docker compose up works from a clean checkout
@@ -210,12 +216,14 @@ phases:
       - 02-core-domain-and-features#domain-model
       - 08-implementation-decisions-and-conventions#conventions
     - id: p0-schema-service-integration
-      title: 'Migration: services, integration_keys'
-      description: Add services and integration_keys tables; integration key stores hashed token, display prefix, plugin name,
-        JSON config, revoked_at.
+      title: 'Schema: services, integration_keys'
+      description: Add services and integration_keys tables to canonical Atlas schema; integration key stores hashed token,
+        display prefix, plugin name, JSON config, revoked_at. Generate migration via atlas migrate diff — no hand-written
+        DDL.
       acceptance_criteria:
       - integration_keys.token stores only hash; prefix column for UI last-4 style
       - integration_keys.plugin_name references compile-time registry names
+      - Migration generated via atlas migrate diff from schema change (zero hand-written DDL)
       depends_on:
       - p0-schema-core-entities
       definition_of_done:
@@ -230,12 +238,13 @@ phases:
       - 02-core-domain-and-features#domain-model
       - 07-security-and-auth#inbound-webhook-ingestion
     - id: p0-schema-scheduling
-      title: 'Migration: schedules, rotations, overrides'
+      title: 'Schema: schedules, rotations, overrides'
       description: Add schedules (IANA timezone), rotations (RRULE text, layer, participants JSON), overrides (start/end,
-        user swap, audit fields).
+        user swap, audit fields) to canonical Atlas schema. Generate migration via atlas migrate diff — no hand-written DDL.
       acceptance_criteria:
       - schedules.timezone stores valid IANA zone string
       - overrides support soft-delete with deleted_at where product requires audit retention
+      - Migration generated via atlas migrate diff from schema change (zero hand-written DDL)
       depends_on:
       - p0-schema-core-entities
       definition_of_done:
@@ -249,13 +258,15 @@ phases:
       spec_refs:
       - 02-core-domain-and-features#scheduling
     - id: p0-schema-escalation-alerts
-      title: 'Migration: escalation_policies, steps, alerts, notification_attempts'
+      title: 'Schema: escalation_policies, steps, alerts, notification_attempts'
       description: Add escalation_policies, escalation_steps (ordered, delay_minutes, repeat config), alerts (status, dedup_key,
-        escalation_state JSON), notification_attempts.
+        escalation_state JSON), notification_attempts to canonical Atlas schema. Generate migration via atlas migrate diff
+        — no hand-written DDL.
       acceptance_criteria:
       - 'alerts.status enum: triggered, acknowledged, closed'
       - alerts.dedup_key indexed per service_id
       - escalation_steps.order unique per policy
+      - Migration generated via atlas migrate diff from schema change (zero hand-written DDL)
       depends_on:
       - p0-schema-service-integration
       definition_of_done:
@@ -269,13 +280,14 @@ phases:
       spec_refs:
       - 02-core-domain-and-features#escalation-engine-semantics
     - id: p0-schema-sessions-audit
-      title: 'Migration: sessions, audit_events, refresh_tokens'
+      title: 'Schema: sessions, audit_events, refresh_tokens'
       description: Add server-side sessions (HttpOnly cookie backing), audit_events append-only, refresh_tokens for mobile
-        devices with revocation.
+        devices with revocation to canonical Atlas schema. Generate migration via atlas migrate diff — no hand-written DDL.
       acceptance_criteria:
       - sessions store expires_at and user_agent fingerprint
       - audit_events capture actor_id, action, target_type, target_id, metadata JSON
       - refresh_tokens individually revocable
+      - Migration generated via atlas migrate diff from schema change (zero hand-written DDL)
       depends_on:
       - p0-schema-core-entities
       definition_of_done:
@@ -609,7 +621,7 @@ phases:
       - river migrations applied on engine startup
       - Worker logs job start/finish with structured slog fields
       depends_on:
-      - p0-goose-migrations-setup
+      - p0-atlas-migrations-setup
       - p0-go-service-skeletons
       definition_of_done:
       - Follows the DoD checklist in 08-implementation-decisions-and-conventions

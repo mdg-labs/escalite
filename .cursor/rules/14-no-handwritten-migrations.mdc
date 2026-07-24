@@ -1,0 +1,40 @@
+---
+description: Enforce Atlas declarative schema — zero hand-written DDL migrations
+alwaysApply: true
+---
+
+# Zero hand-written DDL migrations
+
+Escalite uses **Atlas** with a canonical declarative schema. See doc 08 (`#database-schema-workflow`) and `docs/adr/0001-atlas-declarative-schema.md`.
+
+## Canonical source of truth
+
+| What | Path |
+| ---- | ---- |
+| Declarative schema | `services/api/schema/` (Atlas HCL) |
+| Generated migrations | `services/api/migrations/` (from `atlas migrate diff` only) |
+| sqlc queries | `services/api/queries/` |
+
+## Required workflow for schema changes
+
+1. Edit `services/api/schema/` (tables, columns, indexes, constraints).
+2. Run `atlas migrate diff --env local` (or `task schema:diff` when defined).
+3. Commit **both** schema and generated migration files in the same commit/PR.
+
+## Forbidden
+
+- Hand-writing `CREATE TABLE`, `ALTER TABLE`, `DROP`, indexes, or constraints in `services/api/migrations/`
+- Creating migration files manually (no `touch`, no copy-paste DDL into new `.sql` files)
+- Using `goose create` or other migration scaffolders for DDL
+- Committing schema changes without the matching generated migration
+- Editing generated migration DDL to "fix" drift — fix the canonical schema and re-run `atlas migrate diff`
+
+## Allowed
+
+- Hand-written **DML only** (INSERT/UPDATE backfills) in a migration file when paired with an ADR note in the PR — never DDL
+- Editing `atlas.hcl` and Taskfile migration tasks
+- sqlc query files in `services/api/queries/` (not schema DDL)
+
+## Verifier / orchestrator gate
+
+Schema-related task **FAIL** if committed migration files contain DDL that was not produced by `atlas migrate diff` in the same change set, or if canonical schema and migrations are out of sync.

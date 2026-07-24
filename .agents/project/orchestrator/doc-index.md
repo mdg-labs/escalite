@@ -12,6 +12,7 @@
 | `spec-08` | `docs/specs/08-implementation-decisions-and-conventions.md` | Pinned tooling, DoD, bootstrap order |
 | `roadmap` | `docs/roadmap/ROADMAP.md` | Phases, task IDs (generated) |
 | `roadmap-yaml` | `docs/roadmap/roadmap.yaml` | Machine-readable roadmap source |
+| `adr-0001` | `docs/adr/0001-atlas-declarative-schema.md` | Atlas declarative schema decision |
 
 ## Verification commands
 

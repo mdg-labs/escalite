@@ -97,12 +97,12 @@ Staging:
   - NEVER stage .agents/project/agent-memory/**
 
 Examples:
-  feat(api)[#42]: add goose migration bootstrap
+  feat(api)[#42]: add Atlas migration bootstrap
   fix(web)[#42]: correct urql cache key for services
 
 Pre-commit:
   - Run SCOPED CI GATE (below) — failure → blocked, no commit
-  - DB changes → goose -dir services/api/migrations postgres "$DATABASE_URL" up only (see DB MIGRATIONS)
+  - DB changes → atlas migrate diff + atlas migrate apply only (see DB MIGRATIONS)
 
 Handoff order (with KANEO SYNC):
   in-progress → implement → session ended → in-review → THEN commit
@@ -169,9 +169,15 @@ SCOPED CI GATE (mandatory before commit and in verifier Layer 2):
 
 ```text
 DB MIGRATIONS (mandatory in every execution prompt):
-- Schema changes → use project migration CLI only (goose -dir services/api/migrations postgres "$DATABASE_URL" up)
-- Never hand-write migration.sql or create migration directories manually
-- If CLI cannot run → report blocked; no SQL workaround
+- Canonical schema: services/api/schema/ (Atlas HCL) — edit this, never hand-write DDL in migrations/
+- Generate: atlas migrate diff --env local (or task schema:diff) after schema edits
+- Apply: atlas migrate apply --env local (or task migrate)
+- Never hand-write CREATE/ALTER/DROP in services/api/migrations/
+- Never create migration files manually — only via atlas migrate diff
+- DML-only backfills: allowed only with ADR note in PR — never DDL
+- sqlc reads canonical schema + services/api/queries/
+- CI must pass atlas migrate lint / drift gate
+- See .cursor/rules/14-no-handwritten-migrations.mdc and docs/adr/0001-atlas-declarative-schema.md
 ```
 
 ## PLAN FILE GUARD
