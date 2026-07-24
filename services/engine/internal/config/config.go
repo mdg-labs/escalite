@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 	"strings"
@@ -13,11 +14,18 @@ type Options struct {
 	RequireDatabase   bool
 }
 
+const (
+	encryptionKeyEnv   = "ESCALITE_ENCRYPTION_KEY"
+	encryptionKeyBytes = 32
+	encryptionKeyHint  = "generate with: openssl rand -hex 32 (see .env.example and docs/specs/07-security-and-auth.md)"
+)
+
 // Config holds parsed ESCALITE_* environment configuration.
 type Config struct {
-	ListenAddr  string
-	DatabaseURL string
-	LogLevel    string
+	ListenAddr     string
+	DatabaseURL    string
+	LogLevel       string
+	EncryptionKey  []byte
 }
 
 // Load reads and validates configuration from the environment.
@@ -35,6 +43,12 @@ func Load(opts Options) (Config, error) {
 		}
 		cfg.DatabaseURL = databaseURL
 	}
+
+	encryptionKey, err := loadEncryptionKey()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.EncryptionKey = encryptionKey
 
 	if err := validateLogLevel(cfg.LogLevel); err != nil {
 		return Config{}, err
@@ -69,4 +83,47 @@ func validateLogLevel(level string) error {
 	default:
 		return fmt.Errorf("invalid ESCALITE_LOG_LEVEL %q: use debug, info, warn, or error", level)
 	}
+}
+
+func loadEncryptionKey() ([]byte, error) {
+	value := strings.TrimSpace(os.Getenv(encryptionKeyEnv))
+	if value == "" {
+		return nil, fmt.Errorf("missing required environment variable %s: %s", encryptionKeyEnv, encryptionKeyHint)
+	}
+	if isEncryptionKeyPlaceholder(value) {
+		return nil, fmt.Errorf("%s is empty or a placeholder: %s", encryptionKeyEnv, encryptionKeyHint)
+	}
+	if len(value) != encryptionKeyBytes*2 {
+		return nil, fmt.Errorf("invalid %s: expected %d hex characters (%d bytes); %s",
+			encryptionKeyEnv, encryptionKeyBytes*2, encryptionKeyBytes, encryptionKeyHint)
+	}
+
+	key, err := hex.DecodeString(value)
+	if err != nil {
+		return nil, fmt.Errorf("invalid %s: must be hex-encoded 32-byte key; %s", encryptionKeyEnv, encryptionKeyHint)
+	}
+	if isAllZeros(key) {
+		return nil, fmt.Errorf("%s must not be all zeros: %s", encryptionKeyEnv, encryptionKeyHint)
+	}
+
+	return key, nil
+}
+
+func isEncryptionKeyPlaceholder(value string) bool {
+	switch strings.ToLower(value) {
+	case "changeme", "change-me", "change_me", "placeholder", "replace-me", "replace_me",
+		"your-key-here", "your_key_here", "secret", "xxx":
+		return true
+	default:
+		return false
+	}
+}
+
+func isAllZeros(key []byte) bool {
+	for _, b := range key {
+		if b != 0 {
+			return false
+		}
+	}
+	return true
 }
