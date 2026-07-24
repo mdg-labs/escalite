@@ -1,0 +1,19 @@
+{
+  "name": "@escalite/schema",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Escalite GraphQL SDL — single source of truth for API schema",
+  "exports": {
+    ".": "./graphql/schema.graphql",
+    "./graphql/*": "./graphql/*"
+  },
+  "files": [
+    "graphql"
+  ],
+  "scripts": {
+    "build": "node -e \"console.log('@escalite/schema build noop')\"",
+    "lint": "node scripts/validate-gqlgen.mjs",
+    "test:unit": "pnpm run lint",
+    "typecheck": "node -e \"console.log('@escalite/schema typecheck noop')\""
+  }
+}

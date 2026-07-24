@@ -1,0 +1,23 @@
+type Query {
+  """
+  Returns the authenticated user, or null when no session is present.
+  """
+  me: User
+
+  """
+  API liveness check (mirrors REST /healthz).
+  """
+  health: Health!
+}
+
+type Mutation {
+  """
+  Email + password login; establishes a server-side session cookie.
+  """
+  login(input: LoginInput!): LoginPayload!
+
+  """
+  Bootstrap the first organization and admin user when no users exist.
+  """
+  setup(input: SetupInput!): SetupPayload!
+}

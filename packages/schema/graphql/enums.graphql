@@ -1,0 +1,7 @@
+"""
+Organization-level role for RBAC (doc 07).
+"""
+enum UserRole {
+  ADMIN
+  MEMBER
+}

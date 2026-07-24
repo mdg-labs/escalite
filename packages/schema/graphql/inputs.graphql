@@ -1,0 +1,10 @@
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input SetupInput {
+  organizationName: String!
+  email: String!
+  password: String!
+}

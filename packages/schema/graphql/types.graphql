@@ -1,0 +1,36 @@
+type User {
+  id: ID!
+  email: String!
+  role: UserRole!
+  organizationId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Organization {
+  id: ID!
+  name: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Team {
+  id: ID!
+  organizationId: ID!
+  name: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Health {
+  status: String!
+}
+
+type LoginPayload {
+  user: User!
+}
+
+type SetupPayload {
+  organization: Organization!
+  user: User!
+}

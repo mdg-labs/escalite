@@ -1,0 +1,4 @@
+"""
+RFC 3339 UTC timestamp.
+"""
+scalar DateTime

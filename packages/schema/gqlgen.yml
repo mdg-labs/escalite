@@ -1,0 +1,24 @@
+# gqlgen config for SDL validation and future services/api wiring (p0-gqlgen-wiring).
+# Run: pnpm --filter @escalite/schema lint
+
+schema:
+  - graphql/*.graphql
+
+exec:
+  filename: validate/exec.go
+  package: schemavalidate
+
+model:
+  filename: validate/models_gen.go
+  package: schemavalidate
+
+resolver:
+  layout: follow-schema
+  dir: validate
+  package: schemavalidate
+  filename_template: "{name}.resolvers.go"
+
+models:
+  DateTime:
+    model:
+      - github.com/99designs/gqlgen/graphql.Time
