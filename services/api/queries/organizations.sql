@@ -8,6 +8,12 @@ FROM organizations
 WHERE id = $1
 LIMIT 1;
 
+-- name: GetFirstOrganization :one
+SELECT *
+FROM organizations
+ORDER BY created_at ASC
+LIMIT 1;
+
 -- name: CreateOrganization :one
 INSERT INTO organizations (
     id,

@@ -20,12 +20,22 @@ const (
 	encryptionKeyHint  = "generate with: openssl rand -hex 32 (see .env.example and docs/specs/07-security-and-auth.md)"
 )
 
+// OIDCConfig holds optional OIDC client settings. Nil means OIDC is disabled.
+type OIDCConfig struct {
+	IssuerURL    string
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
+	SuccessURL   string
+}
+
 // Config holds parsed ESCALITE_* environment configuration.
 type Config struct {
-	ListenAddr     string
-	DatabaseURL    string
-	LogLevel       string
-	EncryptionKey  []byte
+	ListenAddr    string
+	DatabaseURL   string
+	LogLevel      string
+	EncryptionKey []byte
+	OIDC          *OIDCConfig
 }
 
 // Load reads and validates configuration from the environment.
@@ -50,6 +60,12 @@ func Load(opts Options) (Config, error) {
 	}
 	cfg.EncryptionKey = encryptionKey
 
+	oidcCfg, err := loadOIDC()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.OIDC = oidcCfg
+
 	if err := validateLogLevel(cfg.LogLevel); err != nil {
 		return Config{}, err
 	}
@@ -59,6 +75,48 @@ func Load(opts Options) (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func loadOIDC() (*OIDCConfig, error) {
+	issuerURL := strings.TrimSpace(os.Getenv("ESCALITE_OIDC_ISSUER_URL"))
+	clientID := strings.TrimSpace(os.Getenv("ESCALITE_OIDC_CLIENT_ID"))
+	clientSecret := strings.TrimSpace(os.Getenv("ESCALITE_OIDC_CLIENT_SECRET"))
+
+	if issuerURL == "" && clientID == "" && clientSecret == "" {
+		return nil, nil
+	}
+
+	if issuerURL == "" || clientID == "" || clientSecret == "" {
+		return nil, fmt.Errorf(
+			"partial OIDC configuration: set all of ESCALITE_OIDC_ISSUER_URL, ESCALITE_OIDC_CLIENT_ID, and ESCALITE_OIDC_CLIENT_SECRET, or leave all unset",
+		)
+	}
+
+	redirectURL := strings.TrimSpace(os.Getenv("ESCALITE_OIDC_REDIRECT_URL"))
+	publicURL := strings.TrimSpace(os.Getenv("ESCALITE_PUBLIC_URL"))
+	if redirectURL == "" {
+		if publicURL == "" {
+			return nil, fmt.Errorf(
+				"OIDC enabled but redirect URL unknown: set ESCALITE_OIDC_REDIRECT_URL or ESCALITE_PUBLIC_URL",
+			)
+		}
+		redirectURL = strings.TrimSuffix(publicURL, "/") + "/api/v1/auth/oidc/callback"
+	}
+
+	successURL := publicURL
+	if successURL == "" {
+		successURL = "/"
+	} else {
+		successURL = strings.TrimSuffix(successURL, "/")
+	}
+
+	return &OIDCConfig{
+		IssuerURL:    issuerURL,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RedirectURL:  redirectURL,
+		SuccessURL:   successURL,
+	}, nil
 }
 
 func requireEnv(key, hint string) (string, error) {

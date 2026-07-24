@@ -22,6 +22,7 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteSession(ctx context.Context, arg DeleteSessionParams) error
 	GetActiveSessionByID(ctx context.Context, id uuid.UUID) (Session, error)
+	GetFirstOrganization(ctx context.Context) (Organization, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
 	GetSessionByID(ctx context.Context, arg GetSessionByIDParams) (Session, error)
 	GetTeamByID(ctx context.Context, arg GetTeamByIDParams) (Team, error)

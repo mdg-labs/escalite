@@ -108,6 +108,25 @@ func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganization
 	return i, err
 }
 
+const getFirstOrganization = `-- name: GetFirstOrganization :one
+SELECT id, name, created_at, updated_at
+FROM organizations
+ORDER BY created_at ASC
+LIMIT 1
+`
+
+func (q *Queries) GetFirstOrganization(ctx context.Context) (Organization, error) {
+	row := q.db.QueryRow(ctx, getFirstOrganization)
+	var i Organization
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getOrganizationByID = `-- name: GetOrganizationByID :one
 SELECT id, name, created_at, updated_at
 FROM organizations

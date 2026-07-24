@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/mdg-labs/escalite/services/api/internal/config"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 )
 
@@ -16,6 +17,14 @@ import (
 type Dependencies struct {
 	Logger *slog.Logger
 	Pool   *pgxpool.Pool
+	OIDC   *OIDCServices
+}
+
+// OIDCServices holds optional OIDC login handlers when ESCALITE_OIDC_* is configured.
+type OIDCServices struct {
+	Handler    *handlers.OIDCHandler
+	Login      http.HandlerFunc
+	Callback   http.HandlerFunc
 }
 
 // New returns an HTTP server with health, readiness, and API routes.
@@ -45,6 +54,11 @@ func New(deps Dependencies) http.Handler {
 		r.Post("/api/v1/setup", setup.ServeHTTP)
 		r.Post("/api/v1/login", login.ServeHTTP)
 
+		if deps.OIDC != nil {
+			r.Get("/api/v1/auth/oidc/login", deps.OIDC.Login)
+			r.Get("/api/v1/auth/oidc/callback", deps.OIDC.Callback)
+		}
+
 		r.Group(func(r chi.Router) {
 			r.Use(handlers.RequireSession(deps.Pool, deps.Logger))
 			r.Post("/api/v1/logout", logout.ServeHTTP)
@@ -59,4 +73,18 @@ func New(deps Dependencies) http.Handler {
 
 	deps.Logger.Info("router initialized")
 	return r
+}
+
+// NewOIDCServices builds OIDC route handlers when configuration is present.
+func NewOIDCServices(pool *pgxpool.Pool, logger *slog.Logger, oidcCfg *config.OIDCConfig, provider handlers.OIDCAuthenticator) *OIDCServices {
+	if oidcCfg == nil || provider == nil {
+		return nil
+	}
+
+	handler := handlers.NewOIDCHandler(pool, logger, provider, oidcCfg.SuccessURL)
+	return &OIDCServices{
+		Handler:  handler,
+		Login:    handler.Login,
+		Callback: handler.Callback,
+	}
 }

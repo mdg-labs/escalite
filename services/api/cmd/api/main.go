@@ -15,6 +15,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/config"
 	"github.com/mdg-labs/escalite/services/api/internal/log"
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
+	"github.com/mdg-labs/escalite/services/api/internal/oidc"
 	"github.com/mdg-labs/escalite/services/api/internal/server"
 )
 
@@ -51,9 +52,25 @@ func run() int {
 	}
 	defer pool.Close()
 
+	var oidcProvider *oidc.Provider
+	if cfg.OIDC != nil {
+		oidcProvider, err = oidc.NewProvider(ctx, oidc.Config{
+			IssuerURL:    cfg.OIDC.IssuerURL,
+			ClientID:     cfg.OIDC.ClientID,
+			ClientSecret: cfg.OIDC.ClientSecret,
+			RedirectURL:  cfg.OIDC.RedirectURL,
+		})
+		if err != nil {
+			logger.Error("oidc provider failed", "error", err)
+			return 1
+		}
+		logger.Info("oidc login enabled", "issuer", cfg.OIDC.IssuerURL)
+	}
+
 	handler := server.New(server.Dependencies{
 		Logger: logger,
 		Pool:   pool,
+		OIDC:   server.NewOIDCServices(pool, logger, cfg.OIDC, oidcProvider),
 	})
 	httpServer := &http.Server{
 		Addr:              cfg.ListenAddr,
