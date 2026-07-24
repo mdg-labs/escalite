@@ -1,6 +1,7 @@
 // Canonical Escalite database schema (Atlas HCL).
 // Core domain entities: organizations, teams, users, team_memberships (#39).
 // Service + integration key tables (#40).
+// Escalation policies, alerts, notification_attempts (#42).
 
 schema "public" {
 }
@@ -323,5 +324,332 @@ table "integration_keys" {
 
   index "integration_keys_plugin_name_idx" {
     columns = [column.plugin_name]
+  }
+}
+
+table "escalation_policies" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "service_id" {
+    null = false
+    type = uuid
+  }
+  column "name" {
+    null = false
+    type = text
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "escalation_policies_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "escalation_policies_service_id_organization_id_fkey" {
+    columns     = [column.service_id, column.organization_id]
+    ref_columns = [table.services.column.id, table.services.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "escalation_policies_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "escalation_policies_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  index "escalation_policies_service_id_idx" {
+    columns = [column.service_id]
+  }
+}
+
+table "escalation_steps" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "escalation_policy_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "step_order" {
+    null = false
+    type = integer
+  }
+  column "delay_minutes" {
+    null    = false
+    type    = integer
+    default = 0
+  }
+  column "repeat_last_step" {
+    null    = false
+    type    = boolean
+    default = false
+  }
+  column "max_repeats" {
+    null = true
+    type = integer
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "escalation_steps_escalation_policy_id_organization_id_fkey" {
+    columns     = [column.escalation_policy_id, column.organization_id]
+    ref_columns = [table.escalation_policies.column.id, table.escalation_policies.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "escalation_steps_escalation_policy_id_step_order_key" {
+    columns = [column.escalation_policy_id, column.step_order]
+  }
+
+  unique "escalation_steps_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "escalation_steps_escalation_policy_id_idx" {
+    columns = [column.escalation_policy_id]
+  }
+}
+
+table "alerts" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "service_id" {
+    null = false
+    type = uuid
+  }
+  column "integration_key_id" {
+    null = true
+    type = uuid
+  }
+  column "status" {
+    null = false
+    type = text
+  }
+  column "dedup_key" {
+    null = false
+    type = text
+  }
+  column "summary" {
+    null = false
+    type = text
+  }
+  column "description" {
+    null = true
+    type = text
+  }
+  column "priority" {
+    null    = false
+    type    = text
+    default = "high"
+  }
+  column "event_count" {
+    null    = false
+    type    = integer
+    default = 1
+  }
+  column "escalation_state" {
+    null    = false
+    type    = jsonb
+    default = sql("'{}'::jsonb")
+  }
+  column "acknowledged_at" {
+    null = true
+    type = timestamptz
+  }
+  column "closed_at" {
+    null = true
+    type = timestamptz
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "alerts_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "alerts_service_id_organization_id_fkey" {
+    columns     = [column.service_id, column.organization_id]
+    ref_columns = [table.services.column.id, table.services.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "alerts_integration_key_id_fkey" {
+    columns     = [column.integration_key_id]
+    ref_columns = [table.integration_keys.column.id]
+    on_delete   = SET_NULL
+  }
+
+  unique "alerts_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "alerts_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  index "alerts_service_id_idx" {
+    columns = [column.service_id]
+  }
+
+  index "alerts_service_id_dedup_key_idx" {
+    columns = [column.service_id, column.dedup_key]
+  }
+
+  index "alerts_status_idx" {
+    columns = [column.status]
+  }
+
+  check "alerts_status_check" {
+    expr = "(status = ANY (ARRAY['triggered'::text, 'acknowledged'::text, 'closed'::text]))"
+  }
+
+  check "alerts_priority_check" {
+    expr = "(priority = ANY (ARRAY['low'::text, 'high'::text]))"
+  }
+}
+
+table "notification_attempts" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "alert_id" {
+    null = false
+    type = uuid
+  }
+  column "escalation_step_id" {
+    null = true
+    type = uuid
+  }
+  column "channel" {
+    null = false
+    type = text
+  }
+  column "status" {
+    null = false
+    type = text
+  }
+  column "recipient" {
+    null    = false
+    type    = jsonb
+    default = sql("'{}'::jsonb")
+  }
+  column "error_message" {
+    null = true
+    type = text
+  }
+  column "sent_at" {
+    null = true
+    type = timestamptz
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "notification_attempts_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "notification_attempts_alert_id_organization_id_fkey" {
+    columns     = [column.alert_id, column.organization_id]
+    ref_columns = [table.alerts.column.id, table.alerts.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "notification_attempts_escalation_step_id_organization_id_fkey" {
+    columns     = [column.escalation_step_id, column.organization_id]
+    ref_columns = [table.escalation_steps.column.id, table.escalation_steps.column.organization_id]
+    on_delete   = SET_NULL
+  }
+
+  index "notification_attempts_alert_id_idx" {
+    columns = [column.alert_id]
+  }
+
+  index "notification_attempts_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  check "notification_attempts_status_check" {
+    expr = "(status = ANY (ARRAY['pending'::text, 'sent'::text, 'failed'::text]))"
   }
 }
