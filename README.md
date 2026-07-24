@@ -14,7 +14,21 @@ Install these tools before developing locally:
 | [Go](https://go.dev/) | ≥ 1.22 | API, engine, and integrations services |
 | [Task](https://taskfile.dev/) | 3.x | Root task runner (`go install github.com/go-task/task/v3/cmd/task@latest`) |
 
-Docker is required for the full local stack once `deploy/docker-compose/` lands (Phase 0, task #36).
+Docker is required for the full local stack via `deploy/docker-compose/` (see below).
+
+## Docker Compose stack
+
+```bash
+cp .env.example deploy/docker-compose/.env
+task compose:dev
+```
+
+Production-style local images:
+
+```bash
+task compose:prod:build
+task compose:prod
+```
 
 ## Quick start
 
@@ -25,7 +39,7 @@ pnpm install
 task dev
 ```
 
-`task dev` starts Turborepo `dev` tasks across JS workspaces. Go services and Docker Compose profiles are wired in follow-on Phase 0 tasks.
+`task dev` starts Turborepo `dev` tasks across JS workspaces. For the full stack (Postgres, API, engine, web), use `task compose:dev`.
 
 ## Monorepo layout
 
@@ -42,8 +56,12 @@ task dev
 task dev       # Start JS dev workflows (Turborepo)
 task build     # Build JS workspaces and Go services
 task test      # Run JS and Go tests
-task lint      # Lint JS workspaces
+task lint       # Lint JS workspaces
 task migrate   # Apply Postgres migrations (requires DATABASE_URL)
+task compose:dev        # Docker Compose dev profile
+task compose:prod:build # Build prod-profile images locally
+task compose:prod       # Run prod-profile stack
+task compose:config     # Validate compose YAML (dev + prod)
 ```
 
 Set `DATABASE_URL` or `ESCALITE_DATABASE_URL` before running `task migrate`.

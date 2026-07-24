@@ -1,0 +1,21 @@
+# Example Caddy config for optional TLS termination in front of Escalite.
+# Pair with the commented `caddy` service in docker-compose.yml.
+#
+# Replace the site address with your public hostname and ensure DNS points here.
+# Caddy obtains certificates automatically when using a real domain on :443.
+
+{$ESCALITE_PUBLIC_URL:localhost} {
+	encode gzip
+
+	handle /api/* {
+		reverse_proxy api:8080
+	}
+
+	handle /healthz {
+		reverse_proxy api:8080
+	}
+
+	handle {
+		reverse_proxy web:5173
+	}
+}

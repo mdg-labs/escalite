@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node -e \"console.log('@escalite/web build placeholder')\"",
-    "dev": "node -e \"console.log('@escalite/web dev placeholder — Vite shell lands in a later task')\"",
+    "build": "node -e \"const fs=require('fs'); fs.mkdirSync('dist',{recursive:true}); fs.writeFileSync('dist/index.html','<!DOCTYPE html><html><head><title>Escalite</title></head><body><h1>Escalite</h1><p>Web shell placeholder — Vite lands in a later task.</p></body></html>')\"",
+    "dev": "node -e \"const http=require('http'); const server=http.createServer((_req,res)=>{res.writeHead(200,{'Content-Type':'text/html'}); res.end('<!DOCTYPE html><html><body><h1>Escalite web (dev)</h1></body></html>');}); server.listen(5173,'0.0.0.0',()=>console.log('escalite web dev listening on :5173'));\"",
     "lint": "eslint .",
     "test:unit": "node -e \"console.log('@escalite/web test placeholder')\"",
     "typecheck": "tsc --noEmit"

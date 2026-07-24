@@ -34,6 +34,37 @@ tasks:
       - sh: test -n "{{.DATABASE_URL}}"
         msg: "Set DATABASE_URL or ESCALITE_DATABASE_URL before running migrations"
 
+  compose:dev:
+    desc: Start Docker Compose dev profile (postgres, api, engine, web)
+    dir: deploy/docker-compose
+    env:
+      ESCALITE_DOCKER_TARGET: dev
+    cmds:
+      - docker compose --profile dev up {{.CLI_ARGS}}
+
+  compose:prod:build:
+    desc: Build Docker Compose prod-profile images with local tags
+    dir: deploy/docker-compose
+    env:
+      ESCALITE_DOCKER_TARGET: prod
+    cmds:
+      - docker compose --profile prod build {{.CLI_ARGS}}
+
+  compose:prod:
+    desc: Start Docker Compose prod profile using locally tagged images
+    dir: deploy/docker-compose
+    env:
+      ESCALITE_DOCKER_TARGET: prod
+    cmds:
+      - docker compose --profile prod up {{.CLI_ARGS}}
+
+  compose:config:
+    desc: Validate Docker Compose configuration for dev and prod profiles
+    dir: deploy/docker-compose
+    cmds:
+      - ESCALITE_DOCKER_TARGET=dev docker compose --profile dev config
+      - ESCALITE_DOCKER_TARGET=prod docker compose --profile prod config
+
   go:build:
     internal: true
     cmds:
