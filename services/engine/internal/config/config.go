@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 // Options controls which environment variables are required at startup.
@@ -22,10 +23,11 @@ const (
 
 // Config holds parsed ESCALITE_* environment configuration.
 type Config struct {
-	ListenAddr     string
-	DatabaseURL    string
-	LogLevel       string
-	EncryptionKey  []byte
+	ListenAddr            string
+	DatabaseURL           string
+	LogLevel              string
+	EncryptionKey         []byte
+	HeartbeatScanInterval time.Duration
 }
 
 // Load reads and validates configuration from the environment.
@@ -53,6 +55,12 @@ func Load(opts Options) (Config, error) {
 	if err := validateLogLevel(cfg.LogLevel); err != nil {
 		return Config{}, err
 	}
+
+	heartbeatScanInterval, err := loadHeartbeatScanInterval()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.HeartbeatScanInterval = heartbeatScanInterval
 
 	if strings.TrimSpace(cfg.ListenAddr) == "" {
 		return Config{}, fmt.Errorf("ESCALITE_HTTP_ADDR must not be empty")
@@ -83,6 +91,29 @@ func validateLogLevel(level string) error {
 	default:
 		return fmt.Errorf("invalid ESCALITE_LOG_LEVEL %q: use debug, info, warn, or error", level)
 	}
+}
+
+func loadHeartbeatScanInterval() (time.Duration, error) {
+	const (
+		envKey  = "ESCALITE_HEARTBEAT_SCAN_INTERVAL"
+		defaultInterval = time.Minute
+		minInterval     = time.Second
+	)
+
+	value := strings.TrimSpace(os.Getenv(envKey))
+	if value == "" {
+		return defaultInterval, nil
+	}
+
+	interval, err := time.ParseDuration(value)
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s %q: use a Go duration such as 1m or 30s", envKey, value)
+	}
+	if interval < minInterval {
+		return 0, fmt.Errorf("%s must be at least %s", envKey, minInterval)
+	}
+
+	return interval, nil
 }
 
 func loadEncryptionKey() ([]byte, error) {

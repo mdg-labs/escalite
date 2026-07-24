@@ -21,7 +21,7 @@ func TestWorkerLoggingMiddlewareLogsStartAndFinish(t *testing.T) {
 	middleware := NewWorkerLoggingMiddleware(logger)
 	job := &rivertype.JobRow{
 		ID:      42,
-		Kind:    NoopArgs{}.Kind(),
+		Kind:    HeartbeatScanArgs{}.Kind(),
 		Queue:   river.QueueDefault,
 		Attempt: 1,
 	}
@@ -38,7 +38,7 @@ func TestWorkerLoggingMiddlewareLogsStartAndFinish(t *testing.T) {
 	require.NoError(t, json.Unmarshal(lines[0], &started))
 	assert.Equal(t, "job started", started["msg"])
 	assert.Equal(t, float64(42), started["job_id"])
-	assert.Equal(t, "noop", started["job_kind"])
+	assert.Equal(t, "heartbeat_scan", started["job_kind"])
 	assert.Equal(t, river.QueueDefault, started["queue"])
 	assert.Equal(t, float64(1), started["attempt"])
 
@@ -56,7 +56,7 @@ func TestWorkerLoggingMiddlewareLogsErrors(t *testing.T) {
 	middleware := NewWorkerLoggingMiddleware(logger)
 	job := &rivertype.JobRow{
 		ID:      7,
-		Kind:    NoopArgs{}.Kind(),
+		Kind:    HeartbeatScanArgs{}.Kind(),
 		Queue:   river.QueueDefault,
 		Attempt: 2,
 	}

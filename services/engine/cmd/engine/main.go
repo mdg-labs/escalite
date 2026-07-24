@@ -38,9 +38,10 @@ func run() int {
 
 	ctx := context.Background()
 	queueClient, err := queue.New(ctx, queue.Options{
-		DatabaseURL: cfg.DatabaseURL,
-		Logger:      logger,
-		Workers:     queue.NewWorkers(),
+		DatabaseURL:           cfg.DatabaseURL,
+		Logger:                logger,
+		Workers:               queue.NewWorkers(logger),
+		HeartbeatScanInterval: cfg.HeartbeatScanInterval,
 	})
 	if err != nil {
 		logger.Error("queue client failed", "error", err)

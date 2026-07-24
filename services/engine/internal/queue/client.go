@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,9 +17,10 @@ const defaultQueueWorkers = 10
 
 // Options configures a River queue client for the engine service.
 type Options struct {
-	DatabaseURL string
-	Logger      *slog.Logger
-	Workers     *river.Workers
+	DatabaseURL           string
+	Logger                *slog.Logger
+	Workers               *river.Workers
+	HeartbeatScanInterval time.Duration
 }
 
 // Client wraps a pgx pool and River worker client.
@@ -34,7 +36,7 @@ func New(ctx context.Context, opts Options) (*Client, error) {
 		opts.Logger = slog.Default()
 	}
 	if opts.Workers == nil {
-		opts.Workers = NewWorkers()
+		opts.Workers = NewWorkers(opts.Logger)
 	}
 
 	pool, err := pgxpool.New(ctx, opts.DatabaseURL)
@@ -51,7 +53,8 @@ func New(ctx context.Context, opts Options) (*Client, error) {
 		Queues: map[string]river.QueueConfig{
 			river.QueueDefault: {MaxWorkers: defaultQueueWorkers},
 		},
-		Workers: opts.Workers,
+		Workers:      opts.Workers,
+		PeriodicJobs: NewPeriodicJobs(opts.HeartbeatScanInterval),
 		Middleware: []rivertype.Middleware{
 			NewWorkerLoggingMiddleware(opts.Logger),
 		},
