@@ -37,6 +37,28 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	EscalationPolicy struct {
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Name           func(childComplexity int) int
+		OrganizationID func(childComplexity int) int
+		ServiceID      func(childComplexity int) int
+		Steps          func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
+	}
+
+	EscalationStep struct {
+		CreatedAt          func(childComplexity int) int
+		DelayMinutes       func(childComplexity int) int
+		EscalationPolicyID func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		MaxRepeats         func(childComplexity int) int
+		OrganizationID     func(childComplexity int) int
+		RepeatLastStep     func(childComplexity int) int
+		StepOrder          func(childComplexity int) int
+		UpdatedAt          func(childComplexity int) int
+	}
+
 	Health struct {
 		Status func(childComplexity int) int
 	}
@@ -46,8 +68,11 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		Login func(childComplexity int, input model.LoginInput) int
-		Setup func(childComplexity int, input model.SetupInput) int
+		CreateEscalationPolicy func(childComplexity int, input model.CreateEscalationPolicyInput) int
+		DeleteEscalationPolicy func(childComplexity int, id string) int
+		Login                  func(childComplexity int, input model.LoginInput) int
+		Setup                  func(childComplexity int, input model.SetupInput) int
+		UpdateEscalationPolicy func(childComplexity int, input model.UpdateEscalationPolicyInput) int
 	}
 
 	Organization struct {
@@ -58,8 +83,19 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Health func(childComplexity int) int
-		Me     func(childComplexity int) int
+		EscalationPolicies func(childComplexity int, serviceID string) int
+		EscalationPolicy   func(childComplexity int, id string) int
+		Health             func(childComplexity int) int
+		Me                 func(childComplexity int) int
+	}
+
+	Service struct {
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Name           func(childComplexity int) int
+		OrganizationID func(childComplexity int) int
+		TeamID         func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
 	}
 
 	SetupPayload struct {
@@ -92,10 +128,15 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (*model.LoginPayload, error)
 	Setup(ctx context.Context, input model.SetupInput) (*model.SetupPayload, error)
+	CreateEscalationPolicy(ctx context.Context, input model.CreateEscalationPolicyInput) (*model.EscalationPolicy, error)
+	UpdateEscalationPolicy(ctx context.Context, input model.UpdateEscalationPolicyInput) (*model.EscalationPolicy, error)
+	DeleteEscalationPolicy(ctx context.Context, id string) (bool, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
 	Health(ctx context.Context) (*model.Health, error)
+	EscalationPolicy(ctx context.Context, id string) (*model.EscalationPolicy, error)
+	EscalationPolicies(ctx context.Context, serviceID string) ([]*model.EscalationPolicy, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -116,6 +157,104 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	_ = ec
 	switch typeName + "." + field {
 
+	case "EscalationPolicy.createdAt":
+		if e.ComplexityRoot.EscalationPolicy.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationPolicy.CreatedAt(childComplexity), true
+	case "EscalationPolicy.id":
+		if e.ComplexityRoot.EscalationPolicy.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationPolicy.ID(childComplexity), true
+	case "EscalationPolicy.name":
+		if e.ComplexityRoot.EscalationPolicy.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationPolicy.Name(childComplexity), true
+	case "EscalationPolicy.organizationId":
+		if e.ComplexityRoot.EscalationPolicy.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationPolicy.OrganizationID(childComplexity), true
+	case "EscalationPolicy.serviceId":
+		if e.ComplexityRoot.EscalationPolicy.ServiceID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationPolicy.ServiceID(childComplexity), true
+	case "EscalationPolicy.steps":
+		if e.ComplexityRoot.EscalationPolicy.Steps == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationPolicy.Steps(childComplexity), true
+	case "EscalationPolicy.updatedAt":
+		if e.ComplexityRoot.EscalationPolicy.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationPolicy.UpdatedAt(childComplexity), true
+
+	case "EscalationStep.createdAt":
+		if e.ComplexityRoot.EscalationStep.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStep.CreatedAt(childComplexity), true
+	case "EscalationStep.delayMinutes":
+		if e.ComplexityRoot.EscalationStep.DelayMinutes == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStep.DelayMinutes(childComplexity), true
+	case "EscalationStep.escalationPolicyId":
+		if e.ComplexityRoot.EscalationStep.EscalationPolicyID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStep.EscalationPolicyID(childComplexity), true
+	case "EscalationStep.id":
+		if e.ComplexityRoot.EscalationStep.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStep.ID(childComplexity), true
+	case "EscalationStep.maxRepeats":
+		if e.ComplexityRoot.EscalationStep.MaxRepeats == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStep.MaxRepeats(childComplexity), true
+	case "EscalationStep.organizationId":
+		if e.ComplexityRoot.EscalationStep.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStep.OrganizationID(childComplexity), true
+	case "EscalationStep.repeatLastStep":
+		if e.ComplexityRoot.EscalationStep.RepeatLastStep == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStep.RepeatLastStep(childComplexity), true
+	case "EscalationStep.stepOrder":
+		if e.ComplexityRoot.EscalationStep.StepOrder == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStep.StepOrder(childComplexity), true
+	case "EscalationStep.updatedAt":
+		if e.ComplexityRoot.EscalationStep.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStep.UpdatedAt(childComplexity), true
+
 	case "Health.status":
 		if e.ComplexityRoot.Health.Status == nil {
 			break
@@ -130,6 +269,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.LoginPayload.User(childComplexity), true
 
+	case "Mutation.createEscalationPolicy":
+		if e.ComplexityRoot.Mutation.CreateEscalationPolicy == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createEscalationPolicy_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateEscalationPolicy(childComplexity, args["input"].(model.CreateEscalationPolicyInput)), true
+	case "Mutation.deleteEscalationPolicy":
+		if e.ComplexityRoot.Mutation.DeleteEscalationPolicy == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteEscalationPolicy_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteEscalationPolicy(childComplexity, args["id"].(string)), true
 	case "Mutation.login":
 		if e.ComplexityRoot.Mutation.Login == nil {
 			break
@@ -152,6 +313,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.Setup(childComplexity, args["input"].(model.SetupInput)), true
+	case "Mutation.updateEscalationPolicy":
+		if e.ComplexityRoot.Mutation.UpdateEscalationPolicy == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateEscalationPolicy_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateEscalationPolicy(childComplexity, args["input"].(model.UpdateEscalationPolicyInput)), true
 
 	case "Organization.createdAt":
 		if e.ComplexityRoot.Organization.CreatedAt == nil {
@@ -178,6 +350,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Organization.UpdatedAt(childComplexity), true
 
+	case "Query.escalationPolicies":
+		if e.ComplexityRoot.Query.EscalationPolicies == nil {
+			break
+		}
+
+		args, err := ec.field_Query_escalationPolicies_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.EscalationPolicies(childComplexity, args["serviceId"].(string)), true
+	case "Query.escalationPolicy":
+		if e.ComplexityRoot.Query.EscalationPolicy == nil {
+			break
+		}
+
+		args, err := ec.field_Query_escalationPolicy_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.EscalationPolicy(childComplexity, args["id"].(string)), true
 	case "Query.health":
 		if e.ComplexityRoot.Query.Health == nil {
 			break
@@ -191,6 +385,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Me(childComplexity), true
+
+	case "Service.createdAt":
+		if e.ComplexityRoot.Service.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Service.CreatedAt(childComplexity), true
+	case "Service.id":
+		if e.ComplexityRoot.Service.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Service.ID(childComplexity), true
+	case "Service.name":
+		if e.ComplexityRoot.Service.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Service.Name(childComplexity), true
+	case "Service.organizationId":
+		if e.ComplexityRoot.Service.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Service.OrganizationID(childComplexity), true
+	case "Service.teamId":
+		if e.ComplexityRoot.Service.TeamID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Service.TeamID(childComplexity), true
+	case "Service.updatedAt":
+		if e.ComplexityRoot.Service.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Service.UpdatedAt(childComplexity), true
 
 	case "SetupPayload.organization":
 		if e.ComplexityRoot.SetupPayload.Organization == nil {
@@ -281,8 +512,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := newExecutionContext(opCtx, e, make(chan graphql.DeferredResult))
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputCreateEscalationPolicyInput,
+		ec.unmarshalInputEscalationStepInput,
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputSetupInput,
+		ec.unmarshalInputUpdateEscalationPolicyInput,
 	)
 	first := true
 
@@ -376,6 +610,25 @@ input SetupInput {
   email: String!
   password: String!
 }
+
+input EscalationStepInput {
+  stepOrder: Int!
+  delayMinutes: Int!
+  repeatLastStep: Boolean = false
+  maxRepeats: Int
+}
+
+input CreateEscalationPolicyInput {
+  serviceId: ID!
+  name: String!
+  steps: [EscalationStepInput!]!
+}
+
+input UpdateEscalationPolicyInput {
+  id: ID!
+  name: String!
+  steps: [EscalationStepInput!]!
+}
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Query {
   """
@@ -387,6 +640,16 @@ input SetupInput {
   API liveness check (mirrors REST /healthz).
   """
   health: Health!
+
+  """
+  Fetch a single escalation policy by ID (org admin only).
+  """
+  escalationPolicy(id: ID!): EscalationPolicy
+
+  """
+  List escalation policies for a service (org admin only).
+  """
+  escalationPolicies(serviceId: ID!): [EscalationPolicy!]!
 }
 
 type Mutation {
@@ -399,6 +662,21 @@ type Mutation {
   Bootstrap the first organization and admin user when no users exist.
   """
   setup(input: SetupInput!): SetupPayload!
+
+  """
+  Create an escalation policy with ordered steps (org admin only).
+  """
+  createEscalationPolicy(input: CreateEscalationPolicyInput!): EscalationPolicy!
+
+  """
+  Replace an escalation policy and its steps (org admin only).
+  """
+  updateEscalationPolicy(input: UpdateEscalationPolicyInput!): EscalationPolicy!
+
+  """
+  Delete an escalation policy and its steps (org admin only).
+  """
+  deleteEscalationPolicy(id: ID!): Boolean!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/scalars.graphql", Input: `"""
@@ -435,6 +713,37 @@ type Team {
   updatedAt: DateTime!
 }
 
+type Service {
+  id: ID!
+  organizationId: ID!
+  teamId: ID!
+  name: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type EscalationPolicy {
+  id: ID!
+  organizationId: ID!
+  serviceId: ID!
+  name: String!
+  steps: [EscalationStep!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type EscalationStep {
+  id: ID!
+  escalationPolicyId: ID!
+  organizationId: ID!
+  stepOrder: Int!
+  delayMinutes: Int!
+  repeatLastStep: Boolean!
+  maxRepeats: Int
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type Health {
   status: String!
 }
@@ -454,6 +763,50 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // childFields_* functions provide shared child field context lookups.
 // Each function is generated once per unique object type, deduplicating the
 // switch statements that were previously inlined in every fieldContext_* function.
+
+func (ec *executionContext) childFields_EscalationPolicy(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_EscalationPolicy_id(ctx, field)
+	case "organizationId":
+		return ec.fieldContext_EscalationPolicy_organizationId(ctx, field)
+	case "serviceId":
+		return ec.fieldContext_EscalationPolicy_serviceId(ctx, field)
+	case "name":
+		return ec.fieldContext_EscalationPolicy_name(ctx, field)
+	case "steps":
+		return ec.fieldContext_EscalationPolicy_steps(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_EscalationPolicy_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_EscalationPolicy_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type EscalationPolicy", field.Name)
+}
+
+func (ec *executionContext) childFields_EscalationStep(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_EscalationStep_id(ctx, field)
+	case "escalationPolicyId":
+		return ec.fieldContext_EscalationStep_escalationPolicyId(ctx, field)
+	case "organizationId":
+		return ec.fieldContext_EscalationStep_organizationId(ctx, field)
+	case "stepOrder":
+		return ec.fieldContext_EscalationStep_stepOrder(ctx, field)
+	case "delayMinutes":
+		return ec.fieldContext_EscalationStep_delayMinutes(ctx, field)
+	case "repeatLastStep":
+		return ec.fieldContext_EscalationStep_repeatLastStep(ctx, field)
+	case "maxRepeats":
+		return ec.fieldContext_EscalationStep_maxRepeats(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_EscalationStep_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_EscalationStep_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type EscalationStep", field.Name)
+}
 
 func (ec *executionContext) childFields_Health(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
@@ -629,6 +982,34 @@ func (ec *executionContext) childFields___Type(ctx context.Context, field graphq
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_createEscalationPolicy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateEscalationPolicyInput, error) {
+			return ec.unmarshalNCreateEscalationPolicyInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateEscalationPolicyInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteEscalationPolicy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -657,6 +1038,20 @@ func (ec *executionContext) field_Mutation_setup_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updateEscalationPolicy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateEscalationPolicyInput, error) {
+			return ec.unmarshalNUpdateEscalationPolicyInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateEscalationPolicyInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -668,6 +1063,34 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_escalationPolicies_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "serviceId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["serviceId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_escalationPolicy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -730,6 +1153,383 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ***************************** args.gotpl *****************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _EscalationPolicy_id(ctx context.Context, field graphql.CollectedField, obj *model.EscalationPolicy) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationPolicy_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationPolicy_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationPolicy", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationPolicy_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.EscalationPolicy) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationPolicy_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationPolicy_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationPolicy", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationPolicy_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.EscalationPolicy) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationPolicy_serviceId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationPolicy_serviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationPolicy", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationPolicy_name(ctx context.Context, field graphql.CollectedField, obj *model.EscalationPolicy) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationPolicy_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationPolicy_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationPolicy", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationPolicy_steps(ctx context.Context, field graphql.CollectedField, obj *model.EscalationPolicy) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationPolicy_steps(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Steps, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.EscalationStep) graphql.Marshaler {
+			return ec.marshalNEscalationStep2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationPolicy_steps(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EscalationPolicy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_EscalationStep(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EscalationPolicy_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.EscalationPolicy) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationPolicy_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationPolicy_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationPolicy", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationPolicy_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.EscalationPolicy) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationPolicy_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationPolicy_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationPolicy", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStep_id(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStep_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStep_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStep", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStep_escalationPolicyId(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStep_escalationPolicyId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EscalationPolicyID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStep_escalationPolicyId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStep", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStep_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStep_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStep_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStep", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStep_stepOrder(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStep_stepOrder(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StepOrder, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStep_stepOrder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStep", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStep_delayMinutes(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStep_delayMinutes(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DelayMinutes, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStep_delayMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStep", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStep_repeatLastStep(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStep_repeatLastStep(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RepeatLastStep, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStep_repeatLastStep(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStep", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStep_maxRepeats(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStep_maxRepeats(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MaxRepeats, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *int) graphql.Marshaler {
+			return ec.marshalOInt2ᚖint(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStep_maxRepeats(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStep", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStep_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStep_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStep_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStep", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStep_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStep_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStep_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStep", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
 
 func (ec *executionContext) _Health_status(ctx context.Context, field graphql.CollectedField, obj *model.Health) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
@@ -868,6 +1668,138 @@ func (ec *executionContext) fieldContext_Mutation_setup(ctx context.Context, fie
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_setup_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createEscalationPolicy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createEscalationPolicy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateEscalationPolicy(ctx, fc.Args["input"].(model.CreateEscalationPolicyInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.EscalationPolicy) graphql.Marshaler {
+			return ec.marshalNEscalationPolicy2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationPolicy(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createEscalationPolicy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_EscalationPolicy(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createEscalationPolicy_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateEscalationPolicy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateEscalationPolicy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateEscalationPolicy(ctx, fc.Args["input"].(model.UpdateEscalationPolicyInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.EscalationPolicy) graphql.Marshaler {
+			return ec.marshalNEscalationPolicy2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationPolicy(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateEscalationPolicy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_EscalationPolicy(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateEscalationPolicy_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteEscalationPolicy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteEscalationPolicy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteEscalationPolicy(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteEscalationPolicy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteEscalationPolicy_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -1030,6 +1962,94 @@ func (ec *executionContext) fieldContext_Query_health(_ context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_escalationPolicy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_escalationPolicy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().EscalationPolicy(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.EscalationPolicy) graphql.Marshaler {
+			return ec.marshalOEscalationPolicy2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationPolicy(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_escalationPolicy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_EscalationPolicy(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_escalationPolicy_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_escalationPolicies(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_escalationPolicies(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().EscalationPolicies(ctx, fc.Args["serviceId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.EscalationPolicy) graphql.Marshaler {
+			return ec.marshalNEscalationPolicy2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationPolicyᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_escalationPolicies(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_EscalationPolicy(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_escalationPolicies_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1104,6 +2124,144 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _Service_id(ctx context.Context, field graphql.CollectedField, obj *model.Service) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Service_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Service_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Service", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Service_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.Service) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Service_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Service_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Service", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Service_teamId(ctx context.Context, field graphql.CollectedField, obj *model.Service) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Service_teamId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TeamID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Service_teamId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Service", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Service_name(ctx context.Context, field graphql.CollectedField, obj *model.Service) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Service_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Service_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Service", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Service_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Service) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Service_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Service_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Service", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _Service_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Service) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Service_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Service_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Service", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
 func (ec *executionContext) _SetupPayload_organization(ctx context.Context, field graphql.CollectedField, obj *model.SetupPayload) (ret graphql.Marshaler) {
@@ -2482,6 +3640,105 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputCreateEscalationPolicyInput(ctx context.Context, obj any) (model.CreateEscalationPolicyInput, error) {
+	var it model.CreateEscalationPolicyInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"serviceId", "name", "steps"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "serviceId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "steps":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("steps"))
+			data, err := ec.unmarshalNEscalationStepInput2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Steps = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputEscalationStepInput(ctx context.Context, obj any) (model.EscalationStepInput, error) {
+	var it model.EscalationStepInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["repeatLastStep"]; !present {
+		asMap["repeatLastStep"] = false
+	}
+
+	fieldsInOrder := [...]string{"stepOrder", "delayMinutes", "repeatLastStep", "maxRepeats"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "stepOrder":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("stepOrder"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StepOrder = data
+		case "delayMinutes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("delayMinutes"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DelayMinutes = data
+		case "repeatLastStep":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("repeatLastStep"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RepeatLastStep = data
+		case "maxRepeats":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxRepeats"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MaxRepeats = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj any) (model.LoginInput, error) {
 	var it model.LoginInput
 	if obj == nil {
@@ -2563,6 +3820,50 @@ func (ec *executionContext) unmarshalInputSetupInput(ctx context.Context, obj an
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateEscalationPolicyInput(ctx context.Context, obj any) (model.UpdateEscalationPolicyInput, error) {
+	var it model.UpdateEscalationPolicyInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "steps"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "steps":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("steps"))
+			data, err := ec.unmarshalNEscalationStepInput2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Steps = data
+		}
+	}
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2570,6 +3871,152 @@ func (ec *executionContext) unmarshalInputSetupInput(ctx context.Context, obj an
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var escalationPolicyImplementors = []string{"EscalationPolicy"}
+
+func (ec *executionContext) _EscalationPolicy(ctx context.Context, sel ast.SelectionSet, obj *model.EscalationPolicy) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, escalationPolicyImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EscalationPolicy")
+		case "id":
+			out.Values[i] = ec._EscalationPolicy_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "organizationId":
+			out.Values[i] = ec._EscalationPolicy_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceId":
+			out.Values[i] = ec._EscalationPolicy_serviceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._EscalationPolicy_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "steps":
+			out.Values[i] = ec._EscalationPolicy_steps(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._EscalationPolicy_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._EscalationPolicy_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var escalationStepImplementors = []string{"EscalationStep"}
+
+func (ec *executionContext) _EscalationStep(ctx context.Context, sel ast.SelectionSet, obj *model.EscalationStep) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, escalationStepImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EscalationStep")
+		case "id":
+			out.Values[i] = ec._EscalationStep_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "escalationPolicyId":
+			out.Values[i] = ec._EscalationStep_escalationPolicyId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "organizationId":
+			out.Values[i] = ec._EscalationStep_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "stepOrder":
+			out.Values[i] = ec._EscalationStep_stepOrder(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "delayMinutes":
+			out.Values[i] = ec._EscalationStep_delayMinutes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "repeatLastStep":
+			out.Values[i] = ec._EscalationStep_repeatLastStep(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxRepeats":
+			out.Values[i] = ec._EscalationStep_maxRepeats(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._EscalationStep_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._EscalationStep_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
 
 var healthImplementors = []string{"Health"}
 
@@ -2677,6 +4124,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "setup":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_setup(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createEscalationPolicy":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createEscalationPolicy(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateEscalationPolicy":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateEscalationPolicy(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteEscalationPolicy":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteEscalationPolicy(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -2819,6 +4287,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "escalationPolicy":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_escalationPolicy(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "escalationPolicies":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_escalationPolicies(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -2832,6 +4344,69 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			})
 			if out.Values[i] == graphql.RequiredNull {
 				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var serviceImplementors = []string{"Service"}
+
+func (ec *executionContext) _Service(ctx context.Context, sel ast.SelectionSet, obj *model.Service) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, serviceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Service")
+		case "id":
+			out.Values[i] = ec._Service_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "organizationId":
+			out.Values[i] = ec._Service_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "teamId":
+			out.Values[i] = ec._Service_teamId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Service_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._Service_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Service_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -3426,6 +5001,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNCreateEscalationPolicyInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateEscalationPolicyInput(ctx context.Context, v any) (model.CreateEscalationPolicyInput, error) {
+	res, err := ec.unmarshalInputCreateEscalationPolicyInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNDateTime2timeᚐTime(ctx context.Context, v any) (time.Time, error) {
 	res, err := graphql.UnmarshalTime(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3440,6 +5020,81 @@ func (ec *executionContext) marshalNDateTime2timeᚐTime(ctx context.Context, se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNEscalationPolicy2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationPolicy(ctx context.Context, sel ast.SelectionSet, v model.EscalationPolicy) graphql.Marshaler {
+	return ec._EscalationPolicy(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEscalationPolicy2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationPolicyᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EscalationPolicy) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNEscalationPolicy2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationPolicy(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNEscalationPolicy2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationPolicy(ctx context.Context, sel ast.SelectionSet, v *model.EscalationPolicy) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EscalationPolicy(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEscalationStep2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EscalationStep) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNEscalationStep2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStep(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNEscalationStep2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStep(ctx context.Context, sel ast.SelectionSet, v *model.EscalationStep) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EscalationStep(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNEscalationStepInput2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepInputᚄ(ctx context.Context, v any) ([]*model.EscalationStepInput, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]*model.EscalationStepInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNEscalationStepInput2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNEscalationStepInput2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepInput(ctx context.Context, v any) (*model.EscalationStepInput, error) {
+	res, err := ec.unmarshalInputEscalationStepInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNHealth2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHealth(ctx context.Context, sel ast.SelectionSet, v model.Health) graphql.Marshaler {
@@ -3464,6 +5119,22 @@ func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (str
 func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	_ = sel
 	res := graphql.MarshalID(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalInt(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -3534,6 +5205,11 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNUpdateEscalationPolicyInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateEscalationPolicyInput(ctx context.Context, v any) (model.UpdateEscalationPolicyInput, error) {
+	res, err := ec.unmarshalInputUpdateEscalationPolicyInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
@@ -3723,6 +5399,31 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	_ = sel
 	_ = ctx
 	res := graphql.MarshalBoolean(*v)
+	return res
+}
+
+func (ec *executionContext) marshalOEscalationPolicy2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationPolicy(ctx context.Context, sel ast.SelectionSet, v *model.EscalationPolicy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EscalationPolicy(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalInt(*v)
 	return res
 }
 

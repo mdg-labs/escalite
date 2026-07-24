@@ -18,11 +18,15 @@ const (
 	ActionLoginFailed           = "auth.login_failed"
 	ActionLogout                = "auth.logout"
 	ActionRoleChanged           = "user.role_changed"
-	ActionIntegrationKeyCreated = "integration_key.created"
-	ActionIntegrationKeyRevoked = "integration_key.revoked"
+	ActionIntegrationKeyCreated   = "integration_key.created"
+	ActionIntegrationKeyRevoked   = "integration_key.revoked"
+	ActionEscalationPolicyCreated = "escalation_policy.created"
+	ActionEscalationPolicyUpdated = "escalation_policy.updated"
+	ActionEscalationPolicyDeleted = "escalation_policy.deleted"
 
-	targetTypeUser           = "user"
-	targetTypeIntegrationKey = "integration_key"
+	targetTypeUser             = "user"
+	targetTypeIntegrationKey   = "integration_key"
+	targetTypeEscalationPolicy = "escalation_policy"
 )
 
 // RequestMeta captures HTTP request context stored in audit metadata.
@@ -149,6 +153,45 @@ func (r *Recorder) IntegrationKeyRevoked(ctx context.Context, q db.Querier, orgI
 		Action:         ActionIntegrationKeyRevoked,
 		TargetType:     pgtype.Text{String: targetTypeIntegrationKey, Valid: true},
 		TargetID:       pgtype.UUID{Bytes: keyID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// EscalationPolicyCreated records escalation policy creation.
+func (r *Recorder) EscalationPolicyCreated(ctx context.Context, q db.Querier, orgID, actorID, policyID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionEscalationPolicyCreated,
+		TargetType:     pgtype.Text{String: targetTypeEscalationPolicy, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: policyID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// EscalationPolicyUpdated records escalation policy updates.
+func (r *Recorder) EscalationPolicyUpdated(ctx context.Context, q db.Querier, orgID, actorID, policyID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionEscalationPolicyUpdated,
+		TargetType:     pgtype.Text{String: targetTypeEscalationPolicy, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: policyID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// EscalationPolicyDeleted records escalation policy deletion.
+func (r *Recorder) EscalationPolicyDeleted(ctx context.Context, q db.Querier, orgID, actorID, policyID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionEscalationPolicyDeleted,
+		TargetType:     pgtype.Text{String: targetTypeEscalationPolicy, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: policyID, Valid: true},
 		Metadata:       []byte("{}"),
 	})
 }

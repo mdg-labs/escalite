@@ -13,20 +13,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-
 	"github.com/mdg-labs/escalite/services/api/graph/model"
 	"github.com/mdg-labs/escalite/services/api/internal/audit"
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/gqlerr"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
-)
-
-const (
-	invalidCredentialsMessage = "invalid credentials"
-	minPasswordLength         = 8
 )
 
 // Login is the resolver for the login field.
@@ -232,26 +226,6 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 // Health is the resolver for the health field.
 func (r *queryResolver) Health(ctx context.Context) (*model.Health, error) {
 	return &model.Health{Status: "ok"}, nil
-}
-
-func (r *mutationResolver) recordFailedLogin(
-	ctx context.Context,
-	queries db.Querier,
-	user *db.User,
-	meta audit.RequestMeta,
-) {
-	orgID := uuid.Nil
-	var targetUserID *uuid.UUID
-	if user != nil {
-		orgID = user.OrganizationID
-		targetUserID = &user.ID
-	} else {
-		org, err := queries.GetFirstOrganization(ctx)
-		if err == nil {
-			orgID = org.ID
-		}
-	}
-	r.audit.LoginFailed(ctx, queries, orgID, targetUserID, meta)
 }
 
 // Mutation returns MutationResolver implementation.

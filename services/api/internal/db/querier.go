@@ -16,17 +16,24 @@ type Querier interface {
 	CountOrganizations(ctx context.Context) (int64, error)
 	CountUsers(ctx context.Context) (int64, error)
 	CreateAuditEvent(ctx context.Context, arg CreateAuditEventParams) (AuditEvent, error)
+	CreateEscalationPolicy(ctx context.Context, arg CreateEscalationPolicyParams) (EscalationPolicy, error)
+	CreateEscalationStep(ctx context.Context, arg CreateEscalationStepParams) (EscalationStep, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
 	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetToken, error)
+	CreateService(ctx context.Context, arg CreateServiceParams) (Service, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateTeam(ctx context.Context, arg CreateTeamParams) (Team, error)
 	CreateTeamMembership(ctx context.Context, arg CreateTeamMembershipParams) (TeamMembership, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteEscalationPolicy(ctx context.Context, arg DeleteEscalationPolicyParams) error
+	DeleteEscalationStepsByPolicyID(ctx context.Context, arg DeleteEscalationStepsByPolicyIDParams) error
 	DeleteSession(ctx context.Context, arg DeleteSessionParams) error
 	GetActiveSessionByID(ctx context.Context, id uuid.UUID) (Session, error)
+	GetEscalationPolicyByID(ctx context.Context, arg GetEscalationPolicyByIDParams) (EscalationPolicy, error)
 	GetFirstOrganization(ctx context.Context) (Organization, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
 	GetPasswordResetTokenByHash(ctx context.Context, tokenHash string) (PasswordResetToken, error)
+	GetServiceByID(ctx context.Context, arg GetServiceByIDParams) (Service, error)
 	GetSessionByID(ctx context.Context, arg GetSessionByIDParams) (Session, error)
 	GetTeamByID(ctx context.Context, arg GetTeamByIDParams) (Team, error)
 	GetUserByEmail(ctx context.Context, arg GetUserByEmailParams) (User, error)
@@ -35,11 +42,14 @@ type Querier interface {
 	HasTeamMembership(ctx context.Context, arg HasTeamMembershipParams) (bool, error)
 	InvalidateUnusedPasswordResetTokensForUser(ctx context.Context, userID uuid.UUID) error
 	ListAuditEventsByOrganization(ctx context.Context, organizationID uuid.UUID) ([]AuditEvent, error)
+	ListEscalationPoliciesByServiceID(ctx context.Context, arg ListEscalationPoliciesByServiceIDParams) ([]EscalationPolicy, error)
+	ListEscalationStepsByPolicyID(ctx context.Context, arg ListEscalationStepsByPolicyIDParams) ([]EscalationStep, error)
 	MarkPasswordResetTokenUsed(ctx context.Context, id uuid.UUID) error
 	PingDatabase(ctx context.Context) (int32, error)
 	RevokeAllUserSessions(ctx context.Context, arg RevokeAllUserSessionsParams) error
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
 	SessionsSchemaReady(ctx context.Context) (bool, error)
+	UpdateEscalationPolicy(ctx context.Context, arg UpdateEscalationPolicyParams) (EscalationPolicy, error)
 	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
 }
 

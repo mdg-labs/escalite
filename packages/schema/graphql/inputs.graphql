@@ -8,3 +8,22 @@ input SetupInput {
   email: String!
   password: String!
 }
+
+input EscalationStepInput {
+  stepOrder: Int!
+  delayMinutes: Int!
+  repeatLastStep: Boolean = false
+  maxRepeats: Int
+}
+
+input CreateEscalationPolicyInput {
+  serviceId: ID!
+  name: String!
+  steps: [EscalationStepInput!]!
+}
+
+input UpdateEscalationPolicyInput {
+  id: ID!
+  name: String!
+  steps: [EscalationStepInput!]!
+}

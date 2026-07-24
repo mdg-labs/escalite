@@ -10,6 +10,41 @@ import (
 	"time"
 )
 
+type CreateEscalationPolicyInput struct {
+	ServiceID string                 `json:"serviceId"`
+	Name      string                 `json:"name"`
+	Steps     []*EscalationStepInput `json:"steps"`
+}
+
+type EscalationPolicy struct {
+	ID             string            `json:"id"`
+	OrganizationID string            `json:"organizationId"`
+	ServiceID      string            `json:"serviceId"`
+	Name           string            `json:"name"`
+	Steps          []*EscalationStep `json:"steps"`
+	CreatedAt      time.Time         `json:"createdAt"`
+	UpdatedAt      time.Time         `json:"updatedAt"`
+}
+
+type EscalationStep struct {
+	ID                 string    `json:"id"`
+	EscalationPolicyID string    `json:"escalationPolicyId"`
+	OrganizationID     string    `json:"organizationId"`
+	StepOrder          int       `json:"stepOrder"`
+	DelayMinutes       int       `json:"delayMinutes"`
+	RepeatLastStep     bool      `json:"repeatLastStep"`
+	MaxRepeats         *int      `json:"maxRepeats,omitempty"`
+	CreatedAt          time.Time `json:"createdAt"`
+	UpdatedAt          time.Time `json:"updatedAt"`
+}
+
+type EscalationStepInput struct {
+	StepOrder      int   `json:"stepOrder"`
+	DelayMinutes   int   `json:"delayMinutes"`
+	RepeatLastStep *bool `json:"repeatLastStep,omitempty"`
+	MaxRepeats     *int  `json:"maxRepeats,omitempty"`
+}
+
 type Health struct {
 	Status string `json:"status"`
 }
@@ -36,6 +71,15 @@ type Organization struct {
 type Query struct {
 }
 
+type Service struct {
+	ID             string    `json:"id"`
+	OrganizationID string    `json:"organizationId"`
+	TeamID         string    `json:"teamId"`
+	Name           string    `json:"name"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
+}
+
 type SetupInput struct {
 	OrganizationName string `json:"organizationName"`
 	Email            string `json:"email"`
@@ -53,6 +97,12 @@ type Team struct {
 	Name           string    `json:"name"`
 	CreatedAt      time.Time `json:"createdAt"`
 	UpdatedAt      time.Time `json:"updatedAt"`
+}
+
+type UpdateEscalationPolicyInput struct {
+	ID    string                 `json:"id"`
+	Name  string                 `json:"name"`
+	Steps []*EscalationStepInput `json:"steps"`
 }
 
 type User struct {

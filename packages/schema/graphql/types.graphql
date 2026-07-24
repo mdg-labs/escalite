@@ -22,6 +22,37 @@ type Team {
   updatedAt: DateTime!
 }
 
+type Service {
+  id: ID!
+  organizationId: ID!
+  teamId: ID!
+  name: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type EscalationPolicy {
+  id: ID!
+  organizationId: ID!
+  serviceId: ID!
+  name: String!
+  steps: [EscalationStep!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type EscalationStep {
+  id: ID!
+  escalationPolicyId: ID!
+  organizationId: ID!
+  stepOrder: Int!
+  delayMinutes: Int!
+  repeatLastStep: Boolean!
+  maxRepeats: Int
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type Health {
   status: String!
 }
