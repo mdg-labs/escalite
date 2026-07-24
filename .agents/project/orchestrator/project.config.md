@@ -23,7 +23,7 @@
 | MCP server | `user-kaneo` |
 | Workspace | MDG-Labs (`X3VbytvC7pKgazK2dAsOQIFtdGYRzdGH`) |
 | Project | Escalite (`bkbnmftqdr54r9gcgrgtndbw`) |
-| Ready status slug | `to-do` |
+| Ready status slug | `ready` |
 | GitHub MCP (read) | `user-github` |
 
 **Commits:** use GitHub `[#N]` from `externalLinks.externalId`. Never Kaneo task IDs in git.

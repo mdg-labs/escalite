@@ -1515,7 +1515,7 @@ phases:
       - apps/mobile builds with eas.json stub for future builds
       - Deep link scheme escalite:// configured
       depends_on:
-      - p1-e2e-alert-flow
+      - p0-graphql-codegen-ts
       definition_of_done:
       - Follows the DoD checklist in 08-implementation-decisions-and-conventions
       - Follows the DoD checklist in 08-implementation-decisions-and-conventions; docker compose up works from a clean checkout
@@ -2281,18 +2281,20 @@ phases:
 external_dependencies:
 - blocks:
   - p2-ios-critical-alerts-entitlement
-  - p2-ios-critical-alerts-impl
   requires_human_action: Apple Developer account + submit Critical Alerts entitlement request; approval is discretionary and
     timing is external
 - blocks:
-  - p2-twilio-integration
-  requires_human_action: Twilio account + credentials for SMS/voice testing
+  - p2-ios-critical-alerts-impl
+  requires_human_action: Cannot enable Critical Alerts in production until Apple approves entitlement
 - blocks:
-  - p4-pagerduty-importer
-  requires_human_action: PagerDuty API token or export file from operator account for import validation
+  - p2-twilio-integration
+  requires_human_action: Twilio account + credentials for SMS/voice testing and production send
 - blocks:
   - p4-coolify-validation
-  requires_human_action: Coolify instance or VPS for manual deploy validation; DNS/TLS domain configuration
+  requires_human_action: Coolify instance or VPS for manual validation deploy; DNS/TLS domain decisions by operator
+- blocks:
+  - p4-pagerduty-importer
+  requires_human_action: PagerDuty API token or export file from operator account for test/import runs
 - blocks:
   - p5-status-page-app
-  requires_human_action: Custom domain DNS and TLS for public status page deployment
+  requires_human_action: Custom domain DNS and TLS certificate provisioning for public status page (operator responsibility)

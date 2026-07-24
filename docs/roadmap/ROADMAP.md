@@ -10,20 +10,23 @@
 
 ## External dependencies (human action required)
 
-- **Blocks:** `p2-ios-critical-alerts-entitlement`, `p2-ios-critical-alerts-impl`
+- **Blocks:** `p2-ios-critical-alerts-entitlement`
   - **Action:** Apple Developer account + submit Critical Alerts entitlement request; approval is discretionary and timing is external
 
-- **Blocks:** `p2-twilio-integration`
-  - **Action:** Twilio account + credentials for SMS/voice testing
+- **Blocks:** `p2-ios-critical-alerts-impl`
+  - **Action:** Cannot enable Critical Alerts in production until Apple approves entitlement
 
-- **Blocks:** `p4-pagerduty-importer`
-  - **Action:** PagerDuty API token or export file from operator account for import validation
+- **Blocks:** `p2-twilio-integration`
+  - **Action:** Twilio account + credentials for SMS/voice testing and production send
 
 - **Blocks:** `p4-coolify-validation`
-  - **Action:** Coolify instance or VPS for manual deploy validation; DNS/TLS domain configuration
+  - **Action:** Coolify instance or VPS for manual validation deploy; DNS/TLS domain decisions by operator
+
+- **Blocks:** `p4-pagerduty-importer`
+  - **Action:** PagerDuty API token or export file from operator account for test/import runs
 
 - **Blocks:** `p5-status-page-app`
-  - **Action:** Custom domain DNS and TLS for public status page deployment
+  - **Action:** Custom domain DNS and TLS certificate provisioning for public status page (operator responsibility)
 
 ## Phases
 
@@ -568,7 +571,7 @@ Alert list/detail, service config, schedule calendar, escalation editor per Phas
 Minimal native app: push, ack, escalate per doc 03.
 
 - **`p2-mobile-expo-scaffold`** — Expo app scaffold in apps/mobile
-  - Size: M | Depends on: `p1-e2e-alert-flow`
+  - Size: M | Depends on: `p0-graphql-codegen-ts`
   - Acceptance criteria:
     - apps/mobile builds with eas.json stub for future builds
     - Deep link scheme escalite:// configured

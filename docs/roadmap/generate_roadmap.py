@@ -1203,7 +1203,7 @@ def phase_2_epics() -> list[dict]:
                         "apps/mobile builds with eas.json stub for future builds",
                         "Deep link scheme escalite:// configured",
                     ],
-                    depends_on=["p1-e2e-alert-flow"],
+                    depends_on=["p0-graphql-codegen-ts"],
                     estimated_size="M",
                     labels=["phase-2", "mobile", "expo"],
                     spec_refs=["03-mobile-app-spec#tech-choice"],
@@ -1839,30 +1839,6 @@ ROADMAP["phases"].extend(
     ]
 )
 
-ROADMAP["external_dependencies"] = [
-    {
-        "blocks": ["p2-ios-critical-alerts-entitlement", "p2-ios-critical-alerts-impl"],
-        "requires_human_action": "Apple Developer account + submit Critical Alerts entitlement request; approval is discretionary and timing is external",
-    },
-    {
-        "blocks": ["p2-twilio-integration"],
-        "requires_human_action": "Twilio account + credentials for SMS/voice testing",
-    },
-    {
-        "blocks": ["p4-pagerduty-importer"],
-        "requires_human_action": "PagerDuty API token or export file from operator account for import validation",
-    },
-    {
-        "blocks": ["p4-coolify-validation"],
-        "requires_human_action": "Coolify instance or VPS for manual deploy validation; DNS/TLS domain configuration",
-    },
-    {
-        "blocks": ["p5-status-page-app"],
-        "requires_human_action": "Custom domain DNS and TLS for public status page deployment",
-    },
-]
-
-
 def collect_task_ids() -> dict[str, dict]:
     ids: dict[str, dict] = {}
     for phase in ROADMAP["phases"]:
@@ -1872,6 +1848,43 @@ def collect_task_ids() -> dict[str, dict]:
                     raise ValueError(f"Duplicate task id: {t['id']}")
                 ids[t["id"]] = t
     return ids
+
+
+def validate_external_dependencies(task_ids: dict[str, dict]) -> None:
+    for tid, t in task_ids.items():
+        ext = t.get("external_dependency")
+        if not ext:
+            continue
+        if ext.get("requires_human_action") is not True:
+            raise ValueError(f"Task {tid}: external_dependency.requires_human_action must be true")
+        if not ext.get("reason"):
+            raise ValueError(f"Task {tid}: external_dependency.reason is required")
+        blocked_by = ext.get("blocked_by")
+        if blocked_by is not None:
+            if blocked_by not in task_ids:
+                raise ValueError(f"Task {tid}: external_dependency.blocked_by references unknown task {blocked_by}")
+            if blocked_by not in t.get("depends_on", []):
+                raise ValueError(
+                    f"Task {tid}: external_dependency.blocked_by ({blocked_by}) must also appear in depends_on"
+                )
+        extra_keys = set(ext) - {"requires_human_action", "reason", "blocked_by"}
+        if extra_keys:
+            raise ValueError(f"Task {tid}: unexpected external_dependency keys: {extra_keys}")
+
+
+def generate_external_dependencies(task_ids: dict[str, dict]) -> list[dict]:
+    """Build root external_dependencies from per-task external_dependency fields."""
+    by_reason: dict[str, list[str]] = {}
+    for tid, t in sorted(task_ids.items()):
+        ext = t.get("external_dependency")
+        if not ext:
+            continue
+        by_reason.setdefault(ext["reason"], []).append(tid)
+
+    return [
+        {"blocks": blocks, "requires_human_action": reason}
+        for reason, blocks in sorted(by_reason.items(), key=lambda item: item[1])
+    ]
 
 
 def validate_dag(task_ids: dict[str, dict]) -> None:
@@ -1943,6 +1956,8 @@ def render_markdown() -> str:
 def main() -> None:
     task_ids = collect_task_ids()
     validate_dag(task_ids)
+    validate_external_dependencies(task_ids)
+    ROADMAP["external_dependencies"] = generate_external_dependencies(task_ids)
 
     YAML_PATH.write_text(
         yaml.dump(ROADMAP, sort_keys=False, allow_unicode=True, default_flow_style=False, width=120),

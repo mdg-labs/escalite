@@ -3,3 +3,5 @@
 .agents/project/agent-memory/archive/*
 !.agents/project/agent-memory/archive/.gitkeep
 .agents/project/kaneo-intake/plans/
+.env
+.env.local
