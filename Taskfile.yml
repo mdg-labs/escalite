@@ -48,7 +48,7 @@ tasks:
     env:
       ESCALITE_DOCKER_TARGET: prod
     cmds:
-      - docker compose --profile prod build {{.CLI_ARGS}}
+      - docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod build {{.CLI_ARGS}}
 
   compose:prod:
     desc: Start Docker Compose prod profile using locally tagged images
@@ -56,14 +56,20 @@ tasks:
     env:
       ESCALITE_DOCKER_TARGET: prod
     cmds:
-      - docker compose --profile prod up {{.CLI_ARGS}}
+      - docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod up {{.CLI_ARGS}}
 
   compose:config:
     desc: Validate Docker Compose configuration for dev and prod profiles
     dir: deploy/docker-compose
     cmds:
       - ESCALITE_DOCKER_TARGET=dev docker compose --profile dev config
-      - ESCALITE_DOCKER_TARGET=prod docker compose --profile prod config
+      - ESCALITE_DOCKER_TARGET=prod docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod config
+      - |
+        ESCALITE_DOCKER_TARGET=prod \
+        ESCALITE_API_IMAGE=escalite-api:local@sha256:0000000000000000000000000000000000000000000000000000000000000000 \
+        ESCALITE_ENGINE_IMAGE=escalite-engine:local@sha256:0000000000000000000000000000000000000000000000000000000000000000 \
+        ESCALITE_WEB_IMAGE=escalite-web:local@sha256:0000000000000000000000000000000000000000000000000000000000000000 \
+        docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.release.yml --profile prod config
 
   go:build:
     internal: true

@@ -1,0 +1,10 @@
+# Prod profile overrides — run built images without dev bind-mounts.
+services:
+  api:
+    volumes: !reset []
+
+  engine:
+    volumes: !reset []
+
+  web:
+    volumes: !reset []

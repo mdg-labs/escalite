@@ -5,9 +5,11 @@
 #   cp .env.example .env
 #   docker compose --profile dev up
 #
-# Production-style local images:
-#   docker compose --profile prod build
-#   docker compose --profile prod up
+# Production-style local images (no dev bind-mounts):
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod build
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod up
+#
+# Release deploy with digest-pinned registry images — see README.md and docker-compose.release.yml
 
 name: escalite
 

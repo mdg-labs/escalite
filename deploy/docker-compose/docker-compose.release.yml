@@ -1,0 +1,36 @@
+# Escalite release compose — digest-pinned images for production deployments.
+#
+# Digest pinning (07-security-and-auth § dependency-supply-chain):
+# Pin every runtime image to an immutable @sha256:… reference so deploys cannot
+# silently pull a retagged or compromised floating tag.
+#
+# Workflow:
+#   1. CI builds and pushes versioned images (e.g. ghcr.io/org/escalite-api:v0.1.0).
+#   2. Record each manifest digest:
+#        docker buildx imagetools inspect IMAGE:TAG --format '{{.Manifest.Digest}}'
+#   3. Set ESCALITE_*_IMAGE in .env to registry/image@sha256:… (see .env.example).
+#   4. Deploy:
+#        docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+#          -f docker-compose.release.yml --profile prod up -d
+#
+# Update digests on each release after images are pushed; commit the new values
+# to your operator config repo or sealed secrets — not necessarily this file.
+
+services:
+  postgres:
+    image: ${ESCALITE_POSTGRES_IMAGE:-postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777}
+
+  api:
+    image: ${ESCALITE_API_IMAGE:?Set ESCALITE_API_IMAGE to a digest-pinned image reference}
+    pull_policy: always
+    build: !reset null
+
+  engine:
+    image: ${ESCALITE_ENGINE_IMAGE:?Set ESCALITE_ENGINE_IMAGE to a digest-pinned image reference}
+    pull_policy: always
+    build: !reset null
+
+  web:
+    image: ${ESCALITE_WEB_IMAGE:?Set ESCALITE_WEB_IMAGE to a digest-pinned image reference}
+    pull_policy: always
+    build: !reset null

@@ -23,12 +23,14 @@ cp .env.example deploy/docker-compose/.env
 task compose:dev
 ```
 
-Production-style local images:
+Production-style local images (distroless / unprivileged nginx, non-root):
 
 ```bash
 task compose:prod:build
 task compose:prod
 ```
+
+Release deployments with digest-pinned registry images: see [`deploy/docker-compose/README.md`](deploy/docker-compose/README.md).
 
 ## Quick start
 
