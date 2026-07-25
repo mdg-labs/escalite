@@ -1,0 +1,53 @@
+{
+  "receiver": "escalite",
+  "status": "firing",
+  "orgId": 1,
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "HighMemoryUsage",
+        "grafana_folder": "Infrastructure",
+        "instance": "db-primary-01",
+        "severity": "critical"
+      },
+      "annotations": {
+        "description": "Memory usage on db-primary-01 has been above 90% for 5 minutes.",
+        "runbook_url": "https://wiki.example.com/runbooks/high-memory",
+        "summary": "High memory usage on db-primary-01"
+      },
+      "startsAt": "2026-07-25T06:12:03.157076Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "https://grafana.example.com/alerting/grafana/abc123/view",
+      "fingerprint": "c6eadffa33fcdf37",
+      "silenceURL": "https://grafana.example.com/alerting/silence/new?alertmanager=grafana&matchers=alertname%3DHighMemoryUsage",
+      "dashboardURL": "https://grafana.example.com/d/infra-overview",
+      "panelURL": "https://grafana.example.com/d/infra-overview?viewPanel=4",
+      "values": {
+        "B": 92.4,
+        "C": 1
+      }
+    }
+  ],
+  "groupLabels": {
+    "alertname": "HighMemoryUsage"
+  },
+  "commonLabels": {
+    "alertname": "HighMemoryUsage",
+    "grafana_folder": "Infrastructure",
+    "instance": "db-primary-01",
+    "severity": "critical"
+  },
+  "commonAnnotations": {
+    "description": "Memory usage on db-primary-01 has been above 90% for 5 minutes.",
+    "runbook_url": "https://wiki.example.com/runbooks/high-memory",
+    "summary": "High memory usage on db-primary-01"
+  },
+  "externalURL": "https://grafana.example.com",
+  "version": "1",
+  "groupKey": "{}:{alertname=\"HighMemoryUsage\"}",
+  "truncatedAlerts": 0,
+  "title": "[FIRING:1] HighMemoryUsage",
+  "state": "alerting",
+  "message": "High memory usage on db-primary-01"
+}

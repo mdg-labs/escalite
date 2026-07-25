@@ -1,0 +1,51 @@
+{
+  "receiver": "escalite",
+  "status": "firing",
+  "orgId": 1,
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "HighCPUUsage",
+        "instance": "app-01",
+        "severity": "warning"
+      },
+      "annotations": {
+        "summary": "CPU usage above threshold on app-01"
+      },
+      "startsAt": "2026-07-25T06:30:00.000Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "https://grafana.example.com/alerting/grafana/cpu-rule/view",
+      "fingerprint": "a8c518a872e3149a"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "HighCPUUsage",
+        "instance": "app-02",
+        "severity": "info"
+      },
+      "annotations": {
+        "summary": "CPU usage above threshold on app-02"
+      },
+      "startsAt": "2026-07-25T06:30:00.000Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "https://grafana.example.com/alerting/grafana/cpu-rule/view",
+      "fingerprint": "8b581f60e6fd0de1"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "HighCPUUsage"
+  },
+  "commonLabels": {
+    "alertname": "HighCPUUsage"
+  },
+  "commonAnnotations": {},
+  "externalURL": "https://grafana.example.com",
+  "version": "1",
+  "groupKey": "{}:{alertname=\"HighCPUUsage\"}",
+  "truncatedAlerts": 0,
+  "title": "[FIRING:2] HighCPUUsage",
+  "state": "alerting",
+  "message": "CPU usage above threshold"
+}

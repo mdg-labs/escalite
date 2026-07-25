@@ -9,6 +9,7 @@ import (
 
 	"github.com/mdg-labs/escalite/services/integrations"
 	_ "github.com/mdg-labs/escalite/services/integrations/datadog"
+	_ "github.com/mdg-labs/escalite/services/integrations/grafana"
 )
 
 func TestEventTypeConstants(t *testing.T) {
@@ -26,12 +27,17 @@ func TestGetUnknownPlugin(t *testing.T) {
 }
 
 func TestValidateConfigUnknownPlugin(t *testing.T) {
-	err := integrations.ValidateConfig("grafana", json.RawMessage(`{}`))
+	err := integrations.ValidateConfig("newrelic", json.RawMessage(`{}`))
 	require.Error(t, err)
 
 	var unknown integrations.ErrUnknownPlugin
 	require.ErrorAs(t, err, &unknown)
-	require.Equal(t, "grafana", unknown.Name)
+	require.Equal(t, "newrelic", unknown.Name)
+}
+
+func TestValidateConfigGrafana(t *testing.T) {
+	err := integrations.ValidateConfig("grafana", json.RawMessage(`{}`))
+	require.NoError(t, err)
 }
 
 func TestConfigSchemaDatadogPlugin(t *testing.T) {
