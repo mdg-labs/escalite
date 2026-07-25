@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/mdg-labs/escalite/services/api/internal/db"
+	"github.com/mdg-labs/escalite/services/engine/oncall"
 )
 
 func computeReplacedUserID(timezone string, rotation db.Rotation, at time.Time) pgtype.UUID {
@@ -20,7 +21,7 @@ func computeReplacedUserID(timezone string, rotation db.Rotation, at time.Time) 
 		return pgtype.UUID{}
 	}
 
-	userID, err := currentOnCallUser(
+	userID, err := oncall.CurrentOnCallUser(
 		rotation.Rrule,
 		timeFromDB(rotation.CreatedAt),
 		loc,

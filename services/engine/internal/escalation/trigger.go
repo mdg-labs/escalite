@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,12 +17,14 @@ import (
 
 	"github.com/mdg-labs/escalite/services/engine/internal/db"
 	"github.com/mdg-labs/escalite/services/engine/internal/jobs"
+	"github.com/mdg-labs/escalite/services/engine/oncall"
 )
 
 const (
-	statusTriggered = "triggered"
-	statusPending   = "pending"
-	targetTypeUser  = "user"
+	statusTriggered    = "triggered"
+	statusPending      = "pending"
+	targetTypeUser     = "user"
+	targetTypeRotation = "rotation"
 )
 
 // JobInserter inserts River jobs, typically a river.Client.
@@ -147,35 +150,40 @@ func scheduleStepNotifications(
 	stepID := pgtype.UUID{Bytes: step.ID, Valid: true}
 
 	for _, target := range targets {
-		channels, recipient, err := resolveTarget(ctx, q, alert.OrganizationID, target)
+		resolved, err := resolveTarget(ctx, q, alert.OrganizationID, target, time.Now().UTC())
 		if err != nil {
 			return err
 		}
+		if len(resolved) == 0 {
+			continue
+		}
 
-		for _, channel := range channels {
-			attemptID := uuid.Must(uuid.NewV7())
-			recipientJSON, err := json.Marshal(recipient)
-			if err != nil {
-				return fmt.Errorf("marshal recipient: %w", err)
-			}
+		for _, item := range resolved {
+			for _, channel := range item.channels {
+				attemptID := uuid.Must(uuid.NewV7())
+				recipientJSON, err := json.Marshal(item.recipient)
+				if err != nil {
+					return fmt.Errorf("marshal recipient: %w", err)
+				}
 
-			if _, err := q.CreateNotificationAttempt(ctx, db.CreateNotificationAttemptParams{
-				ID:               attemptID,
-				OrganizationID:   alert.OrganizationID,
-				AlertID:          alert.ID,
-				EscalationStepID: stepID,
-				Channel:          channel,
-				Status:           statusPending,
-				Recipient:        recipientJSON,
-			}); err != nil {
-				return fmt.Errorf("create notification attempt: %w", err)
-			}
+				if _, err := q.CreateNotificationAttempt(ctx, db.CreateNotificationAttemptParams{
+					ID:               attemptID,
+					OrganizationID:   alert.OrganizationID,
+					AlertID:          alert.ID,
+					EscalationStepID: stepID,
+					Channel:          channel,
+					Status:           statusPending,
+					Recipient:        recipientJSON,
+				}); err != nil {
+					return fmt.Errorf("create notification attempt: %w", err)
+				}
 
-			if _, err := inserter.Insert(ctx, jobs.NotifyArgs{
-				NotificationAttemptID: attemptID,
-				OrganizationID:      alert.OrganizationID,
-			}, nil); err != nil {
-				return fmt.Errorf("enqueue notify job: %w", err)
+				if _, err := inserter.Insert(ctx, jobs.NotifyArgs{
+					NotificationAttemptID: attemptID,
+					OrganizationID:      alert.OrganizationID,
+				}, nil); err != nil {
+					return fmt.Errorf("enqueue notify job: %w", err)
+				}
 			}
 		}
 	}
@@ -229,36 +237,82 @@ type recipientPayload struct {
 	URL    string `json:"url,omitempty"`
 }
 
+type resolvedNotification struct {
+	channels  []string
+	recipient recipientPayload
+}
+
 func resolveTarget(
 	ctx context.Context,
 	q db.Querier,
 	organizationID uuid.UUID,
 	target db.EscalationStepTarget,
-) ([]string, recipientPayload, error) {
+	at time.Time,
+) ([]resolvedNotification, error) {
 	channels, err := parseChannels(target.Channels)
 	if err != nil {
-		return nil, recipientPayload{}, fmt.Errorf("parse channels: %w", err)
+		return nil, fmt.Errorf("parse channels: %w", err)
 	}
 
 	switch target.TargetType {
 	case targetTypeUser:
 		if !target.UserID.Valid {
-			return nil, recipientPayload{}, fmt.Errorf("user target missing user_id")
+			return nil, fmt.Errorf("user target missing user_id")
 		}
 		user, err := q.GetUserByID(ctx, db.GetUserByIDParams{
 			ID:             uuid.UUID(target.UserID.Bytes),
 			OrganizationID: organizationID,
 		})
 		if err != nil {
-			return nil, recipientPayload{}, fmt.Errorf("load user target: %w", err)
+			return nil, fmt.Errorf("load user target: %w", err)
 		}
-		return channels, recipientPayload{
-			Type:   targetTypeUser,
-			UserID: user.ID.String(),
-			Email:  user.Email,
-		}, nil
+		return []resolvedNotification{{
+			channels: channels,
+			recipient: recipientPayload{
+				Type:   targetTypeUser,
+				UserID: user.ID.String(),
+				Email:  user.Email,
+			},
+		}}, nil
+	case targetTypeRotation:
+		if !target.ScheduleID.Valid {
+			return nil, fmt.Errorf("rotation target missing schedule_id")
+		}
+		scheduleID := uuid.UUID(target.ScheduleID.Bytes)
+		userIDs, err := oncall.UsersAt(ctx, q, organizationID, scheduleID, at)
+		if err != nil {
+			return nil, fmt.Errorf("resolve rotation schedule %s: %w", scheduleID, err)
+		}
+		if len(userIDs) == 0 {
+			slog.Default().Info(
+				"skipping rotation target with no on-call users",
+				"schedule_id", scheduleID,
+				"organization_id", organizationID,
+			)
+			return nil, nil
+		}
+
+		resolved := make([]resolvedNotification, 0, len(userIDs))
+		for _, userID := range userIDs {
+			user, err := q.GetUserByID(ctx, db.GetUserByIDParams{
+				ID:             userID,
+				OrganizationID: organizationID,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("load on-call user %s: %w", userID, err)
+			}
+			resolved = append(resolved, resolvedNotification{
+				channels: channels,
+				recipient: recipientPayload{
+					Type:   targetTypeUser,
+					UserID: user.ID.String(),
+					Email:  user.Email,
+				},
+			})
+		}
+		return resolved, nil
 	default:
-		return nil, recipientPayload{}, fmt.Errorf("unsupported target type %q", target.TargetType)
+		return nil, fmt.Errorf("unsupported target type %q", target.TargetType)
 	}
 }
 

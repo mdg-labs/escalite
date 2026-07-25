@@ -24,6 +24,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/gqlerr"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/engine/escalationapi"
+	"github.com/mdg-labs/escalite/services/engine/oncall"
 )
 
 // Login is the resolver for the login field.
@@ -1401,7 +1402,7 @@ func (r *queryResolver) OnCallNow(ctx context.Context, scheduleID string, at *ti
 			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 		}
 
-		userID, err := currentOnCallUser(
+		userID, err := oncall.CurrentOnCallUser(
 			rotation.Rrule,
 			timeFromDB(rotation.CreatedAt),
 			loc,
@@ -1409,7 +1410,7 @@ func (r *queryResolver) OnCallNow(ctx context.Context, scheduleID string, at *ti
 			participantIDs,
 		)
 		if err != nil {
-			if errors.Is(err, errNoActiveShift) {
+			if oncall.IsNoActiveShift(err) {
 				continue
 			}
 			r.logger.Error("compute on-call user failed", "error", err, "rotationId", rotation.ID)

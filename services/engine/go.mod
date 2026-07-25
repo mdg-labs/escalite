@@ -11,6 +11,7 @@ require (
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.41.0
 	github.com/riverqueue/river/rivertype v0.41.0
 	github.com/stretchr/testify v1.11.1
+	github.com/teambition/rrule-go v1.8.2
 	github.com/testcontainers/testcontainers-go v0.43.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.43.0
 )

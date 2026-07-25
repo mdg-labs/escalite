@@ -1,4 +1,4 @@
-package graph
+package oncall
 
 import (
 	"errors"
@@ -10,9 +10,9 @@ import (
 
 var errNoActiveShift = errors.New("no active shift")
 
-// currentOnCallUser returns the participant on call at instant at for a rotation.
+// CurrentOnCallUser returns the participant on call at instant at for a rotation.
 // anchor is the rotation start (typically created_at); shift boundaries use loc.
-func currentOnCallUser(rruleText string, anchor time.Time, loc *time.Location, at time.Time, participantIDs []string) (string, error) {
+func CurrentOnCallUser(rruleText string, anchor time.Time, loc *time.Location, at time.Time, participantIDs []string) (string, error) {
 	if len(participantIDs) == 0 {
 		return "", fmt.Errorf("no participants")
 	}
@@ -42,4 +42,8 @@ func currentOnCallUser(rruleText string, anchor time.Time, loc *time.Location, a
 
 	index := (len(occurrences) - 1) % len(participantIDs)
 	return participantIDs[index], nil
+}
+
+func IsNoActiveShift(err error) bool {
+	return errors.Is(err, errNoActiveShift)
 }
