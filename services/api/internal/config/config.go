@@ -31,6 +31,16 @@ type OIDCConfig struct {
 	SuccessURL   string
 }
 
+// SlackOAuthConfig holds optional Slack app OAuth settings. Nil means the "Add to Slack"
+// workspace install flow is disabled (manual bot token entry remains available).
+type SlackOAuthConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
+	Scopes       []string
+	SuccessURL   string
+}
+
 // SMTPConfig holds optional outbound SMTP settings. Nil means email is not sent (noop sender).
 type SMTPConfig struct {
 	Host     string
@@ -69,19 +79,20 @@ type InboundEmailConfig struct {
 
 // Config holds parsed ESCALITE_* environment configuration.
 type Config struct {
-	ListenAddr     string
-	DatabaseURL    string
-	LogLevel       string
-	EncryptionKey  []byte
-	PublicURL      string
-	AppOrigin      string
-	Environment    string
-	OIDC           *OIDCConfig
-	SMTP           *SMTPConfig
-	InboundEmail   InboundEmailConfig
-	PasswordReset  PasswordResetRateLimitConfig
-	HeartbeatPing  HeartbeatPingRateLimitConfig
-	GraphQL        GraphQLConfig
+	ListenAddr    string
+	DatabaseURL   string
+	LogLevel      string
+	EncryptionKey []byte
+	PublicURL     string
+	AppOrigin     string
+	Environment   string
+	OIDC          *OIDCConfig
+	SlackOAuth    *SlackOAuthConfig
+	SMTP          *SMTPConfig
+	InboundEmail  InboundEmailConfig
+	PasswordReset PasswordResetRateLimitConfig
+	HeartbeatPing HeartbeatPingRateLimitConfig
+	GraphQL       GraphQLConfig
 }
 
 // Load reads and validates configuration from the environment.
@@ -111,6 +122,12 @@ func Load(opts Options) (Config, error) {
 		return Config{}, err
 	}
 	cfg.OIDC = oidcCfg
+
+	slackOAuthCfg, err := loadSlackOAuth()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.SlackOAuth = slackOAuthCfg
 
 	smtpCfg, err := loadSMTP()
 	if err != nil {
@@ -182,6 +199,65 @@ func loadOIDC() (*OIDCConfig, error) {
 		RedirectURL:  redirectURL,
 		SuccessURL:   successURL,
 	}, nil
+}
+
+// defaultSlackBotScopes are the Slack bot token scopes requested by the "Add to Slack"
+// OAuth v2 install flow: posting alerts/incidents (chat:write*), reading channel/user
+// metadata for the channel-per-incident and interactive-buttons follow-up tasks.
+var defaultSlackBotScopes = []string{"chat:write", "chat:write.public", "channels:read", "users:read"}
+
+func loadSlackOAuth() (*SlackOAuthConfig, error) {
+	clientID := strings.TrimSpace(os.Getenv("ESCALITE_SLACK_CLIENT_ID"))
+	clientSecret := strings.TrimSpace(os.Getenv("ESCALITE_SLACK_CLIENT_SECRET"))
+
+	if clientID == "" && clientSecret == "" {
+		return nil, nil
+	}
+	if clientID == "" || clientSecret == "" {
+		return nil, fmt.Errorf(
+			"partial Slack OAuth configuration: set both ESCALITE_SLACK_CLIENT_ID and ESCALITE_SLACK_CLIENT_SECRET, or leave both unset",
+		)
+	}
+
+	redirectURL := strings.TrimSpace(os.Getenv("ESCALITE_SLACK_REDIRECT_URL"))
+	publicURL := strings.TrimSpace(os.Getenv("ESCALITE_PUBLIC_URL"))
+	if redirectURL == "" {
+		if publicURL == "" {
+			return nil, fmt.Errorf(
+				"Slack app install enabled but redirect URL unknown: set ESCALITE_SLACK_REDIRECT_URL or ESCALITE_PUBLIC_URL",
+			)
+		}
+		redirectURL = strings.TrimSuffix(publicURL, "/") + "/api/v1/integrations/slack/callback"
+	}
+
+	successURL := "/settings"
+	if appOrigin := strings.TrimSuffix(strings.TrimSpace(os.Getenv("ESCALITE_APP_ORIGIN")), "/"); appOrigin != "" {
+		successURL = appOrigin + "/settings"
+	}
+
+	scopes := defaultSlackBotScopes
+	if raw := strings.TrimSpace(os.Getenv("ESCALITE_SLACK_SCOPES")); raw != "" {
+		scopes = splitAndTrimNonEmpty(raw, ",")
+	}
+
+	return &SlackOAuthConfig{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RedirectURL:  redirectURL,
+		Scopes:       scopes,
+		SuccessURL:   successURL,
+	}, nil
+}
+
+func splitAndTrimNonEmpty(raw, sep string) []string {
+	parts := strings.Split(raw, sep)
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
 }
 
 func loadSMTP() (*SMTPConfig, error) {

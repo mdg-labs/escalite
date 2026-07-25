@@ -348,8 +348,10 @@ type ComplexityRoot struct {
 	}
 
 	SlackSettings struct {
-		Configured func(childComplexity int) int
-		TokenHint  func(childComplexity int) int
+		Configured      func(childComplexity int) int
+		OauthInstallURL func(childComplexity int) int
+		TokenHint       func(childComplexity int) int
+		WorkspaceName   func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -2216,12 +2218,24 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.SlackSettings.Configured(childComplexity), true
+	case "SlackSettings.oauthInstallUrl":
+		if e.ComplexityRoot.SlackSettings.OauthInstallURL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackSettings.OauthInstallURL(childComplexity), true
 	case "SlackSettings.tokenHint":
 		if e.ComplexityRoot.SlackSettings.TokenHint == nil {
 			break
 		}
 
 		return e.ComplexityRoot.SlackSettings.TokenHint(childComplexity), true
+	case "SlackSettings.workspaceName":
+		if e.ComplexityRoot.SlackSettings.WorkspaceName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackSettings.WorkspaceName(childComplexity), true
 
 	case "Subscription.alertUpdated":
 		if e.ComplexityRoot.Subscription.AlertUpdated == nil {
@@ -3441,6 +3455,10 @@ type UserNotificationRule {
 type SlackSettings {
   configured: Boolean!
   tokenHint: String
+  """Slack workspace name when installed via OAuth (Add to Slack). Null for manual token entry."""
+  workspaceName: String
+  """Absolute URL to start Slack OAuth install when enabled; null when OAuth is not configured."""
+  oauthInstallUrl: String
 }
 
 """Registered mobile device for Expo push delivery."""
@@ -3993,6 +4011,10 @@ func (ec *executionContext) childFields_SlackSettings(ctx context.Context, field
 		return ec.fieldContext_SlackSettings_configured(ctx, field)
 	case "tokenHint":
 		return ec.fieldContext_SlackSettings_tokenHint(ctx, field)
+	case "workspaceName":
+		return ec.fieldContext_SlackSettings_workspaceName(ctx, field)
+	case "oauthInstallUrl":
+		return ec.fieldContext_SlackSettings_oauthInstallUrl(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type SlackSettings", field.Name)
 }
@@ -12015,6 +12037,52 @@ func (ec *executionContext) fieldContext_SlackSettings_tokenHint(_ context.Conte
 	return graphql.NewScalarFieldContext("SlackSettings", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _SlackSettings_workspaceName(ctx context.Context, field graphql.CollectedField, obj *model.SlackSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackSettings_workspaceName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.WorkspaceName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_SlackSettings_workspaceName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackSettings", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackSettings_oauthInstallUrl(ctx context.Context, field graphql.CollectedField, obj *model.SlackSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackSettings_oauthInstallUrl(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OauthInstallURL, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_SlackSettings_oauthInstallUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackSettings", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _Subscription_alertUpdated(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
 	return graphql.ResolveFieldStream(
 		ctx,
@@ -18197,6 +18265,16 @@ func (ec *executionContext) _SlackSettings(ctx context.Context, sel ast.Selectio
 			}
 		case "tokenHint":
 			out.Values[i] = ec._SlackSettings_tokenHint(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "workspaceName":
+			out.Values[i] = ec._SlackSettings_workspaceName(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "oauthInstallUrl":
+			out.Values[i] = ec._SlackSettings_oauthInstallUrl(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}

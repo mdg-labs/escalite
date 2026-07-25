@@ -14,18 +14,18 @@ import (
 )
 
 const (
-	ActionLogin                 = "auth.login"
-	ActionLoginFailed           = "auth.login_failed"
-	ActionLogout                = "auth.logout"
-	ActionRoleChanged           = "user.role_changed"
-	ActionIntegrationKeyCreated   = "integration_key.created"
-	ActionIntegrationKeyRevoked   = "integration_key.revoked"
-	ActionEscalationPolicyCreated = "escalation_policy.created"
-	ActionEscalationPolicyUpdated = "escalation_policy.updated"
-	ActionEscalationPolicyDeleted = "escalation_policy.deleted"
-	ActionHeartbeatMonitorCreated = "heartbeat_monitor.created"
-	ActionHeartbeatMonitorUpdated = "heartbeat_monitor.updated"
-	ActionHeartbeatMonitorDeleted = "heartbeat_monitor.deleted"
+	ActionLogin                    = "auth.login"
+	ActionLoginFailed              = "auth.login_failed"
+	ActionLogout                   = "auth.logout"
+	ActionRoleChanged              = "user.role_changed"
+	ActionIntegrationKeyCreated    = "integration_key.created"
+	ActionIntegrationKeyRevoked    = "integration_key.revoked"
+	ActionEscalationPolicyCreated  = "escalation_policy.created"
+	ActionEscalationPolicyUpdated  = "escalation_policy.updated"
+	ActionEscalationPolicyDeleted  = "escalation_policy.deleted"
+	ActionHeartbeatMonitorCreated  = "heartbeat_monitor.created"
+	ActionHeartbeatMonitorUpdated  = "heartbeat_monitor.updated"
+	ActionHeartbeatMonitorDeleted  = "heartbeat_monitor.deleted"
 	ActionMaintenanceWindowCreated = "maintenance_window.created"
 	ActionMaintenanceWindowUpdated = "maintenance_window.updated"
 	ActionMaintenanceWindowDeleted = "maintenance_window.deleted"
@@ -34,24 +34,26 @@ const (
 	ActionIncidentRoleDefCreated   = "incident_role_definition.created"
 	ActionIncidentRoleDefUpdated   = "incident_role_definition.updated"
 	ActionIncidentRoleDefDeleted   = "incident_role_definition.deleted"
-	ActionOverrideCreated         = "override.created"
-	ActionOverrideDeleted         = "override.deleted"
+	ActionOverrideCreated          = "override.created"
+	ActionOverrideDeleted          = "override.deleted"
 	ActionAlertEscalationSnoozed   = "alert.escalation_snoozed"
 	ActionAlertReEscalated         = "alert.re_escalated"
 	ActionServiceCreated           = "service.created"
 	ActionServiceUpdated           = "service.updated"
 	ActionServiceDeleted           = "service.deleted"
+	ActionSlackWorkspaceConnected  = "slack_workspace.connected"
 
-	targetTypeUser             = "user"
-	targetTypeIntegrationKey   = "integration_key"
-	targetTypeEscalationPolicy = "escalation_policy"
-	targetTypeHeartbeatMonitor = "heartbeat_monitor"
+	targetTypeUser              = "user"
+	targetTypeSlackWorkspace    = "organization_slack_settings"
+	targetTypeIntegrationKey    = "integration_key"
+	targetTypeEscalationPolicy  = "escalation_policy"
+	targetTypeHeartbeatMonitor  = "heartbeat_monitor"
 	targetTypeMaintenanceWindow = "maintenance_window"
 	targetTypeIncident          = "incident"
 	targetTypeIncidentRoleDef   = "incident_role_definition"
-	targetTypeOverride         = "override"
-	targetTypeAlert            = "alert"
-	targetTypeService          = "service"
+	targetTypeOverride          = "override"
+	targetTypeAlert             = "alert"
+	targetTypeService           = "service"
 )
 
 // RequestMeta captures HTTP request context stored in audit metadata.
@@ -328,8 +330,8 @@ func (r *Recorder) OverrideDeleted(ctx context.Context, q db.Querier, orgID, act
 // AlertEscalationSnoozed records a manual escalation snooze.
 func (r *Recorder) AlertEscalationSnoozed(ctx context.Context, q db.Querier, orgID, actorID, alertID uuid.UUID, durationMinutes int32, nextEscalationAt string) {
 	meta, err := json.Marshal(map[string]any{
-		"duration_minutes":     durationMinutes,
-		"next_escalation_at":   nextEscalationAt,
+		"duration_minutes":   durationMinutes,
+		"next_escalation_at": nextEscalationAt,
 	})
 	if err != nil {
 		r.logger.Error("marshal snooze audit metadata failed", "error", err)
@@ -469,6 +471,19 @@ func (r *Recorder) IncidentRoleDefinitionDeleted(ctx context.Context, q db.Queri
 		TargetType:     pgtype.Text{String: targetTypeIncidentRoleDef, Valid: true},
 		TargetID:       pgtype.UUID{Bytes: roleDefID, Valid: true},
 		Metadata:       []byte("{}"),
+	})
+}
+
+// SlackWorkspaceConnected records a Slack app OAuth workspace install or reinstall.
+func (r *Recorder) SlackWorkspaceConnected(ctx context.Context, q db.Querier, orgID, actorID uuid.UUID, workspaceID string) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionSlackWorkspaceConnected,
+		TargetType:     pgtype.Text{String: targetTypeSlackWorkspace, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: orgID, Valid: true},
+		Metadata:       mustMarshalAnyMeta(r.logger, map[string]any{"workspace_id": workspaceID}),
 	})
 }
 

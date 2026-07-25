@@ -2014,6 +2014,22 @@ table "organization_slack_settings" {
     null = false
     type = text
   }
+  column "workspace_id" {
+    null = true
+    type = text
+  }
+  column "workspace_name" {
+    null = true
+    type = text
+  }
+  column "bot_user_id" {
+    null = true
+    type = text
+  }
+  column "scope" {
+    null = true
+    type = text
+  }
   column "created_at" {
     null    = false
     type    = timestamptz

@@ -405,6 +405,24 @@ mutation RevokeMobileDevice($id: ID!) {
   }
 }
 
+query SlackSettings {
+  slackSettings {
+    configured
+    tokenHint
+    workspaceName
+    oauthInstallUrl
+  }
+}
+
+mutation SaveSlackSettings($input: SaveSlackSettingsInput!) {
+  saveSlackSettings(input: $input) {
+    configured
+    tokenHint
+    workspaceName
+    oauthInstallUrl
+  }
+}
+
 fragment UserSummary on User {
   id
   email

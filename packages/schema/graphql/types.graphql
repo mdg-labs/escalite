@@ -228,6 +228,10 @@ type UserNotificationRule {
 type SlackSettings {
   configured: Boolean!
   tokenHint: String
+  """Slack workspace name when installed via OAuth (Add to Slack). Null for manual token entry."""
+  workspaceName: String
+  """Absolute URL to start Slack OAuth install when enabled; null when OAuth is not configured."""
+  oauthInstallUrl: String
 }
 
 """Registered mobile device for Expo push delivery."""

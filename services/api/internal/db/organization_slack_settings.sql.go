@@ -9,10 +9,11 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getOrganizationSlackSettings = `-- name: GetOrganizationSlackSettings :one
-SELECT organization_id, bot_token_ciphertext, encryption_key_id, token_hint, created_at, updated_at
+SELECT organization_id, bot_token_ciphertext, encryption_key_id, token_hint, workspace_id, workspace_name, bot_user_id, scope, created_at, updated_at
 FROM organization_slack_settings
 WHERE organization_id = $1
 LIMIT 1
@@ -26,6 +27,82 @@ func (q *Queries) GetOrganizationSlackSettings(ctx context.Context, organization
 		&i.BotTokenCiphertext,
 		&i.EncryptionKeyID,
 		&i.TokenHint,
+		&i.WorkspaceID,
+		&i.WorkspaceName,
+		&i.BotUserID,
+		&i.Scope,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const upsertOrganizationSlackOAuthInstall = `-- name: UpsertOrganizationSlackOAuthInstall :one
+INSERT INTO organization_slack_settings (
+    organization_id,
+    bot_token_ciphertext,
+    encryption_key_id,
+    token_hint,
+    workspace_id,
+    workspace_name,
+    bot_user_id,
+    scope
+) VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7,
+    $8
+)
+ON CONFLICT (organization_id) DO UPDATE
+SET bot_token_ciphertext = EXCLUDED.bot_token_ciphertext,
+    encryption_key_id = EXCLUDED.encryption_key_id,
+    token_hint = EXCLUDED.token_hint,
+    workspace_id = EXCLUDED.workspace_id,
+    workspace_name = EXCLUDED.workspace_name,
+    bot_user_id = EXCLUDED.bot_user_id,
+    scope = EXCLUDED.scope,
+    updated_at = now()
+RETURNING organization_id, bot_token_ciphertext, encryption_key_id, token_hint, workspace_id, workspace_name, bot_user_id, scope, created_at, updated_at
+`
+
+type UpsertOrganizationSlackOAuthInstallParams struct {
+	OrganizationID     uuid.UUID   `json:"organization_id"`
+	BotTokenCiphertext []byte      `json:"bot_token_ciphertext"`
+	EncryptionKeyID    string      `json:"encryption_key_id"`
+	TokenHint          string      `json:"token_hint"`
+	WorkspaceID        pgtype.Text `json:"workspace_id"`
+	WorkspaceName      pgtype.Text `json:"workspace_name"`
+	BotUserID          pgtype.Text `json:"bot_user_id"`
+	Scope              pgtype.Text `json:"scope"`
+}
+
+// Reinstalling the Escalite Slack app (same organization) upserts this single row by
+// organization_id, so re-authorizing never creates a duplicate workspace row.
+func (q *Queries) UpsertOrganizationSlackOAuthInstall(ctx context.Context, arg UpsertOrganizationSlackOAuthInstallParams) (OrganizationSlackSetting, error) {
+	row := q.db.QueryRow(ctx, upsertOrganizationSlackOAuthInstall,
+		arg.OrganizationID,
+		arg.BotTokenCiphertext,
+		arg.EncryptionKeyID,
+		arg.TokenHint,
+		arg.WorkspaceID,
+		arg.WorkspaceName,
+		arg.BotUserID,
+		arg.Scope,
+	)
+	var i OrganizationSlackSetting
+	err := row.Scan(
+		&i.OrganizationID,
+		&i.BotTokenCiphertext,
+		&i.EncryptionKeyID,
+		&i.TokenHint,
+		&i.WorkspaceID,
+		&i.WorkspaceName,
+		&i.BotUserID,
+		&i.Scope,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -49,7 +126,7 @@ SET bot_token_ciphertext = EXCLUDED.bot_token_ciphertext,
     encryption_key_id = EXCLUDED.encryption_key_id,
     token_hint = EXCLUDED.token_hint,
     updated_at = now()
-RETURNING organization_id, bot_token_ciphertext, encryption_key_id, token_hint, created_at, updated_at
+RETURNING organization_id, bot_token_ciphertext, encryption_key_id, token_hint, workspace_id, workspace_name, bot_user_id, scope, created_at, updated_at
 `
 
 type UpsertOrganizationSlackSettingsParams struct {
@@ -72,6 +149,10 @@ func (q *Queries) UpsertOrganizationSlackSettings(ctx context.Context, arg Upser
 		&i.BotTokenCiphertext,
 		&i.EncryptionKeyID,
 		&i.TokenHint,
+		&i.WorkspaceID,
+		&i.WorkspaceName,
+		&i.BotUserID,
+		&i.Scope,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

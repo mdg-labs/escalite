@@ -407,6 +407,10 @@ type SetupPayload struct {
 type SlackSettings struct {
 	Configured bool    `json:"configured"`
 	TokenHint  *string `json:"tokenHint,omitempty"`
+	// Slack workspace name when installed via OAuth (Add to Slack). Null for manual token entry.
+	WorkspaceName *string `json:"workspaceName,omitempty"`
+	// Absolute URL to start Slack OAuth install when enabled; null when OAuth is not configured.
+	OauthInstallURL *string `json:"oauthInstallUrl,omitempty"`
 }
 
 type Subscription struct {

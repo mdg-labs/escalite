@@ -1,4 +1,4 @@
-h1:fiivUuHBMpun6CJWqTInCdFqdMLJhepwtIop/Fdw0L4=
+h1:7/iP3z8qgoJUD6feHvTlLyiegJ/g9e2RHFtUT5Mn5as=
 20260724152227_bootstrap.sql h1:WYv9xloOU0omzO45qOWDBOgKJ7DzGguHqhrhDqa2E4U=
 20260724153443_core_entities.sql h1:NkaRkIxu11UNWC8twLznio2v14tL8RNRwk5qjaO3How=
 20260724153823_service_integration.sql h1:S9SoDj8QwVLhYA3KlpxK/z/Qy/hbvMqDd8MswSvRJXY=
@@ -20,3 +20,4 @@ h1:fiivUuHBMpun6CJWqTInCdFqdMLJhepwtIop/Fdw0L4=
 20260725143307_maintenance_windows.sql h1:bntPQOaSDJkjU62HqljhnqJTy0h8F+LP6szKI/aKk5k=
 20260725144655_incidents.sql h1:UT2WASo7F2TZN6KiwKI10rQvzhexd9t6sfIkpAZdgNA=
 20260725151018_service_auto_promote.sql h1:lssbOVzxDfVSje8QpOsOuZv7iC5Qwr/6WtkhG4glCqU=
+20260725161741_add_slack_oauth_workspace_columns.sql h1:OeGwZp3+TC0qv8HrOv6mxGnJaZKi0z1Rp+jisZ4LfYQ=

@@ -9,15 +9,29 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 )
 
-func slackSettingsFromDB(settings *db.OrganizationSlackSetting) *model.SlackSettings {
+func slackSettingsFromDB(settings *db.OrganizationSlackSetting, oauthInstallURL string) *model.SlackSettings {
 	if settings == nil {
-		return &model.SlackSettings{Configured: false}
+		return slackSettingsResponse(nil, false, oauthInstallURL)
 	}
+	return slackSettingsResponse(settings, true, oauthInstallURL)
+}
+
+func slackSettingsResponse(settings *db.OrganizationSlackSetting, configured bool, oauthInstallURL string) *model.SlackSettings {
+	result := &model.SlackSettings{Configured: configured}
+	if oauthInstallURL != "" {
+		result.OauthInstallURL = &oauthInstallURL
+	}
+	if !configured || settings == nil {
+		return result
+	}
+
 	hint := settings.TokenHint
-	return &model.SlackSettings{
-		Configured: true,
-		TokenHint:  &hint,
+	result.TokenHint = &hint
+	if settings.WorkspaceName.Valid && settings.WorkspaceName.String != "" {
+		workspaceName := settings.WorkspaceName.String
+		result.WorkspaceName = &workspaceName
 	}
+	return result
 }
 
 func userContactMethodFromDB(method db.UserContactMethod) (*model.UserContactMethod, error) {

@@ -16,37 +16,6 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 )
 
-func (r *mutationResolver) PromoteAlertToIncident(ctx context.Context, input model.PromoteAlertToIncidentInput) (*model.Alert, error) {
-	sc, err := requireAuthSession(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	alertID, err := parseUUIDField(input.AlertID, "alertId")
-	if err != nil {
-		return nil, err
-	}
-
-	queries := db.New(r.pool)
-	alert, service, err := r.loadAlertWithTeamAccess(ctx, queries, sc, alertID)
-	if err != nil {
-		return nil, err
-	}
-
-	if alert.IncidentID.Valid {
-		return nil, gqlerr.New(handlers.CodeValidation, "alert is already attached to an incident")
-	}
-	if alert.Status == "closed" {
-		return nil, gqlerr.New(handlers.CodeValidation, "cannot promote a closed alert")
-	}
-
-	if input.IncidentID != nil && strings.TrimSpace(*input.IncidentID) != "" {
-		return r.attachAlertToExistingIncident(ctx, queries, sc, alertID, service.TeamID, strings.TrimSpace(*input.IncidentID))
-	}
-
-	return r.promoteAlertToNewIncident(ctx, queries, sc, alert, alertID, service.TeamID, input.Title)
-}
-
 func (r *mutationResolver) promoteAlertToNewIncident(
 	ctx context.Context,
 	queries *db.Queries,

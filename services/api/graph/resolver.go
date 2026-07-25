@@ -13,22 +13,31 @@ import (
 
 // Resolver is the root GraphQL resolver with shared dependencies.
 type Resolver struct {
-	pool     *pgxpool.Pool
-	logger   *slog.Logger
-	audit    *audit.Recorder
-	jobs     *queue.Producer
-	secrets  *crypto.Box
-	realtime *realtime.Hub
+	pool                *pgxpool.Pool
+	logger              *slog.Logger
+	audit               *audit.Recorder
+	jobs                *queue.Producer
+	secrets             *crypto.Box
+	realtime            *realtime.Hub
+	slackOAuthInstallURL string
 }
 
 // NewResolver returns a resolver wired with database and logging dependencies.
-func NewResolver(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, secrets *crypto.Box, hub *realtime.Hub) *Resolver {
+func NewResolver(
+	pool *pgxpool.Pool,
+	logger *slog.Logger,
+	jobs *queue.Producer,
+	secrets *crypto.Box,
+	hub *realtime.Hub,
+	slackOAuthInstallURL string,
+) *Resolver {
 	return &Resolver{
-		pool:     pool,
-		logger:   logger,
-		audit:    audit.NewRecorder(logger),
-		jobs:     jobs,
-		secrets:  secrets,
-		realtime: hub,
+		pool:                pool,
+		logger:              logger,
+		audit:               audit.NewRecorder(logger),
+		jobs:                jobs,
+		secrets:             secrets,
+		realtime:            hub,
+		slackOAuthInstallURL: slackOAuthInstallURL,
 	}
 }

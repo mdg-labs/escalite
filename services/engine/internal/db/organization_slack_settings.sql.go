@@ -12,7 +12,7 @@ import (
 )
 
 const getOrganizationSlackSettings = `-- name: GetOrganizationSlackSettings :one
-SELECT organization_id, bot_token_ciphertext, encryption_key_id, token_hint, created_at, updated_at
+SELECT organization_id, bot_token_ciphertext, encryption_key_id, token_hint, workspace_id, workspace_name, bot_user_id, scope, created_at, updated_at
 FROM organization_slack_settings
 WHERE organization_id = $1
 LIMIT 1
@@ -26,6 +26,10 @@ func (q *Queries) GetOrganizationSlackSettings(ctx context.Context, organization
 		&i.BotTokenCiphertext,
 		&i.EncryptionKeyID,
 		&i.TokenHint,
+		&i.WorkspaceID,
+		&i.WorkspaceName,
+		&i.BotUserID,
+		&i.Scope,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

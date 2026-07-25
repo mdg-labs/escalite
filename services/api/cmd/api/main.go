@@ -89,16 +89,20 @@ func run() int {
 		}
 		logger.Info("oidc login enabled", "issuer", cfg.OIDC.IssuerURL)
 	}
+	if cfg.SlackOAuth != nil {
+		logger.Info("slack oauth install enabled")
+	}
 
 	handler := server.New(server.Dependencies{
-		Logger:    logger,
-		Pool:      pool,
-		Jobs:      jobs,
-		Secrets:   secrets,
-		OIDC:      server.NewOIDCServices(pool, logger, cfg.OIDC, oidcProvider),
-		Mail:      newMailSender(cfg, logger),
-		PublicURL: cfg.PublicURL,
-		AppOrigin: cfg.AppOrigin,
+		Logger:     logger,
+		Pool:       pool,
+		Jobs:       jobs,
+		Secrets:    secrets,
+		OIDC:       server.NewOIDCServices(pool, logger, cfg.OIDC, oidcProvider),
+		SlackOAuth: server.NewSlackOAuthServices(pool, logger, secrets, cfg.SlackOAuth),
+		Mail:       newMailSender(cfg, logger),
+		PublicURL:  cfg.PublicURL,
+		AppOrigin:  cfg.AppOrigin,
 		PasswordReset: &server.PasswordResetOptions{
 			EmailLimiter: ratelimit.NewMemoryLimiter(
 				cfg.PasswordReset.EmailLimit,

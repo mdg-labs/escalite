@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -30,20 +31,21 @@ type InboundEmailOptions struct {
 
 // Dependencies holds runtime services wired into the HTTP router.
 type Dependencies struct {
-	Logger        *slog.Logger
-	Pool          *pgxpool.Pool
-	Jobs          *queue.Producer
-	Secrets       *crypto.Box
-	OIDC          *OIDCServices
-	Mail          email.Sender
-	PublicURL     string
-	AppOrigin     string
-	PasswordReset *PasswordResetOptions
-	HeartbeatPing   *HeartbeatPingOptions
-	InboundWebhook  *InboundWebhookOptions
-	InboundEmail    *InboundEmailOptions
-	GraphQL         graphql.Options
-	Realtime        *realtime.Hub
+	Logger         *slog.Logger
+	Pool           *pgxpool.Pool
+	Jobs           *queue.Producer
+	Secrets        *crypto.Box
+	OIDC           *OIDCServices
+	SlackOAuth     *SlackOAuthServices
+	Mail           email.Sender
+	PublicURL      string
+	AppOrigin      string
+	PasswordReset  *PasswordResetOptions
+	HeartbeatPing  *HeartbeatPingOptions
+	InboundWebhook *InboundWebhookOptions
+	InboundEmail   *InboundEmailOptions
+	GraphQL        graphql.Options
+	Realtime       *realtime.Hub
 }
 
 // PasswordResetOptions overrides password reset wiring (primarily for tests).
@@ -65,9 +67,17 @@ type InboundWebhookOptions struct {
 
 // OIDCServices holds optional OIDC login handlers when ESCALITE_OIDC_* is configured.
 type OIDCServices struct {
-	Handler    *handlers.OIDCHandler
-	Login      http.HandlerFunc
-	Callback   http.HandlerFunc
+	Handler  *handlers.OIDCHandler
+	Login    http.HandlerFunc
+	Callback http.HandlerFunc
+}
+
+// SlackOAuthServices holds optional Slack app OAuth install handlers when
+// ESCALITE_SLACK_CLIENT_ID/ESCALITE_SLACK_CLIENT_SECRET are configured.
+type SlackOAuthServices struct {
+	Handler  *handlers.SlackOAuthHandler
+	Install  http.HandlerFunc
+	Callback http.HandlerFunc
 }
 
 // New returns an HTTP server with health, readiness, and API routes.
@@ -177,12 +187,21 @@ func New(deps Dependencies) http.Handler {
 				r.Use(handlers.RequireTeamAccess(deps.Pool, deps.Logger))
 				r.Get("/", team.ServeHTTP)
 			})
+
+			if deps.SlackOAuth != nil {
+				r.Get("/api/v1/integrations/slack/install", deps.SlackOAuth.Install)
+				r.Get("/api/v1/integrations/slack/callback", deps.SlackOAuth.Callback)
+			}
 		})
 
 		r.Group(func(r chi.Router) {
 			r.Use(handlers.WithRequestMiddleware)
 			r.Use(handlers.AttachSession(deps.Pool, deps.Logger))
-			r.Handle("/graphql", graphql.NewHandler(deps.Pool, deps.Logger, deps.Jobs, deps.Secrets, deps.Realtime, deps.GraphQL))
+			graphqlOpts := deps.GraphQL
+			if deps.SlackOAuth != nil {
+				graphqlOpts.SlackOAuthInstallURL = SlackOAuthInstallURL(deps.PublicURL)
+			}
+			r.Handle("/graphql", graphql.NewHandler(deps.Pool, deps.Logger, deps.Jobs, deps.Secrets, deps.Realtime, graphqlOpts))
 		})
 	}
 
@@ -200,6 +219,27 @@ func NewOIDCServices(pool *pgxpool.Pool, logger *slog.Logger, oidcCfg *config.OI
 	return &OIDCServices{
 		Handler:  handler,
 		Login:    handler.Login,
+		Callback: handler.Callback,
+	}
+}
+
+// SlackOAuthInstallURL returns the REST install endpoint when Slack OAuth is enabled.
+func SlackOAuthInstallURL(publicURL string) string {
+	if publicURL == "" {
+		return "/api/v1/integrations/slack/install"
+	}
+	return strings.TrimSuffix(publicURL, "/") + "/api/v1/integrations/slack/install"
+}
+func NewSlackOAuthServices(pool *pgxpool.Pool, logger *slog.Logger, secrets *crypto.Box, slackCfg *config.SlackOAuthConfig) *SlackOAuthServices {
+	if slackCfg == nil {
+		return nil
+	}
+
+	provider := handlers.NewSlackOAuthClient(slackCfg.ClientID, slackCfg.ClientSecret, slackCfg.RedirectURL, slackCfg.Scopes)
+	handler := handlers.NewSlackOAuthHandler(pool, logger, provider, secrets, slackCfg.SuccessURL)
+	return &SlackOAuthServices{
+		Handler:  handler,
+		Install:  handler.Install,
 		Callback: handler.Callback,
 	}
 }

@@ -27,9 +27,10 @@ const (
 
 // Options configures the GraphQL HTTP handler.
 type Options struct {
-	Production    bool
-	MaxDepth      int
-	MaxComplexity int
+	Production           bool
+	MaxDepth             int
+	MaxComplexity        int
+	SlackOAuthInstallURL string
 }
 
 // NewHandler returns a gqlgen server configured with transport hardening and error codes.
@@ -45,7 +46,7 @@ func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, s
 	}
 
 	srv := gqlhandler.New(graph.NewExecutableSchema(graph.Config{
-		Resolvers: graph.NewResolver(pool, logger, jobs, secrets, hub),
+		Resolvers: graph.NewResolver(pool, logger, jobs, secrets, hub, opts.SlackOAuthInstallURL),
 	}))
 
 	srv.AddTransport(transport.Websocket{

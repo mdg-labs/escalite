@@ -145,6 +145,9 @@ type Querier interface {
 	UpdateService(ctx context.Context, arg UpdateServiceParams) (Service, error)
 	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
 	UpsertMobileDevice(ctx context.Context, arg UpsertMobileDeviceParams) (MobileDevice, error)
+	// Reinstalling the Escalite Slack app (same organization) upserts this single row by
+	// organization_id, so re-authorizing never creates a duplicate workspace row.
+	UpsertOrganizationSlackOAuthInstall(ctx context.Context, arg UpsertOrganizationSlackOAuthInstallParams) (OrganizationSlackSetting, error)
 	UpsertOrganizationSlackSettings(ctx context.Context, arg UpsertOrganizationSlackSettingsParams) (OrganizationSlackSetting, error)
 	UpsertUserContactMethod(ctx context.Context, arg UpsertUserContactMethodParams) (UserContactMethod, error)
 	UpsertUserNotificationRule(ctx context.Context, arg UpsertUserNotificationRuleParams) (UserNotificationRule, error)

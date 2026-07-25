@@ -1657,7 +1657,7 @@ func (r *mutationResolver) SaveSlackSettings(ctx context.Context, input model.Sa
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
 
-	return slackSettingsFromDB(&settings), nil
+	return slackSettingsFromDB(&settings, r.slackOAuthInstallURL), nil
 }
 
 // CreateIntegrationKey is the resolver for the createIntegrationKey field.
@@ -2298,6 +2298,38 @@ func (r *mutationResolver) UnassignIncidentRole(ctx context.Context, id string) 
 	return true, nil
 }
 
+// PromoteAlertToIncident is the resolver for the promoteAlertToIncident field.
+func (r *mutationResolver) PromoteAlertToIncident(ctx context.Context, input model.PromoteAlertToIncidentInput) (*model.Alert, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	alertID, err := parseUUIDField(input.AlertID, "alertId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	alert, service, err := r.loadAlertWithTeamAccess(ctx, queries, sc, alertID)
+	if err != nil {
+		return nil, err
+	}
+
+	if alert.IncidentID.Valid {
+		return nil, gqlerr.New(handlers.CodeValidation, "alert is already attached to an incident")
+	}
+	if alert.Status == "closed" {
+		return nil, gqlerr.New(handlers.CodeValidation, "cannot promote a closed alert")
+	}
+
+	if input.IncidentID != nil && strings.TrimSpace(*input.IncidentID) != "" {
+		return r.attachAlertToExistingIncident(ctx, queries, sc, alertID, service.TeamID, strings.TrimSpace(*input.IncidentID))
+	}
+
+	return r.promoteAlertToNewIncident(ctx, queries, sc, alert, alertID, service.TeamID, input.Title)
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	sc, ok := auth.SessionFromContext(ctx)
@@ -2837,13 +2869,13 @@ func (r *queryResolver) SlackSettings(ctx context.Context) (*model.SlackSettings
 	settings, err := queries.GetOrganizationSlackSettings(ctx, sc.User.OrganizationID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return slackSettingsFromDB(nil), nil
+			return slackSettingsFromDB(nil, r.slackOAuthInstallURL), nil
 		}
 		r.logger.Error("load slack settings failed", "error", err)
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
 
-	return slackSettingsFromDB(&settings), nil
+	return slackSettingsFromDB(&settings, r.slackOAuthInstallURL), nil
 }
 
 // IntegrationKeys is the resolver for the integrationKeys field.

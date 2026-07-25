@@ -142,6 +142,23 @@ const messages = {
   'schedule.action.delete': 'Delete override',
   'schedule.computedAt': 'Computed at',
   'settings.title': 'Settings',
+  'settings.slack.title': 'Slack workspace',
+  'settings.slack.description':
+    'Connect your Slack workspace so Escalite can post incidents and alerts. OAuth installs store the bot token encrypted at rest.',
+  'settings.slack.loading': 'Loading Slack settings…',
+  'settings.slack.status.connected': 'Connected',
+  'settings.slack.status.notConnected': 'No Slack workspace connected yet.',
+  'settings.slack.tokenHint': 'Bot token ends with {hint}',
+  'settings.slack.action.addToSlack': 'Add to Slack',
+  'settings.slack.action.reconnect': 'Reconnect Slack',
+  'settings.slack.action.saveToken': 'Save bot token',
+  'settings.slack.action.saving': 'Saving…',
+  'settings.slack.manual.label': 'Slack bot token',
+  'settings.slack.manual.placeholder': 'xoxb-…',
+  'settings.slack.manual.help':
+    'Paste a bot token from your Slack app when OAuth is not configured on this instance.',
+  'settings.slack.oauth.connected': 'Slack workspace connected successfully.',
+  'settings.slack.oauth.error': 'Slack authorization failed. Try again or contact your administrator.',
   'settings.devices.title': 'Mobile devices',
   'settings.devices.description':
     'Registered Expo push tokens for the Escalite mobile app. Revoke a device to stop push delivery to that installation.',

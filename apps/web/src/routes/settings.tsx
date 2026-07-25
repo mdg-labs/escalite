@@ -27,6 +27,7 @@ import {
 import { AlertTriangleIcon, CircleCheckIcon, SmartphoneIcon } from 'lucide-react'
 
 import { AppShell } from '../components/app-shell'
+import { SlackSettingsPanel } from '../components/slack-settings-panel'
 import { formatDateTime, formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
 
@@ -87,7 +88,10 @@ export function SettingsPage(): ReactElement {
 
   return (
     <AppShell title={t('settings.title')}>
-      <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
+      <div className="space-y-6">
+        <SlackSettingsPanel />
+
+        <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
         <div className="flex items-start gap-3">
           <SmartphoneIcon className="mt-0.5 size-5 text-muted-foreground" />
           <div>
@@ -182,6 +186,7 @@ export function SettingsPage(): ReactElement {
           )}
         </div>
       </section>
+      </div>
     </AppShell>
   )
 }

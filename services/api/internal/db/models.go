@@ -198,6 +198,10 @@ type OrganizationSlackSetting struct {
 	BotTokenCiphertext []byte             `json:"bot_token_ciphertext"`
 	EncryptionKeyID    string             `json:"encryption_key_id"`
 	TokenHint          string             `json:"token_hint"`
+	WorkspaceID        pgtype.Text        `json:"workspace_id"`
+	WorkspaceName      pgtype.Text        `json:"workspace_name"`
+	BotUserID          pgtype.Text        `json:"bot_user_id"`
+	Scope              pgtype.Text        `json:"scope"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
