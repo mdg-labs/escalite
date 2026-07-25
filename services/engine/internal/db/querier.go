@@ -24,6 +24,7 @@ type Querier interface {
 	CreateTeam(ctx context.Context, arg CreateTeamParams) (Team, error)
 	CreateTriggeredAlert(ctx context.Context, arg CreateTriggeredAlertParams) (Alert, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	FinishNotificationAttempt(ctx context.Context, arg FinishNotificationAttemptParams) (NotificationAttempt, error)
 	GetAlertByID(ctx context.Context, arg GetAlertByIDParams) (Alert, error)
 	GetAlertByServiceDedupKey(ctx context.Context, arg GetAlertByServiceDedupKeyParams) (Alert, error)
 	GetEscalationStepByPolicyAndOrder(ctx context.Context, arg GetEscalationStepByPolicyAndOrderParams) (EscalationStep, error)

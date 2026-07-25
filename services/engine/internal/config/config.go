@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -21,6 +22,15 @@ const (
 	encryptionKeyHint  = "generate with: openssl rand -hex 32 (see .env.example and docs/specs/07-security-and-auth.md)"
 )
 
+// SMTPConfig holds optional outbound SMTP settings. Nil means email is not sent.
+type SMTPConfig struct {
+	Host     string
+	Port     int
+	Username string
+	Password string
+	From     string
+}
+
 // Config holds parsed ESCALITE_* environment configuration.
 type Config struct {
 	ListenAddr            string
@@ -28,6 +38,7 @@ type Config struct {
 	LogLevel              string
 	EncryptionKey         []byte
 	HeartbeatScanInterval time.Duration
+	SMTP                  *SMTPConfig
 }
 
 // Load reads and validates configuration from the environment.
@@ -61,6 +72,12 @@ func Load(opts Options) (Config, error) {
 		return Config{}, err
 	}
 	cfg.HeartbeatScanInterval = heartbeatScanInterval
+
+	smtpCfg, err := loadSMTP()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.SMTP = smtpCfg
 
 	if strings.TrimSpace(cfg.ListenAddr) == "" {
 		return Config{}, fmt.Errorf("ESCALITE_HTTP_ADDR must not be empty")
@@ -157,4 +174,33 @@ func isAllZeros(key []byte) bool {
 		}
 	}
 	return true
+}
+
+func loadSMTP() (*SMTPConfig, error) {
+	host := strings.TrimSpace(os.Getenv("ESCALITE_SMTP_HOST"))
+	if host == "" {
+		return nil, nil
+	}
+
+	from := strings.TrimSpace(os.Getenv("ESCALITE_SMTP_FROM"))
+	if from == "" {
+		return nil, fmt.Errorf("ESCALITE_SMTP_FROM is required when ESCALITE_SMTP_HOST is set")
+	}
+
+	port := 587
+	if rawPort := strings.TrimSpace(os.Getenv("ESCALITE_SMTP_PORT")); rawPort != "" {
+		parsed, err := strconv.Atoi(rawPort)
+		if err != nil || parsed < 1 || parsed > 65535 {
+			return nil, fmt.Errorf("invalid ESCALITE_SMTP_PORT %q: use a port between 1 and 65535", rawPort)
+		}
+		port = parsed
+	}
+
+	return &SMTPConfig{
+		Host:     host,
+		Port:     port,
+		Username: strings.TrimSpace(os.Getenv("ESCALITE_SMTP_USERNAME")),
+		Password: os.Getenv("ESCALITE_SMTP_PASSWORD"),
+		From:     from,
+	}, nil
 }

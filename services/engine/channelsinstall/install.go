@@ -7,7 +7,13 @@ import (
 	"github.com/mdg-labs/escalite/services/engine/channels/push"
 	"github.com/mdg-labs/escalite/services/engine/channels/slackdm"
 	"github.com/mdg-labs/escalite/services/engine/channels/webhook"
+	engineemail "github.com/mdg-labs/escalite/services/engine/internal/email"
 )
+
+// ConfigureEmail sets the SMTP sender used by the email notification channel.
+func ConfigureEmail(sender engineemail.Sender) {
+	email.SetSender(sender)
+}
 
 func init() {
 	channels.Register(email.New())

@@ -15,6 +15,7 @@ import (
 	"github.com/mdg-labs/escalite/services/engine/internal/escalation"
 	"github.com/mdg-labs/escalite/services/engine/internal/queue"
 	"github.com/mdg-labs/escalite/services/engine/internal/testutil"
+	_ "github.com/mdg-labs/escalite/services/engine/channelsinstall"
 )
 
 func TestTriggeredAlertSchedulesStep1NotificationsWithin5s(t *testing.T) {
@@ -143,16 +144,31 @@ func TestTriggeredAlertSchedulesStep1NotificationsWithin5s(t *testing.T) {
 
 	deadline := time.Now().Add(5 * time.Second)
 	for {
-		count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+		attempts, err := queries.ListNotificationAttemptsByAlertID(ctx, db.ListNotificationAttemptsByAlertIDParams{
 			AlertID:        alertID,
 			OrganizationID: orgID,
 		})
 		require.NoError(t, err)
-		if count == 3 {
+		if len(attempts) != 3 {
+			if time.Now().After(deadline) {
+				t.Fatalf("expected 3 notification attempts within 5s, got %d", len(attempts))
+			}
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+
+		terminal := 0
+		for _, attempt := range attempts {
+			switch attempt.Status {
+			case "sent", "failed":
+				terminal++
+			}
+		}
+		if terminal == 3 {
 			break
 		}
 		if time.Now().After(deadline) {
-			t.Fatalf("expected 3 notification attempts within 5s, got %d", count)
+			t.Fatalf("expected 3 terminal notification attempts within 5s, got %d", terminal)
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -165,14 +181,16 @@ func TestTriggeredAlertSchedulesStep1NotificationsWithin5s(t *testing.T) {
 	require.Len(t, attempts, 3)
 
 	channelCounts := map[string]int{}
+	terminalStatuses := map[string]int{}
 	for _, attempt := range attempts {
-		require.Equal(t, "pending", attempt.Status)
 		require.True(t, attempt.EscalationStepID.Valid)
 		require.Equal(t, stepID, uuid.UUID(attempt.EscalationStepID.Bytes))
 		channelCounts[attempt.Channel]++
+		terminalStatuses[attempt.Status]++
 	}
 	require.Equal(t, 2, channelCounts["email"])
 	require.Equal(t, 1, channelCounts["push"])
+	require.Equal(t, 3, terminalStatuses["failed"]+terminalStatuses["sent"])
 
 	updatedAlert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
 		ID:             alertID,

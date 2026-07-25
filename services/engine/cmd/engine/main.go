@@ -10,11 +10,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/mdg-labs/escalite/services/engine/channelsinstall"
 	"github.com/mdg-labs/escalite/services/engine/internal/config"
+	"github.com/mdg-labs/escalite/services/engine/internal/email"
 	"github.com/mdg-labs/escalite/services/engine/internal/log"
 	"github.com/mdg-labs/escalite/services/engine/internal/queue"
 	"github.com/mdg-labs/escalite/services/engine/internal/server"
-	_ "github.com/mdg-labs/escalite/services/engine/channelsinstall"
 )
 
 const serviceName = "engine"
@@ -36,6 +37,8 @@ func run() int {
 
 	logger := log.NewJSONLogger(serviceName, cfg.LogLevel)
 	logger.Info("starting service", "listen_addr", cfg.ListenAddr)
+
+	channelsinstall.ConfigureEmail(newMailSender(cfg, logger))
 
 	ctx := context.Background()
 	queueClient, err := queue.New(ctx, queue.Options{
@@ -94,4 +97,22 @@ func run() int {
 
 	logger.Info("service stopped")
 	return 0
+}
+
+func newMailSender(cfg config.Config, logger *slog.Logger) email.Sender {
+	if cfg.SMTP == nil {
+		logger.Warn(
+			"smtp not configured; email notifications will fail until ESCALITE_SMTP_HOST and ESCALITE_SMTP_FROM are set (see .env.example)",
+		)
+		return nil
+	}
+
+	logger.Info("smtp configured for outbound email", "host", cfg.SMTP.Host, "port", cfg.SMTP.Port)
+	return email.NewSMTPSender(email.SMTPConfig{
+		Host:     cfg.SMTP.Host,
+		Port:     cfg.SMTP.Port,
+		Username: cfg.SMTP.Username,
+		Password: cfg.SMTP.Password,
+		From:     cfg.SMTP.From,
+	})
 }

@@ -88,6 +88,47 @@ func (q *Queries) CreateNotificationAttempt(ctx context.Context, arg CreateNotif
 	return i, err
 }
 
+const finishNotificationAttempt = `-- name: FinishNotificationAttempt :one
+UPDATE notification_attempts
+SET
+    status = $3,
+    error_message = $4,
+    sent_at = CASE WHEN $3 = 'sent' THEN now() ELSE sent_at END
+WHERE id = $1
+  AND organization_id = $2
+RETURNING id, organization_id, alert_id, escalation_step_id, channel, status, recipient, error_message, sent_at, created_at
+`
+
+type FinishNotificationAttemptParams struct {
+	ID             uuid.UUID   `json:"id"`
+	OrganizationID uuid.UUID   `json:"organization_id"`
+	Status         string      `json:"status"`
+	ErrorMessage   pgtype.Text `json:"error_message"`
+}
+
+func (q *Queries) FinishNotificationAttempt(ctx context.Context, arg FinishNotificationAttemptParams) (NotificationAttempt, error) {
+	row := q.db.QueryRow(ctx, finishNotificationAttempt,
+		arg.ID,
+		arg.OrganizationID,
+		arg.Status,
+		arg.ErrorMessage,
+	)
+	var i NotificationAttempt
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.AlertID,
+		&i.EscalationStepID,
+		&i.Channel,
+		&i.Status,
+		&i.Recipient,
+		&i.ErrorMessage,
+		&i.SentAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getNotificationAttemptByID = `-- name: GetNotificationAttemptByID :one
 SELECT id, organization_id, alert_id, escalation_step_id, channel, status, recipient, error_message, sent_at, created_at
 FROM notification_attempts
