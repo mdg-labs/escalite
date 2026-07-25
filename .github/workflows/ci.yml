@@ -83,7 +83,7 @@ jobs:
           fi
 
   e2e:
-    name: E2E smoke
+    name: E2E (compose gate)
     runs-on: ubuntu-latest
     env:
       ESCALITE_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef

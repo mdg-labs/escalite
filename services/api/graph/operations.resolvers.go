@@ -172,6 +172,16 @@ func (r *mutationResolver) Setup(ctx context.Context, input model.SetupInput) (*
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
 
+	_, err = txQueries.CreateTeam(ctx, db.CreateTeamParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		Name:           "Default",
+	})
+	if err != nil {
+		r.logger.Error("create default team failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
 	_, err = txQueries.CreateSession(ctx, db.CreateSessionParams{
 		ID:             sessionID,
 		UserID:         userID,
