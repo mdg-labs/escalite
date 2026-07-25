@@ -95,6 +95,12 @@ func run() int {
 				cfg.PasswordReset.IPWindow,
 			),
 		},
+		HeartbeatPing: &server.HeartbeatPingOptions{
+			TokenLimiter: ratelimit.NewMemoryLimiter(
+				cfg.HeartbeatPing.Limit,
+				cfg.HeartbeatPing.Window,
+			),
+		},
 		GraphQL: graphql.Options{
 			Production:    cfg.IsProduction(),
 			MaxDepth:      cfg.GraphQL.MaxDepth,

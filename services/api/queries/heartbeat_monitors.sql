@@ -50,3 +50,11 @@ RETURNING *;
 DELETE FROM heartbeat_monitors
 WHERE id = $1
   AND organization_id = $2;
+
+-- name: RecordHeartbeatPing :one
+UPDATE heartbeat_monitors
+SET last_ping_at = now(),
+    status = 'healthy',
+    updated_at = now()
+WHERE token_hash = $1
+RETURNING *;

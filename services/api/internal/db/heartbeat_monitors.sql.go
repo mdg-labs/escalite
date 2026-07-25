@@ -173,6 +173,35 @@ func (q *Queries) ListHeartbeatMonitorsByServiceID(ctx context.Context, arg List
 	return items, nil
 }
 
+const recordHeartbeatPing = `-- name: RecordHeartbeatPing :one
+UPDATE heartbeat_monitors
+SET last_ping_at = now(),
+    status = 'healthy',
+    updated_at = now()
+WHERE token_hash = $1
+RETURNING id, organization_id, service_id, name, interval_seconds, grace_seconds, token_hash, prefix, status, last_ping_at, created_at, updated_at
+`
+
+func (q *Queries) RecordHeartbeatPing(ctx context.Context, tokenHash string) (HeartbeatMonitor, error) {
+	row := q.db.QueryRow(ctx, recordHeartbeatPing, tokenHash)
+	var i HeartbeatMonitor
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.ServiceID,
+		&i.Name,
+		&i.IntervalSeconds,
+		&i.GraceSeconds,
+		&i.TokenHash,
+		&i.Prefix,
+		&i.Status,
+		&i.LastPingAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const updateHeartbeatMonitor = `-- name: UpdateHeartbeatMonitor :one
 UPDATE heartbeat_monitors
 SET name = $3,

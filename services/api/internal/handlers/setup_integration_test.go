@@ -59,6 +59,7 @@ type testServerOptions struct {
 	Mail          email.Sender
 	PublicURL     string
 	PasswordReset *server.PasswordResetOptions
+	HeartbeatPing *server.HeartbeatPingOptions
 }
 
 func newTestHandler(t *testing.T) (http.Handler, *pgxpool.Pool, func()) {
@@ -86,6 +87,7 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 		Mail:          opts.Mail,
 		PublicURL:     opts.PublicURL,
 		PasswordReset: opts.PasswordReset,
+		HeartbeatPing: opts.HeartbeatPing,
 	})
 
 	return handler, pool, func() {

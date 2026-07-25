@@ -48,6 +48,12 @@ type PasswordResetRateLimitConfig struct {
 	IPWindow    time.Duration
 }
 
+// HeartbeatPingRateLimitConfig controls heartbeat ping throttling per token.
+type HeartbeatPingRateLimitConfig struct {
+	Limit  int
+	Window time.Duration
+}
+
 // GraphQLConfig controls GraphQL transport hardening limits.
 type GraphQLConfig struct {
 	MaxDepth      int
@@ -66,6 +72,7 @@ type Config struct {
 	OIDC           *OIDCConfig
 	SMTP           *SMTPConfig
 	PasswordReset  PasswordResetRateLimitConfig
+	HeartbeatPing  HeartbeatPingRateLimitConfig
 	GraphQL        GraphQLConfig
 }
 
@@ -106,6 +113,7 @@ func Load(opts Options) (Config, error) {
 	cfg.PublicURL = strings.TrimSpace(os.Getenv("ESCALITE_PUBLIC_URL"))
 	cfg.AppOrigin = strings.TrimSuffix(strings.TrimSpace(os.Getenv("ESCALITE_APP_ORIGIN")), "/")
 	cfg.PasswordReset = loadPasswordResetRateLimit()
+	cfg.HeartbeatPing = loadHeartbeatPingRateLimit()
 	cfg.Environment = loadEnvironment()
 	cfg.GraphQL = loadGraphQLConfig()
 
@@ -197,6 +205,13 @@ func loadPasswordResetRateLimit() PasswordResetRateLimitConfig {
 		EmailWindow: envDurationOrDefault("ESCALITE_PASSWORD_RESET_RATE_LIMIT_EMAIL_WINDOW", time.Hour),
 		IPLimit:     envIntOrDefault("ESCALITE_PASSWORD_RESET_RATE_LIMIT_IP", 20),
 		IPWindow:    envDurationOrDefault("ESCALITE_PASSWORD_RESET_RATE_LIMIT_IP_WINDOW", time.Hour),
+	}
+}
+
+func loadHeartbeatPingRateLimit() HeartbeatPingRateLimitConfig {
+	return HeartbeatPingRateLimitConfig{
+		Limit:  envIntOrDefault("ESCALITE_HEARTBEAT_PING_RATE_LIMIT", 120),
+		Window: envDurationOrDefault("ESCALITE_HEARTBEAT_PING_RATE_LIMIT_WINDOW", time.Minute),
 	}
 }
 
