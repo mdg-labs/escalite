@@ -1,2 +1,2 @@
-// Package integrations handles inbound webhooks and outbound notification channels.
+// Package integrations defines compile-time inbound integration plugins and webhook ingestion.
 package integrations
