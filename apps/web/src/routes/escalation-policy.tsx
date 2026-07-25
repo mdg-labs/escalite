@@ -9,7 +9,6 @@ import {
 import {
   EscalationPolicyEditor,
   canSaveEscalationPolicy,
-  createEmptyTarget,
   type EscalationEditorPolicy,
   type EscalationPolicySavePayload,
 } from '@escalite/ui/domain/EscalationPolicyEditor'
