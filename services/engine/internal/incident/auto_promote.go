@@ -137,26 +137,3 @@ func findOrCreateOpenIncident(
 
 	return incident, true, nil
 }
-
-// EscalationSuppressed reports whether per-alert escalation should be skipped for an incident-grouped alert.
-func EscalationSuppressed(ctx context.Context, q db.Querier, alert db.Alert) (bool, error) {
-	if !alert.IncidentID.Valid {
-		return false, nil
-	}
-
-	service, err := q.GetServiceByID(ctx, db.GetServiceByIDParams{
-		ID:             alert.ServiceID,
-		OrganizationID: alert.OrganizationID,
-	})
-	if err != nil {
-		return false, fmt.Errorf("load service for escalation suppression: %w", err)
-	}
-
-	for _, priority := range service.AutoPromoteSuppressEscalationPriorities {
-		if priority == alert.Priority {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}

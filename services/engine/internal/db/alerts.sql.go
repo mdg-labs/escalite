@@ -215,6 +215,59 @@ func (q *Queries) GetAlertByID(ctx context.Context, arg GetAlertByIDParams) (Ale
 	return i, err
 }
 
+const listAlertsByIncidentID = `-- name: ListAlertsByIncidentID :many
+SELECT id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, resolved_at, resolved_integration, incident_id, created_at, updated_at
+FROM alerts
+WHERE incident_id = $1
+  AND organization_id = $2
+ORDER BY created_at ASC
+`
+
+type ListAlertsByIncidentIDParams struct {
+	IncidentID     pgtype.UUID `json:"incident_id"`
+	OrganizationID uuid.UUID   `json:"organization_id"`
+}
+
+func (q *Queries) ListAlertsByIncidentID(ctx context.Context, arg ListAlertsByIncidentIDParams) ([]Alert, error) {
+	rows, err := q.db.Query(ctx, listAlertsByIncidentID, arg.IncidentID, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Alert{}
+	for rows.Next() {
+		var i Alert
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.ServiceID,
+			&i.IntegrationKeyID,
+			&i.Status,
+			&i.DedupKey,
+			&i.Summary,
+			&i.Description,
+			&i.Priority,
+			&i.EventCount,
+			&i.EscalationState,
+			&i.AcknowledgedAt,
+			&i.AcknowledgedByUserID,
+			&i.ClosedAt,
+			&i.ResolvedAt,
+			&i.ResolvedIntegration,
+			&i.IncidentID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRecentUnassignedAlertsByService = `-- name: ListRecentUnassignedAlertsByService :many
 SELECT id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, resolved_at, resolved_integration, incident_id, created_at, updated_at
 FROM alerts

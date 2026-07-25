@@ -64,6 +64,13 @@ WHERE id = $1
   AND status IN ('triggered', 'acknowledged')
 RETURNING *;
 
+-- name: ListAlertsByIncidentID :many
+SELECT *
+FROM alerts
+WHERE incident_id = $1
+  AND organization_id = $2
+ORDER BY created_at ASC;
+
 -- name: ReEscalateAlert :one
 UPDATE alerts
 SET status = 'triggered',

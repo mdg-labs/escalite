@@ -2014,6 +2014,20 @@ func (r *mutationResolver) UpdateIncidentStatus(ctx context.Context, input model
 	}
 
 	r.audit.IncidentStatusUpdated(ctx, queries, sc.User.OrganizationID, sc.User.ID, incidentID, newStatus)
+
+	if newStatus == "resolved" && current.Status != "resolved" {
+		if err := escalationapi.ResumeEscalationOnIncidentClose(
+			ctx,
+			r.pool,
+			r.jobs,
+			incidentID,
+			sc.User.OrganizationID,
+		); err != nil {
+			r.logger.Error("resume escalation on incident close failed", "error", err, "incident_id", incidentID)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+	}
+
 	return incidentFromDB(incident), nil
 }
 

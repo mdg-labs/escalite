@@ -117,6 +117,36 @@ func (q *Queries) CreateTimelineEvent(ctx context.Context, arg CreateTimelineEve
 	return i, err
 }
 
+const getIncidentByID = `-- name: GetIncidentByID :one
+SELECT id, organization_id, team_id, title, status, created_by_user_id, resolved_at, created_at, updated_at
+FROM incidents
+WHERE id = $1
+  AND organization_id = $2
+LIMIT 1
+`
+
+type GetIncidentByIDParams struct {
+	ID             uuid.UUID `json:"id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+func (q *Queries) GetIncidentByID(ctx context.Context, arg GetIncidentByIDParams) (Incident, error) {
+	row := q.db.QueryRow(ctx, getIncidentByID, arg.ID, arg.OrganizationID)
+	var i Incident
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.TeamID,
+		&i.Title,
+		&i.Status,
+		&i.CreatedByUserID,
+		&i.ResolvedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getOpenIncidentForTeam = `-- name: GetOpenIncidentForTeam :one
 SELECT id, organization_id, team_id, title, status, created_by_user_id, resolved_at, created_at, updated_at
 FROM incidents

@@ -168,6 +168,95 @@ func TestAutoPromoteSuppressesEscalationForConfiguredPriorities(t *testing.T) {
 	}
 }
 
+func TestIncidentCloseResumesEscalationForTriggeredAlerts(t *testing.T) {
+	ctx := context.Background()
+	databaseURL, cleanup, err := testutil.StartPostgres(ctx)
+	require.NoError(t, err)
+	defer cleanup()
+
+	require.NoError(t, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+
+	queueClient, err := queue.New(ctx, queue.Options{
+		DatabaseURL: databaseURL,
+		Logger:      slog.Default(),
+	})
+	require.NoError(t, err)
+	defer queueClient.Close()
+
+	require.NoError(t, queueClient.Start(ctx))
+	defer func() {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = queueClient.Stop(stopCtx)
+	}()
+
+	queries := db.New(queueClient.Pool())
+	orgID, serviceID, _ := seedAutoPromoteService(t, ctx, queueClient.Pool(), queries, 1)
+
+	alertID := uuid.Must(uuid.NewV7())
+	_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
+		AlertID:        alertID,
+		OrganizationID: orgID,
+		ServiceID:      serviceID,
+		DedupKey:       "resume-on-close",
+		Summary:        "Database latency",
+		Priority:       "high",
+	})
+	require.NoError(t, err)
+
+	storedAlert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+		ID:             alertID,
+		OrganizationID: orgID,
+	})
+	require.NoError(t, err)
+	require.True(t, storedAlert.IncidentID.Valid)
+
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+			AlertID:        alertID,
+			OrganizationID: orgID,
+		})
+		require.NoError(t, err)
+		if count > 0 {
+			t.Fatalf("expected no notification attempts while incident is open, got %d", count)
+		}
+		if time.Now().After(deadline) {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	incidentID := uuid.UUID(storedAlert.IncidentID.Bytes)
+	_, err = queueClient.Pool().Exec(ctx, `
+		UPDATE incidents
+		SET status = 'resolved',
+		    resolved_at = now(),
+		    updated_at = now()
+		WHERE id = $1
+		  AND organization_id = $2
+	`, incidentID, orgID)
+	require.NoError(t, err)
+
+	require.NoError(t, escalation.ResumeEscalationOnIncidentClose(ctx, queries, queueClient, incidentID, orgID))
+
+	deadline = time.Now().Add(5 * time.Second)
+	for {
+		count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+			AlertID:        alertID,
+			OrganizationID: orgID,
+		})
+		require.NoError(t, err)
+		if count > 0 {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("expected notification attempts after incident close")
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
 func seedAutoPromoteService(
 	t *testing.T,
 	ctx context.Context,

@@ -104,3 +104,15 @@ func AcknowledgeAlert(
 	_, err := escalation.AcknowledgeAlert(ctx, queries, jobs, alertID, organizationID, acknowledgedBy)
 	return err
 }
+
+// ResumeEscalationOnIncidentClose schedules step-1 notifications for triggered alerts
+// whose escalation was suppressed while grouped under a resolved incident.
+func ResumeEscalationOnIncidentClose(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	jobs JobProducer,
+	incidentID, organizationID uuid.UUID,
+) error {
+	queries := db.New(pool)
+	return escalation.ResumeEscalationOnIncidentClose(ctx, queries, jobs, incidentID, organizationID)
+}
