@@ -172,6 +172,13 @@ func scheduleStepNotifications(
 					}
 					recipient.Config = config
 				}
+				if channel == "push" {
+					config, err := pushRecipientConfig(ctx, q, alert.OrganizationID, recipient.UserID)
+					if err != nil {
+						return err
+					}
+					recipient.Config = config
+				}
 
 				attemptID := uuid.Must(uuid.NewV7())
 				recipientJSON, err := json.Marshal(recipient)
@@ -408,6 +415,57 @@ func slackUserIDFromConfig(raw []byte) (string, error) {
 		return "", fmt.Errorf("parse slack-dm contact config: %w", err)
 	}
 	return strings.TrimSpace(cfg.SlackUserID), nil
+}
+
+func pushRecipientConfig(
+	ctx context.Context,
+	q db.Querier,
+	organizationID uuid.UUID,
+	userID string,
+) (json.RawMessage, error) {
+	parsedUserID, err := uuid.Parse(strings.TrimSpace(userID))
+	if err != nil {
+		return nil, fmt.Errorf("invalid user id for push: %w", err)
+	}
+
+	contact, err := q.GetUserContactMethodByChannel(ctx, db.GetUserContactMethodByChannelParams{
+		OrganizationID: organizationID,
+		UserID:         parsedUserID,
+		Channel:        "push",
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("load push contact method: %w", err)
+	}
+
+	token, err := expoPushTokenFromConfig(contact.Config)
+	if err != nil {
+		return nil, err
+	}
+	if token == "" {
+		return nil, nil
+	}
+
+	raw, err := json.Marshal(map[string]string{"expo_push_token": token})
+	if err != nil {
+		return nil, fmt.Errorf("marshal push config: %w", err)
+	}
+	return raw, nil
+}
+
+func expoPushTokenFromConfig(raw []byte) (string, error) {
+	if len(raw) == 0 {
+		return "", nil
+	}
+	var cfg struct {
+		ExpoPushToken string `json:"expo_push_token"`
+	}
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return "", fmt.Errorf("parse push contact config: %w", err)
+	}
+	return strings.TrimSpace(cfg.ExpoPushToken), nil
 }
 
 // CreateTriggeredAlertParams configures a new triggered alert and schedules step-1 escalation.
