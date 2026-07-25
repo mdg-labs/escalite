@@ -11,6 +11,8 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"github.com/riverqueue/river/rivertype"
+
+	"github.com/mdg-labs/escalite/services/engine/internal/crypto"
 )
 
 const defaultQueueWorkers = 10
@@ -21,6 +23,7 @@ type Options struct {
 	Logger                *slog.Logger
 	Workers               *river.Workers
 	HeartbeatScanInterval time.Duration
+	EncryptionKey         []byte
 }
 
 // Client wraps a pgx pool and River worker client.
@@ -53,7 +56,15 @@ func New(ctx context.Context, opts Options) (*Client, error) {
 
 	workers := opts.Workers
 	if workers == nil {
-		workers = NewWorkers(opts.Logger, pool, client)
+		var secrets *crypto.Box
+		if len(opts.EncryptionKey) > 0 {
+			secrets, err = crypto.NewBox(opts.EncryptionKey)
+			if err != nil {
+				pool.Close()
+				return nil, fmt.Errorf("create encryption box: %w", err)
+			}
+		}
+		workers = NewWorkers(opts.Logger, pool, client, secrets)
 	}
 
 	riverClient, err := river.NewClient(riverpgxv5.New(pool), &river.Config{

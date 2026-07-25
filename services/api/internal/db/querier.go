@@ -48,6 +48,7 @@ type Querier interface {
 	GetFirstOrganization(ctx context.Context) (Organization, error)
 	GetHeartbeatMonitorByID(ctx context.Context, arg GetHeartbeatMonitorByIDParams) (HeartbeatMonitor, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
+	GetOrganizationSlackSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSlackSetting, error)
 	GetOverrideByID(ctx context.Context, arg GetOverrideByIDParams) (Override, error)
 	GetPasswordResetTokenByHash(ctx context.Context, tokenHash string) (PasswordResetToken, error)
 	GetRotationByID(ctx context.Context, arg GetRotationByIDParams) (Rotation, error)
@@ -58,6 +59,7 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, arg GetUserByEmailParams) (User, error)
 	GetUserByEmailForAuth(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, arg GetUserByIDParams) (User, error)
+	GetUserContactMethodByChannel(ctx context.Context, arg GetUserContactMethodByChannelParams) (UserContactMethod, error)
 	HasTeamMembership(ctx context.Context, arg HasTeamMembershipParams) (bool, error)
 	InvalidateUnusedPasswordResetTokensForUser(ctx context.Context, userID uuid.UUID) error
 	ListActiveOverridesByScheduleAt(ctx context.Context, arg ListActiveOverridesByScheduleAtParams) ([]Override, error)
@@ -84,6 +86,8 @@ type Querier interface {
 	UpdateRotation(ctx context.Context, arg UpdateRotationParams) (Rotation, error)
 	UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Schedule, error)
 	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
+	UpsertOrganizationSlackSettings(ctx context.Context, arg UpsertOrganizationSlackSettingsParams) (OrganizationSlackSetting, error)
+	UpsertUserContactMethod(ctx context.Context, arg UpsertUserContactMethodParams) (UserContactMethod, error)
 }
 
 var _ Querier = (*Queries)(nil)

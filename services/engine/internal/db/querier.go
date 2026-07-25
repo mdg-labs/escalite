@@ -6,6 +6,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type Querier interface {
@@ -29,9 +31,11 @@ type Querier interface {
 	GetAlertByServiceDedupKey(ctx context.Context, arg GetAlertByServiceDedupKeyParams) (Alert, error)
 	GetEscalationStepByPolicyAndOrder(ctx context.Context, arg GetEscalationStepByPolicyAndOrderParams) (EscalationStep, error)
 	GetNotificationAttemptByID(ctx context.Context, arg GetNotificationAttemptByIDParams) (NotificationAttempt, error)
+	GetOrganizationSlackSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSlackSetting, error)
 	GetScheduleByID(ctx context.Context, arg GetScheduleByIDParams) (Schedule, error)
 	GetServiceByID(ctx context.Context, arg GetServiceByIDParams) (Service, error)
 	GetUserByID(ctx context.Context, arg GetUserByIDParams) (User, error)
+	GetUserContactMethodByChannel(ctx context.Context, arg GetUserContactMethodByChannelParams) (UserContactMethod, error)
 	ListActiveOverridesByScheduleAt(ctx context.Context, arg ListActiveOverridesByScheduleAtParams) ([]Override, error)
 	ListEscalationPoliciesByServiceID(ctx context.Context, arg ListEscalationPoliciesByServiceIDParams) ([]EscalationPolicy, error)
 	ListEscalationStepTargetsByStepID(ctx context.Context, arg ListEscalationStepTargetsByStepIDParams) ([]EscalationStepTarget, error)

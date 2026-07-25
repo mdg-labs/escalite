@@ -7,6 +7,7 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/mail"
 	"strings"
@@ -1316,15 +1317,57 @@ func (r *mutationResolver) SaveUserContactMethod(ctx context.Context, input mode
 		config = map[string]any{}
 	}
 
-	now := time.Now().UTC()
-	return &model.UserContactMethod{
-		ID:        uuid.Must(uuid.NewV7()).String(),
-		UserID:    sc.User.ID.String(),
-		Channel:   input.Channel,
-		Config:    config,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}, nil
+	rawConfig, err := json.Marshal(config)
+	if err != nil {
+		return nil, gqlerr.New(handlers.CodeValidation, "config must be a JSON object")
+	}
+
+	queries := db.New(r.pool)
+	method, err := queries.UpsertUserContactMethod(ctx, db.UpsertUserContactMethodParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: sc.User.OrganizationID,
+		UserID:         sc.User.ID,
+		Channel:        strings.TrimSpace(input.Channel),
+		Config:         rawConfig,
+	})
+	if err != nil {
+		r.logger.Error("save user contact method failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return userContactMethodFromDB(method)
+}
+
+// SaveSlackSettings is the resolver for the saveSlackSettings field.
+func (r *mutationResolver) SaveSlackSettings(ctx context.Context, input model.SaveSlackSettingsInput) (*model.SlackSettings, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if r.secrets == nil {
+		return nil, gqlerr.New(handlers.CodeInternal, "encryption is not configured")
+	}
+
+	botToken := strings.TrimSpace(input.BotToken)
+	if err := validateSlackBotToken(botToken); err != nil {
+		return nil, gqlerr.New(handlers.CodeValidation, err.Error())
+	}
+
+	params, err := encryptSlackBotToken(r.secrets, botToken)
+	if err != nil {
+		r.logger.Error("encrypt slack bot token failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	params.OrganizationID = sc.User.OrganizationID
+
+	queries := db.New(r.pool)
+	settings, err := queries.UpsertOrganizationSlackSettings(ctx, params)
+	if err != nil {
+		r.logger.Error("save slack settings failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return slackSettingsFromDB(&settings), nil
 }
 
 // Me is the resolver for the me field.
@@ -1730,6 +1773,26 @@ func (r *queryResolver) NotificationChannels(ctx context.Context) ([]*model.Noti
 		return nil, err
 	}
 	return notificationChannelDefinitions(), nil
+}
+
+// SlackSettings is the resolver for the slackSettings field.
+func (r *queryResolver) SlackSettings(ctx context.Context) (*model.SlackSettings, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	settings, err := queries.GetOrganizationSlackSettings(ctx, sc.User.OrganizationID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return slackSettingsFromDB(nil), nil
+		}
+		r.logger.Error("load slack settings failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return slackSettingsFromDB(&settings), nil
 }
 
 // Mutation returns MutationResolver implementation.

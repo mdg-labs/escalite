@@ -82,3 +82,7 @@ input SaveUserContactMethodInput {
   channel: String!
   config: JSON!
 }
+
+input SaveSlackSettingsInput {
+  botToken: String!
+}

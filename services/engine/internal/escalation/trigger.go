@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -160,8 +161,20 @@ func scheduleStepNotifications(
 
 		for _, item := range resolved {
 			for _, channel := range item.channels {
+				recipient := item.recipient
+				if channel == "slack-dm" {
+					config, skip, err := slackDMRecipientConfig(ctx, q, alert.OrganizationID, recipient.UserID, alert.ID)
+					if err != nil {
+						return err
+					}
+					if skip {
+						continue
+					}
+					recipient.Config = config
+				}
+
 				attemptID := uuid.Must(uuid.NewV7())
-				recipientJSON, err := json.Marshal(item.recipient)
+				recipientJSON, err := json.Marshal(recipient)
 				if err != nil {
 					return fmt.Errorf("marshal recipient: %w", err)
 				}
@@ -233,10 +246,11 @@ func scheduleEscalationTimer(
 }
 
 type recipientPayload struct {
-	Type   string `json:"type"`
-	UserID string `json:"user_id,omitempty"`
-	Email  string `json:"email,omitempty"`
-	URL    string `json:"url,omitempty"`
+	Type   string          `json:"type"`
+	UserID string          `json:"user_id,omitempty"`
+	Email  string          `json:"email,omitempty"`
+	URL    string          `json:"url,omitempty"`
+	Config json.RawMessage `json:"config,omitempty"`
 }
 
 type resolvedNotification struct {
@@ -330,6 +344,70 @@ func parseChannels(raw []byte) ([]string, error) {
 		return []string{"email"}, nil
 	}
 	return channels, nil
+}
+
+func slackDMRecipientConfig(
+	ctx context.Context,
+	q db.Querier,
+	organizationID uuid.UUID,
+	userID string,
+	alertID uuid.UUID,
+) (json.RawMessage, bool, error) {
+	parsedUserID, err := uuid.Parse(strings.TrimSpace(userID))
+	if err != nil {
+		return nil, false, fmt.Errorf("invalid user id for slack-dm: %w", err)
+	}
+
+	contact, err := q.GetUserContactMethodByChannel(ctx, db.GetUserContactMethodByChannelParams{
+		OrganizationID: organizationID,
+		UserID:         parsedUserID,
+		Channel:        "slack-dm",
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Default().Info(
+				"skipping slack-dm notification: missing slack_user_id",
+				"user_id", parsedUserID,
+				"organization_id", organizationID,
+				"alert_id", alertID,
+			)
+			return nil, true, nil
+		}
+		return nil, false, fmt.Errorf("load slack-dm contact method: %w", err)
+	}
+
+	slackUserID, err := slackUserIDFromConfig(contact.Config)
+	if err != nil {
+		return nil, false, err
+	}
+	if slackUserID == "" {
+		slog.Default().Info(
+			"skipping slack-dm notification: missing slack_user_id",
+			"user_id", parsedUserID,
+			"organization_id", organizationID,
+			"alert_id", alertID,
+		)
+		return nil, true, nil
+	}
+
+	raw, err := json.Marshal(map[string]string{"slack_user_id": slackUserID})
+	if err != nil {
+		return nil, false, fmt.Errorf("marshal slack-dm config: %w", err)
+	}
+	return raw, false, nil
+}
+
+func slackUserIDFromConfig(raw []byte) (string, error) {
+	if len(raw) == 0 {
+		return "", nil
+	}
+	var cfg struct {
+		SlackUserID string `json:"slack_user_id"`
+	}
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return "", fmt.Errorf("parse slack-dm contact config: %w", err)
+	}
+	return strings.TrimSpace(cfg.SlackUserID), nil
 }
 
 // CreateTriggeredAlertParams configures a new triggered alert and schedules step-1 escalation.

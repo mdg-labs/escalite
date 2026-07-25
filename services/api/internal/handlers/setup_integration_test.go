@@ -3,6 +3,7 @@ package handlers_test
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -19,6 +20,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
+	"github.com/mdg-labs/escalite/services/api/internal/crypto"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/email"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
@@ -60,6 +62,18 @@ type testServerOptions struct {
 	PublicURL     string
 	PasswordReset *server.PasswordResetOptions
 	HeartbeatPing *server.HeartbeatPingOptions
+	Secrets       *crypto.Box
+}
+
+const testEncryptionKeyHex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+func testSecretsBox(t *testing.T) *crypto.Box {
+	t.Helper()
+	key, err := hex.DecodeString(testEncryptionKeyHex)
+	require.NoError(t, err)
+	box, err := crypto.NewBox(key)
+	require.NoError(t, err)
+	return box
 }
 
 func newTestHandler(t *testing.T) (http.Handler, *pgxpool.Pool, func()) {
@@ -80,10 +94,16 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 	jobs, err := queue.NewProducer(ctx, pool, slog.Default())
 	require.NoError(t, err)
 
+	secrets := opts.Secrets
+	if secrets == nil {
+		secrets = testSecretsBox(t)
+	}
+
 	handler := server.New(server.Dependencies{
 		Logger:        slog.Default(),
 		Pool:          pool,
 		Jobs:          jobs,
+		Secrets:       secrets,
 		Mail:          opts.Mail,
 		PublicURL:     opts.PublicURL,
 		PasswordReset: opts.PasswordReset,

@@ -123,7 +123,7 @@ func TestNotifyWorkerRecordsFailedAttemptOnSendError(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	worker := queue.NewNotifyWorker(slog.Default(), queueClient.Pool())
+	worker := queue.NewNotifyWorker(slog.Default(), queueClient.Pool(), nil)
 	err = worker.Work(ctx, &river.Job[jobs.NotifyArgs]{
 		JobRow: &rivertype.JobRow{
 			Attempt:     1,
@@ -238,7 +238,7 @@ func TestNotifyWorkerDeliversWebhookAttempt(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	worker := queue.NewNotifyWorker(slog.Default(), queueClient.Pool())
+	worker := queue.NewNotifyWorker(slog.Default(), queueClient.Pool(), nil)
 	err = worker.Work(ctx, &river.Job[jobs.NotifyArgs]{
 		Args: jobs.NotifyArgs{
 			NotificationAttemptID: attemptID,

@@ -12,6 +12,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 
 	"github.com/mdg-labs/escalite/services/api/graph"
+	"github.com/mdg-labs/escalite/services/api/internal/crypto"
 	"github.com/mdg-labs/escalite/services/api/internal/gqlerr"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/api/internal/queue"
@@ -30,7 +31,7 @@ type Options struct {
 }
 
 // NewHandler returns a gqlgen server configured with transport hardening and error codes.
-func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, opts Options) http.Handler {
+func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, secrets *crypto.Box, opts Options) http.Handler {
 	maxDepth := opts.MaxDepth
 	if maxDepth <= 0 {
 		maxDepth = defaultMaxDepth
@@ -42,7 +43,7 @@ func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, o
 	}
 
 	srv := gqlhandler.New(graph.NewExecutableSchema(graph.Config{
-		Resolvers: graph.NewResolver(pool, logger, jobs),
+		Resolvers: graph.NewResolver(pool, logger, jobs, secrets),
 	}))
 
 	srv.AddTransport(transport.POST{})

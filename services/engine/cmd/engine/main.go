@@ -45,6 +45,7 @@ func run() int {
 		DatabaseURL:           cfg.DatabaseURL,
 		Logger:                logger,
 		HeartbeatScanInterval: cfg.HeartbeatScanInterval,
+		EncryptionKey:         cfg.EncryptionKey,
 	})
 	if err != nil {
 		logger.Error("queue client failed", "error", err)

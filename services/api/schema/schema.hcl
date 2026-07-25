@@ -1402,3 +1402,108 @@ table "refresh_tokens" {
     columns = [column.organization_id]
   }
 }
+
+table "organization_slack_settings" {
+  schema = schema.public
+
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "bot_token_ciphertext" {
+    null = false
+    type = bytea
+  }
+  column "encryption_key_id" {
+    null = false
+    type = text
+  }
+  column "token_hint" {
+    null = false
+    type = text
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.organization_id]
+  }
+
+  foreign_key "organization_slack_settings_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+}
+
+table "user_contact_methods" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "user_id" {
+    null = false
+    type = uuid
+  }
+  column "channel" {
+    null = false
+    type = text
+  }
+  column "config" {
+    null    = false
+    type    = jsonb
+    default = "{}"
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "user_contact_methods_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "user_contact_methods_user_id_organization_id_fkey" {
+    columns     = [column.user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "user_contact_methods_organization_id_user_id_channel_key" {
+    columns = [column.organization_id, column.user_id, column.channel]
+  }
+
+  index "user_contact_methods_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  index "user_contact_methods_user_id_idx" {
+    columns = [column.user_id]
+  }
+}

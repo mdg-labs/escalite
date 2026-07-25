@@ -3,15 +3,19 @@ package queue
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 
 	"github.com/mdg-labs/escalite/services/engine/channels"
+	"github.com/mdg-labs/escalite/services/engine/internal/crypto"
 	"github.com/mdg-labs/escalite/services/engine/internal/db"
 	"github.com/mdg-labs/escalite/services/engine/internal/jobs"
 )
@@ -24,15 +28,16 @@ const (
 // NotifyWorker processes outbound notification jobs.
 type NotifyWorker struct {
 	river.WorkerDefaults[jobs.NotifyArgs]
-	logger *slog.Logger
-	pool   *pgxpool.Pool
+	logger  *slog.Logger
+	pool    *pgxpool.Pool
+	secrets *crypto.Box
 }
 
-func NewNotifyWorker(logger *slog.Logger, pool *pgxpool.Pool) *NotifyWorker {
+func NewNotifyWorker(logger *slog.Logger, pool *pgxpool.Pool, secrets *crypto.Box) *NotifyWorker {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &NotifyWorker{logger: logger, pool: pool}
+	return &NotifyWorker{logger: logger, pool: pool, secrets: secrets}
 }
 
 func (w *NotifyWorker) Work(ctx context.Context, job *river.Job[jobs.NotifyArgs]) error {
@@ -71,6 +76,13 @@ func (w *NotifyWorker) Work(ctx context.Context, job *river.Job[jobs.NotifyArgs]
 	target, channelConfig, err := parseRecipient(attempt.Recipient)
 	if err != nil {
 		return w.finishAttempt(ctx, queries, attempt, notificationStatusFailed, err.Error())
+	}
+
+	if attempt.Channel == "slack-dm" {
+		channelConfig, err = w.mergeSlackDMConfig(ctx, queries, attempt.OrganizationID, channelConfig)
+		if err != nil {
+			return w.finishAttempt(ctx, queries, attempt, notificationStatusFailed, err.Error())
+		}
 	}
 
 	sendErr := channel.Send(ctx, channels.SendParams{
@@ -170,4 +182,45 @@ func notifyAttemptNumber(job *river.Job[jobs.NotifyArgs]) int {
 
 func shouldRetryDelivery(channelName string, err error) bool {
 	return channelName == "webhook" && err != nil
+}
+
+func (w *NotifyWorker) mergeSlackDMConfig(
+	ctx context.Context,
+	queries *db.Queries,
+	organizationID uuid.UUID,
+	existing json.RawMessage,
+) (json.RawMessage, error) {
+	if w.secrets == nil {
+		return nil, errors.New("encryption is not configured")
+	}
+
+	settings, err := queries.GetOrganizationSlackSettings(ctx, organizationID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New("slack bot token is not configured")
+		}
+		return nil, fmt.Errorf("load slack settings: %w", err)
+	}
+
+	token, err := w.secrets.Decrypt(crypto.Encrypted{
+		KeyID:      settings.EncryptionKeyID,
+		Ciphertext: settings.BotTokenCiphertext,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("decrypt slack bot token: %w", err)
+	}
+
+	cfg := map[string]any{}
+	if len(existing) > 0 {
+		if err := json.Unmarshal(existing, &cfg); err != nil {
+			return nil, fmt.Errorf("parse slack-dm config: %w", err)
+		}
+	}
+	cfg["bot_token"] = string(token)
+
+	raw, err := json.Marshal(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("marshal slack-dm config: %w", err)
+	}
+	return raw, nil
 }

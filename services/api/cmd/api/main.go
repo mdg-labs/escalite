@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/mdg-labs/escalite/services/api/internal/config"
+	"github.com/mdg-labs/escalite/services/api/internal/crypto"
 	"github.com/mdg-labs/escalite/services/api/internal/email"
 	"github.com/mdg-labs/escalite/services/api/internal/graphql"
 	"github.com/mdg-labs/escalite/services/api/internal/log"
@@ -63,6 +64,12 @@ func run() int {
 		return 1
 	}
 
+	secrets, err := crypto.NewBox(cfg.EncryptionKey)
+	if err != nil {
+		logger.Error("encryption setup failed", "error", err)
+		return 1
+	}
+
 	var oidcProvider *oidc.Provider
 	if cfg.OIDC != nil {
 		oidcProvider, err = oidc.NewProvider(ctx, oidc.Config{
@@ -82,6 +89,7 @@ func run() int {
 		Logger:    logger,
 		Pool:      pool,
 		Jobs:      jobs,
+		Secrets:   secrets,
 		OIDC:      server.NewOIDCServices(pool, logger, cfg.OIDC, oidcProvider),
 		Mail:      newMailSender(cfg, logger),
 		PublicURL: cfg.PublicURL,

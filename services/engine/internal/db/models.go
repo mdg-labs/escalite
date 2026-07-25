@@ -120,6 +120,15 @@ type Organization struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
+type OrganizationSlackSetting struct {
+	OrganizationID     uuid.UUID          `json:"organization_id"`
+	BotTokenCiphertext []byte             `json:"bot_token_ciphertext"`
+	EncryptionKeyID    string             `json:"encryption_key_id"`
+	TokenHint          string             `json:"token_hint"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Override struct {
 	ID               uuid.UUID          `json:"id"`
 	ScheduleID       uuid.UUID          `json:"schedule_id"`
@@ -224,6 +233,16 @@ type User struct {
 	Email          string             `json:"email"`
 	PasswordHash   pgtype.Text        `json:"password_hash"`
 	Role           string             `json:"role"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type UserContactMethod struct {
+	ID             uuid.UUID          `json:"id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	UserID         uuid.UUID          `json:"user_id"`
+	Channel        string             `json:"channel"`
+	Config         []byte             `json:"config"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }

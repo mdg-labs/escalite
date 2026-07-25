@@ -114,6 +114,7 @@ type ComplexityRoot struct {
 		DeleteSchedule         func(childComplexity int, id string) int
 		Login                  func(childComplexity int, input model.LoginInput) int
 		ReEscalateAlert        func(childComplexity int, id string) int
+		SaveSlackSettings      func(childComplexity int, input model.SaveSlackSettingsInput) int
 		SaveUserContactMethod  func(childComplexity int, input model.SaveUserContactMethodInput) int
 		Setup                  func(childComplexity int, input model.SetupInput) int
 		SnoozeAlert            func(childComplexity int, id string, durationMinutes int) int
@@ -174,6 +175,7 @@ type ComplexityRoot struct {
 		Overrides            func(childComplexity int, scheduleID string) int
 		Schedule             func(childComplexity int, id string) int
 		Schedules            func(childComplexity int, teamID string) int
+		SlackSettings        func(childComplexity int) int
 	}
 
 	Rotation struct {
@@ -211,6 +213,11 @@ type ComplexityRoot struct {
 	SetupPayload struct {
 		Organization func(childComplexity int) int
 		User         func(childComplexity int) int
+	}
+
+	SlackSettings struct {
+		Configured func(childComplexity int) int
+		TokenHint  func(childComplexity int) int
 	}
 
 	Team struct {
@@ -266,6 +273,7 @@ type MutationResolver interface {
 	CreateOverride(ctx context.Context, input model.CreateOverrideInput) (*model.Override, error)
 	DeleteOverride(ctx context.Context, id string) (bool, error)
 	SaveUserContactMethod(ctx context.Context, input model.SaveUserContactMethodInput) (*model.UserContactMethod, error)
+	SaveSlackSettings(ctx context.Context, input model.SaveSlackSettingsInput) (*model.SlackSettings, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
@@ -279,6 +287,7 @@ type QueryResolver interface {
 	OnCallNow(ctx context.Context, scheduleID string, at *time.Time) (*model.OnCallNow, error)
 	Overrides(ctx context.Context, scheduleID string) ([]*model.Override, error)
 	NotificationChannels(ctx context.Context) ([]*model.NotificationChannelDefinition, error)
+	SlackSettings(ctx context.Context) (*model.SlackSettings, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -723,6 +732,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.ReEscalateAlert(childComplexity, args["id"].(string)), true
+	case "Mutation.saveSlackSettings":
+		if e.ComplexityRoot.Mutation.SaveSlackSettings == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveSlackSettings_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SaveSlackSettings(childComplexity, args["input"].(model.SaveSlackSettingsInput)), true
 	case "Mutation.saveUserContactMethod":
 		if e.ComplexityRoot.Mutation.SaveUserContactMethod == nil {
 			break
@@ -1057,6 +1077,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Schedules(childComplexity, args["teamId"].(string)), true
+	case "Query.slackSettings":
+		if e.ComplexityRoot.Query.SlackSettings == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.SlackSettings(childComplexity), true
 
 	case "Rotation.createdAt":
 		if e.ComplexityRoot.Rotation.CreatedAt == nil {
@@ -1212,6 +1238,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.SetupPayload.User(childComplexity), true
 
+	case "SlackSettings.configured":
+		if e.ComplexityRoot.SlackSettings.Configured == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackSettings.Configured(childComplexity), true
+	case "SlackSettings.tokenHint":
+		if e.ComplexityRoot.SlackSettings.TokenHint == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackSettings.TokenHint(childComplexity), true
+
 	case "Team.createdAt":
 		if e.ComplexityRoot.Team.CreatedAt == nil {
 			break
@@ -1332,6 +1371,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateScheduleInput,
 		ec.unmarshalInputEscalationStepInput,
 		ec.unmarshalInputLoginInput,
+		ec.unmarshalInputSaveSlackSettingsInput,
 		ec.unmarshalInputSaveUserContactMethodInput,
 		ec.unmarshalInputSetupInput,
 		ec.unmarshalInputUpdateEscalationPolicyInput,
@@ -1531,6 +1571,10 @@ input SaveUserContactMethodInput {
   channel: String!
   config: JSON!
 }
+
+input SaveSlackSettingsInput {
+  botToken: String!
+}
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Query {
   """
@@ -1589,6 +1633,11 @@ input SaveUserContactMethodInput {
   List registered notification channels and config schemas for form generation.
   """
   notificationChannels: [NotificationChannelDefinition!]!
+
+  """
+  Organization Slack bot token status (org admin only).
+  """
+  slackSettings: SlackSettings!
 }
 
 type Mutation {
@@ -1696,6 +1745,11 @@ type Mutation {
   Save the current user's contact method config for a notification channel.
   """
   saveUserContactMethod(input: SaveUserContactMethodInput!): UserContactMethod!
+
+  """
+  Save the organization Slack bot token (org admin only). Returns last-4 hint only.
+  """
+  saveSlackSettings(input: SaveSlackSettingsInput!): SlackSettings!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/scalars.graphql", Input: `"""
@@ -1887,6 +1941,12 @@ type UserContactMethod {
   config: JSON!
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+"""Organization Slack bot token configuration (hint only after save)."""
+type SlackSettings {
+  configured: Boolean!
+  tokenHint: String
 }
 `, BuiltIn: false},
 }
@@ -2152,6 +2212,16 @@ func (ec *executionContext) childFields_SetupPayload(ctx context.Context, field 
 		return ec.fieldContext_SetupPayload_user(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type SetupPayload", field.Name)
+}
+
+func (ec *executionContext) childFields_SlackSettings(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "configured":
+		return ec.fieldContext_SlackSettings_configured(ctx, field)
+	case "tokenHint":
+		return ec.fieldContext_SlackSettings_tokenHint(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type SlackSettings", field.Name)
 }
 
 func (ec *executionContext) childFields_User(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2499,6 +2569,20 @@ func (ec *executionContext) field_Mutation_reEscalateAlert_args(ctx context.Cont
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_saveSlackSettings_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.SaveSlackSettingsInput, error) {
+			return ec.unmarshalNSaveSlackSettingsInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveSlackSettingsInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -4765,6 +4849,50 @@ func (ec *executionContext) fieldContext_Mutation_saveUserContactMethod(ctx cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_saveSlackSettings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_saveSlackSettings(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SaveSlackSettings(ctx, fc.Args["input"].(model.SaveSlackSettingsInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.SlackSettings) graphql.Marshaler {
+			return ec.marshalNSlackSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSlackSettings(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_saveSlackSettings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SlackSettings(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveSlackSettings_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NotificationChannelDefinition_name(ctx context.Context, field graphql.CollectedField, obj *model.NotificationChannelDefinition) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5774,6 +5902,38 @@ func (ec *executionContext) fieldContext_Query_notificationChannels(_ context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_slackSettings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_slackSettings(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().SlackSettings(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.SlackSettings) graphql.Marshaler {
+			return ec.marshalNSlackSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSlackSettings(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_slackSettings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SlackSettings(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6450,6 +6610,52 @@ func (ec *executionContext) fieldContext_SetupPayload_user(_ context.Context, fi
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _SlackSettings_configured(ctx context.Context, field graphql.CollectedField, obj *model.SlackSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackSettings_configured(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Configured, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackSettings_configured(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackSettings", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _SlackSettings_tokenHint(ctx context.Context, field graphql.CollectedField, obj *model.SlackSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackSettings_tokenHint(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TokenHint, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_SlackSettings_tokenHint(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackSettings", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Team_id(ctx context.Context, field graphql.CollectedField, obj *model.Team) (ret graphql.Marshaler) {
@@ -8249,6 +8455,36 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj an
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputSaveSlackSettingsInput(ctx context.Context, obj any) (model.SaveSlackSettingsInput, error) {
+	var it model.SaveSlackSettingsInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"botToken"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "botToken":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("botToken"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BotToken = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSaveUserContactMethodInput(ctx context.Context, obj any) (model.SaveUserContactMethodInput, error) {
 	var it model.SaveUserContactMethodInput
 	if obj == nil {
@@ -9120,6 +9356,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "saveSlackSettings":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveSlackSettings(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9688,6 +9931,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "slackSettings":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_slackSettings(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -9957,6 +10222,49 @@ func (ec *executionContext) _SetupPayload(ctx context.Context, sel ast.Selection
 		case "user":
 			out.Values[i] = ec._SetupPayload_user(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var slackSettingsImplementors = []string{"SlackSettings"}
+
+func (ec *executionContext) _SlackSettings(ctx context.Context, sel ast.SelectionSet, obj *model.SlackSettings) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, slackSettingsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SlackSettings")
+		case "configured":
+			out.Values[i] = ec._SlackSettings_configured(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tokenHint":
+			out.Values[i] = ec._SlackSettings_tokenHint(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
 		default:
@@ -11000,6 +11308,11 @@ func (ec *executionContext) marshalNRotation2ᚖgithubᚗcomᚋmdgᚑlabsᚋesca
 	return ec._Rotation(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNSaveSlackSettingsInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveSlackSettingsInput(ctx context.Context, v any) (model.SaveSlackSettingsInput, error) {
+	res, err := ec.unmarshalInputSaveSlackSettingsInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNSaveUserContactMethodInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveUserContactMethodInput(ctx context.Context, v any) (model.SaveUserContactMethodInput, error) {
 	res, err := ec.unmarshalInputSaveUserContactMethodInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -11052,6 +11365,20 @@ func (ec *executionContext) marshalNSetupPayload2ᚖgithubᚗcomᚋmdgᚑlabsᚋ
 		return graphql.Null
 	}
 	return ec._SetupPayload(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSlackSettings2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSlackSettings(ctx context.Context, sel ast.SelectionSet, v model.SlackSettings) graphql.Marshaler {
+	return ec._SlackSettings(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSlackSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSlackSettings(ctx context.Context, sel ast.SelectionSet, v *model.SlackSettings) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SlackSettings(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {

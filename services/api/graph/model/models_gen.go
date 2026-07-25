@@ -185,6 +185,10 @@ type Rotation struct {
 	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
+type SaveSlackSettingsInput struct {
+	BotToken string `json:"botToken"`
+}
+
 type SaveUserContactMethodInput struct {
 	Channel string         `json:"channel"`
 	Config  map[string]any `json:"config"`
@@ -219,6 +223,12 @@ type SetupInput struct {
 type SetupPayload struct {
 	Organization *Organization `json:"organization"`
 	User         *User         `json:"user"`
+}
+
+// Organization Slack bot token configuration (hint only after save).
+type SlackSettings struct {
+	Configured bool    `json:"configured"`
+	TokenHint  *string `json:"tokenHint,omitempty"`
 }
 
 type Team struct {
