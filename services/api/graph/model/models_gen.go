@@ -316,6 +316,14 @@ type Override struct {
 	UpdatedAt        time.Time `json:"updatedAt"`
 }
 
+type PromoteAlertToIncidentInput struct {
+	AlertID string `json:"alertId"`
+	// Attach to an existing incident instead of creating one.
+	IncidentID *string `json:"incidentId,omitempty"`
+	// Title when creating a new incident; defaults to the alert summary.
+	Title *string `json:"title,omitempty"`
+}
+
 type Query struct {
 }
 

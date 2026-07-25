@@ -178,3 +178,11 @@ input AssignIncidentRoleInput {
   roleDefinitionId: ID!
   userId: ID!
 }
+
+input PromoteAlertToIncidentInput {
+  alertId: ID!
+  """Attach to an existing incident instead of creating one."""
+  incidentId: ID
+  """Title when creating a new incident; defaults to the alert summary."""
+  title: String
+}

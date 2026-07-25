@@ -22,7 +22,7 @@ SET status = 'acknowledged',
 WHERE id = $1
   AND organization_id = $2
   AND status = 'triggered'
-RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
+RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, resolved_at, resolved_integration, created_at, updated_at
 `
 
 type AcknowledgeAlertParams struct {
@@ -55,6 +55,8 @@ func (q *Queries) AcknowledgeAlert(ctx context.Context, arg AcknowledgeAlertPara
 		&i.AcknowledgedAt,
 		&i.AcknowledgedByUserID,
 		&i.ClosedAt,
+		&i.ResolvedAt,
+		&i.ResolvedIntegration,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -70,7 +72,7 @@ SET status = 'closed',
 WHERE id = $1
   AND organization_id = $2
   AND status IN ('triggered', 'acknowledged')
-RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
+RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, resolved_at, resolved_integration, created_at, updated_at
 `
 
 type CloseAlertParams struct {
@@ -97,6 +99,8 @@ func (q *Queries) CloseAlert(ctx context.Context, arg CloseAlertParams) (Alert, 
 		&i.AcknowledgedAt,
 		&i.AcknowledgedByUserID,
 		&i.ClosedAt,
+		&i.ResolvedAt,
+		&i.ResolvedIntegration,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -104,7 +108,7 @@ func (q *Queries) CloseAlert(ctx context.Context, arg CloseAlertParams) (Alert, 
 }
 
 const getAlertByID = `-- name: GetAlertByID :one
-SELECT id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
+SELECT id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, resolved_at, resolved_integration, created_at, updated_at
 FROM alerts
 WHERE id = $1
   AND organization_id = $2
@@ -134,6 +138,8 @@ func (q *Queries) GetAlertByID(ctx context.Context, arg GetAlertByIDParams) (Ale
 		&i.AcknowledgedAt,
 		&i.AcknowledgedByUserID,
 		&i.ClosedAt,
+		&i.ResolvedAt,
+		&i.ResolvedIntegration,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -150,7 +156,7 @@ SET status = 'triggered',
 WHERE id = $1
   AND organization_id = $2
   AND status IN ('triggered', 'acknowledged')
-RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
+RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, resolved_at, resolved_integration, created_at, updated_at
 `
 
 type ReEscalateAlertParams struct {
@@ -177,6 +183,8 @@ func (q *Queries) ReEscalateAlert(ctx context.Context, arg ReEscalateAlertParams
 		&i.AcknowledgedAt,
 		&i.AcknowledgedByUserID,
 		&i.ClosedAt,
+		&i.ResolvedAt,
+		&i.ResolvedIntegration,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -189,7 +197,7 @@ SET escalation_state = $3,
     updated_at = now()
 WHERE id = $1
   AND organization_id = $2
-RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
+RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, resolved_at, resolved_integration, created_at, updated_at
 `
 
 type UpdateAlertEscalationStateParams struct {
@@ -216,6 +224,8 @@ func (q *Queries) UpdateAlertEscalationState(ctx context.Context, arg UpdateAler
 		&i.AcknowledgedAt,
 		&i.AcknowledgedByUserID,
 		&i.ClosedAt,
+		&i.ResolvedAt,
+		&i.ResolvedIntegration,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

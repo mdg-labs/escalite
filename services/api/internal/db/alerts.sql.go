@@ -64,6 +64,50 @@ func (q *Queries) AcknowledgeAlert(ctx context.Context, arg AcknowledgeAlertPara
 	return i, err
 }
 
+const assignAlertToIncident = `-- name: AssignAlertToIncident :one
+UPDATE alerts
+SET incident_id = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+  AND incident_id IS NULL
+  AND status IN ('triggered', 'acknowledged')
+RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, resolved_at, resolved_integration, incident_id, created_at, updated_at
+`
+
+type AssignAlertToIncidentParams struct {
+	ID             uuid.UUID   `json:"id"`
+	OrganizationID uuid.UUID   `json:"organization_id"`
+	IncidentID     pgtype.UUID `json:"incident_id"`
+}
+
+func (q *Queries) AssignAlertToIncident(ctx context.Context, arg AssignAlertToIncidentParams) (Alert, error) {
+	row := q.db.QueryRow(ctx, assignAlertToIncident, arg.ID, arg.OrganizationID, arg.IncidentID)
+	var i Alert
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.ServiceID,
+		&i.IntegrationKeyID,
+		&i.Status,
+		&i.DedupKey,
+		&i.Summary,
+		&i.Description,
+		&i.Priority,
+		&i.EventCount,
+		&i.EscalationState,
+		&i.AcknowledgedAt,
+		&i.AcknowledgedByUserID,
+		&i.ClosedAt,
+		&i.ResolvedAt,
+		&i.ResolvedIntegration,
+		&i.IncidentID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const closeAlert = `-- name: CloseAlert :one
 UPDATE alerts
 SET status = 'closed',

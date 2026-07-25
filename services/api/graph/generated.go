@@ -202,6 +202,7 @@ type ComplexityRoot struct {
 		DeleteSchedule               func(childComplexity int, id string) int
 		DeleteService                func(childComplexity int, id string) int
 		Login                        func(childComplexity int, input model.LoginInput) int
+		PromoteAlertToIncident       func(childComplexity int, input model.PromoteAlertToIncidentInput) int
 		ReEscalateAlert              func(childComplexity int, id string) int
 		RegisterMobileDevice         func(childComplexity int, input model.RegisterMobileDeviceInput) int
 		RevokeIntegrationKey         func(childComplexity int, id string) int
@@ -458,6 +459,7 @@ type MutationResolver interface {
 	DeleteIncidentRoleDefinition(ctx context.Context, id string) (bool, error)
 	AssignIncidentRole(ctx context.Context, input model.AssignIncidentRoleInput) (*model.IncidentRoleAssignment, error)
 	UnassignIncidentRole(ctx context.Context, id string) (bool, error)
+	PromoteAlertToIncident(ctx context.Context, input model.PromoteAlertToIncidentInput) (*model.Alert, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
@@ -1379,6 +1381,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.Login(childComplexity, args["input"].(model.LoginInput)), true
+	case "Mutation.promoteAlertToIncident":
+		if e.ComplexityRoot.Mutation.PromoteAlertToIncident == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_promoteAlertToIncident_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.PromoteAlertToIncident(childComplexity, args["input"].(model.PromoteAlertToIncidentInput)), true
 	case "Mutation.reEscalateAlert":
 		if e.ComplexityRoot.Mutation.ReEscalateAlert == nil {
 			break
@@ -2407,6 +2420,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputEscalationStepTargetInput,
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputNotificationRuleStepInput,
+		ec.unmarshalInputPromoteAlertToIncidentInput,
 		ec.unmarshalInputRegisterMobileDeviceInput,
 		ec.unmarshalInputSaveNotificationRuleInput,
 		ec.unmarshalInputSaveSlackSettingsInput,
@@ -2746,6 +2760,14 @@ input AssignIncidentRoleInput {
   incidentId: ID!
   roleDefinitionId: ID!
   userId: ID!
+}
+
+input PromoteAlertToIncidentInput {
+  alertId: ID!
+  """Attach to an existing incident instead of creating one."""
+  incidentId: ID
+  """Title when creating a new incident; defaults to the alert summary."""
+  title: String
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Subscription {
@@ -3104,6 +3126,11 @@ type Mutation {
   Remove a role assignment from an incident (team access required).
   """
   unassignIncidentRole(id: ID!): Boolean!
+
+  """
+  Promote an alert into a new or existing incident (team access required).
+  """
+  promoteAlertToIncident(input: PromoteAlertToIncidentInput!): Alert!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/scalars.graphql", Input: `"""
@@ -4418,6 +4445,20 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.LoginInput, error) {
 			return ec.unmarshalNLoginInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐLoginInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_promoteAlertToIncident_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.PromoteAlertToIncidentInput, error) {
+			return ec.unmarshalNPromoteAlertToIncidentInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐPromoteAlertToIncidentInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -9297,6 +9338,50 @@ func (ec *executionContext) fieldContext_Mutation_unassignIncidentRole(ctx conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_unassignIncidentRole_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_promoteAlertToIncident(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_promoteAlertToIncident(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().PromoteAlertToIncident(ctx, fc.Args["input"].(model.PromoteAlertToIncidentInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Alert) graphql.Marshaler {
+			return ec.marshalNAlert2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlert(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_promoteAlertToIncident(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Alert(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_promoteAlertToIncident_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -14336,6 +14421,50 @@ func (ec *executionContext) unmarshalInputNotificationRuleStepInput(ctx context.
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPromoteAlertToIncidentInput(ctx context.Context, obj any) (model.PromoteAlertToIncidentInput, error) {
+	var it model.PromoteAlertToIncidentInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"alertId", "incidentId", "title"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "alertId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("alertId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AlertID = data
+		case "incidentId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("incidentId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IncidentID = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputRegisterMobileDeviceInput(ctx context.Context, obj any) (model.RegisterMobileDeviceInput, error) {
 	var it model.RegisterMobileDeviceInput
 	if obj == nil {
@@ -16390,6 +16519,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "unassignIncidentRole":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_unassignIncidentRole(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "promoteAlertToIncident":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_promoteAlertToIncident(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -19227,6 +19363,11 @@ func (ec *executionContext) marshalNOverride2ᚖgithubᚗcomᚋmdgᚑlabsᚋesca
 		return graphql.Null
 	}
 	return ec._Override(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPromoteAlertToIncidentInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐPromoteAlertToIncidentInput(ctx context.Context, v any) (model.PromoteAlertToIncidentInput, error) {
+	res, err := ec.unmarshalInputPromoteAlertToIncidentInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNRegisterMobileDeviceInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRegisterMobileDeviceInput(ctx context.Context, v any) (model.RegisterMobileDeviceInput, error) {

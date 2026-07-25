@@ -354,4 +354,9 @@ type Mutation {
   Remove a role assignment from an incident (team access required).
   """
   unassignIncidentRole(id: ID!): Boolean!
+
+  """
+  Promote an alert into a new or existing incident (team access required).
+  """
+  promoteAlertToIncident(input: PromoteAlertToIncidentInput!): Alert!
 }

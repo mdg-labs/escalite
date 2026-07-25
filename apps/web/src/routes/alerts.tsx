@@ -10,6 +10,7 @@ import {
   useAlertsQuery,
   useCloseAlertMutation,
   useMeQuery,
+  usePromoteAlertToIncidentMutation,
 } from '@escalite/ts-types'
 import {
   Alert,
@@ -96,8 +97,10 @@ export function AlertsPage(): ReactElement {
 
   const [, acknowledgeAlert] = useAcknowledgeAlertMutation()
   const [, closeAlert] = useCloseAlertMutation()
+  const [, promoteAlertToIncident] = usePromoteAlertToIncidentMutation()
   const [ackLoading, setAckLoading] = useState(false)
   const [closeLoading, setCloseLoading] = useState(false)
+  const [promoteLoading, setPromoteLoading] = useState(false)
 
   useEffect(() => {
     if (data?.alerts) {
@@ -183,6 +186,25 @@ export function AlertsPage(): ReactElement {
     }
     if (result.data?.closeAlert) {
       applyAlertUpdate(result.data.closeAlert)
+    }
+  }
+
+  async function handlePromote(): Promise<void> {
+    if (!selectedAlert || selectedAlert.incidentId) {
+      return
+    }
+    setActionError(null)
+    setPromoteLoading(true)
+    const result = await promoteAlertToIncident({
+      input: { alertId: selectedAlert.id },
+    })
+    setPromoteLoading(false)
+    if (result.error) {
+      setActionError(t('alerts.error.action'))
+      return
+    }
+    if (result.data?.promoteAlertToIncident) {
+      applyAlertUpdate(result.data.promoteAlertToIncident)
     }
   }
 
@@ -316,6 +338,17 @@ export function AlertsPage(): ReactElement {
                 </Button>
                 <GroupSeparator />
                 <Button
+                  disabled={Boolean(selectedAlert.incidentId) || selectedAlert.status === AlertStatus.Closed}
+                  loading={promoteLoading}
+                  onClick={() => {
+                    void handlePromote()
+                  }}
+                  variant="outline"
+                >
+                  {promoteLoading ? t('alerts.action.promote.loading') : t('alerts.action.promote')}
+                </Button>
+                <GroupSeparator />
+                <Button
                   disabled={selectedAlert.status === AlertStatus.Closed}
                   loading={closeLoading}
                   onClick={() => {
@@ -358,6 +391,12 @@ export function AlertsPage(): ReactElement {
                     <dt className="text-muted-foreground">{t('alerts.detail.serviceId')}</dt>
                     <dd className="font-mono text-xs">{selectedAlert.serviceId}</dd>
                   </div>
+                  {selectedAlert.incidentId ? (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted-foreground">{t('alerts.detail.incident')}</dt>
+                      <dd className="font-mono text-xs">{selectedAlert.incidentId}</dd>
+                    </div>
+                  ) : null}
                 </dl>
               </div>
 

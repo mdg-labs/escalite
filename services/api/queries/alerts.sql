@@ -142,3 +142,13 @@ WHERE id = $1
   AND organization_id = $2
   AND status IN ('triggered', 'acknowledged')
 RETURNING *;
+
+-- name: AssignAlertToIncident :one
+UPDATE alerts
+SET incident_id = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+  AND incident_id IS NULL
+  AND status IN ('triggered', 'acknowledged')
+RETURNING *;
