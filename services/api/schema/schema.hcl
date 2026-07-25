@@ -3,7 +3,7 @@
 // Scheduling tables: schedules, rotations, overrides (#41).
 // Service + integration key tables (#40).
 // Escalation policies, alerts, notification_attempts (#42).
-// Sessions, audit_events, refresh_tokens (#43).
+// Sessions, audit_events, mobile_auth_codes, refresh_tokens (#43, #105).
 // Password reset tokens (#51).
 
 schema "public" {
@@ -1341,6 +1341,77 @@ table "password_reset_tokens" {
   }
 
   index "password_reset_tokens_expires_at_idx" {
+    columns = [column.expires_at]
+  }
+}
+
+table "mobile_auth_codes" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "user_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "code_hash" {
+    null = false
+    type = text
+  }
+  column "expires_at" {
+    null = false
+    type = timestamptz
+  }
+  column "used_at" {
+    null = true
+    type = timestamptz
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "mobile_auth_codes_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "mobile_auth_codes_user_id_organization_id_fkey" {
+    columns     = [column.user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "mobile_auth_codes_code_hash_key" {
+    columns = [column.code_hash]
+  }
+
+  unique "mobile_auth_codes_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "mobile_auth_codes_user_id_idx" {
+    columns = [column.user_id]
+  }
+
+  index "mobile_auth_codes_expires_at_idx" {
     columns = [column.expires_at]
   }
 }

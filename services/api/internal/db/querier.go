@@ -24,10 +24,12 @@ type Querier interface {
 	CreateEscalationStepTarget(ctx context.Context, arg CreateEscalationStepTargetParams) (EscalationStepTarget, error)
 	CreateHeartbeatMonitor(ctx context.Context, arg CreateHeartbeatMonitorParams) (HeartbeatMonitor, error)
 	CreateIntegrationKey(ctx context.Context, arg CreateIntegrationKeyParams) (IntegrationKey, error)
+	CreateMobileAuthCode(ctx context.Context, arg CreateMobileAuthCodeParams) (MobileAuthCode, error)
 	CreateNotificationAttempt(ctx context.Context, arg CreateNotificationAttemptParams) (NotificationAttempt, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
 	CreateOverride(ctx context.Context, arg CreateOverrideParams) (Override, error)
 	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetToken, error)
+	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error)
 	CreateRotation(ctx context.Context, arg CreateRotationParams) (Rotation, error)
 	CreateSchedule(ctx context.Context, arg CreateScheduleParams) (Schedule, error)
 	CreateService(ctx context.Context, arg CreateServiceParams) (Service, error)
@@ -51,11 +53,13 @@ type Querier interface {
 	GetFirstOrganization(ctx context.Context) (Organization, error)
 	GetHeartbeatMonitorByID(ctx context.Context, arg GetHeartbeatMonitorByIDParams) (HeartbeatMonitor, error)
 	GetIntegrationKeyByID(ctx context.Context, arg GetIntegrationKeyByIDParams) (IntegrationKey, error)
+	GetMobileAuthCodeByHash(ctx context.Context, codeHash string) (MobileAuthCode, error)
 	GetOpenAlertByServiceDedupKey(ctx context.Context, arg GetOpenAlertByServiceDedupKeyParams) (Alert, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
 	GetOrganizationSlackSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSlackSetting, error)
 	GetOverrideByID(ctx context.Context, arg GetOverrideByIDParams) (Override, error)
 	GetPasswordResetTokenByHash(ctx context.Context, tokenHash string) (PasswordResetToken, error)
+	GetRefreshTokenByHash(ctx context.Context, tokenHash string) (RefreshToken, error)
 	GetRotationByID(ctx context.Context, arg GetRotationByIDParams) (Rotation, error)
 	GetScheduleByID(ctx context.Context, arg GetScheduleByIDParams) (Schedule, error)
 	GetServiceByID(ctx context.Context, arg GetServiceByIDParams) (Service, error)
@@ -85,6 +89,7 @@ type Querier interface {
 	ListServicesByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]Service, error)
 	ListTeamsByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]Team, error)
 	ListUserNotificationRules(ctx context.Context, arg ListUserNotificationRulesParams) ([]UserNotificationRule, error)
+	MarkMobileAuthCodeUsed(ctx context.Context, arg MarkMobileAuthCodeUsedParams) error
 	MarkPasswordResetTokenUsed(ctx context.Context, id uuid.UUID) error
 	PingDatabase(ctx context.Context) (int32, error)
 	ReEscalateAlert(ctx context.Context, arg ReEscalateAlertParams) (Alert, error)
@@ -92,6 +97,7 @@ type Querier interface {
 	ResolveOpenAlert(ctx context.Context, arg ResolveOpenAlertParams) (Alert, error)
 	RevokeAllUserSessions(ctx context.Context, arg RevokeAllUserSessionsParams) error
 	RevokeIntegrationKey(ctx context.Context, arg RevokeIntegrationKeyParams) (IntegrationKey, error)
+	RevokeRefreshToken(ctx context.Context, arg RevokeRefreshTokenParams) error
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
 	SessionsSchemaReady(ctx context.Context) (bool, error)
 	SoftDeleteOverride(ctx context.Context, arg SoftDeleteOverrideParams) (Override, error)

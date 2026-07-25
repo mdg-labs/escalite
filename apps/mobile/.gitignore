@@ -1,4 +1,5 @@
 dist/
 .expo/
+.tamagui/
 node_modules/
 *.hbc

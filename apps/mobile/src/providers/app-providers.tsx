@@ -2,6 +2,7 @@ import { Provider as UrqlProvider, cacheExchange, createClient, fetchExchange } 
 import { TamaguiProvider, Theme } from 'tamagui'
 import type { ReactNode } from 'react'
 
+import { AuthProvider } from '@/auth/context'
 import { DEFAULT_THEME, tamaguiConfig } from '@/theme/tamagui.config'
 
 const urqlClient = createClient({
@@ -17,7 +18,9 @@ export function AppProviders({ children }: AppProvidersProps) {
   return (
     <UrqlProvider value={urqlClient}>
       <TamaguiProvider config={tamaguiConfig} defaultTheme={DEFAULT_THEME}>
-        <Theme name={DEFAULT_THEME}>{children}</Theme>
+        <Theme name={DEFAULT_THEME}>
+          <AuthProvider>{children}</AuthProvider>
+        </Theme>
       </TamaguiProvider>
     </UrqlProvider>
   )

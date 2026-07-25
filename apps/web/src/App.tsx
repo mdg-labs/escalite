@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react'
-import { Navigate, Route, Routes } from 'react-router'
+import { Navigate, Route, Routes, useSearchParams } from 'react-router'
 import { useMeQuery } from '@escalite/ts-types'
 
 import { AlertsPage } from './routes/alerts'
@@ -7,6 +7,7 @@ import { DashboardPage } from './routes/dashboard'
 import { EscalationPolicyPage } from './routes/escalation-policy'
 import { IntegrationsPage } from './routes/integrations'
 import { LoginPage } from './routes/login'
+import { LoginMobilePage } from './routes/login-mobile'
 import { SchedulePage } from './routes/schedule'
 import { ServicePage } from './routes/service'
 import { ServicesPage } from './routes/services'
@@ -36,13 +37,15 @@ function ProtectedRoute({ children }: { children: ReactNode }): ReactElement {
 
 function GuestRoute({ children }: { children: ReactNode }): ReactElement {
   const [{ data, fetching }] = useMeQuery({ requestPolicy: 'network-only' })
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get('redirect') ?? '/dashboard'
 
   if (fetching) {
     return <AuthLoading />
   }
 
   if (data?.me) {
-    return <Navigate replace to="/dashboard" />
+    return <Navigate replace to={redirectTo} />
   }
 
   return <>{children}</>
@@ -59,6 +62,7 @@ export function App(): ReactElement {
           </GuestRoute>
         }
       />
+      <Route path="/login/mobile" element={<LoginMobilePage />} />
       <Route
         path="/setup"
         element={

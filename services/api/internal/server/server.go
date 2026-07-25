@@ -138,6 +138,8 @@ func New(deps Dependencies) http.Handler {
 		}
 		inboundEmail := handlers.NewInboundEmailHandler(deps.Pool, deps.Logger, emailCfg)
 
+		mobileAuth := handlers.NewMobileAuthHandler(deps.Pool, deps.Logger)
+
 		r.Post("/api/v1/setup", setup.ServeHTTP)
 		r.Post("/api/v1/login", login.ServeHTTP)
 		r.Post("/api/v1/password-reset/request", passwordReset.Request)
@@ -154,6 +156,9 @@ func New(deps Dependencies) http.Handler {
 			r.Post("/api/v1/inbound/email", inboundEmail.ServeHTTP)
 		}
 
+		r.Post("/api/v1/mobile/auth/exchange", mobileAuth.Exchange)
+		r.Post("/api/v1/mobile/auth/refresh", mobileAuth.Refresh)
+
 		if deps.OIDC != nil {
 			r.Get("/api/v1/auth/oidc/login", deps.OIDC.Login)
 			r.Get("/api/v1/auth/oidc/callback", deps.OIDC.Callback)
@@ -161,6 +166,7 @@ func New(deps Dependencies) http.Handler {
 
 		r.Group(func(r chi.Router) {
 			r.Use(handlers.RequireSession(deps.Pool, deps.Logger))
+			r.Post("/api/v1/mobile/auth/code", mobileAuth.IssueCode)
 			r.Post("/api/v1/logout", logout.ServeHTTP)
 			r.Get("/api/v1/me", me.ServeHTTP)
 

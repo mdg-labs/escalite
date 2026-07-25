@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactElement } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useLoginMutation } from '@escalite/ts-types'
 import { Button, Input } from '@escalite/ui'
 
@@ -11,6 +11,8 @@ function formatGraphQLError(message: string): string {
 
 export function LoginPage(): ReactElement {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get('redirect') ?? '/dashboard'
   const [, login] = useLoginMutation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -36,7 +38,7 @@ export function LoginPage(): ReactElement {
       return
     }
 
-    navigate('/dashboard', { replace: true })
+    navigate(redirectTo, { replace: true })
   }
 
   return (

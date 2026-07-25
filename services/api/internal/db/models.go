@@ -102,6 +102,17 @@ type IntegrationKey struct {
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
+type MobileAuthCode struct {
+	ID             uuid.UUID          `json:"id"`
+	UserID         uuid.UUID          `json:"user_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	CodeHash       string             `json:"code_hash"`
+	ExpiresAt      pgtype.Timestamptz `json:"expires_at"`
+	UsedAt         pgtype.Timestamptz `json:"used_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
 type NotificationAttempt struct {
 	ID               uuid.UUID          `json:"id"`
 	OrganizationID   uuid.UUID          `json:"organization_id"`
