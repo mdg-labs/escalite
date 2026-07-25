@@ -44,8 +44,21 @@ type MultiAlertInboundPlugin interface {
 	ParseAlerts(raw []byte, headers http.Header) ([]AlertCreate, error)
 }
 
+// ConfigurableInboundPlugin parses payloads using per-integration-key config.
+type ConfigurableInboundPlugin interface {
+	InboundPlugin
+	ParseAlertWithConfig(raw []byte, headers http.Header, cfg json.RawMessage) (AlertCreate, error)
+}
+
 // ParseAll returns every alert in a payload, using ParseAlerts when implemented.
-func ParseAll(plugin InboundPlugin, raw []byte, headers http.Header) ([]AlertCreate, error) {
+func ParseAll(plugin InboundPlugin, raw []byte, headers http.Header, cfg json.RawMessage) ([]AlertCreate, error) {
+	if configurable, ok := plugin.(ConfigurableInboundPlugin); ok {
+		alert, err := configurable.ParseAlertWithConfig(raw, headers, cfg)
+		if err != nil {
+			return nil, err
+		}
+		return []AlertCreate{alert}, nil
+	}
 	if batch, ok := plugin.(MultiAlertInboundPlugin); ok {
 		return batch.ParseAlerts(raw, headers)
 	}

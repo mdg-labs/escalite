@@ -3,4 +3,5 @@ package install
 
 import (
 	_ "github.com/mdg-labs/escalite/services/integrations/alertmanager"
+	_ "github.com/mdg-labs/escalite/services/integrations/genericwebhook"
 )

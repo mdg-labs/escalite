@@ -24,7 +24,7 @@ func TestParseFiringFixture(t *testing.T) {
 	plugin, err := integrations.Get("prometheus-alertmanager")
 	require.NoError(t, err)
 
-	alerts, err := integrations.ParseAll(plugin, raw, http.Header{})
+	alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
 	require.NoError(t, err)
 	require.Len(t, alerts, 1)
 
@@ -43,7 +43,7 @@ func TestParseResolvedFixture(t *testing.T) {
 	plugin, err := integrations.Get("prometheus-alertmanager")
 	require.NoError(t, err)
 
-	alerts, err := integrations.ParseAll(plugin, raw, http.Header{})
+	alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
 	require.NoError(t, err)
 	require.Len(t, alerts, 1)
 
@@ -58,7 +58,7 @@ func TestParseMultiAlertFixture(t *testing.T) {
 	plugin, err := integrations.Get("prometheus-alertmanager")
 	require.NoError(t, err)
 
-	alerts, err := integrations.ParseAll(plugin, raw, http.Header{})
+	alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
 	require.NoError(t, err)
 	require.Len(t, alerts, 2)
 

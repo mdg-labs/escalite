@@ -124,7 +124,7 @@ func (h *InboundWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	parsedAlerts, err := integrations.ParseAll(plugin, body, r.Header)
+	parsedAlerts, err := integrations.ParseAll(plugin, body, r.Header, key.Config)
 	if err != nil {
 		WriteAPIError(w, http.StatusBadRequest, CodeValidation, "invalid webhook payload")
 		return

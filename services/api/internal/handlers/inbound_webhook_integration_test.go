@@ -49,6 +49,10 @@ func postInboundWebhook(t *testing.T, handler http.Handler, plugin, token string
 }
 
 func seedIntegrationKey(t *testing.T, pool *pgxpool.Pool, orgID, serviceID uuid.UUID, pluginName string) (keyID uuid.UUID, plaintextToken string) {
+	return seedIntegrationKeyWithConfig(t, pool, orgID, serviceID, pluginName, "{}")
+}
+
+func seedIntegrationKeyWithConfig(t *testing.T, pool *pgxpool.Pool, orgID, serviceID uuid.UUID, pluginName, config string) (keyID uuid.UUID, plaintextToken string) {
 	t.Helper()
 
 	plaintext, hash, prefix, err := auth.NewIntegrationKeyToken()
@@ -58,8 +62,8 @@ func seedIntegrationKey(t *testing.T, pool *pgxpool.Pool, orgID, serviceID uuid.
 	_, err = pool.Exec(context.Background(), `
 		INSERT INTO integration_keys (
 			id, service_id, organization_id, token, prefix, plugin_name, config
-		) VALUES ($1, $2, $3, $4, $5, $6, '{}'::jsonb)
-	`, keyID, serviceID, orgID, hash, prefix, pluginName)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+	`, keyID, serviceID, orgID, hash, prefix, pluginName, config)
 	require.NoError(t, err)
 
 	return keyID, plaintext
