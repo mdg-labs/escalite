@@ -302,6 +302,133 @@ func (q *Queries) IncrementOpenAlertEventCount(ctx context.Context, arg Incremen
 	return i, err
 }
 
+const listAlertsForOrgAdmin = `-- name: ListAlertsForOrgAdmin :many
+SELECT id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, resolved_at, resolved_integration, created_at, updated_at
+FROM alerts
+WHERE organization_id = $1
+  AND (
+    $3::text IS NULL
+    OR status = $3
+  )
+ORDER BY created_at DESC
+LIMIT $2
+`
+
+type ListAlertsForOrgAdminParams struct {
+	OrganizationID uuid.UUID   `json:"organization_id"`
+	Limit          int32       `json:"limit"`
+	StatusFilter   pgtype.Text `json:"status_filter"`
+}
+
+func (q *Queries) ListAlertsForOrgAdmin(ctx context.Context, arg ListAlertsForOrgAdminParams) ([]Alert, error) {
+	rows, err := q.db.Query(ctx, listAlertsForOrgAdmin, arg.OrganizationID, arg.Limit, arg.StatusFilter)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Alert{}
+	for rows.Next() {
+		var i Alert
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.ServiceID,
+			&i.IntegrationKeyID,
+			&i.Status,
+			&i.DedupKey,
+			&i.Summary,
+			&i.Description,
+			&i.Priority,
+			&i.EventCount,
+			&i.EscalationState,
+			&i.AcknowledgedAt,
+			&i.AcknowledgedByUserID,
+			&i.ClosedAt,
+			&i.ResolvedAt,
+			&i.ResolvedIntegration,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAlertsForTeamMember = `-- name: ListAlertsForTeamMember :many
+SELECT a.id, a.organization_id, a.service_id, a.integration_key_id, a.status, a.dedup_key, a.summary, a.description, a.priority, a.event_count, a.escalation_state, a.acknowledged_at, a.acknowledged_by_user_id, a.closed_at, a.resolved_at, a.resolved_integration, a.created_at, a.updated_at
+FROM alerts a
+INNER JOIN services s
+  ON s.id = a.service_id
+ AND s.organization_id = a.organization_id
+INNER JOIN team_memberships tm
+  ON tm.team_id = s.team_id
+ AND tm.user_id = $2
+ AND tm.organization_id = a.organization_id
+WHERE a.organization_id = $1
+  AND (
+    $4::text IS NULL
+    OR a.status = $4
+  )
+ORDER BY a.created_at DESC
+LIMIT $3
+`
+
+type ListAlertsForTeamMemberParams struct {
+	OrganizationID uuid.UUID   `json:"organization_id"`
+	UserID         uuid.UUID   `json:"user_id"`
+	Limit          int32       `json:"limit"`
+	StatusFilter   pgtype.Text `json:"status_filter"`
+}
+
+func (q *Queries) ListAlertsForTeamMember(ctx context.Context, arg ListAlertsForTeamMemberParams) ([]Alert, error) {
+	rows, err := q.db.Query(ctx, listAlertsForTeamMember,
+		arg.OrganizationID,
+		arg.UserID,
+		arg.Limit,
+		arg.StatusFilter,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Alert{}
+	for rows.Next() {
+		var i Alert
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.ServiceID,
+			&i.IntegrationKeyID,
+			&i.Status,
+			&i.DedupKey,
+			&i.Summary,
+			&i.Description,
+			&i.Priority,
+			&i.EventCount,
+			&i.EscalationState,
+			&i.AcknowledgedAt,
+			&i.AcknowledgedByUserID,
+			&i.ClosedAt,
+			&i.ResolvedAt,
+			&i.ResolvedIntegration,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const reEscalateAlert = `-- name: ReEscalateAlert :one
 UPDATE alerts
 SET status = 'triggered',

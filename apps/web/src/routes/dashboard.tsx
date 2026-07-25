@@ -26,7 +26,10 @@ export function DashboardPage(): ReactElement {
             Your on-call workspace shell is ready. Incident and alerting features arrive in later
             phases.
           </p>
-          <p className="mt-4 text-sm">
+          <p className="mt-4 flex flex-wrap gap-4 text-sm">
+            <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/alerts">
+              View alerts
+            </Link>
             <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/integrations">
               Add an integration
             </Link>

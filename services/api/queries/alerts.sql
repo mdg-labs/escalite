@@ -31,6 +31,35 @@ WHERE id = $1
   AND organization_id = $2
 LIMIT 1;
 
+-- name: ListAlertsForOrgAdmin :many
+SELECT *
+FROM alerts
+WHERE organization_id = $1
+  AND (
+    sqlc.narg('status_filter')::text IS NULL
+    OR status = sqlc.narg('status_filter')
+  )
+ORDER BY created_at DESC
+LIMIT $2;
+
+-- name: ListAlertsForTeamMember :many
+SELECT a.*
+FROM alerts a
+INNER JOIN services s
+  ON s.id = a.service_id
+ AND s.organization_id = a.organization_id
+INNER JOIN team_memberships tm
+  ON tm.team_id = s.team_id
+ AND tm.user_id = $2
+ AND tm.organization_id = a.organization_id
+WHERE a.organization_id = $1
+  AND (
+    sqlc.narg('status_filter')::text IS NULL
+    OR a.status = sqlc.narg('status_filter')
+  )
+ORDER BY a.created_at DESC
+LIMIT $3;
+
 -- name: GetOpenAlertByServiceDedupKey :one
 SELECT *
 FROM alerts

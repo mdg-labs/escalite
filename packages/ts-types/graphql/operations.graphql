@@ -41,26 +41,6 @@ mutation Setup($input: SetupInput!) {
   }
 }
 
-subscription AlertUpdated($orgId: ID!) {
-  alertUpdated(orgId: $orgId) {
-    id
-    organizationId
-    serviceId
-    status
-    dedupKey
-    summary
-    priority
-    updatedAt
-  }
-}
-
-subscription OnCallUpdated($orgId: ID!) {
-  onCallUpdated(orgId: $orgId) {
-    scheduleId
-    organizationId
-  }
-}
-
 mutation CreateIntegrationKey($input: CreateIntegrationKeyInput!) {
   createIntegrationKey(input: $input) {
     id
@@ -71,6 +51,13 @@ mutation CreateIntegrationKey($input: CreateIntegrationKeyInput!) {
     token
     revokedAt
     createdAt
+  }
+}
+
+subscription OnCallUpdated($orgId: ID!) {
+  onCallUpdated(orgId: $orgId) {
+    scheduleId
+    organizationId
   }
 }
 
@@ -159,5 +146,55 @@ mutation UpdateEscalationPolicy($input: UpdateEscalationPolicyInput!) {
       repeatLastStep
       maxRepeats
     }
+  }
+}
+
+fragment AlertFields on Alert {
+  id
+  organizationId
+  serviceId
+  status
+  dedupKey
+  summary
+  description
+  priority
+  eventCount
+  acknowledgedAt
+  acknowledgedBy {
+    id
+    email
+  }
+  closedAt
+  createdAt
+  updatedAt
+}
+
+query Alerts($status: AlertStatus, $limit: Int) {
+  alerts(status: $status, limit: $limit) {
+    ...AlertFields
+  }
+}
+
+query Alert($id: ID!) {
+  alert(id: $id) {
+    ...AlertFields
+  }
+}
+
+mutation AcknowledgeAlert($id: ID!) {
+  acknowledgeAlert(id: $id) {
+    ...AlertFields
+  }
+}
+
+mutation CloseAlert($id: ID!) {
+  closeAlert(id: $id) {
+    ...AlertFields
+  }
+}
+
+subscription AlertUpdated($orgId: ID!) {
+  alertUpdated(orgId: $orgId) {
+    ...AlertFields
   }
 }

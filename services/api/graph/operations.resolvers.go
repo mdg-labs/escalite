@@ -1603,6 +1603,16 @@ func (r *queryResolver) Health(ctx context.Context) (*model.Health, error) {
 	return &model.Health{Status: "ok"}, nil
 }
 
+// Alert is the resolver for the alert field.
+func (r *queryResolver) Alert(ctx context.Context, id string) (*model.Alert, error) {
+	return r.resolveAlert(ctx, id)
+}
+
+// Alerts is the resolver for the alerts field.
+func (r *queryResolver) Alerts(ctx context.Context, status *model.AlertStatus, limit *int) ([]*model.Alert, error) {
+	return r.resolveAlerts(ctx, status, limit)
+}
+
 // EscalationPolicy is the resolver for the escalationPolicy field.
 func (r *queryResolver) EscalationPolicy(ctx context.Context, id string) (*model.EscalationPolicy, error) {
 	sc, err := requireAdminSession(ctx)

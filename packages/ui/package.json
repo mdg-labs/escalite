@@ -22,7 +22,8 @@
     "./primitives/number-field": "./primitives/number-field.tsx",
     "./primitives/select": "./primitives/select.tsx",
     "./primitives/group": "./primitives/group.tsx",
-    "./primitives/alert-dialog": "./primitives/alert-dialog.tsx",
+    "./primitives/scroll-area": "./primitives/scroll-area.tsx",
+    "./primitives/tabs": "./primitives/tabs.tsx",
     "./domain/EscalationPolicyEditor": "./domain/EscalationPolicyEditor/index.ts"
   },
   "scripts": {

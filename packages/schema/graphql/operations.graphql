@@ -22,6 +22,16 @@ type Query {
   health: Health!
 
   """
+  Fetch a single alert by ID (team access required).
+  """
+  alert(id: ID!): Alert
+
+  """
+  List alerts visible to the current user, optionally filtered by status.
+  """
+  alerts(status: AlertStatus, limit: Int = 100): [Alert!]!
+
+  """
   Fetch a single escalation policy by ID (org admin only).
   """
   escalationPolicy(id: ID!): EscalationPolicy
