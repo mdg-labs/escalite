@@ -30,6 +30,9 @@ const (
 	ActionOverrideDeleted         = "override.deleted"
 	ActionAlertEscalationSnoozed   = "alert.escalation_snoozed"
 	ActionAlertReEscalated         = "alert.re_escalated"
+	ActionServiceCreated           = "service.created"
+	ActionServiceUpdated           = "service.updated"
+	ActionServiceDeleted           = "service.deleted"
 
 	targetTypeUser             = "user"
 	targetTypeIntegrationKey   = "integration_key"
@@ -37,6 +40,7 @@ const (
 	targetTypeHeartbeatMonitor = "heartbeat_monitor"
 	targetTypeOverride         = "override"
 	targetTypeAlert            = "alert"
+	targetTypeService          = "service"
 )
 
 // RequestMeta captures HTTP request context stored in audit metadata.
@@ -311,6 +315,45 @@ func (r *Recorder) AlertReEscalated(ctx context.Context, q db.Querier, orgID, ac
 		TargetType:     pgtype.Text{String: targetTypeAlert, Valid: true},
 		TargetID:       pgtype.UUID{Bytes: alertID, Valid: true},
 		Metadata:       meta,
+	})
+}
+
+// ServiceCreated records service creation.
+func (r *Recorder) ServiceCreated(ctx context.Context, q db.Querier, orgID, actorID, serviceID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionServiceCreated,
+		TargetType:     pgtype.Text{String: targetTypeService, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: serviceID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// ServiceUpdated records service updates.
+func (r *Recorder) ServiceUpdated(ctx context.Context, q db.Querier, orgID, actorID, serviceID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionServiceUpdated,
+		TargetType:     pgtype.Text{String: targetTypeService, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: serviceID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// ServiceDeleted records service soft-deletion.
+func (r *Recorder) ServiceDeleted(ctx context.Context, q db.Querier, orgID, actorID, serviceID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionServiceDeleted,
+		TargetType:     pgtype.Text{String: targetTypeService, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: serviceID, Valid: true},
+		Metadata:       []byte("{}"),
 	})
 }
 

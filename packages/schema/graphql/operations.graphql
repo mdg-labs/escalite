@@ -92,6 +92,21 @@ type Query {
   List integration keys for a service (org admin only).
   """
   integrationKeys(serviceId: ID!): [IntegrationKey!]!
+
+  """
+  List teams in the organization (org admin only).
+  """
+  teams: [Team!]!
+
+  """
+  List services in the organization (org admin only).
+  """
+  services: [Service!]!
+
+  """
+  Fetch a single service by ID (org admin only).
+  """
+  service(id: ID!): Service
 }
 
 type Mutation {
@@ -229,4 +244,19 @@ type Mutation {
   Rotate an integration key: revoke the existing key and return a new one with the same config (org admin only).
   """
   rotateIntegrationKey(id: ID!): IntegrationKey!
+
+  """
+  Create a service (org admin only).
+  """
+  createService(input: CreateServiceInput!): Service!
+
+  """
+  Update a service (org admin only).
+  """
+  updateService(input: UpdateServiceInput!): Service!
+
+  """
+  Soft-delete a service (org admin only).
+  """
+  deleteService(id: ID!): Boolean!
 }

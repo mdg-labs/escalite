@@ -220,6 +220,12 @@ query Schedule($id: ID!) {
   }
 }
 
+query Schedules($teamId: ID!) {
+  schedules(teamId: $teamId) {
+    ...ScheduleFields
+  }
+}
+
 query OnCallNow($scheduleId: ID!, $at: DateTime) {
   onCallNow(scheduleId: $scheduleId, at: $at) {
     scheduleId
@@ -259,4 +265,55 @@ mutation CreateOverride($input: CreateOverrideInput!) {
 
 mutation DeleteOverride($id: ID!) {
   deleteOverride(id: $id)
+}
+
+fragment ServiceFields on Service {
+  id
+  organizationId
+  teamId
+  name
+  createdAt
+  updatedAt
+}
+
+fragment TeamFields on Team {
+  id
+  organizationId
+  name
+  createdAt
+  updatedAt
+}
+
+query Teams {
+  teams {
+    ...TeamFields
+  }
+}
+
+query Services {
+  services {
+    ...ServiceFields
+  }
+}
+
+query Service($id: ID!) {
+  service(id: $id) {
+    ...ServiceFields
+  }
+}
+
+mutation CreateService($input: CreateServiceInput!) {
+  createService(input: $input) {
+    ...ServiceFields
+  }
+}
+
+mutation UpdateService($input: UpdateServiceInput!) {
+  updateService(input: $input) {
+    ...ServiceFields
+  }
+}
+
+mutation DeleteService($id: ID!) {
+  deleteService(id: $id)
 }

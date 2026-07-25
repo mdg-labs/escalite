@@ -68,6 +68,11 @@ type CreateScheduleInput struct {
 	Timezone string `json:"timezone"`
 }
 
+type CreateServiceInput struct {
+	TeamID string `json:"teamId"`
+	Name   string `json:"name"`
+}
+
 type EscalationPolicy struct {
 	ID             string            `json:"id"`
 	OrganizationID string            `json:"organizationId"`
@@ -311,6 +316,11 @@ type UpdateScheduleInput struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Timezone string `json:"timezone"`
+}
+
+type UpdateServiceInput struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type User struct {

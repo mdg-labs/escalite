@@ -197,6 +197,7 @@ type Service struct {
 	OrganizationID uuid.UUID          `json:"organization_id"`
 	TeamID         uuid.UUID          `json:"team_id"`
 	Name           string             `json:"name"`
+	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }

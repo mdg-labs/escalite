@@ -42,6 +42,7 @@ CREATE TABLE "services" (
   "organization_id" uuid NOT NULL,
   "team_id" uuid NOT NULL,
   "name" text NOT NULL,
+  "deleted_at" timestamptz NULL,
   "created_at" timestamptz NOT NULL DEFAULT now(),
   "updated_at" timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY ("id"),
@@ -51,6 +52,8 @@ CREATE TABLE "services" (
 );
 -- Create index "services_organization_id_idx" to table: "services"
 CREATE INDEX "services_organization_id_idx" ON "services" ("organization_id");
+-- Create index "services_active_organization_id_idx" to table: "services"
+CREATE INDEX "services_active_organization_id_idx" ON "services" ("organization_id") WHERE (deleted_at IS NULL);
 -- Create index "services_team_id_idx" to table: "services"
 CREATE INDEX "services_team_id_idx" ON "services" ("team_id");
 -- Create "integration_keys" table

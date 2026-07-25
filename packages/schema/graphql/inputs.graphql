@@ -102,3 +102,13 @@ input CreateIntegrationKeyInput {
   pluginName: String!
   config: JSON!
 }
+
+input CreateServiceInput {
+  teamId: ID!
+  name: String!
+}
+
+input UpdateServiceInput {
+  id: ID!
+  name: String!
+}

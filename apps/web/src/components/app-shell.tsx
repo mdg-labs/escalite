@@ -24,6 +24,9 @@ export function AppShell({ title, children }: AppShellProps): ReactElement {
               <Link className="hover:text-foreground" to="/alerts">
                 {t('nav.alerts')}
               </Link>
+              <Link className="hover:text-foreground" to="/services">
+                {t('nav.services')}
+              </Link>
               <Link className="hover:text-foreground" to="/integrations">
                 {t('nav.integrations')}
               </Link>

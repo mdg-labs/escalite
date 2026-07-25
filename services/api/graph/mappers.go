@@ -221,6 +221,27 @@ func heartbeatMonitorFromDB(monitor db.HeartbeatMonitor, token *string) *model.H
 	}
 }
 
+func serviceFromDB(service db.Service) *model.Service {
+	return &model.Service{
+		ID:             service.ID.String(),
+		OrganizationID: service.OrganizationID.String(),
+		TeamID:         service.TeamID.String(),
+		Name:           service.Name,
+		CreatedAt:      timeFromDB(service.CreatedAt),
+		UpdatedAt:      timeFromDB(service.UpdatedAt),
+	}
+}
+
+func teamFromDB(team db.Team) *model.Team {
+	return &model.Team{
+		ID:             team.ID.String(),
+		OrganizationID: team.OrganizationID.String(),
+		Name:           team.Name,
+		CreatedAt:      timeFromDB(team.CreatedAt),
+		UpdatedAt:      timeFromDB(team.UpdatedAt),
+	}
+}
+
 func integrationKeyFromDB(key db.IntegrationKey, token *string) *model.IntegrationKey {
 	var config map[string]any
 	if len(key.Config) > 0 {

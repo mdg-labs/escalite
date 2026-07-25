@@ -8,6 +8,8 @@ import { EscalationPolicyPage } from './routes/escalation-policy'
 import { IntegrationsPage } from './routes/integrations'
 import { LoginPage } from './routes/login'
 import { SchedulePage } from './routes/schedule'
+import { ServicePage } from './routes/service'
+import { ServicesPage } from './routes/services'
 import { SetupPage } from './routes/setup'
 
 function AuthLoading(): ReactElement {
@@ -78,6 +80,22 @@ export function App(): ReactElement {
         element={
           <ProtectedRoute>
             <IntegrationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/services"
+        element={
+          <ProtectedRoute>
+            <ServicesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/services/:serviceId"
+        element={
+          <ProtectedRoute>
+            <ServicePage />
           </ProtectedRoute>
         }
       />

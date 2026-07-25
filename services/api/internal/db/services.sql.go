@@ -23,7 +23,7 @@ INSERT INTO services (
     $3,
     $4
 )
-RETURNING id, organization_id, team_id, name, created_at, updated_at
+RETURNING id, organization_id, team_id, name, deleted_at, created_at, updated_at
 `
 
 type CreateServiceParams struct {
@@ -46,6 +46,7 @@ func (q *Queries) CreateService(ctx context.Context, arg CreateServiceParams) (S
 		&i.OrganizationID,
 		&i.TeamID,
 		&i.Name,
+		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -53,10 +54,11 @@ func (q *Queries) CreateService(ctx context.Context, arg CreateServiceParams) (S
 }
 
 const getServiceByID = `-- name: GetServiceByID :one
-SELECT id, organization_id, team_id, name, created_at, updated_at
+SELECT id, organization_id, team_id, name, deleted_at, created_at, updated_at
 FROM services
 WHERE id = $1
   AND organization_id = $2
+  AND deleted_at IS NULL
 LIMIT 1
 `
 
@@ -73,6 +75,104 @@ func (q *Queries) GetServiceByID(ctx context.Context, arg GetServiceByIDParams) 
 		&i.OrganizationID,
 		&i.TeamID,
 		&i.Name,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listServicesByOrganizationID = `-- name: ListServicesByOrganizationID :many
+SELECT id, organization_id, team_id, name, deleted_at, created_at, updated_at
+FROM services
+WHERE organization_id = $1
+  AND deleted_at IS NULL
+ORDER BY name ASC
+`
+
+func (q *Queries) ListServicesByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]Service, error) {
+	rows, err := q.db.Query(ctx, listServicesByOrganizationID, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Service{}
+	for rows.Next() {
+		var i Service
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.TeamID,
+			&i.Name,
+			&i.DeletedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const softDeleteService = `-- name: SoftDeleteService :one
+UPDATE services
+SET deleted_at = now(),
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+  AND deleted_at IS NULL
+RETURNING id, organization_id, team_id, name, deleted_at, created_at, updated_at
+`
+
+type SoftDeleteServiceParams struct {
+	ID             uuid.UUID `json:"id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+func (q *Queries) SoftDeleteService(ctx context.Context, arg SoftDeleteServiceParams) (Service, error) {
+	row := q.db.QueryRow(ctx, softDeleteService, arg.ID, arg.OrganizationID)
+	var i Service
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.TeamID,
+		&i.Name,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateService = `-- name: UpdateService :one
+UPDATE services
+SET name = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+  AND deleted_at IS NULL
+RETURNING id, organization_id, team_id, name, deleted_at, created_at, updated_at
+`
+
+type UpdateServiceParams struct {
+	ID             uuid.UUID `json:"id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	Name           string    `json:"name"`
+}
+
+func (q *Queries) UpdateService(ctx context.Context, arg UpdateServiceParams) (Service, error) {
+	row := q.db.QueryRow(ctx, updateService, arg.ID, arg.OrganizationID, arg.Name)
+	var i Service
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.TeamID,
+		&i.Name,
+		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

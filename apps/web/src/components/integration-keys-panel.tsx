@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from 'react'
+import { useEffect, useState, type ReactElement } from 'react'
 import {
   useIntegrationKeysQuery,
   useRevokeIntegrationKeyMutation,
@@ -53,6 +53,11 @@ type RevealSecret = {
   tokenPrefix: string
 }
 
+type IntegrationKeysPanelProps = {
+  serviceId?: string
+  embedded?: boolean
+}
+
 function keyStatusBadge(key: IntegrationKeyRow): ReactElement {
   if (key.revokedAt) {
     return (
@@ -71,9 +76,12 @@ function keyStatusBadge(key: IntegrationKeyRow): ReactElement {
   )
 }
 
-export function IntegrationKeysPanel(): ReactElement {
-  const [serviceId, setServiceId] = useState('')
-  const [loadedServiceId, setLoadedServiceId] = useState('')
+export function IntegrationKeysPanel({
+  serviceId: initialServiceId = '',
+  embedded = false,
+}: IntegrationKeysPanelProps): ReactElement {
+  const [serviceId, setServiceId] = useState(initialServiceId)
+  const [loadedServiceId, setLoadedServiceId] = useState(embedded ? initialServiceId : '')
   const [createOpen, setCreateOpen] = useState(false)
   const [revealSecret, setRevealSecret] = useState<RevealSecret | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -89,6 +97,13 @@ export function IntegrationKeysPanel(): ReactElement {
   const [, rotateIntegrationKey] = useRotateIntegrationKeyMutation()
 
   const keys = data?.integrationKeys ?? []
+
+  useEffect(() => {
+    if (embedded && initialServiceId) {
+      setServiceId(initialServiceId)
+      setLoadedServiceId(initialServiceId)
+    }
+  }, [embedded, initialServiceId])
 
   function handleLoadKeys(): void {
     const trimmed = serviceId.trim()
@@ -165,22 +180,24 @@ export function IntegrationKeysPanel(): ReactElement {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="flex-1 space-y-2">
-          <label className="text-sm font-medium text-foreground" htmlFor="integration-service-id">
-            Service ID
-          </label>
-          <Input
-            id="integration-service-id"
-            onChange={(event) => setServiceId(event.target.value)}
-            placeholder="Service UUID"
-            value={serviceId}
-          />
+      {!embedded ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex-1 space-y-2">
+            <label className="text-sm font-medium text-foreground" htmlFor="integration-service-id">
+              Service ID
+            </label>
+            <Input
+              id="integration-service-id"
+              onChange={(event) => setServiceId(event.target.value)}
+              placeholder="Service UUID"
+              value={serviceId}
+            />
+          </div>
+          <Button onClick={handleLoadKeys} type="button">
+            Load keys
+          </Button>
         </div>
-        <Button onClick={handleLoadKeys} type="button">
-          Load keys
-        </Button>
-      </div>
+      ) : null}
 
       {error ? (
         <Alert variant="error">

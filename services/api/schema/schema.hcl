@@ -481,6 +481,10 @@ table "services" {
     null = false
     type = text
   }
+  column "deleted_at" {
+    null = true
+    type = timestamptz
+  }
   column "created_at" {
     null    = false
     type    = timestamptz
@@ -494,6 +498,11 @@ table "services" {
 
   primary_key {
     columns = [column.id]
+  }
+
+  index "services_active_organization_id_idx" {
+    columns = [column.organization_id]
+    where   = "(deleted_at IS NULL)"
   }
 
   foreign_key "services_organization_id_fkey" {

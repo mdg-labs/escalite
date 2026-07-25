@@ -30,6 +30,9 @@ export function DashboardPage(): ReactElement {
             <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/alerts">
               View alerts
             </Link>
+            <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/services">
+              Configure services
+            </Link>
             <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/integrations">
               Add an integration
             </Link>

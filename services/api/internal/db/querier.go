@@ -82,6 +82,8 @@ type Querier interface {
 	ListNotificationAttemptsByAlertID(ctx context.Context, arg ListNotificationAttemptsByAlertIDParams) ([]NotificationAttempt, error)
 	ListRotationsByScheduleID(ctx context.Context, arg ListRotationsByScheduleIDParams) ([]Rotation, error)
 	ListSchedulesByTeamID(ctx context.Context, arg ListSchedulesByTeamIDParams) ([]Schedule, error)
+	ListServicesByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]Service, error)
+	ListTeamsByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]Team, error)
 	ListUserNotificationRules(ctx context.Context, arg ListUserNotificationRulesParams) ([]UserNotificationRule, error)
 	MarkPasswordResetTokenUsed(ctx context.Context, id uuid.UUID) error
 	PingDatabase(ctx context.Context) (int32, error)
@@ -93,11 +95,13 @@ type Querier interface {
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
 	SessionsSchemaReady(ctx context.Context) (bool, error)
 	SoftDeleteOverride(ctx context.Context, arg SoftDeleteOverrideParams) (Override, error)
+	SoftDeleteService(ctx context.Context, arg SoftDeleteServiceParams) (Service, error)
 	UpdateAlertEscalationState(ctx context.Context, arg UpdateAlertEscalationStateParams) (Alert, error)
 	UpdateEscalationPolicy(ctx context.Context, arg UpdateEscalationPolicyParams) (EscalationPolicy, error)
 	UpdateHeartbeatMonitor(ctx context.Context, arg UpdateHeartbeatMonitorParams) (HeartbeatMonitor, error)
 	UpdateRotation(ctx context.Context, arg UpdateRotationParams) (Rotation, error)
 	UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Schedule, error)
+	UpdateService(ctx context.Context, arg UpdateServiceParams) (Service, error)
 	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
 	UpsertOrganizationSlackSettings(ctx context.Context, arg UpsertOrganizationSlackSettingsParams) (OrganizationSlackSetting, error)
 	UpsertUserContactMethod(ctx context.Context, arg UpsertUserContactMethodParams) (UserContactMethod, error)

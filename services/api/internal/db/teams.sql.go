@@ -68,3 +68,36 @@ func (q *Queries) GetTeamByID(ctx context.Context, arg GetTeamByIDParams) (Team,
 	)
 	return i, err
 }
+
+const listTeamsByOrganizationID = `-- name: ListTeamsByOrganizationID :many
+SELECT id, organization_id, name, created_at, updated_at
+FROM teams
+WHERE organization_id = $1
+ORDER BY name ASC
+`
+
+func (q *Queries) ListTeamsByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]Team, error) {
+	rows, err := q.db.Query(ctx, listTeamsByOrganizationID, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Team{}
+	for rows.Next() {
+		var i Team
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

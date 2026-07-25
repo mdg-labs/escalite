@@ -1589,6 +1589,114 @@ func (r *mutationResolver) RotateIntegrationKey(ctx context.Context, id string) 
 	return integrationKeyFromDB(newKey, &plaintext), nil
 }
 
+// CreateService is the resolver for the createService field.
+func (r *mutationResolver) CreateService(ctx context.Context, input model.CreateServiceInput) (*model.Service, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+
+	teamID, err := parseUUIDField(input.TeamID, "teamId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetTeamByID(ctx, db.GetTeamByIDParams{
+		ID:             teamID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "team not found")
+		}
+		r.logger.Error("load team failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	serviceID := uuid.Must(uuid.NewV7())
+	service, err := queries.CreateService(ctx, db.CreateServiceParams{
+		ID:             serviceID,
+		OrganizationID: sc.User.OrganizationID,
+		TeamID:         teamID,
+		Name:           name,
+	})
+	if err != nil {
+		r.logger.Error("create service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.ServiceCreated(ctx, queries, sc.User.OrganizationID, sc.User.ID, serviceID)
+	return serviceFromDB(service), nil
+}
+
+// UpdateService is the resolver for the updateService field.
+func (r *mutationResolver) UpdateService(ctx context.Context, input model.UpdateServiceInput) (*model.Service, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+
+	serviceID, err := parseUUIDField(input.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	service, err := queries.UpdateService(ctx, db.UpdateServiceParams{
+		ID:             serviceID,
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "service not found")
+		}
+		r.logger.Error("update service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.ServiceUpdated(ctx, queries, sc.User.OrganizationID, sc.User.ID, serviceID)
+	return serviceFromDB(service), nil
+}
+
+// DeleteService is the resolver for the deleteService field.
+func (r *mutationResolver) DeleteService(ctx context.Context, id string) (bool, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	serviceID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return false, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.SoftDeleteService(ctx, db.SoftDeleteServiceParams{
+		ID:             serviceID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, gqlerr.New(handlers.CodeNotFound, "service not found")
+		}
+		r.logger.Error("delete service failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.ServiceDeleted(ctx, queries, sc.User.OrganizationID, sc.User.ID, serviceID)
+	return true, nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	sc, ok := auth.SessionFromContext(ctx)
@@ -2092,6 +2200,76 @@ func (r *queryResolver) IntegrationKeys(ctx context.Context, serviceID string) (
 	}
 
 	return result, nil
+}
+
+// Teams is the resolver for the teams field.
+func (r *queryResolver) Teams(ctx context.Context) ([]*model.Team, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	teams, err := queries.ListTeamsByOrganizationID(ctx, sc.User.OrganizationID)
+	if err != nil {
+		r.logger.Error("list teams failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	result := make([]*model.Team, 0, len(teams))
+	for _, team := range teams {
+		result = append(result, teamFromDB(team))
+	}
+	return result, nil
+}
+
+// Services is the resolver for the services field.
+func (r *queryResolver) Services(ctx context.Context) ([]*model.Service, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	services, err := queries.ListServicesByOrganizationID(ctx, sc.User.OrganizationID)
+	if err != nil {
+		r.logger.Error("list services failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	result := make([]*model.Service, 0, len(services))
+	for _, service := range services {
+		result = append(result, serviceFromDB(service))
+	}
+	return result, nil
+}
+
+// Service is the resolver for the service field.
+func (r *queryResolver) Service(ctx context.Context, id string) (*model.Service, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	serviceID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	service, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             serviceID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		r.logger.Error("load service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return serviceFromDB(service), nil
 }
 
 // AlertUpdated is the resolver for the alertUpdated field.
