@@ -3,6 +3,7 @@ package graphql
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	gqlhandler "github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -47,6 +48,9 @@ func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, s
 		Resolvers: graph.NewResolver(pool, logger, jobs, secrets, hub),
 	}))
 
+	srv.AddTransport(transport.Websocket{
+		KeepAlivePingInterval: 10 * time.Second,
+	})
 	srv.AddTransport(transport.POST{})
 	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
 	srv.Use(extension.FixedComplexityLimit(maxComplexity))

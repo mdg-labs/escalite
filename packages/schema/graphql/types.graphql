@@ -127,6 +127,12 @@ type Rotation {
   updatedAt: DateTime!
 }
 
+"""Emitted when schedule data changes that may affect on-call assignments."""
+type OnCallUpdatedEvent {
+  scheduleId: ID!
+  organizationId: ID!
+}
+
 """Current on-call assignment for a schedule's rotation layers."""
 type OnCallNow {
   scheduleId: ID!

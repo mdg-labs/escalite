@@ -41,6 +41,26 @@ mutation Setup($input: SetupInput!) {
   }
 }
 
+subscription AlertUpdated($orgId: ID!) {
+  alertUpdated(orgId: $orgId) {
+    id
+    organizationId
+    serviceId
+    status
+    dedupKey
+    summary
+    priority
+    updatedAt
+  }
+}
+
+subscription OnCallUpdated($orgId: ID!) {
+  onCallUpdated(orgId: $orgId) {
+    scheduleId
+    organizationId
+  }
+}
+
 mutation CreateIntegrationKey($input: CreateIntegrationKeyInput!) {
   createIntegrationKey(input: $input) {
     id

@@ -26,6 +26,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
 	"github.com/mdg-labs/escalite/services/api/internal/queue"
+	"github.com/mdg-labs/escalite/services/api/internal/realtime"
 	"github.com/mdg-labs/escalite/services/api/internal/server"
 )
 
@@ -101,6 +102,9 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 		secrets = testSecretsBox(t)
 	}
 
+	realtimeBridge := realtime.NewBridge(databaseURL, slog.Default())
+	realtimeBridge.Start(ctx)
+
 	handler := server.New(server.Dependencies{
 		Logger:        slog.Default(),
 		Pool:          pool,
@@ -112,9 +116,11 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 		HeartbeatPing: opts.HeartbeatPing,
 		InboundWebhook: opts.InboundWebhook,
 		InboundEmail:   opts.InboundEmail,
+		Realtime:       realtimeBridge.Hub,
 	})
 
 	return handler, pool, func() {
+		realtimeBridge.Close()
 		pool.Close()
 		cleanup()
 	}

@@ -4,9 +4,3 @@ schema {
   subscription: Subscription
 }
 
-"""
-Placeholder root type for realtime GraphQL subscriptions (#97).
-"""
-type Subscription {
-  _noop: Boolean
-}

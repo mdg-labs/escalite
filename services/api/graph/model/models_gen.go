@@ -178,6 +178,12 @@ type OnCallNow struct {
 	Layers     []*OnCallLayer `json:"layers"`
 }
 
+// Emitted when schedule data changes that may affect on-call assignments.
+type OnCallUpdatedEvent struct {
+	ScheduleID     string `json:"scheduleId"`
+	OrganizationID string `json:"organizationId"`
+}
+
 type Organization struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
@@ -268,7 +274,6 @@ type SlackSettings struct {
 	TokenHint  *string `json:"tokenHint,omitempty"`
 }
 
-// Placeholder root type for realtime GraphQL subscriptions (#97).
 type Subscription struct {
 }
 

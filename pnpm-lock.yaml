@@ -20,6 +20,9 @@ importers:
       '@escalite/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      graphql-ws:
+        specifier: ^6.2.0
+        version: 6.2.0(graphql@16.14.2)(ws@8.21.1)
       react:
         specifier: ^19.2.6
         version: 19.2.8

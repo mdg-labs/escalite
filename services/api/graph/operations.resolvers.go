@@ -1951,13 +1951,35 @@ func (r *queryResolver) SlackSettings(ctx context.Context) (*model.SlackSettings
 	return slackSettingsFromDB(&settings), nil
 }
 
+// AlertUpdated is the resolver for the alertUpdated field.
+func (r *subscriptionResolver) AlertUpdated(ctx context.Context, orgID string) (<-chan *model.Alert, error) {
+	_, orgUUID, err := requireOrgSubscriptionAccess(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	return r.streamAlertUpdates(ctx, orgUUID)
+}
+
+// OnCallUpdated is the resolver for the onCallUpdated field.
+func (r *subscriptionResolver) OnCallUpdated(ctx context.Context, orgID string) (<-chan *model.OnCallUpdatedEvent, error) {
+	_, orgUUID, err := requireOrgSubscriptionAccess(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	return r.streamOnCallUpdates(ctx, orgUUID)
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// Subscription returns SubscriptionResolver implementation.
+func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionResolver{r} }
+
 type (
-	mutationResolver struct{ *Resolver }
-	queryResolver    struct{ *Resolver }
+	mutationResolver     struct{ *Resolver }
+	queryResolver        struct{ *Resolver }
+	subscriptionResolver struct{ *Resolver }
 )

@@ -162,6 +162,11 @@ type ComplexityRoot struct {
 		ScheduleID func(childComplexity int) int
 	}
 
+	OnCallUpdatedEvent struct {
+		OrganizationID func(childComplexity int) int
+		ScheduleID     func(childComplexity int) int
+	}
+
 	Organization struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
@@ -243,7 +248,8 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		Noop func(childComplexity int) int
+		AlertUpdated  func(childComplexity int, orgID string) int
+		OnCallUpdated func(childComplexity int, orgID string) int
 	}
 
 	Team struct {
@@ -329,7 +335,8 @@ type QueryResolver interface {
 	SlackSettings(ctx context.Context) (*model.SlackSettings, error)
 }
 type SubscriptionResolver interface {
-	Noop(ctx context.Context) (<-chan *bool, error)
+	AlertUpdated(ctx context.Context, orgID string) (<-chan *model.Alert, error)
+	OnCallUpdated(ctx context.Context, orgID string) (<-chan *model.OnCallUpdatedEvent, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -1015,6 +1022,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.OnCallNow.ScheduleID(childComplexity), true
 
+	case "OnCallUpdatedEvent.organizationId":
+		if e.ComplexityRoot.OnCallUpdatedEvent.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OnCallUpdatedEvent.OrganizationID(childComplexity), true
+	case "OnCallUpdatedEvent.scheduleId":
+		if e.ComplexityRoot.OnCallUpdatedEvent.ScheduleID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OnCallUpdatedEvent.ScheduleID(childComplexity), true
+
 	case "Organization.createdAt":
 		if e.ComplexityRoot.Organization.CreatedAt == nil {
 			break
@@ -1400,12 +1420,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.SlackSettings.TokenHint(childComplexity), true
 
-	case "Subscription._noop":
-		if e.ComplexityRoot.Subscription.Noop == nil {
+	case "Subscription.alertUpdated":
+		if e.ComplexityRoot.Subscription.AlertUpdated == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Subscription.Noop(childComplexity), true
+		args, err := ec.field_Subscription_alertUpdated_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Subscription.AlertUpdated(childComplexity, args["orgId"].(string)), true
+	case "Subscription.onCallUpdated":
+		if e.ComplexityRoot.Subscription.OnCallUpdated == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_onCallUpdated_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Subscription.OnCallUpdated(childComplexity, args["orgId"].(string)), true
 
 	case "Team.createdAt":
 		if e.ComplexityRoot.Team.CreatedAt == nil {
@@ -1805,7 +1841,19 @@ input CreateIntegrationKeyInput {
   config: JSON!
 }
 `, BuiltIn: false},
-	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Query {
+	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Subscription {
+  """
+  Emits when an alert is created or updated within the organization.
+  """
+  alertUpdated(orgId: ID!): Alert!
+
+  """
+  Emits when schedule-related data changes that may affect on-call assignments.
+  """
+  onCallUpdated(orgId: ID!): OnCallUpdatedEvent!
+}
+
+type Query {
   """
   Returns the authenticated user, or null when no session is present.
   """
@@ -2017,12 +2065,6 @@ scalar JSON
   subscription: Subscription
 }
 
-"""
-Placeholder root type for realtime GraphQL subscriptions (#97).
-"""
-type Subscription {
-  _noop: Boolean
-}
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/types.graphql", Input: `type User {
   id: ID!
@@ -2151,6 +2193,12 @@ type Rotation {
   participantIds: [ID!]!
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+"""Emitted when schedule data changes that may affect on-call assignments."""
+type OnCallUpdatedEvent {
+  scheduleId: ID!
+  organizationId: ID!
 }
 
 """Current on-call assignment for a schedule's rotation layers."""
@@ -2436,6 +2484,16 @@ func (ec *executionContext) childFields_OnCallNow(ctx context.Context, field gra
 		return ec.fieldContext_OnCallNow_layers(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type OnCallNow", field.Name)
+}
+
+func (ec *executionContext) childFields_OnCallUpdatedEvent(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "scheduleId":
+		return ec.fieldContext_OnCallUpdatedEvent_scheduleId(ctx, field)
+	case "organizationId":
+		return ec.fieldContext_OnCallUpdatedEvent_organizationId(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type OnCallUpdatedEvent", field.Name)
 }
 
 func (ec *executionContext) childFields_Organization(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -3207,6 +3265,34 @@ func (ec *executionContext) field_Query_schedules_args(ctx context.Context, rawA
 		return nil, err
 	}
 	args["teamId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_alertUpdated_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "orgId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["orgId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_onCallUpdated_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "orgId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["orgId"] = arg0
 	return args, nil
 }
 
@@ -5855,6 +5941,52 @@ func (ec *executionContext) fieldContext_OnCallNow_layers(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _OnCallUpdatedEvent_scheduleId(ctx context.Context, field graphql.CollectedField, obj *model.OnCallUpdatedEvent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_OnCallUpdatedEvent_scheduleId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ScheduleID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_OnCallUpdatedEvent_scheduleId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("OnCallUpdatedEvent", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _OnCallUpdatedEvent_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.OnCallUpdatedEvent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_OnCallUpdatedEvent_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_OnCallUpdatedEvent_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("OnCallUpdatedEvent", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
 func (ec *executionContext) _Organization_id(ctx context.Context, field graphql.CollectedField, obj *model.Organization) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -7459,27 +7591,92 @@ func (ec *executionContext) fieldContext_SlackSettings_tokenHint(_ context.Conte
 	return graphql.NewScalarFieldContext("SlackSettings", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
-func (ec *executionContext) _Subscription__noop(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
+func (ec *executionContext) _Subscription_alertUpdated(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
 	return graphql.ResolveFieldStream(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_Subscription__noop(ctx, field)
+			return ec.fieldContext_Subscription_alertUpdated(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Subscription().Noop(ctx)
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Subscription().AlertUpdated(ctx, fc.Args["orgId"].(string))
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *bool) graphql.Marshaler {
-			return ec.marshalOBoolean2ᚖbool(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Alert) graphql.Marshaler {
+			return ec.marshalNAlert2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlert(ctx, selections, v)
 		},
 		true,
-		false,
+		true,
 	)
 }
-func (ec *executionContext) fieldContext_Subscription__noop(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("Subscription", field, true, true, errors.New("field of type Boolean does not have child fields"))
+func (ec *executionContext) fieldContext_Subscription_alertUpdated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Alert(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Subscription_alertUpdated_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Subscription_onCallUpdated(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
+	return graphql.ResolveFieldStream(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Subscription_onCallUpdated(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Subscription().OnCallUpdated(ctx, fc.Args["orgId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.OnCallUpdatedEvent) graphql.Marshaler {
+			return ec.marshalNOnCallUpdatedEvent2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOnCallUpdatedEvent(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Subscription_onCallUpdated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_OnCallUpdatedEvent(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Subscription_onCallUpdated_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _Team_id(ctx context.Context, field graphql.CollectedField, obj *model.Team) (ret graphql.Marshaler) {
@@ -10754,6 +10951,49 @@ func (ec *executionContext) _OnCallNow(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
+var onCallUpdatedEventImplementors = []string{"OnCallUpdatedEvent"}
+
+func (ec *executionContext) _OnCallUpdatedEvent(ctx context.Context, sel ast.SelectionSet, obj *model.OnCallUpdatedEvent) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, onCallUpdatedEventImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OnCallUpdatedEvent")
+		case "scheduleId":
+			out.Values[i] = ec._OnCallUpdatedEvent_scheduleId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "organizationId":
+			out.Values[i] = ec._OnCallUpdatedEvent_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var organizationImplementors = []string{"Organization"}
 
 func (ec *executionContext) _Organization(ctx context.Context, sel ast.SelectionSet, obj *model.Organization) graphql.Marshaler {
@@ -11554,8 +11794,10 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	}
 
 	switch fields[0].Name {
-	case "_noop":
-		return ec._Subscription__noop(ctx, fields[0])
+	case "alertUpdated":
+		return ec._Subscription_alertUpdated(ctx, fields[0])
+	case "onCallUpdated":
+		return ec._Subscription_onCallUpdated(ctx, fields[0])
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
@@ -12636,6 +12878,20 @@ func (ec *executionContext) marshalNOnCallLayer2ᚖgithubᚗcomᚋmdgᚑlabsᚋe
 		return graphql.Null
 	}
 	return ec._OnCallLayer(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNOnCallUpdatedEvent2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOnCallUpdatedEvent(ctx context.Context, sel ast.SelectionSet, v model.OnCallUpdatedEvent) graphql.Marshaler {
+	return ec._OnCallUpdatedEvent(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOnCallUpdatedEvent2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOnCallUpdatedEvent(ctx context.Context, sel ast.SelectionSet, v *model.OnCallUpdatedEvent) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._OnCallUpdatedEvent(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNOrganization2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganization(ctx context.Context, sel ast.SelectionSet, v *model.Organization) graphql.Marshaler {
