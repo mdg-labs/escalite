@@ -58,10 +58,13 @@ func TestSendPostsExpoPushMessage(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, expoMessage{
-		To:       "ExponentPushToken[abc123]",
-		Title:    "Disk full",
-		Body:     "Volume /data is full",
-		Priority: "high",
+		To:                "ExponentPushToken[abc123]",
+		Title:             "Disk full",
+		Body:              "Volume /data is full",
+		Priority:          "high",
+		CategoryID:        "alert.triggered",
+		InterruptionLevel: "critical",
+		ChannelID:         "alerts-critical",
 		Data: alertData{
 			Type:      "alert.triggered",
 			AlertID:   "alert-1",
@@ -70,12 +73,51 @@ func TestSendPostsExpoPushMessage(t *testing.T) {
 			Title:     "Disk full",
 			Body:      "Volume /data is full",
 			Actions:   []string{"ack", "escalate"},
+			Critical:  true,
 		},
 	}, received)
 
 	raw, err := json.Marshal(received.Data)
 	require.NoError(t, err)
-	require.NotContains(t, string(raw), "critical")
+	require.Contains(t, string(raw), `"critical":true`)
+}
+
+func TestSendUsesTimeSensitiveFallbackWhenCriticalDisabled(t *testing.T) {
+	var received expoMessage
+	pushchannel.SetHTTPClient(roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		body, err := io.ReadAll(req.Body)
+		require.NoError(t, err)
+		require.NoError(t, json.Unmarshal(body, &received))
+
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(`{"data":[{"status":"ok","id":"ticket-1"}]}`)),
+			Header:     make(http.Header),
+		}, nil
+	}))
+	t.Cleanup(func() { pushchannel.SetHTTPClient(nil) })
+
+	config, err := json.Marshal(map[string]any{
+		"expo_push_token":  "ExponentPushToken[abc123]",
+		"critical_enabled": false,
+	})
+	require.NoError(t, err)
+
+	channel := pushchannel.New()
+	err = channel.Send(context.Background(), channels.SendParams{
+		Config: config,
+		Alert: channels.Alert{
+			ID:          "alert-1",
+			ServiceID:   "service-1",
+			Priority:    "high",
+			Summary:     "Disk full",
+			Description: "Volume /data is full",
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "time-sensitive", received.InterruptionLevel)
+	require.Equal(t, "alerts", received.ChannelID)
+	require.False(t, received.Data.Critical)
 }
 
 func TestSendFailsWithoutExpoPushToken(t *testing.T) {
@@ -135,11 +177,14 @@ func TestValidateConfigRequiresExpoPushToken(t *testing.T) {
 }
 
 type expoMessage struct {
-	To       string    `json:"to"`
-	Title    string    `json:"title"`
-	Body     string    `json:"body"`
-	Priority string    `json:"priority,omitempty"`
-	Data     alertData `json:"data"`
+	To                string    `json:"to"`
+	Title             string    `json:"title"`
+	Body              string    `json:"body"`
+	Priority          string    `json:"priority,omitempty"`
+	CategoryID        string    `json:"categoryId"`
+	InterruptionLevel string    `json:"interruptionLevel,omitempty"`
+	ChannelID         string    `json:"channelId,omitempty"`
+	Data              alertData `json:"data"`
 }
 
 type alertData struct {
@@ -150,4 +195,5 @@ type alertData struct {
 	Title     string   `json:"title"`
 	Body      string   `json:"body"`
 	Actions   []string `json:"actions"`
+	Critical  bool     `json:"critical,omitempty"`
 }

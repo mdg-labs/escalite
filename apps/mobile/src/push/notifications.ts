@@ -3,7 +3,11 @@ import { router } from 'expo-router'
 import { Platform } from 'react-native'
 
 import { ensureAlertNotificationCategories } from '@/push/categories'
+import { hasCriticalAlertsPermission, resolveInterruptionLevel } from '@/push/critical-alerts'
 import { parseAlertTriggeredPushData } from '@/push/payload'
+
+export const ALERTS_CHANNEL_ID = 'alerts'
+export const ALERTS_CRITICAL_CHANNEL_ID = 'alerts-critical'
 
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
@@ -14,12 +18,18 @@ Notifications.setNotificationHandler({
       Boolean(data?.title) ||
       Boolean(data?.body)
 
+    const hasCriticalPermission = await hasCriticalAlertsPermission()
+    const interruptionLevel = resolveInterruptionLevel(data?.critical === true, hasCriticalPermission)
+
     return {
       shouldShowAlert: hasDisplayContent,
       shouldPlaySound: true,
       shouldSetBadge: true,
       shouldShowBanner: hasDisplayContent,
       shouldShowList: hasDisplayContent,
+      priority: interruptionLevel === 'critical'
+        ? Notifications.AndroidNotificationPriority.MAX
+        : Notifications.AndroidNotificationPriority.HIGH,
     }
   },
 })
@@ -31,11 +41,20 @@ export async function ensureAndroidNotificationChannel(): Promise<void> {
     return
   }
 
-  await Notifications.setNotificationChannelAsync('alerts', {
+  await Notifications.setNotificationChannelAsync(ALERTS_CHANNEL_ID, {
     name: 'Alerts',
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#f5c842',
+  })
+
+  await Notifications.setNotificationChannelAsync(ALERTS_CRITICAL_CHANNEL_ID, {
+    name: 'Critical alerts',
+    importance: Notifications.AndroidImportance.MAX,
+    bypassDnd: true,
+    vibrationPattern: [0, 500, 250, 500],
+    lightColor: '#f5c842',
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
   })
 }
 

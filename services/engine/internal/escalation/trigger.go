@@ -469,7 +469,21 @@ func pushRecipientConfig(
 		return nil, nil
 	}
 
-	raw, err := json.Marshal(map[string]string{"expo_push_token": token})
+	cfg := map[string]any{
+		"expo_push_token": token,
+	}
+	if len(contact.Config) > 0 {
+		var existing map[string]any
+		if err := json.Unmarshal(contact.Config, &existing); err != nil {
+			return nil, fmt.Errorf("parse push contact config: %w", err)
+		}
+		for key, value := range existing {
+			cfg[key] = value
+		}
+	}
+	cfg["expo_push_token"] = token
+
+	raw, err := json.Marshal(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("marshal push config: %w", err)
 	}

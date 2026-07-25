@@ -19,6 +19,12 @@ const (
 	defaultTimeout = 10 * time.Second
 	expoPushAPIURL = "https://exp.host/--/api/v2/push/send"
 	alertType      = "alert.triggered"
+
+	interruptionTimeSensitive = "time-sensitive"
+	interruptionCritical    = "critical"
+
+	androidAlertsChannel         = "alerts"
+	androidAlertsCriticalChannel = "alerts-critical"
 )
 
 // HTTPDoer performs outbound HTTP requests.
@@ -40,7 +46,15 @@ func SetHTTPClient(client HTTPDoer) {
 type channel struct{}
 
 type channelConfig struct {
-	ExpoPushToken string `json:"expo_push_token"`
+	ExpoPushToken   string `json:"expo_push_token"`
+	CriticalEnabled *bool  `json:"critical_enabled,omitempty"`
+}
+
+func (c channelConfig) criticalDeliveryEnabled() bool {
+	if c.CriticalEnabled == nil {
+		return true
+	}
+	return *c.CriticalEnabled
 }
 
 type alertData struct {
@@ -51,14 +65,18 @@ type alertData struct {
 	Title     string   `json:"title"`
 	Body      string   `json:"body"`
 	Actions   []string `json:"actions"`
+	Critical  bool     `json:"critical,omitempty"`
 }
 
 type expoMessage struct {
-	To       string    `json:"to"`
-	Title    string    `json:"title"`
-	Body     string    `json:"body"`
-	Priority string    `json:"priority,omitempty"`
-	Data     alertData `json:"data"`
+	To                string    `json:"to"`
+	Title             string    `json:"title"`
+	Body              string    `json:"body"`
+	Priority          string    `json:"priority,omitempty"`
+	CategoryID        string    `json:"categoryId"`
+	InterruptionLevel string    `json:"interruptionLevel,omitempty"`
+	ChannelID         string    `json:"channelId,omitempty"`
+	Data              alertData `json:"data"`
 }
 
 type pushTicket struct {
@@ -98,7 +116,7 @@ func (c *channel) Send(ctx context.Context, params channels.SendParams) error {
 		return errors.New("expo_push_token is required")
 	}
 
-	payload := buildMessage(token, params.Alert)
+	payload := buildMessage(token, params.Alert, cfg)
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("marshal expo payload: %w", err)
@@ -181,6 +199,10 @@ func (c *channel) ConfigSchema() json.RawMessage {
 				"type": "string",
 				"minLength": 1,
 				"title": "Expo push token"
+			},
+			"critical_enabled": {
+				"type": "boolean",
+				"title": "Deliver as critical alert when supported"
 			}
 		},
 		"required": ["expo_push_token"],
@@ -199,14 +221,17 @@ func parseConfig(raw json.RawMessage) (channelConfig, error) {
 	return cfg, nil
 }
 
-func buildMessage(token string, alert channels.Alert) expoMessage {
+func buildMessage(token string, alert channels.Alert, cfg channelConfig) expoMessage {
 	title := strings.TrimSpace(alert.Summary)
 	body := strings.TrimSpace(alert.Description)
+	highPriority := strings.EqualFold(strings.TrimSpace(alert.Priority), "high")
+	critical := highPriority && cfg.criticalDeliveryEnabled()
 
 	msg := expoMessage{
-		To:    token,
-		Title: title,
-		Body:  body,
+		To:         token,
+		Title:      title,
+		Body:       body,
+		CategoryID: alertType,
 		Data: alertData{
 			Type:      alertType,
 			AlertID:   alert.ID,
@@ -217,8 +242,15 @@ func buildMessage(token string, alert channels.Alert) expoMessage {
 			Actions:   []string{"ack", "escalate"},
 		},
 	}
-	if strings.EqualFold(strings.TrimSpace(alert.Priority), "high") {
+	if highPriority {
 		msg.Priority = "high"
+		msg.ChannelID = androidAlertsChannel
+		msg.InterruptionLevel = interruptionTimeSensitive
+	}
+	if critical {
+		msg.Data.Critical = true
+		msg.InterruptionLevel = interruptionCritical
+		msg.ChannelID = androidAlertsCriticalChannel
 	}
 	return msg
 }

@@ -25,6 +25,35 @@ test('push payload parser handles alert.triggered contract', () => {
   assert.match(source, /parseAlertTriggeredPushData/)
 })
 
+test('push registration requests critical alert permission on iOS', () => {
+  const source = readFileSync(join(root, 'src/push/register-device.ts'), 'utf8')
+  assert.match(source, /allowCriticalAlerts/)
+})
+
+test('push payload parser handles critical flag', () => {
+  const source = readFileSync(join(root, 'src/push/payload.ts'), 'utf8')
+  assert.match(source, /critical\?: boolean/)
+})
+
+test('critical alerts helper falls back to time-sensitive', () => {
+  const source = readFileSync(join(root, 'src/push/critical-alerts.ts'), 'utf8')
+  assert.match(source, /resolveInterruptionLevel/)
+  assert.match(source, /hasCriticalAlertsPermission/)
+  assert.match(source, /timeSensitive/)
+})
+
+test('android notification channels include critical alerts channel', () => {
+  const source = readFileSync(join(root, 'src/push/notifications.ts'), 'utf8')
+  assert.match(source, /ALERTS_CRITICAL_CHANNEL_ID/)
+  assert.match(source, /AndroidImportance\.MAX/)
+  assert.match(source, /bypassDnd: true/)
+})
+
+test('app.json declares Android full-screen intent permission', () => {
+  const appJson = JSON.parse(readFileSync(join(root, 'app.json'), 'utf8'))
+  assert.ok(appJson.expo.android.permissions.includes('android.permission.USE_FULL_SCREEN_INTENT'))
+})
+
 test('foreground notification handler shows title and body', () => {
   const source = readFileSync(join(root, 'src/push/notifications.ts'), 'utf8')
   assert.match(source, /setNotificationHandler/)

@@ -1,5 +1,6 @@
 import * as Device from 'expo-device'
 import * as Notifications from 'expo-notifications'
+import { Platform } from 'react-native'
 
 import { mobileAuthConfig } from '@/auth/config'
 
@@ -20,7 +21,14 @@ export async function obtainExpoPushToken(): Promise<string | null> {
   const { status: existingStatus } = await Notifications.getPermissionsAsync()
   let finalStatus = existingStatus
   if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync()
+    const { status } = await Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+        allowCriticalAlerts: Platform.OS === 'ios',
+      },
+    })
     finalStatus = status
   }
 
