@@ -83,6 +83,7 @@ type Querier interface {
 	PingDatabase(ctx context.Context) (int32, error)
 	ReEscalateAlert(ctx context.Context, arg ReEscalateAlertParams) (Alert, error)
 	RecordHeartbeatPing(ctx context.Context, tokenHash string) (HeartbeatMonitor, error)
+	ResolveOpenAlert(ctx context.Context, arg ResolveOpenAlertParams) (Alert, error)
 	RevokeAllUserSessions(ctx context.Context, arg RevokeAllUserSessionsParams) error
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
 	SessionsSchemaReady(ctx context.Context) (bool, error)

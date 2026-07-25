@@ -217,3 +217,100 @@ func TestProcessInboundCollapseAcknowledgedAlertDoesNotCreateNotifications(t *te
 	require.Equal(t, "acknowledged", alert.Status)
 	require.Equal(t, int32(2), alert.EventCount)
 }
+
+func TestProcessInboundResolveSetsResolvedAtAndIntegration(t *testing.T) {
+	pool, cleanup := startPostgres(t)
+	defer cleanup()
+
+	fixture := seedInboundFixture(t, pool)
+	ctx := context.Background()
+	logger := slog.Default()
+
+	triggered := integrations.AlertCreate{
+		EventType: integrations.EventTriggered,
+		DedupKey:  "host-1-disk",
+		Summary:   "Disk usage high",
+		Priority:  "low",
+	}
+	alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, triggered)
+	require.NoError(t, err)
+	require.NotEqual(t, uuid.Nil, alertID)
+
+	resolved := integrations.AlertCreate{
+		EventType: integrations.EventResolved,
+		DedupKey:  "host-1-disk",
+	}
+	_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved)
+	require.NoError(t, err)
+
+	alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+		ID:             alertID,
+		OrganizationID: fixture.key.OrganizationID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "closed", alert.Status)
+	require.True(t, alert.ClosedAt.Valid)
+	require.True(t, alert.ResolvedAt.Valid)
+	require.True(t, alert.ResolvedIntegration.Valid)
+	require.Equal(t, "generic-rest-api", alert.ResolvedIntegration.String)
+}
+
+func TestProcessInboundResolveUnknownDedupKeyNoOp(t *testing.T) {
+	pool, cleanup := startPostgres(t)
+	defer cleanup()
+
+	fixture := seedInboundFixture(t, pool)
+	ctx := context.Background()
+	logger := slog.Default()
+
+	resolved := integrations.AlertCreate{
+		EventType: integrations.EventResolved,
+		DedupKey:  "missing-key",
+	}
+	_, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved)
+	require.NoError(t, err)
+
+	var alertCount int
+	err = pool.QueryRow(ctx, `
+		SELECT COUNT(*) FROM alerts
+		WHERE service_id = $1 AND dedup_key = $2
+	`, fixture.key.ServiceID, resolved.DedupKey).Scan(&alertCount)
+	require.NoError(t, err)
+	require.Equal(t, 0, alertCount)
+}
+
+func TestProcessInboundResolveIdempotentWhenAlreadyClosed(t *testing.T) {
+	pool, cleanup := startPostgres(t)
+	defer cleanup()
+
+	fixture := seedInboundFixture(t, pool)
+	ctx := context.Background()
+	logger := slog.Default()
+
+	event := integrations.AlertCreate{
+		EventType: integrations.EventTriggered,
+		DedupKey:  "cpu-high",
+		Summary:   "CPU above threshold",
+		Priority:  "high",
+	}
+	alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	require.NoError(t, err)
+
+	resolved := integrations.AlertCreate{
+		EventType: integrations.EventResolved,
+		DedupKey:  "cpu-high",
+	}
+	_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved)
+	require.NoError(t, err)
+
+	_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved)
+	require.NoError(t, err)
+
+	alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+		ID:             alertID,
+		OrganizationID: fixture.key.OrganizationID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "closed", alert.Status)
+	require.True(t, alert.ResolvedAt.Valid)
+}

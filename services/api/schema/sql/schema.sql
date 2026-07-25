@@ -89,6 +89,8 @@ CREATE TABLE "alerts" (
   "acknowledged_at" timestamptz NULL,
   "acknowledged_by_user_id" uuid NULL,
   "closed_at" timestamptz NULL,
+  "resolved_at" timestamptz NULL,
+  "resolved_integration" text NULL,
   "created_at" timestamptz NOT NULL DEFAULT now(),
   "updated_at" timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY ("id"),

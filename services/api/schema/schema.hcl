@@ -966,6 +966,14 @@ table "alerts" {
     null = true
     type = timestamptz
   }
+  column "resolved_at" {
+    null = true
+    type = timestamptz
+  }
+  column "resolved_integration" {
+    null = true
+    type = text
+  }
   column "created_at" {
     null    = false
     type    = timestamptz

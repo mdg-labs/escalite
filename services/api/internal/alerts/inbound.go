@@ -107,10 +107,11 @@ func resolveByDedupKey(
 		return err
 	}
 
-	_, err = queries.CloseAlert(ctx, db.CloseAlertParams{
-		ID:              alert.ID,
-		OrganizationID:  key.OrganizationID,
-		EscalationState: raw,
+	_, err = queries.ResolveOpenAlert(ctx, db.ResolveOpenAlertParams{
+		ID:                  alert.ID,
+		OrganizationID:      key.OrganizationID,
+		EscalationState:     raw,
+		ResolvedIntegration: pgtype.Text{String: key.PluginName, Valid: true},
 	})
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
 		return nil

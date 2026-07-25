@@ -63,6 +63,9 @@ func TestInboundWebhookAlertmanagerCreatesAndResolvesAlert(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "closed", closed.Status)
 	require.True(t, closed.ClosedAt.Valid)
+	require.True(t, closed.ResolvedAt.Valid)
+	require.True(t, closed.ResolvedIntegration.Valid)
+	require.Equal(t, "prometheus-alertmanager", closed.ResolvedIntegration.String)
 }
 
 func loadAlertmanagerFixture(t *testing.T, name string) []byte {

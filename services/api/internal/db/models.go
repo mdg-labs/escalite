@@ -24,6 +24,8 @@ type Alert struct {
 	AcknowledgedAt       pgtype.Timestamptz `json:"acknowledged_at"`
 	AcknowledgedByUserID pgtype.UUID        `json:"acknowledged_by_user_id"`
 	ClosedAt             pgtype.Timestamptz `json:"closed_at"`
+	ResolvedAt           pgtype.Timestamptz `json:"resolved_at"`
+	ResolvedIntegration  pgtype.Text        `json:"resolved_integration"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
 }

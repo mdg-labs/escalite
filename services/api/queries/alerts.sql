@@ -79,6 +79,19 @@ WHERE id = $1
   AND status IN ('triggered', 'acknowledged')
 RETURNING *;
 
+-- name: ResolveOpenAlert :one
+UPDATE alerts
+SET status = 'closed',
+    closed_at = now(),
+    resolved_at = now(),
+    resolved_integration = $4,
+    escalation_state = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+  AND status IN ('triggered', 'acknowledged')
+RETURNING *;
+
 -- name: ReEscalateAlert :one
 UPDATE alerts
 SET status = 'triggered',

@@ -158,3 +158,32 @@ func TestInboundAlertsRejectsNonGenericRESTKey(t *testing.T) {
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &errResp))
 	require.Equal(t, handlers.CodeUnauthenticated, errResp.Code)
 }
+
+func TestInboundAlertsResolveUnknownDedupKeyReturnsOK(t *testing.T) {
+	handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
+	defer cleanup()
+
+	bootstrapAdmin(t, handler)
+
+	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+
+	_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "generic-rest-api")
+
+	payload := []byte(`{
+		"summary": "Recovered",
+		"dedup_key": "unknown-key",
+		"event_type": "resolved"
+	}`)
+	rec := postInboundAlert(t, handler, token, payload)
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+
+	var resp struct {
+		Status string `json:"status"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	require.Equal(t, "resolved", resp.Status)
+}
