@@ -43,7 +43,7 @@ func validateNotificationRuleSteps(steps []*model.NotificationRuleStepInput) ([]
 		if _, exists := seen[channel]; exists {
 			return nil, fmt.Errorf("duplicate channel %q in notification rule", channel)
 		}
-		if err := validateNotificationChannelConfig(channel, map[string]any{}); err != nil {
+		if err := validateRegisteredNotificationChannel(channel); err != nil {
 			return nil, err
 		}
 		if step.DelayMinutes < 0 {
