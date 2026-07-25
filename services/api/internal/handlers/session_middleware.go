@@ -76,6 +76,18 @@ func loadSessionContext(
 	pool *pgxpool.Pool,
 	logger *slog.Logger,
 ) (auth.SessionContext, bool, error) {
+	if sc, ok, err := loadCookieSessionContext(ctx, r, pool, logger); err != nil || ok {
+		return sc, ok, err
+	}
+	return loadRefreshTokenSessionContext(ctx, r, pool, logger)
+}
+
+func loadCookieSessionContext(
+	ctx context.Context,
+	r *http.Request,
+	pool *pgxpool.Pool,
+	logger *slog.Logger,
+) (auth.SessionContext, bool, error) {
 	cookie, err := sessionCookie(ctx, r)
 	if err != nil || cookie == nil || cookie.Value == "" {
 		return auth.SessionContext{}, false, nil
@@ -112,6 +124,49 @@ func loadSessionContext(
 	return auth.SessionContext{
 		Session: session,
 		User:    user,
+	}, true, nil
+}
+
+func loadRefreshTokenSessionContext(
+	ctx context.Context,
+	r *http.Request,
+	pool *pgxpool.Pool,
+	logger *slog.Logger,
+) (auth.SessionContext, bool, error) {
+	if r == nil {
+		return auth.SessionContext{}, false, nil
+	}
+
+	bearer, ok := auth.ParseBearerToken(r.Header.Get("Authorization"))
+	if !ok {
+		return auth.SessionContext{}, false, nil
+	}
+
+	queries := db.New(pool)
+	stored, err := queries.GetRefreshTokenByHash(ctx, auth.HashRefreshToken(bearer))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return auth.SessionContext{}, false, nil
+		}
+		logger.Error("load refresh token failed", "error", err)
+		return auth.SessionContext{}, false, err
+	}
+
+	user, err := queries.GetUserByID(ctx, db.GetUserByIDParams{
+		ID:             stored.UserID,
+		OrganizationID: stored.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return auth.SessionContext{}, false, nil
+		}
+		logger.Error("load refresh token user failed", "error", err)
+		return auth.SessionContext{}, false, err
+	}
+
+	return auth.SessionContext{
+		User:         user,
+		RefreshToken: &stored,
 	}, true, nil
 }
 

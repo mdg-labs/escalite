@@ -202,6 +202,19 @@ type SlackSettings {
   tokenHint: String
 }
 
+"""Registered mobile device for Expo push delivery."""
+type MobileDevice {
+  id: ID!
+  platform: String
+  deviceLabel: String
+  """Display prefix for the Expo push token (last-4 style)."""
+  pushTokenPrefix: String!
+  revokedAt: DateTime
+  lastRegisteredAt: DateTime!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 """Inbound integration key for a service."""
 type IntegrationKey {
   id: ID!

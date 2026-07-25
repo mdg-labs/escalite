@@ -113,6 +113,21 @@ type MobileAuthCode struct {
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
+type MobileDevice struct {
+	ID               uuid.UUID          `json:"id"`
+	OrganizationID   uuid.UUID          `json:"organization_id"`
+	UserID           uuid.UUID          `json:"user_id"`
+	RefreshTokenID   pgtype.UUID        `json:"refresh_token_id"`
+	ExpoPushToken    string             `json:"expo_push_token"`
+	PushTokenPrefix  string             `json:"push_token_prefix"`
+	Platform         pgtype.Text        `json:"platform"`
+	DeviceLabel      pgtype.Text        `json:"device_label"`
+	RevokedAt        pgtype.Timestamptz `json:"revoked_at"`
+	LastRegisteredAt pgtype.Timestamptz `json:"last_registered_at"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
 type NotificationAttempt struct {
 	ID               uuid.UUID          `json:"id"`
 	OrganizationID   uuid.UUID          `json:"organization_id"`

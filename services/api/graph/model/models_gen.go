@@ -158,6 +158,19 @@ type LoginPayload struct {
 	User *User `json:"user"`
 }
 
+// Registered mobile device for Expo push delivery.
+type MobileDevice struct {
+	ID          string  `json:"id"`
+	Platform    *string `json:"platform,omitempty"`
+	DeviceLabel *string `json:"deviceLabel,omitempty"`
+	// Display prefix for the Expo push token (last-4 style).
+	PushTokenPrefix  string     `json:"pushTokenPrefix"`
+	RevokedAt        *time.Time `json:"revokedAt,omitempty"`
+	LastRegisteredAt time.Time  `json:"lastRegisteredAt"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
+}
+
 type Mutation struct {
 }
 
@@ -223,6 +236,12 @@ type Override struct {
 }
 
 type Query struct {
+}
+
+type RegisterMobileDeviceInput struct {
+	ExpoPushToken string  `json:"expoPushToken"`
+	Platform      *string `json:"platform,omitempty"`
+	DeviceLabel   *string `json:"deviceLabel,omitempty"`
 }
 
 type Rotation struct {

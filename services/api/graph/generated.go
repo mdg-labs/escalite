@@ -113,6 +113,17 @@ type ComplexityRoot struct {
 		User func(childComplexity int) int
 	}
 
+	MobileDevice struct {
+		CreatedAt        func(childComplexity int) int
+		DeviceLabel      func(childComplexity int) int
+		ID               func(childComplexity int) int
+		LastRegisteredAt func(childComplexity int) int
+		Platform         func(childComplexity int) int
+		PushTokenPrefix  func(childComplexity int) int
+		RevokedAt        func(childComplexity int) int
+		UpdatedAt        func(childComplexity int) int
+	}
+
 	Mutation struct {
 		AcknowledgeAlert       func(childComplexity int, id string) int
 		CloseAlert             func(childComplexity int, id string) int
@@ -132,7 +143,9 @@ type ComplexityRoot struct {
 		DeleteService          func(childComplexity int, id string) int
 		Login                  func(childComplexity int, input model.LoginInput) int
 		ReEscalateAlert        func(childComplexity int, id string) int
+		RegisterMobileDevice   func(childComplexity int, input model.RegisterMobileDeviceInput) int
 		RevokeIntegrationKey   func(childComplexity int, id string) int
+		RevokeMobileDevice     func(childComplexity int, id string) int
 		RotateIntegrationKey   func(childComplexity int, id string) int
 		SaveNotificationRule   func(childComplexity int, input model.SaveNotificationRuleInput) int
 		SaveSlackSettings      func(childComplexity int, input model.SaveSlackSettingsInput) int
@@ -205,6 +218,7 @@ type ComplexityRoot struct {
 		HeartbeatMonitors    func(childComplexity int, serviceID string) int
 		IntegrationKeys      func(childComplexity int, serviceID string) int
 		Me                   func(childComplexity int) int
+		MobileDevices        func(childComplexity int) int
 		NotificationChannels func(childComplexity int) int
 		NotificationRules    func(childComplexity int) int
 		OnCallNow            func(childComplexity int, scheduleID string, at *time.Time) int
@@ -325,6 +339,8 @@ type MutationResolver interface {
 	DeleteRotation(ctx context.Context, id string) (bool, error)
 	CreateOverride(ctx context.Context, input model.CreateOverrideInput) (*model.Override, error)
 	DeleteOverride(ctx context.Context, id string) (bool, error)
+	RegisterMobileDevice(ctx context.Context, input model.RegisterMobileDeviceInput) (*model.MobileDevice, error)
+	RevokeMobileDevice(ctx context.Context, id string) (*model.MobileDevice, error)
 	SaveUserContactMethod(ctx context.Context, input model.SaveUserContactMethodInput) (*model.UserContactMethod, error)
 	SaveNotificationRule(ctx context.Context, input model.SaveNotificationRuleInput) (*model.UserNotificationRule, error)
 	DeleteNotificationRule(ctx context.Context, priority model.AlertPriority) (bool, error)
@@ -351,6 +367,7 @@ type QueryResolver interface {
 	Overrides(ctx context.Context, scheduleID string) ([]*model.Override, error)
 	NotificationChannels(ctx context.Context) ([]*model.NotificationChannelDefinition, error)
 	NotificationRules(ctx context.Context) ([]*model.UserNotificationRule, error)
+	MobileDevices(ctx context.Context) ([]*model.MobileDevice, error)
 	SlackSettings(ctx context.Context) (*model.SlackSettings, error)
 	IntegrationKeys(ctx context.Context, serviceID string) ([]*model.IntegrationKey, error)
 	Teams(ctx context.Context) ([]*model.Team, error)
@@ -711,6 +728,55 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.LoginPayload.User(childComplexity), true
 
+	case "MobileDevice.createdAt":
+		if e.ComplexityRoot.MobileDevice.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MobileDevice.CreatedAt(childComplexity), true
+	case "MobileDevice.deviceLabel":
+		if e.ComplexityRoot.MobileDevice.DeviceLabel == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MobileDevice.DeviceLabel(childComplexity), true
+	case "MobileDevice.id":
+		if e.ComplexityRoot.MobileDevice.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MobileDevice.ID(childComplexity), true
+	case "MobileDevice.lastRegisteredAt":
+		if e.ComplexityRoot.MobileDevice.LastRegisteredAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MobileDevice.LastRegisteredAt(childComplexity), true
+	case "MobileDevice.platform":
+		if e.ComplexityRoot.MobileDevice.Platform == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MobileDevice.Platform(childComplexity), true
+	case "MobileDevice.pushTokenPrefix":
+		if e.ComplexityRoot.MobileDevice.PushTokenPrefix == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MobileDevice.PushTokenPrefix(childComplexity), true
+	case "MobileDevice.revokedAt":
+		if e.ComplexityRoot.MobileDevice.RevokedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MobileDevice.RevokedAt(childComplexity), true
+	case "MobileDevice.updatedAt":
+		if e.ComplexityRoot.MobileDevice.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MobileDevice.UpdatedAt(childComplexity), true
+
 	case "Mutation.acknowledgeAlert":
 		if e.ComplexityRoot.Mutation.AcknowledgeAlert == nil {
 			break
@@ -909,6 +975,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.ReEscalateAlert(childComplexity, args["id"].(string)), true
+	case "Mutation.registerMobileDevice":
+		if e.ComplexityRoot.Mutation.RegisterMobileDevice == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_registerMobileDevice_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RegisterMobileDevice(childComplexity, args["input"].(model.RegisterMobileDeviceInput)), true
 	case "Mutation.revokeIntegrationKey":
 		if e.ComplexityRoot.Mutation.RevokeIntegrationKey == nil {
 			break
@@ -920,6 +997,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RevokeIntegrationKey(childComplexity, args["id"].(string)), true
+	case "Mutation.revokeMobileDevice":
+		if e.ComplexityRoot.Mutation.RevokeMobileDevice == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_revokeMobileDevice_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RevokeMobileDevice(childComplexity, args["id"].(string)), true
 	case "Mutation.rotateIntegrationKey":
 		if e.ComplexityRoot.Mutation.RotateIntegrationKey == nil {
 			break
@@ -1307,6 +1395,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Me(childComplexity), true
+	case "Query.mobileDevices":
+		if e.ComplexityRoot.Query.MobileDevices == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.MobileDevices(childComplexity), true
 	case "Query.notificationChannels":
 		if e.ComplexityRoot.Query.NotificationChannels == nil {
 			break
@@ -1744,6 +1838,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputEscalationStepTargetInput,
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputNotificationRuleStepInput,
+		ec.unmarshalInputRegisterMobileDeviceInput,
 		ec.unmarshalInputSaveNotificationRuleInput,
 		ec.unmarshalInputSaveSlackSettingsInput,
 		ec.unmarshalInputSaveUserContactMethodInput,
@@ -1992,6 +2087,12 @@ input CreateIntegrationKeyInput {
   config: JSON!
 }
 
+input RegisterMobileDeviceInput {
+  expoPushToken: String!
+  platform: String
+  deviceLabel: String
+}
+
 input CreateServiceInput {
   teamId: ID!
   name: String!
@@ -2086,6 +2187,11 @@ type Query {
   List the current user's notification rules by alert priority.
   """
   notificationRules: [UserNotificationRule!]!
+
+  """
+  List mobile devices registered for push notifications for the current user.
+  """
+  mobileDevices: [MobileDevice!]!
 
   """
   Organization Slack bot token status (org admin only).
@@ -2213,6 +2319,16 @@ type Mutation {
   Soft-delete an override (org admin only).
   """
   deleteOverride(id: ID!): Boolean!
+
+  """
+  Register or refresh an Expo push token for the current user's mobile device.
+  """
+  registerMobileDevice(input: RegisterMobileDeviceInput!): MobileDevice!
+
+  """
+  Revoke a mobile device so it no longer receives push notifications.
+  """
+  revokeMobileDevice(id: ID!): MobileDevice!
 
   """
   Save the current user's contact method config for a notification channel.
@@ -2486,6 +2602,19 @@ type SlackSettings {
   tokenHint: String
 }
 
+"""Registered mobile device for Expo push delivery."""
+type MobileDevice {
+  id: ID!
+  platform: String
+  deviceLabel: String
+  """Display prefix for the Expo push token (last-4 style)."""
+  pushTokenPrefix: String!
+  revokedAt: DateTime
+  lastRegisteredAt: DateTime!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 """Inbound integration key for a service."""
 type IntegrationKey {
   id: ID!
@@ -2659,6 +2788,28 @@ func (ec *executionContext) childFields_LoginPayload(ctx context.Context, field 
 		return ec.fieldContext_LoginPayload_user(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type LoginPayload", field.Name)
+}
+
+func (ec *executionContext) childFields_MobileDevice(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_MobileDevice_id(ctx, field)
+	case "platform":
+		return ec.fieldContext_MobileDevice_platform(ctx, field)
+	case "deviceLabel":
+		return ec.fieldContext_MobileDevice_deviceLabel(ctx, field)
+	case "pushTokenPrefix":
+		return ec.fieldContext_MobileDevice_pushTokenPrefix(ctx, field)
+	case "revokedAt":
+		return ec.fieldContext_MobileDevice_revokedAt(ctx, field)
+	case "lastRegisteredAt":
+		return ec.fieldContext_MobileDevice_lastRegisteredAt(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_MobileDevice_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_MobileDevice_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type MobileDevice", field.Name)
 }
 
 func (ec *executionContext) childFields_NotificationChannelDefinition(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -3281,7 +3432,35 @@ func (ec *executionContext) field_Mutation_reEscalateAlert_args(ctx context.Cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_registerMobileDevice_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.RegisterMobileDeviceInput, error) {
+			return ec.unmarshalNRegisterMobileDeviceInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRegisterMobileDeviceInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_revokeIntegrationKey_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_revokeMobileDevice_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
@@ -5012,6 +5191,190 @@ func (ec *executionContext) fieldContext_LoginPayload_user(_ context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _MobileDevice_id(ctx context.Context, field graphql.CollectedField, obj *model.MobileDevice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MobileDevice_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MobileDevice_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MobileDevice", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _MobileDevice_platform(ctx context.Context, field graphql.CollectedField, obj *model.MobileDevice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MobileDevice_platform(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Platform, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_MobileDevice_platform(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MobileDevice", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _MobileDevice_deviceLabel(ctx context.Context, field graphql.CollectedField, obj *model.MobileDevice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MobileDevice_deviceLabel(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DeviceLabel, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_MobileDevice_deviceLabel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MobileDevice", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _MobileDevice_pushTokenPrefix(ctx context.Context, field graphql.CollectedField, obj *model.MobileDevice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MobileDevice_pushTokenPrefix(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PushTokenPrefix, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MobileDevice_pushTokenPrefix(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MobileDevice", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _MobileDevice_revokedAt(ctx context.Context, field graphql.CollectedField, obj *model.MobileDevice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MobileDevice_revokedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RevokedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalODateTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_MobileDevice_revokedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MobileDevice", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _MobileDevice_lastRegisteredAt(ctx context.Context, field graphql.CollectedField, obj *model.MobileDevice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MobileDevice_lastRegisteredAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.LastRegisteredAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MobileDevice_lastRegisteredAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MobileDevice", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _MobileDevice_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.MobileDevice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MobileDevice_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MobileDevice_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MobileDevice", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _MobileDevice_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.MobileDevice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MobileDevice_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MobileDevice_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MobileDevice", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
 func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5886,6 +6249,94 @@ func (ec *executionContext) fieldContext_Mutation_deleteOverride(ctx context.Con
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deleteOverride_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_registerMobileDevice(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_registerMobileDevice(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RegisterMobileDevice(ctx, fc.Args["input"].(model.RegisterMobileDeviceInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.MobileDevice) graphql.Marshaler {
+			return ec.marshalNMobileDevice2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMobileDevice(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_registerMobileDevice(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_MobileDevice(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_registerMobileDevice_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_revokeMobileDevice(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_revokeMobileDevice(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RevokeMobileDevice(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.MobileDevice) graphql.Marshaler {
+			return ec.marshalNMobileDevice2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMobileDevice(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_revokeMobileDevice(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_MobileDevice(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_revokeMobileDevice_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -7548,6 +7999,38 @@ func (ec *executionContext) fieldContext_Query_notificationRules(_ context.Conte
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_UserNotificationRule(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_mobileDevices(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_mobileDevices(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().MobileDevices(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.MobileDevice) graphql.Marshaler {
+			return ec.marshalNMobileDevice2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMobileDeviceᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_mobileDevices(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_MobileDevice(ctx, field)
 		},
 	}
 	return fc, nil
@@ -10669,6 +11152,50 @@ func (ec *executionContext) unmarshalInputNotificationRuleStepInput(ctx context.
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputRegisterMobileDeviceInput(ctx context.Context, obj any) (model.RegisterMobileDeviceInput, error) {
+	var it model.RegisterMobileDeviceInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"expoPushToken", "platform", "deviceLabel"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "expoPushToken":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expoPushToken"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExpoPushToken = data
+		case "platform":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("platform"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Platform = data
+		case "deviceLabel":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deviceLabel"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DeviceLabel = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSaveNotificationRuleInput(ctx context.Context, obj any) (model.SaveNotificationRuleInput, error) {
 	var it model.SaveNotificationRuleInput
 	if obj == nil {
@@ -11560,6 +12087,79 @@ func (ec *executionContext) _LoginPayload(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var mobileDeviceImplementors = []string{"MobileDevice"}
+
+func (ec *executionContext) _MobileDevice(ctx context.Context, sel ast.SelectionSet, obj *model.MobileDevice) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mobileDeviceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MobileDevice")
+		case "id":
+			out.Values[i] = ec._MobileDevice_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "platform":
+			out.Values[i] = ec._MobileDevice_platform(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "deviceLabel":
+			out.Values[i] = ec._MobileDevice_deviceLabel(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "pushTokenPrefix":
+			out.Values[i] = ec._MobileDevice_pushTokenPrefix(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "revokedAt":
+			out.Values[i] = ec._MobileDevice_revokedAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "lastRegisteredAt":
+			out.Values[i] = ec._MobileDevice_lastRegisteredAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._MobileDevice_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._MobileDevice_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -11716,6 +12316,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteOverride":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteOverride(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "registerMobileDevice":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_registerMobileDevice(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "revokeMobileDevice":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_revokeMobileDevice(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -12498,6 +13112,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_notificationRules(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "mobileDevices":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_mobileDevices(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -14013,6 +14649,36 @@ func (ec *executionContext) marshalNLoginPayload2ᚖgithubᚗcomᚋmdgᚑlabsᚋ
 	return ec._LoginPayload(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMobileDevice2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMobileDevice(ctx context.Context, sel ast.SelectionSet, v model.MobileDevice) graphql.Marshaler {
+	return ec._MobileDevice(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMobileDevice2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMobileDeviceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MobileDevice) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNMobileDevice2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMobileDevice(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMobileDevice2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMobileDevice(ctx context.Context, sel ast.SelectionSet, v *model.MobileDevice) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MobileDevice(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNNotificationChannelDefinition2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationChannelDefinitionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.NotificationChannelDefinition) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -14162,6 +14828,11 @@ func (ec *executionContext) marshalNOverride2ᚖgithubᚗcomᚋmdgᚑlabsᚋesca
 		return graphql.Null
 	}
 	return ec._Override(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRegisterMobileDeviceInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRegisterMobileDeviceInput(ctx context.Context, v any) (model.RegisterMobileDeviceInput, error) {
+	res, err := ec.unmarshalInputRegisterMobileDeviceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNRotation2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRotation(ctx context.Context, sel ast.SelectionSet, v model.Rotation) graphql.Marshaler {

@@ -84,6 +84,11 @@ type Query {
   notificationRules: [UserNotificationRule!]!
 
   """
+  List mobile devices registered for push notifications for the current user.
+  """
+  mobileDevices: [MobileDevice!]!
+
+  """
   Organization Slack bot token status (org admin only).
   """
   slackSettings: SlackSettings!
@@ -209,6 +214,16 @@ type Mutation {
   Soft-delete an override (org admin only).
   """
   deleteOverride(id: ID!): Boolean!
+
+  """
+  Register or refresh an Expo push token for the current user's mobile device.
+  """
+  registerMobileDevice(input: RegisterMobileDeviceInput!): MobileDevice!
+
+  """
+  Revoke a mobile device so it no longer receives push notifications.
+  """
+  revokeMobileDevice(id: ID!): MobileDevice!
 
   """
   Save the current user's contact method config for a notification channel.

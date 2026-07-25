@@ -16,6 +16,7 @@ import {
   getStoredRefreshToken,
   setStoredRefreshToken,
 } from '@/auth/secure-store'
+import { syncMobileDevicePushToken } from '@/push/register-device'
 import type { MobileAuthUser } from '@/auth/api'
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
@@ -45,6 +46,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(nextUser)
     setStatus('authenticated')
     setError(null)
+    void syncMobileDevicePushToken(refreshToken).catch(() => {
+      // Push registration is best-effort; auth should still succeed.
+    })
   }, [])
 
   const restoreSession = useCallback(async () => {
@@ -60,6 +64,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(nextUser)
       setStatus('authenticated')
       setError(null)
+      void syncMobileDevicePushToken(refreshToken).catch(() => {
+        // Push registration is best-effort after session restore.
+      })
     } catch (err) {
       await clearStoredRefreshToken()
       setUser(null)

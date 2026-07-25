@@ -3,7 +3,7 @@
 // Scheduling tables: schedules, rotations, overrides (#41).
 // Service + integration key tables (#40).
 // Escalation policies, alerts, notification_attempts (#42).
-// Sessions, audit_events, mobile_auth_codes, refresh_tokens (#43, #105).
+// Sessions, audit_events, mobile_auth_codes, refresh_tokens, mobile_devices (#43, #105, #106).
 // Password reset tokens (#51).
 
 schema "public" {
@@ -1487,6 +1487,100 @@ table "refresh_tokens" {
   }
 
   index "refresh_tokens_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+}
+
+table "mobile_devices" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "user_id" {
+    null = false
+    type = uuid
+  }
+  column "refresh_token_id" {
+    null = true
+    type = uuid
+  }
+  column "expo_push_token" {
+    null = false
+    type = text
+  }
+  column "push_token_prefix" {
+    null = false
+    type = text
+  }
+  column "platform" {
+    null = true
+    type = text
+  }
+  column "device_label" {
+    null = true
+    type = text
+  }
+  column "revoked_at" {
+    null = true
+    type = timestamptz
+  }
+  column "last_registered_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "mobile_devices_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "mobile_devices_user_id_organization_id_fkey" {
+    columns     = [column.user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "mobile_devices_refresh_token_id_organization_id_fkey" {
+    columns     = [column.refresh_token_id, column.organization_id]
+    ref_columns = [table.refresh_tokens.column.id, table.refresh_tokens.column.organization_id]
+    on_delete   = SET_NULL
+  }
+
+  unique "mobile_devices_expo_push_token_key" {
+    columns = [column.expo_push_token]
+  }
+
+  unique "mobile_devices_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "mobile_devices_user_id_idx" {
+    columns = [column.user_id]
+  }
+
+  index "mobile_devices_organization_id_idx" {
     columns = [column.organization_id]
   }
 }

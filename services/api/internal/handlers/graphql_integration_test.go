@@ -33,6 +33,44 @@ func postGraphQL(t *testing.T, handler http.Handler, query string, cookie *http.
 	return rec
 }
 
+func postGraphQLWithBearer(t *testing.T, handler http.Handler, query string, bearerToken string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	body, err := json.Marshal(map[string]string{"query": query})
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/graphql", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+bearerToken)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	return rec
+}
+
+func postMobileAuthCode(t *testing.T, handler http.Handler, sessionCookie *http.Cookie) *httptest.ResponseRecorder {
+	t.Helper()
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/mobile/auth/code", nil)
+	req.AddCookie(sessionCookie)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	return rec
+}
+
+func postMobileAuthExchange(t *testing.T, handler http.Handler, code string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	payload, err := json.Marshal(map[string]string{"code": code})
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/mobile/auth/exchange", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	return rec
+}
+
 func TestGraphQLHealthQuery(t *testing.T) {
 	handler, _, cleanup := newTestHandler(t)
 	defer cleanup()

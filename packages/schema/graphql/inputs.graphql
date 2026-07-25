@@ -111,6 +111,12 @@ input CreateIntegrationKeyInput {
   config: JSON!
 }
 
+input RegisterMobileDeviceInput {
+  expoPushToken: String!
+  platform: String
+  deviceLabel: String
+}
+
 input CreateServiceInput {
   teamId: ID!
   name: String!

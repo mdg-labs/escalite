@@ -317,3 +317,34 @@ mutation UpdateService($input: UpdateServiceInput!) {
 mutation DeleteService($id: ID!) {
   deleteService(id: $id)
 }
+
+query MobileDevices {
+  mobileDevices {
+    id
+    platform
+    deviceLabel
+    pushTokenPrefix
+    revokedAt
+    lastRegisteredAt
+    createdAt
+    updatedAt
+  }
+}
+
+mutation RegisterMobileDevice($input: RegisterMobileDeviceInput!) {
+  registerMobileDevice(input: $input) {
+    id
+    pushTokenPrefix
+    platform
+    deviceLabel
+    revokedAt
+    lastRegisteredAt
+  }
+}
+
+mutation RevokeMobileDevice($id: ID!) {
+  revokeMobileDevice(id: $id) {
+    id
+    revokedAt
+  }
+}

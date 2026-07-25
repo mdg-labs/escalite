@@ -1312,6 +1312,71 @@ func (r *mutationResolver) DeleteOverride(ctx context.Context, id string) (bool,
 	return true, nil
 }
 
+// RegisterMobileDevice is the resolver for the registerMobileDevice field.
+func (r *mutationResolver) RegisterMobileDevice(ctx context.Context, input model.RegisterMobileDeviceInput) (*model.MobileDevice, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	expoPushToken := strings.TrimSpace(input.ExpoPushToken)
+	if err := validateExpoPushToken(expoPushToken); err != nil {
+		return nil, gqlerr.New(handlers.CodeValidation, err.Error())
+	}
+
+	var refreshTokenID pgtype.UUID
+	if sc.RefreshToken != nil {
+		refreshTokenID = pgtype.UUID{Bytes: sc.RefreshToken.ID, Valid: true}
+	}
+
+	queries := db.New(r.pool)
+	device, err := queries.UpsertMobileDevice(ctx, db.UpsertMobileDeviceParams{
+		ID:              uuid.Must(uuid.NewV7()),
+		OrganizationID:  sc.User.OrganizationID,
+		UserID:          sc.User.ID,
+		RefreshTokenID:  refreshTokenID,
+		ExpoPushToken:   expoPushToken,
+		PushTokenPrefix: pushTokenPrefix(expoPushToken),
+		Platform:        optionalTextField(input.Platform),
+		DeviceLabel:     optionalTextField(input.DeviceLabel),
+	})
+	if err != nil {
+		r.logger.Error("register mobile device failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return mobileDeviceFromDB(device), nil
+}
+
+// RevokeMobileDevice is the resolver for the revokeMobileDevice field.
+func (r *mutationResolver) RevokeMobileDevice(ctx context.Context, id string) (*model.MobileDevice, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	deviceID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	device, err := queries.RevokeMobileDevice(ctx, db.RevokeMobileDeviceParams{
+		ID:             deviceID,
+		OrganizationID: sc.User.OrganizationID,
+		UserID:         sc.User.ID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "mobile device not found")
+		}
+		r.logger.Error("revoke mobile device failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return mobileDeviceFromDB(device), nil
+}
+
 // SaveUserContactMethod is the resolver for the saveUserContactMethod field.
 func (r *mutationResolver) SaveUserContactMethod(ctx context.Context, input model.SaveUserContactMethodInput) (*model.UserContactMethod, error) {
 	sc, err := requireAuthSession(ctx)
@@ -2149,6 +2214,26 @@ func (r *queryResolver) NotificationRules(ctx context.Context) ([]*model.UserNot
 		out = append(out, gqlRule)
 	}
 	return out, nil
+}
+
+// MobileDevices is the resolver for the mobileDevices field.
+func (r *queryResolver) MobileDevices(ctx context.Context) ([]*model.MobileDevice, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	devices, err := queries.ListMobileDevicesForUser(ctx, db.ListMobileDevicesForUserParams{
+		OrganizationID: sc.User.OrganizationID,
+		UserID:         sc.User.ID,
+	})
+	if err != nil {
+		r.logger.Error("list mobile devices failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return mobileDevicesFromDB(devices), nil
 }
 
 // SlackSettings is the resolver for the slackSettings field.

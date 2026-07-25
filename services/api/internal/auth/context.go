@@ -17,8 +17,9 @@ const (
 
 // SessionContext holds the authenticated session and user loaded by session middleware.
 type SessionContext struct {
-	Session db.Session
-	User    db.User
+	Session      db.Session
+	User         db.User
+	RefreshToken *db.RefreshToken
 }
 
 // WithSessionContext stores the authenticated session on the request context.

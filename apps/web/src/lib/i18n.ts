@@ -30,6 +30,7 @@ const messages = {
   'nav.dashboard': 'Dashboard',
   'nav.alerts': 'Alerts',
   'nav.integrations': 'Integrations',
+  'nav.settings': 'Settings',
   'nav.services': 'Services',
   'services.title': 'Services',
   'services.description':
@@ -101,6 +102,25 @@ const messages = {
   'schedule.action.save': 'Save override',
   'schedule.action.delete': 'Delete override',
   'schedule.computedAt': 'Computed at',
+  'settings.title': 'Settings',
+  'settings.devices.title': 'Mobile devices',
+  'settings.devices.description':
+    'Registered Expo push tokens for the Escalite mobile app. Revoke a device to stop push delivery to that installation.',
+  'settings.devices.loading': 'Loading devices…',
+  'settings.devices.empty': 'No mobile devices registered yet.',
+  'settings.devices.unknownDevice': 'Mobile device',
+  'settings.devices.status.active': 'Active',
+  'settings.devices.status.revoked': 'Revoked',
+  'settings.devices.column.device': 'Device',
+  'settings.devices.column.token': 'Token prefix',
+  'settings.devices.column.lastSeen': 'Last registered',
+  'settings.devices.column.status': 'Status',
+  'settings.devices.column.actions': 'Actions',
+  'settings.devices.action.revoke': 'Revoke',
+  'settings.devices.action.cancel': 'Cancel',
+  'settings.devices.revoke.title': 'Revoke mobile device?',
+  'settings.devices.revoke.description':
+    'Push notifications will stop for {device}. The app can register again after the next sign-in.',
 } as const
 
 export type MessageKey = keyof typeof messages

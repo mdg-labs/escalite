@@ -11,6 +11,7 @@ import { LoginMobilePage } from './routes/login-mobile'
 import { SchedulePage } from './routes/schedule'
 import { ServicePage } from './routes/service'
 import { ServicesPage } from './routes/services'
+import { SettingsPage } from './routes/settings'
 import { SetupPage } from './routes/setup'
 
 function AuthLoading(): ReactElement {
@@ -116,6 +117,14 @@ export function App(): ReactElement {
         element={
           <ProtectedRoute>
             <EscalationPolicyPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         }
       />
