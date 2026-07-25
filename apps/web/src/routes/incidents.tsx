@@ -36,7 +36,7 @@ import {
   TableRow,
   Textarea,
 } from '@escalite/ui'
-import { AlertCircleIcon } from 'lucide-react'
+import { AlertCircleIcon, DownloadIcon } from 'lucide-react'
 
 import { AppShell } from '../components/app-shell'
 import { formatDateTime } from '../lib/format'
@@ -49,6 +49,7 @@ import {
   userInitials,
 } from '../lib/incidents'
 import { t } from '../lib/i18n'
+import { downloadPostmortemMarkdown } from '../lib/postmortem-export'
 
 const INCIDENT_STATUSES: IncidentStatus[] = [
   IncidentStatus.Investigating,
@@ -440,7 +441,24 @@ export function IncidentsPage(): ReactElement {
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-sm font-medium text-foreground">{t('incidents.timeline.title')}</h3>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-medium text-foreground">{t('incidents.timeline.title')}</h3>
+                  <Button
+                    onClick={() => {
+                      downloadPostmortemMarkdown({
+                        ...incident,
+                        status: incidentStatus,
+                        timelineEvents,
+                        roleAssignments,
+                      })
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <DownloadIcon className="size-4" />
+                    {t('incidents.export.markdown')}
+                  </Button>
+                </div>
                 <ScrollArea className="h-80">
                   <TimelineFeed events={timelineEvents} />
                 </ScrollArea>

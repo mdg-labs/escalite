@@ -202,6 +202,7 @@ const messages = {
   'incidents.timeline.note': 'Note',
   'incidents.timeline.roleAssigned': 'Role assigned',
   'incidents.timeline.roleUnassigned': 'Role unassigned',
+  'incidents.export.markdown': 'Export Markdown',
   'incidents.note.placeholder': 'Add a note to the incident timeline…',
   'incidents.note.add': 'Add note',
   'incidents.note.adding': 'Adding…',

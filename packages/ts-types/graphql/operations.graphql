@@ -472,6 +472,9 @@ fragment IncidentFields on Incident {
   createdBy {
     ...UserSummary
   }
+  alerts {
+    ...AlertFields
+  }
   timelineEvents {
     ...TimelineEventFields
   }
