@@ -116,6 +116,7 @@ func New(deps Dependencies) http.Handler {
 			webhookCfg.KeyLimiter = deps.InboundWebhook.KeyLimiter
 		}
 		inboundWebhook := handlers.NewInboundWebhookHandler(deps.Pool, deps.Logger, webhookCfg)
+		inboundAlerts := handlers.NewInboundAlertsHandler(deps.Pool, deps.Logger)
 
 		r.Post("/api/v1/setup", setup.ServeHTTP)
 		r.Post("/api/v1/login", login.ServeHTTP)
@@ -128,6 +129,7 @@ func New(deps Dependencies) http.Handler {
 		})
 
 		r.Post("/webhook/{plugin}/{token}", inboundWebhook.ServeHTTP)
+		r.Post("/api/v1/alerts", inboundAlerts.ServeHTTP)
 
 		if deps.OIDC != nil {
 			r.Get("/api/v1/auth/oidc/login", deps.OIDC.Login)

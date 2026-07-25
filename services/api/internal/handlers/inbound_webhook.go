@@ -131,7 +131,7 @@ func (h *InboundWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 
 	for _, alertEvent := range parsedAlerts {
-		if err := alerts.ProcessInbound(ctx, queries, h.logger, key, alertEvent); err != nil {
+		if _, err := alerts.ProcessInbound(ctx, queries, h.logger, key, alertEvent); err != nil {
 			h.logger.Error("process inbound alert failed",
 				"integration_key_id", key.ID,
 				"service_id", key.ServiceID,

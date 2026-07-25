@@ -15,30 +15,31 @@ import (
 )
 
 // ProcessInbound applies a normalized inbound alert event for an integration key.
+// For triggered events it returns the created alert ID; resolved events return a zero UUID.
 func ProcessInbound(
 	ctx context.Context,
 	queries *db.Queries,
 	logger *slog.Logger,
 	key db.IntegrationKey,
 	event integrations.AlertCreate,
-) error {
+) (uuid.UUID, error) {
 	switch event.EventType {
 	case integrations.EventTriggered:
 		return createTriggered(ctx, queries, key, event)
 	case integrations.EventResolved:
-		return resolveByDedupKey(ctx, queries, logger, key, event.DedupKey)
+		return uuid.Nil, resolveByDedupKey(ctx, queries, logger, key, event.DedupKey)
 	default:
-		return nil
+		return uuid.Nil, nil
 	}
 }
 
-func createTriggered(ctx context.Context, queries *db.Queries, key db.IntegrationKey, event integrations.AlertCreate) error {
+func createTriggered(ctx context.Context, queries *db.Queries, key db.IntegrationKey, event integrations.AlertCreate) (uuid.UUID, error) {
 	description := pgtype.Text{}
 	if event.Description != "" {
 		description = pgtype.Text{String: event.Description, Valid: true}
 	}
 
-	_, err := queries.CreateTriggeredAlert(ctx, db.CreateTriggeredAlertParams{
+	alert, err := queries.CreateTriggeredAlert(ctx, db.CreateTriggeredAlertParams{
 		ID:               uuid.Must(uuid.NewV7()),
 		OrganizationID:   key.OrganizationID,
 		ServiceID:        key.ServiceID,
@@ -49,7 +50,10 @@ func createTriggered(ctx context.Context, queries *db.Queries, key db.Integratio
 		Priority:         normalizePriority(event.Priority),
 		EscalationState:  []byte(`{}`),
 	})
-	return err
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return alert.ID, nil
 }
 
 func resolveByDedupKey(
