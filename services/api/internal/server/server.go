@@ -18,6 +18,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/api/internal/queue"
 	"github.com/mdg-labs/escalite/services/api/internal/ratelimit"
+	"github.com/mdg-labs/escalite/services/api/internal/realtime"
 )
 
 // InboundEmailOptions overrides inbound email wiring (primarily for tests).
@@ -42,6 +43,7 @@ type Dependencies struct {
 	InboundWebhook  *InboundWebhookOptions
 	InboundEmail    *InboundEmailOptions
 	GraphQL         graphql.Options
+	Realtime        *realtime.Hub
 }
 
 // PasswordResetOptions overrides password reset wiring (primarily for tests).
@@ -174,7 +176,7 @@ func New(deps Dependencies) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(handlers.WithRequestMiddleware)
 			r.Use(handlers.AttachSession(deps.Pool, deps.Logger))
-			r.Handle("/graphql", graphql.NewHandler(deps.Pool, deps.Logger, deps.Jobs, deps.Secrets, deps.GraphQL))
+			r.Handle("/graphql", graphql.NewHandler(deps.Pool, deps.Logger, deps.Jobs, deps.Secrets, deps.Realtime, deps.GraphQL))
 		})
 	}
 

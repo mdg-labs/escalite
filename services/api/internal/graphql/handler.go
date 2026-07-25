@@ -16,6 +16,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/gqlerr"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/api/internal/queue"
+	"github.com/mdg-labs/escalite/services/api/internal/realtime"
 )
 
 const (
@@ -31,7 +32,7 @@ type Options struct {
 }
 
 // NewHandler returns a gqlgen server configured with transport hardening and error codes.
-func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, secrets *crypto.Box, opts Options) http.Handler {
+func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, secrets *crypto.Box, hub *realtime.Hub, opts Options) http.Handler {
 	maxDepth := opts.MaxDepth
 	if maxDepth <= 0 {
 		maxDepth = defaultMaxDepth
@@ -43,7 +44,7 @@ func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, s
 	}
 
 	srv := gqlhandler.New(graph.NewExecutableSchema(graph.Config{
-		Resolvers: graph.NewResolver(pool, logger, jobs, secrets),
+		Resolvers: graph.NewResolver(pool, logger, jobs, secrets, hub),
 	}))
 
 	srv.AddTransport(transport.POST{})

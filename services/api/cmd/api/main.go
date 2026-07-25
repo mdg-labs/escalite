@@ -21,6 +21,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/oidc"
 	"github.com/mdg-labs/escalite/services/api/internal/queue"
 	"github.com/mdg-labs/escalite/services/api/internal/ratelimit"
+	"github.com/mdg-labs/escalite/services/api/internal/realtime"
 	"github.com/mdg-labs/escalite/services/api/internal/server"
 	_ "github.com/mdg-labs/escalite/services/engine/channelsinstall"
 	_ "github.com/mdg-labs/escalite/services/integrations/install"
@@ -70,6 +71,9 @@ func run() int {
 		logger.Error("encryption setup failed", "error", err)
 		return 1
 	}
+
+	realtimeBridge := realtime.NewBridge(cfg.DatabaseURL, logger)
+	realtimeBridge.Start(ctx)
 
 	var oidcProvider *oidc.Provider
 	if cfg.OIDC != nil {
@@ -121,6 +125,7 @@ func run() int {
 			MaxDepth:      cfg.GraphQL.MaxDepth,
 			MaxComplexity: cfg.GraphQL.MaxComplexity,
 		},
+		Realtime: realtimeBridge.Hub,
 	})
 	httpServer := &http.Server{
 		Addr:              cfg.ListenAddr,
@@ -153,6 +158,8 @@ func run() int {
 		logger.Error("graceful shutdown failed", "error", err)
 		return 1
 	}
+
+	realtimeBridge.Close()
 
 	logger.Info("service stopped")
 	return 0

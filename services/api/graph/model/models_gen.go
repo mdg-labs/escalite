@@ -268,6 +268,10 @@ type SlackSettings struct {
 	TokenHint  *string `json:"tokenHint,omitempty"`
 }
 
+// Placeholder root type for realtime GraphQL subscriptions (#97).
+type Subscription struct {
+}
+
 type Team struct {
 	ID             string    `json:"id"`
 	OrganizationID string    `json:"organizationId"`

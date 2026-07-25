@@ -1,4 +1,12 @@
 schema {
   query: Query
   mutation: Mutation
+  subscription: Subscription
+}
+
+"""
+Placeholder root type for realtime GraphQL subscriptions (#97).
+"""
+type Subscription {
+  _noop: Boolean
 }
