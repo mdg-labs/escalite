@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/integrations"
+	_ "github.com/mdg-labs/escalite/services/integrations/datadog"
 )
 
 func TestEventTypeConstants(t *testing.T) {
@@ -33,13 +34,10 @@ func TestValidateConfigUnknownPlugin(t *testing.T) {
 	require.Equal(t, "grafana", unknown.Name)
 }
 
-func TestConfigSchemaUnknownPlugin(t *testing.T) {
-	_, err := integrations.ConfigSchema("datadog")
-	require.Error(t, err)
-
-	var unknown integrations.ErrUnknownPlugin
-	require.ErrorAs(t, err, &unknown)
-	require.Equal(t, "datadog", unknown.Name)
+func TestConfigSchemaDatadogPlugin(t *testing.T) {
+	schema, err := integrations.ConfigSchema("datadog")
+	require.NoError(t, err)
+	require.Contains(t, string(schema), "signature_secret")
 }
 
 func TestInboundPluginInterfaceDocumentsResolvedEvents(t *testing.T) {

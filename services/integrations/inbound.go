@@ -50,6 +50,25 @@ type ConfigurableInboundPlugin interface {
 	ParseAlertWithConfig(raw []byte, headers http.Header, cfg json.RawMessage) (AlertCreate, error)
 }
 
+// AuthenticatableInboundPlugin verifies webhook authenticity before parsing.
+type AuthenticatableInboundPlugin interface {
+	InboundPlugin
+	AuthenticateRequest(raw []byte, headers http.Header, cfg json.RawMessage) error
+}
+
+// ErrInvalidSignature indicates inbound webhook authentication failed.
+type ErrInvalidSignature struct{}
+
+func (ErrInvalidSignature) Error() string { return "invalid webhook signature" }
+
+// Authenticate calls AuthenticateRequest when implemented.
+func Authenticate(plugin InboundPlugin, raw []byte, headers http.Header, cfg json.RawMessage) error {
+	if auth, ok := plugin.(AuthenticatableInboundPlugin); ok {
+		return auth.AuthenticateRequest(raw, headers, cfg)
+	}
+	return nil
+}
+
 // ParseAll returns every alert in a payload, using ParseAlerts when implemented.
 func ParseAll(plugin InboundPlugin, raw []byte, headers http.Header, cfg json.RawMessage) ([]AlertCreate, error) {
 	if configurable, ok := plugin.(ConfigurableInboundPlugin); ok {

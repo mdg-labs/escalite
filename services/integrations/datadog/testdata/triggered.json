@@ -1,0 +1,9 @@
+{
+  "title": "CPU usage above 90%",
+  "msg": "CPU is at 94% on host web-01",
+  "monitor_id": 12345,
+  "alert_type": "error",
+  "alert_transition": "Triggered",
+  "priority": "normal",
+  "tags": ["env:prod", "service:api"]
+}

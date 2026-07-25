@@ -1,0 +1,9 @@
+{
+  "title": "CPU usage above 90%",
+  "msg": "CPU recovered on host web-01",
+  "monitor_id": 12345,
+  "alert_type": "success",
+  "alert_transition": "Recovered",
+  "priority": "normal",
+  "tags": ["env:prod", "service:api"]
+}

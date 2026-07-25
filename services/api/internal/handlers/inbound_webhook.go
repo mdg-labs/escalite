@@ -124,6 +124,16 @@ func (h *InboundWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if err := integrations.Authenticate(plugin, body, r.Header, key.Config); err != nil {
+		var sigErr integrations.ErrInvalidSignature
+		if errors.As(err, &sigErr) {
+			WriteAPIError(w, http.StatusUnauthorized, CodeUnauthenticated, "invalid webhook signature")
+			return
+		}
+		WriteAPIError(w, http.StatusBadRequest, CodeValidation, "invalid webhook configuration")
+		return
+	}
+
 	parsedAlerts, err := integrations.ParseAll(plugin, body, r.Header, key.Config)
 	if err != nil {
 		WriteAPIError(w, http.StatusBadRequest, CodeValidation, "invalid webhook payload")
