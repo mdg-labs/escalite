@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"strings"
 
+	twiliogo "github.com/twilio/twilio-go"
+	openapi "github.com/twilio/twilio-go/rest/api/v2010"
+
 	"github.com/mdg-labs/escalite/services/engine/internal/smsprovider"
 )
 
@@ -17,11 +20,14 @@ type Config struct {
 	AuthToken       string
 	FromNumber      string
 	VoiceFromNumber string
+	// Client is optional; when nil a twilio-go client is built from credentials.
+	Client *twiliogo.RestClient
 }
 
-// Provider is the Twilio-backed SMS/voice provider stub.
+// Provider is the Twilio-backed SMS/voice provider.
 type Provider struct {
-	cfg Config
+	cfg    Config
+	client *twiliogo.RestClient
 }
 
 // New returns a Twilio provider configured with cfg.
@@ -30,12 +36,24 @@ func New(cfg Config) *Provider {
 	if voiceFrom == "" {
 		voiceFrom = strings.TrimSpace(cfg.FromNumber)
 	}
-	return &Provider{cfg: Config{
+	normalized := Config{
 		AccountSID:      strings.TrimSpace(cfg.AccountSID),
 		AuthToken:       strings.TrimSpace(cfg.AuthToken),
 		FromNumber:      strings.TrimSpace(cfg.FromNumber),
 		VoiceFromNumber: voiceFrom,
-	}}
+		Client:          cfg.Client,
+	}
+
+	client := cfg.Client
+	if client == nil {
+		client = twiliogo.NewRestClientWithParams(twiliogo.ClientParams{
+			Username:   normalized.AccountSID,
+			Password:   normalized.AuthToken,
+			AccountSid: normalized.AccountSID,
+		})
+	}
+
+	return &Provider{cfg: normalized, client: client}
 }
 
 func (p *Provider) Name() string {
@@ -49,11 +67,23 @@ func (p *Provider) SendSMS(ctx context.Context, params smsprovider.SMSParams) er
 	if err := validatePhoneNumber(params.To); err != nil {
 		return fmt.Errorf("sms recipient: %w", err)
 	}
-	if strings.TrimSpace(params.Message) == "" {
+	message := strings.TrimSpace(params.Message)
+	if message == "" {
 		return errors.New("sms message is required")
 	}
-	_ = ctx
-	return errors.New("twilio sms delivery is not implemented yet")
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	apiParams := &openapi.CreateMessageParams{}
+	apiParams.SetTo(strings.TrimSpace(params.To))
+	apiParams.SetFrom(p.cfg.FromNumber)
+	apiParams.SetBody(message)
+
+	if _, err := p.client.Api.CreateMessage(apiParams); err != nil {
+		return fmt.Errorf("twilio send sms: %w", err)
+	}
+	return nil
 }
 
 func (p *Provider) MakeVoiceCall(ctx context.Context, params smsprovider.VoiceParams) error {
@@ -63,11 +93,23 @@ func (p *Provider) MakeVoiceCall(ctx context.Context, params smsprovider.VoicePa
 	if err := validatePhoneNumber(params.To); err != nil {
 		return fmt.Errorf("voice recipient: %w", err)
 	}
-	if strings.TrimSpace(params.Message) == "" {
+	message := strings.TrimSpace(params.Message)
+	if message == "" {
 		return errors.New("voice message is required")
 	}
-	_ = ctx
-	return errors.New("twilio voice delivery is not implemented yet")
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	apiParams := &openapi.CreateCallParams{}
+	apiParams.SetTo(strings.TrimSpace(params.To))
+	apiParams.SetFrom(p.cfg.VoiceFromNumber)
+	apiParams.SetTwiml(buildTwiml(message))
+
+	if _, err := p.client.Api.CreateCall(apiParams); err != nil {
+		return fmt.Errorf("twilio voice call: %w", err)
+	}
+	return nil
 }
 
 func (p *Provider) validateConfigured() error {
@@ -90,4 +132,22 @@ func validatePhoneNumber(value string) error {
 		return errors.New("phone number must be in E.164 format")
 	}
 	return nil
+}
+
+func buildTwiml(message string) string {
+	return fmt.Sprintf(
+		`<?xml version="1.0" encoding="UTF-8"?><Response><Say>%s</Say></Response>`,
+		escapeXML(message),
+	)
+}
+
+func escapeXML(value string) string {
+	replacer := strings.NewReplacer(
+		"&", "&amp;",
+		"<", "&lt;",
+		">", "&gt;",
+		`"`, "&quot;",
+		"'", "&apos;",
+	)
+	return replacer.Replace(value)
 }
