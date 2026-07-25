@@ -1,0 +1,12 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Escalite//Schedule Export//EN
+CALNAME:Primary On-Call
+BEGIN:VEVENT
+UID:fixture-event@escalite
+DTSTAMP:20260115T120000Z
+DTSTART;TZID=America/New_York:20260101T090000
+DTEND;TZID=America/New_York:20260102T090000
+SUMMARY:Layer 1: Weekly - oncall-a@example.com
+END:VEVENT
+END:VCALENDAR

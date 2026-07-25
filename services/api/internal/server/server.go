@@ -106,6 +106,9 @@ func New(deps Dependencies) http.Handler {
 			r.Post("/api/v1/logout", logout.ServeHTTP)
 			r.Get("/api/v1/me", me.ServeHTTP)
 
+			scheduleICal := handlers.NewScheduleICalHandler(deps.Pool, deps.Logger)
+			r.Get("/api/v1/schedules/{scheduleID}/calendar.ics", scheduleICal.ServeHTTP)
+
 			r.Route("/api/v1/teams/{teamID}", func(r chi.Router) {
 				r.Use(handlers.RequireTeamAccess(deps.Pool, deps.Logger))
 				r.Get("/", team.ServeHTTP)
