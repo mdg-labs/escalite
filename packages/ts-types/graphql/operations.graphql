@@ -72,3 +72,58 @@ mutation CreateIntegrationKey($input: CreateIntegrationKeyInput!) {
     createdAt
   }
 }
+
+query EscalationPolicy($id: ID!) {
+  escalationPolicy(id: $id) {
+    id
+    name
+    serviceId
+    steps {
+      id
+      stepOrder
+      delayMinutes
+      repeatLastStep
+      maxRepeats
+    }
+  }
+}
+
+query EscalationPolicies($serviceId: ID!) {
+  escalationPolicies(serviceId: $serviceId) {
+    id
+    name
+    steps {
+      id
+      stepOrder
+      delayMinutes
+    }
+  }
+}
+
+mutation CreateEscalationPolicy($input: CreateEscalationPolicyInput!) {
+  createEscalationPolicy(input: $input) {
+    id
+    name
+    steps {
+      id
+      stepOrder
+      delayMinutes
+      repeatLastStep
+      maxRepeats
+    }
+  }
+}
+
+mutation UpdateEscalationPolicy($input: UpdateEscalationPolicyInput!) {
+  updateEscalationPolicy(input: $input) {
+    id
+    name
+    steps {
+      id
+      stepOrder
+      delayMinutes
+      repeatLastStep
+      maxRepeats
+    }
+  }
+}

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router'
 import { useMeQuery } from '@escalite/ts-types'
 
 import { DashboardPage } from './routes/dashboard'
+import { EscalationPolicyPage } from './routes/escalation-policy'
 import { IntegrationsPage } from './routes/integrations'
 import { LoginPage } from './routes/login'
 import { SetupPage } from './routes/setup'
@@ -67,6 +68,14 @@ export function App(): ReactElement {
         element={
           <ProtectedRoute>
             <IntegrationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/services/:serviceId/escalation-policies/:policyId"
+        element={
+          <ProtectedRoute>
+            <EscalationPolicyPage />
           </ProtectedRoute>
         }
       />
