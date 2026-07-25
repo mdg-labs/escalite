@@ -77,6 +77,11 @@ type Query {
   Organization Slack bot token status (org admin only).
   """
   slackSettings: SlackSettings!
+
+  """
+  List integration keys for a service (org admin only).
+  """
+  integrationKeys(serviceId: ID!): [IntegrationKey!]!
 }
 
 type Mutation {
@@ -204,4 +209,14 @@ type Mutation {
   Create an inbound integration key for a service (org admin only).
   """
   createIntegrationKey(input: CreateIntegrationKeyInput!): IntegrationKey!
+
+  """
+  Revoke an integration key (org admin only).
+  """
+  revokeIntegrationKey(id: ID!): IntegrationKey!
+
+  """
+  Rotate an integration key: revoke the existing key and return a new one with the same config (org admin only).
+  """
+  rotateIntegrationKey(id: ID!): IntegrationKey!
 }

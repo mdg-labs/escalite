@@ -23,6 +23,9 @@ importers:
       graphql-ws:
         specifier: ^6.2.0
         version: 6.2.0(graphql@16.14.2)(ws@8.21.1)
+      lucide-react:
+        specifier: ^0.555.0
+        version: 0.555.0(react@19.2.8)
       react:
         specifier: ^19.2.6
         version: 19.2.8

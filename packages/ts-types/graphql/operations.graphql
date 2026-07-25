@@ -69,6 +69,40 @@ mutation CreateIntegrationKey($input: CreateIntegrationKeyInput!) {
     config
     tokenPrefix
     token
+    revokedAt
+    createdAt
+  }
+}
+
+query IntegrationKeys($serviceId: ID!) {
+  integrationKeys(serviceId: $serviceId) {
+    id
+    serviceId
+    pluginName
+    tokenPrefix
+    revokedAt
+    createdAt
+    updatedAt
+  }
+}
+
+mutation RevokeIntegrationKey($id: ID!) {
+  revokeIntegrationKey(id: $id) {
+    id
+    tokenPrefix
+    revokedAt
+  }
+}
+
+mutation RotateIntegrationKey($id: ID!) {
+  rotateIntegrationKey(id: $id) {
+    id
+    serviceId
+    pluginName
+    config
+    tokenPrefix
+    token
+    revokedAt
     createdAt
   }
 }

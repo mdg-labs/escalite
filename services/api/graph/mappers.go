@@ -230,6 +230,12 @@ func integrationKeyFromDB(key db.IntegrationKey, token *string) *model.Integrati
 		config = map[string]any{}
 	}
 
+	var revokedAt *time.Time
+	if key.RevokedAt.Valid {
+		t := key.RevokedAt.Time.UTC()
+		revokedAt = &t
+	}
+
 	return &model.IntegrationKey{
 		ID:             key.ID.String(),
 		OrganizationID: key.OrganizationID.String(),
@@ -238,6 +244,7 @@ func integrationKeyFromDB(key db.IntegrationKey, token *string) *model.Integrati
 		Config:         config,
 		TokenPrefix:    key.Prefix,
 		Token:          token,
+		RevokedAt:      revokedAt,
 		CreatedAt:      timeFromDB(key.CreatedAt),
 		UpdatedAt:      timeFromDB(key.UpdatedAt),
 	}

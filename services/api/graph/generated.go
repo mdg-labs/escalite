@@ -102,6 +102,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		OrganizationID func(childComplexity int) int
 		PluginName     func(childComplexity int) int
+		RevokedAt      func(childComplexity int) int
 		ServiceID      func(childComplexity int) int
 		Token          func(childComplexity int) int
 		TokenPrefix    func(childComplexity int) int
@@ -129,6 +130,8 @@ type ComplexityRoot struct {
 		DeleteSchedule         func(childComplexity int, id string) int
 		Login                  func(childComplexity int, input model.LoginInput) int
 		ReEscalateAlert        func(childComplexity int, id string) int
+		RevokeIntegrationKey   func(childComplexity int, id string) int
+		RotateIntegrationKey   func(childComplexity int, id string) int
 		SaveNotificationRule   func(childComplexity int, input model.SaveNotificationRuleInput) int
 		SaveSlackSettings      func(childComplexity int, input model.SaveSlackSettingsInput) int
 		SaveUserContactMethod  func(childComplexity int, input model.SaveUserContactMethodInput) int
@@ -195,6 +198,7 @@ type ComplexityRoot struct {
 		Health               func(childComplexity int) int
 		HeartbeatMonitor     func(childComplexity int, id string) int
 		HeartbeatMonitors    func(childComplexity int, serviceID string) int
+		IntegrationKeys      func(childComplexity int, serviceID string) int
 		Me                   func(childComplexity int) int
 		NotificationChannels func(childComplexity int) int
 		NotificationRules    func(childComplexity int) int
@@ -318,6 +322,8 @@ type MutationResolver interface {
 	DeleteNotificationRule(ctx context.Context, priority model.AlertPriority) (bool, error)
 	SaveSlackSettings(ctx context.Context, input model.SaveSlackSettingsInput) (*model.SlackSettings, error)
 	CreateIntegrationKey(ctx context.Context, input model.CreateIntegrationKeyInput) (*model.IntegrationKey, error)
+	RevokeIntegrationKey(ctx context.Context, id string) (*model.IntegrationKey, error)
+	RotateIntegrationKey(ctx context.Context, id string) (*model.IntegrationKey, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
@@ -333,6 +339,7 @@ type QueryResolver interface {
 	NotificationChannels(ctx context.Context) ([]*model.NotificationChannelDefinition, error)
 	NotificationRules(ctx context.Context) ([]*model.UserNotificationRule, error)
 	SlackSettings(ctx context.Context) (*model.SlackSettings, error)
+	IntegrationKeys(ctx context.Context, serviceID string) ([]*model.IntegrationKey, error)
 }
 type SubscriptionResolver interface {
 	AlertUpdated(ctx context.Context, orgID string) (<-chan *model.Alert, error)
@@ -650,6 +657,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.IntegrationKey.PluginName(childComplexity), true
+	case "IntegrationKey.revokedAt":
+		if e.ComplexityRoot.IntegrationKey.RevokedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IntegrationKey.RevokedAt(childComplexity), true
 	case "IntegrationKey.serviceId":
 		if e.ComplexityRoot.IntegrationKey.ServiceID == nil {
 			break
@@ -858,6 +871,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.ReEscalateAlert(childComplexity, args["id"].(string)), true
+	case "Mutation.revokeIntegrationKey":
+		if e.ComplexityRoot.Mutation.RevokeIntegrationKey == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_revokeIntegrationKey_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RevokeIntegrationKey(childComplexity, args["id"].(string)), true
+	case "Mutation.rotateIntegrationKey":
+		if e.ComplexityRoot.Mutation.RotateIntegrationKey == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_rotateIntegrationKey_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RotateIntegrationKey(childComplexity, args["id"].(string)), true
 	case "Mutation.saveNotificationRule":
 		if e.ComplexityRoot.Mutation.SaveNotificationRule == nil {
 			break
@@ -1183,6 +1218,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.HeartbeatMonitors(childComplexity, args["serviceId"].(string)), true
+	case "Query.integrationKeys":
+		if e.ComplexityRoot.Query.IntegrationKeys == nil {
+			break
+		}
+
+		args, err := ec.field_Query_integrationKeys_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.IntegrationKeys(childComplexity, args["serviceId"].(string)), true
 
 	case "Query.me":
 		if e.ComplexityRoot.Query.Me == nil {
@@ -1920,6 +1966,11 @@ type Query {
   Organization Slack bot token status (org admin only).
   """
   slackSettings: SlackSettings!
+
+  """
+  List integration keys for a service (org admin only).
+  """
+  integrationKeys(serviceId: ID!): [IntegrationKey!]!
 }
 
 type Mutation {
@@ -2047,6 +2098,16 @@ type Mutation {
   Create an inbound integration key for a service (org admin only).
   """
   createIntegrationKey(input: CreateIntegrationKeyInput!): IntegrationKey!
+
+  """
+  Revoke an integration key (org admin only).
+  """
+  revokeIntegrationKey(id: ID!): IntegrationKey!
+
+  """
+  Rotate an integration key: revoke the existing key and return a new one with the same config (org admin only).
+  """
+  rotateIntegrationKey(id: ID!): IntegrationKey!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/scalars.graphql", Input: `"""
@@ -2280,9 +2341,10 @@ type IntegrationKey {
   """Display prefix for the token (last-4 style)."""
   tokenPrefix: String!
   """
-  Plaintext webhook token; only returned from createIntegrationKey.
+  Plaintext webhook token; only returned from createIntegrationKey and rotateIntegrationKey.
   """
   token: String
+  revokedAt: DateTime
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -2426,6 +2488,8 @@ func (ec *executionContext) childFields_IntegrationKey(ctx context.Context, fiel
 		return ec.fieldContext_IntegrationKey_tokenPrefix(ctx, field)
 	case "token":
 		return ec.fieldContext_IntegrationKey_token(ctx, field)
+	case "revokedAt":
+		return ec.fieldContext_IntegrationKey_revokedAt(ctx, field)
 	case "createdAt":
 		return ec.fieldContext_IntegrationKey_createdAt(ctx, field)
 	case "updatedAt":
@@ -3000,6 +3064,34 @@ func (ec *executionContext) field_Mutation_reEscalateAlert_args(ctx context.Cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_revokeIntegrationKey_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_rotateIntegrationKey_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_saveNotificationRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3191,6 +3283,20 @@ func (ec *executionContext) field_Query_heartbeatMonitor_args(ctx context.Contex
 }
 
 func (ec *executionContext) field_Query_heartbeatMonitors_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "serviceId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["serviceId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_integrationKeys_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "serviceId",
@@ -4524,6 +4630,29 @@ func (ec *executionContext) fieldContext_IntegrationKey_token(_ context.Context,
 	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _IntegrationKey_revokedAt(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationKey) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IntegrationKey_revokedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RevokedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalODateTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_IntegrationKey_revokedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
 func (ec *executionContext) _IntegrationKey_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationKey) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5702,6 +5831,94 @@ func (ec *executionContext) fieldContext_Mutation_createIntegrationKey(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_revokeIntegrationKey(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_revokeIntegrationKey(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RevokeIntegrationKey(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.IntegrationKey) graphql.Marshaler {
+			return ec.marshalNIntegrationKey2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationKey(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_revokeIntegrationKey(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_IntegrationKey(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_revokeIntegrationKey_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_rotateIntegrationKey(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_rotateIntegrationKey(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RotateIntegrationKey(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.IntegrationKey) graphql.Marshaler {
+			return ec.marshalNIntegrationKey2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationKey(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_rotateIntegrationKey(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_IntegrationKey(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_rotateIntegrationKey_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NotificationChannelDefinition_name(ctx context.Context, field graphql.CollectedField, obj *model.NotificationChannelDefinition) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6863,6 +7080,50 @@ func (ec *executionContext) fieldContext_Query_slackSettings(_ context.Context, 
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_SlackSettings(ctx, field)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_integrationKeys(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_integrationKeys(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().IntegrationKeys(ctx, fc.Args["serviceId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.IntegrationKey) graphql.Marshaler {
+			return ec.marshalNIntegrationKey2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationKeyᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_integrationKeys(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_IntegrationKey(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_integrationKeys_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -10484,6 +10745,11 @@ func (ec *executionContext) _IntegrationKey(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
+		case "revokedAt":
+			out.Values[i] = ec._IntegrationKey_revokedAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
 		case "createdAt":
 			out.Values[i] = ec._IntegrationKey_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -10744,6 +11010,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "createIntegrationKey":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createIntegrationKey(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "revokeIntegrationKey":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_revokeIntegrationKey(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rotateIntegrationKey":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_rotateIntegrationKey(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -11434,6 +11714,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_slackSettings(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "integrationKeys":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_integrationKeys(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -12730,6 +13032,22 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 
 func (ec *executionContext) marshalNIntegrationKey2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationKey(ctx context.Context, sel ast.SelectionSet, v model.IntegrationKey) graphql.Marshaler {
 	return ec._IntegrationKey(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNIntegrationKey2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationKeyᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.IntegrationKey) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNIntegrationKey2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationKey(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNIntegrationKey2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationKey(ctx context.Context, sel ast.SelectionSet, v *model.IntegrationKey) graphql.Marshaler {

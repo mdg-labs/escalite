@@ -93,3 +93,111 @@ func (q *Queries) GetActiveIntegrationKeyByTokenHash(ctx context.Context, token 
 	)
 	return i, err
 }
+
+const getIntegrationKeyByID = `-- name: GetIntegrationKeyByID :one
+SELECT id, service_id, organization_id, token, prefix, plugin_name, config, revoked_at, created_at, updated_at
+FROM integration_keys
+WHERE id = $1
+  AND organization_id = $2
+LIMIT 1
+`
+
+type GetIntegrationKeyByIDParams struct {
+	ID             uuid.UUID `json:"id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+func (q *Queries) GetIntegrationKeyByID(ctx context.Context, arg GetIntegrationKeyByIDParams) (IntegrationKey, error) {
+	row := q.db.QueryRow(ctx, getIntegrationKeyByID, arg.ID, arg.OrganizationID)
+	var i IntegrationKey
+	err := row.Scan(
+		&i.ID,
+		&i.ServiceID,
+		&i.OrganizationID,
+		&i.Token,
+		&i.Prefix,
+		&i.PluginName,
+		&i.Config,
+		&i.RevokedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listIntegrationKeysByServiceID = `-- name: ListIntegrationKeysByServiceID :many
+SELECT id, service_id, organization_id, token, prefix, plugin_name, config, revoked_at, created_at, updated_at
+FROM integration_keys
+WHERE service_id = $1
+  AND organization_id = $2
+ORDER BY created_at DESC
+`
+
+type ListIntegrationKeysByServiceIDParams struct {
+	ServiceID      uuid.UUID `json:"service_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+func (q *Queries) ListIntegrationKeysByServiceID(ctx context.Context, arg ListIntegrationKeysByServiceIDParams) ([]IntegrationKey, error) {
+	rows, err := q.db.Query(ctx, listIntegrationKeysByServiceID, arg.ServiceID, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []IntegrationKey{}
+	for rows.Next() {
+		var i IntegrationKey
+		if err := rows.Scan(
+			&i.ID,
+			&i.ServiceID,
+			&i.OrganizationID,
+			&i.Token,
+			&i.Prefix,
+			&i.PluginName,
+			&i.Config,
+			&i.RevokedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const revokeIntegrationKey = `-- name: RevokeIntegrationKey :one
+UPDATE integration_keys
+SET revoked_at = now(),
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+  AND revoked_at IS NULL
+RETURNING id, service_id, organization_id, token, prefix, plugin_name, config, revoked_at, created_at, updated_at
+`
+
+type RevokeIntegrationKeyParams struct {
+	ID             uuid.UUID `json:"id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+func (q *Queries) RevokeIntegrationKey(ctx context.Context, arg RevokeIntegrationKeyParams) (IntegrationKey, error) {
+	row := q.db.QueryRow(ctx, revokeIntegrationKey, arg.ID, arg.OrganizationID)
+	var i IntegrationKey
+	err := row.Scan(
+		&i.ID,
+		&i.ServiceID,
+		&i.OrganizationID,
+		&i.Token,
+		&i.Prefix,
+		&i.PluginName,
+		&i.Config,
+		&i.RevokedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

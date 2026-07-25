@@ -119,3 +119,125 @@ func TestGraphQLCreateIntegrationKeyRejectsInvalidPlugin(t *testing.T) {
 	require.NotEmpty(t, errResp.Errors)
 	require.Equal(t, handlers.CodeValidation, errResp.Errors[0].Extensions.Code)
 }
+
+func TestGraphQLRevokeIntegrationKeyReturns404OnWebhook(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	adminCookie := bootstrapAdmin(t, handler)
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+	service := seedService(t, pool, admin.OrganizationID, team.ID, "webhooks")
+
+	createRec := postGraphQL(t, handler, `mutation {
+		createIntegrationKey(input: {
+			serviceId: "`+service.ID.String()+`"
+			pluginName: "test-plugin"
+			config: {}
+		}) {
+			id
+			token
+		}
+	}`, adminCookie)
+	require.Equal(t, 200, createRec.Code, createRec.Body.String())
+
+	var createResp struct {
+		Data struct {
+			CreateIntegrationKey struct {
+				ID    string `json:"id"`
+				Token string `json:"token"`
+			} `json:"createIntegrationKey"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(createRec.Body.Bytes(), &createResp))
+	require.NotEmpty(t, createResp.Data.CreateIntegrationKey.Token)
+
+	token := createResp.Data.CreateIntegrationKey.Token
+	keyID := createResp.Data.CreateIntegrationKey.ID
+
+	payload := []byte(`{"summary":"test"}`)
+	activeRec := postInboundWebhook(t, handler, "test-plugin", token, payload)
+	require.Equal(t, 202, activeRec.Code, activeRec.Body.String())
+
+	revokeRec := postGraphQL(t, handler, `mutation {
+		revokeIntegrationKey(id: "`+keyID+`") {
+			id
+			revokedAt
+			tokenPrefix
+		}
+	}`, adminCookie)
+	require.Equal(t, 200, revokeRec.Code, revokeRec.Body.String())
+
+	var revokeResp struct {
+		Data struct {
+			RevokeIntegrationKey struct {
+				ID          string `json:"id"`
+				RevokedAt   string `json:"revokedAt"`
+				TokenPrefix string `json:"tokenPrefix"`
+			} `json:"revokeIntegrationKey"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(revokeRec.Body.Bytes(), &revokeResp))
+	require.NotEmpty(t, revokeResp.Data.RevokeIntegrationKey.RevokedAt)
+	require.NotEmpty(t, revokeResp.Data.RevokeIntegrationKey.TokenPrefix)
+
+	revokedRec := postInboundWebhook(t, handler, "test-plugin", token, payload)
+	require.Equal(t, 404, revokedRec.Code, revokedRec.Body.String())
+}
+
+func TestGraphQLIntegrationKeysListsPrefixWithoutToken(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	adminCookie := bootstrapAdmin(t, handler)
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+	service := seedService(t, pool, admin.OrganizationID, team.ID, "api")
+
+	createRec := postGraphQL(t, handler, `mutation {
+		createIntegrationKey(input: {
+			serviceId: "`+service.ID.String()+`"
+			pluginName: "test-plugin"
+			config: {}
+		}) {
+			id
+			tokenPrefix
+			token
+		}
+	}`, adminCookie)
+	require.Equal(t, 200, createRec.Code)
+
+	listRec := postGraphQL(t, handler, `query {
+		integrationKeys(serviceId: "`+service.ID.String()+`") {
+			id
+			tokenPrefix
+			token
+			pluginName
+		}
+	}`, adminCookie)
+	require.Equal(t, 200, listRec.Code, listRec.Body.String())
+
+	var listResp struct {
+		Data struct {
+			IntegrationKeys []struct {
+				ID          string  `json:"id"`
+				TokenPrefix string  `json:"tokenPrefix"`
+				Token       *string `json:"token"`
+				PluginName  string  `json:"pluginName"`
+			} `json:"integrationKeys"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(listRec.Body.Bytes(), &listResp))
+	require.Len(t, listResp.Data.IntegrationKeys, 1)
+	require.NotEmpty(t, listResp.Data.IntegrationKeys[0].TokenPrefix)
+	require.Nil(t, listResp.Data.IntegrationKeys[0].Token)
+	require.Equal(t, "test-plugin", listResp.Data.IntegrationKeys[0].PluginName)
+}

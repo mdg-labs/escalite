@@ -2,7 +2,6 @@
 
 import { AlertDialog as AlertDialogPrimitive } from '@base-ui/react/alert-dialog'
 import type React from 'react'
-
 import { cn } from '../lib/utils'
 
 export const AlertDialogCreateHandle: typeof AlertDialogPrimitive.createHandle =
@@ -10,7 +9,8 @@ export const AlertDialogCreateHandle: typeof AlertDialogPrimitive.createHandle =
 
 export const AlertDialog: typeof AlertDialogPrimitive.Root = AlertDialogPrimitive.Root
 
-export const AlertDialogPortal: typeof AlertDialogPrimitive.Portal = AlertDialogPrimitive.Portal
+export const AlertDialogPortal: typeof AlertDialogPrimitive.Portal =
+  AlertDialogPrimitive.Portal
 
 export function AlertDialogTrigger(
   props: AlertDialogPrimitive.Trigger.Props,
@@ -69,7 +69,9 @@ export function AlertDialogPopup({
       >
         <AlertDialogPrimitive.Popup
           className={cn(
-            'relative row-start-2 flex max-h-full min-h-0 w-full min-w-0 max-w-lg origin-center flex-col rounded-2xl border bg-popover text-popover-foreground shadow-lg/5 transition-[scale,opacity,translate] duration-200 ease-in-out',
+            'relative row-start-2 flex max-h-full min-h-0 w-full min-w-0 max-w-lg origin-center flex-col rounded-2xl border bg-popover not-dark:bg-clip-padding text-popover-foreground opacity-[calc(1-var(--nested-dialogs))] shadow-lg/5 transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-2xl)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] data-ending-style:opacity-0 data-starting-style:opacity-0 sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:data-ending-style:scale-98 sm:data-starting-style:scale-98 dark:before:shadow-[0_-1px_--theme(--color-white/6%)]',
+            bottomStickOnMobile &&
+              'max-sm:max-w-none max-sm:origin-bottom max-sm:rounded-none max-sm:border-x-0 max-sm:border-t max-sm:border-b-0 max-sm:data-ending-style:translate-y-4 max-sm:data-starting-style:translate-y-4 max-sm:before:hidden max-sm:before:rounded-none',
             className,
           )}
           data-slot="alert-dialog-popup"
@@ -86,7 +88,10 @@ export function AlertDialogHeader({
 }: React.ComponentProps<'div'>): React.ReactElement {
   return (
     <div
-      className={cn('flex flex-col gap-2 p-6 text-center sm:text-left', className)}
+      className={cn(
+        'flex flex-col gap-2 p-6 text-center max-sm:pb-4 sm:text-left',
+        className,
+      )}
       data-slot="alert-dialog-header"
       {...props}
     />
@@ -103,7 +108,7 @@ export function AlertDialogFooter({
   return (
     <div
       className={cn(
-        'flex flex-col-reverse gap-2 px-6 sm:flex-row sm:justify-end',
+        'flex flex-col-reverse gap-2 px-6 sm:flex-row sm:justify-end sm:rounded-b-[calc(var(--radius-2xl)-1px)]',
         variant === 'default' && 'border-t bg-muted/72 py-4',
         variant === 'bare' && 'pb-6',
         className,
@@ -120,7 +125,7 @@ export function AlertDialogTitle({
 }: AlertDialogPrimitive.Title.Props): React.ReactElement {
   return (
     <AlertDialogPrimitive.Title
-      className={cn('text-xl font-semibold leading-none', className)}
+      className={cn('font-heading font-semibold text-xl leading-none', className)}
       data-slot="alert-dialog-title"
       {...props}
     />
@@ -133,7 +138,7 @@ export function AlertDialogDescription({
 }: AlertDialogPrimitive.Description.Props): React.ReactElement {
   return (
     <AlertDialogPrimitive.Description
-      className={cn('text-sm text-muted-foreground', className)}
+      className={cn('text-muted-foreground text-sm', className)}
       data-slot="alert-dialog-description"
       {...props}
     />

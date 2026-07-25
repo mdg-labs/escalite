@@ -129,10 +129,11 @@ type IntegrationKey struct {
 	Config         map[string]any `json:"config"`
 	// Display prefix for the token (last-4 style).
 	TokenPrefix string `json:"tokenPrefix"`
-	// Plaintext webhook token; only returned from createIntegrationKey.
-	Token     *string   `json:"token,omitempty"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	// Plaintext webhook token; only returned from createIntegrationKey and rotateIntegrationKey.
+	Token     *string    `json:"token,omitempty"`
+	RevokedAt *time.Time `json:"revokedAt,omitempty"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
 }
 
 type LoginInput struct {

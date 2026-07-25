@@ -1,36 +1,34 @@
 import { useState, type ReactElement } from 'react'
 import { useCreateIntegrationKeyMutation } from '@escalite/ts-types'
-import { Button, Input } from '@escalite/ui'
+import { Alert, AlertDescription, AlertTitle, Button } from '@escalite/ui'
+import { AlertTriangleIcon } from 'lucide-react'
 
-import { appConfig } from '../lib/config'
 import {
   BESZEL_PRESET,
   INTEGRATION_PRESETS,
-  buildBeszelShoutrrrURL,
-  buildInboundWebhookURL,
   buildIntegrationKeyConfigFromPreset,
   type IntegrationPreset,
 } from '../lib/integration-presets'
+import { formatGraphQLError } from '../lib/format'
 
-type CreatedKey = {
-  preset: IntegrationPreset
-  token: string
-  tokenPrefix: string
-  webhookURL: string
-  shoutrrrURL: string
+type IntegrationPickerProps = {
+  serviceId: string
+  onCreated: (payload: {
+    pluginName: string
+    token: string
+    tokenPrefix: string
+    presetLabel: string
+  }) => void
 }
 
-function formatGraphQLError(message: string): string {
-  return message.replace(/^(\[GraphQL\]\s*)+/, '')
-}
-
-export function IntegrationPicker(): ReactElement {
+export function IntegrationPicker({
+  serviceId,
+  onCreated,
+}: IntegrationPickerProps): ReactElement {
   const [, createIntegrationKey] = useCreateIntegrationKeyMutation()
-  const [serviceId, setServiceId] = useState('')
   const [selectedPresetId, setSelectedPresetId] = useState(BESZEL_PRESET.id)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [createdKey, setCreatedKey] = useState<CreatedKey | null>(null)
 
   async function handleCreate(): Promise<void> {
     const preset = INTEGRATION_PRESETS.find((item) => item.id === selectedPresetId)
@@ -69,99 +67,69 @@ export function IntegrationPicker(): ReactElement {
       return
     }
 
-    const webhookURL = buildInboundWebhookURL(
-      appConfig.apiPublicUrl,
-      preset.pluginName,
-      key.token,
-    )
-
-    setCreatedKey({
-      preset,
+    onCreated({
+      pluginName: key.pluginName,
       token: key.token,
       tokenPrefix: key.tokenPrefix,
-      webhookURL,
-      shoutrrrURL: buildBeszelShoutrrrURL(webhookURL),
+      presetLabel: preset.label,
     })
   }
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground" htmlFor="service-id">
-          Service ID
-        </label>
-        <Input
-          id="service-id"
-          onChange={(event) => setServiceId(event.target.value)}
-          placeholder="Service UUID"
-          value={serviceId}
-        />
-      </div>
-
       <fieldset className="space-y-3">
         <legend className="text-sm font-medium text-foreground">Integration preset</legend>
         {INTEGRATION_PRESETS.map((preset) => (
-          <label
+          <PresetOption
             key={preset.id}
-            className="flex cursor-pointer gap-3 rounded-lg border border-border bg-card p-4"
-          >
-            <input
-              checked={selectedPresetId === preset.id}
-              className="mt-1"
-              name="integration-preset"
-              onChange={() => setSelectedPresetId(preset.id)}
-              type="radio"
-              value={preset.id}
-            />
-            <span>
-              <span className="block text-sm font-medium text-foreground">{preset.label}</span>
-              <span className="mt-1 block text-sm text-muted-foreground">{preset.description}</span>
-            </span>
-          </label>
+            onSelect={() => setSelectedPresetId(preset.id)}
+            preset={preset}
+            selected={selectedPresetId === preset.id}
+          />
         ))}
       </fieldset>
 
       {error ? (
-        <p className="text-sm text-destructive-foreground" role="alert">
-          {error}
-        </p>
+        <Alert variant="error">
+          <AlertTriangleIcon />
+          <AlertTitle>Could not create key</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       ) : null}
 
       <Button disabled={loading} onClick={() => void handleCreate()} type="button">
         {loading ? 'Creating…' : 'Create integration key'}
       </Button>
-
-      {createdKey ? (
-        <section className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
-          <h2 className="text-sm font-semibold text-foreground">
-            {createdKey.preset.label} integration key created
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Token prefix <span className="font-mono text-foreground">{createdKey.tokenPrefix}</span>{' '}
-            — save the webhook URL below; the full token is shown once.
-          </p>
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">Webhook URL</p>
-            <code className="block overflow-x-auto rounded-md bg-background p-3 text-xs text-foreground">
-              {createdKey.webhookURL}
-            </code>
-          </div>
-          {createdKey.preset.id === BESZEL_PRESET.id ? (
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">
-                Beszel notification URL (Shoutrrr generic://)
-              </p>
-              <code className="block overflow-x-auto rounded-md bg-background p-3 text-xs text-foreground">
-                {createdKey.shoutrrrURL}
-              </code>
-              <p className="text-xs text-muted-foreground">
-                Paste this into Beszel Settings → Notifications. See docs/integrations/beszel.md
-                for setup details.
-              </p>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
     </div>
+  )
+}
+
+function PresetOption({
+  preset,
+  selected,
+  onSelect,
+}: {
+  preset: IntegrationPreset
+  selected: boolean
+  onSelect: () => void
+}): ReactElement {
+  return (
+    <button
+      className={`flex w-full cursor-pointer gap-3 rounded-lg border bg-card p-4 text-left ${
+        selected ? 'border-primary ring-2 ring-ring/24' : 'border-border'
+      }`}
+      onClick={onSelect}
+      type="button"
+    >
+      <span>
+        <span className="block text-sm font-medium text-foreground">{preset.label}</span>
+        <span className="mt-1 block text-sm text-muted-foreground">{preset.description}</span>
+        {preset.id === BESZEL_PRESET.id ? (
+          <span className="mt-2 block text-xs text-muted-foreground">
+            Beszel Shoutrrr URL is available after the key is created.
+          </span>
+        ) : null}
+      </span>
+    </button>
   )
 }

@@ -212,9 +212,10 @@ type IntegrationKey {
   """Display prefix for the token (last-4 style)."""
   tokenPrefix: String!
   """
-  Plaintext webhook token; only returned from createIntegrationKey.
+  Plaintext webhook token; only returned from createIntegrationKey and rotateIntegrationKey.
   """
   token: String
+  revokedAt: DateTime
   createdAt: DateTime!
   updatedAt: DateTime!
 }

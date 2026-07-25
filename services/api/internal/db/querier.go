@@ -50,6 +50,7 @@ type Querier interface {
 	GetEscalationStepByPolicyAndOrder(ctx context.Context, arg GetEscalationStepByPolicyAndOrderParams) (EscalationStep, error)
 	GetFirstOrganization(ctx context.Context) (Organization, error)
 	GetHeartbeatMonitorByID(ctx context.Context, arg GetHeartbeatMonitorByIDParams) (HeartbeatMonitor, error)
+	GetIntegrationKeyByID(ctx context.Context, arg GetIntegrationKeyByIDParams) (IntegrationKey, error)
 	GetOpenAlertByServiceDedupKey(ctx context.Context, arg GetOpenAlertByServiceDedupKeyParams) (Alert, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
 	GetOrganizationSlackSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSlackSetting, error)
@@ -75,6 +76,7 @@ type Querier interface {
 	ListEscalationStepTargetsByStepID(ctx context.Context, arg ListEscalationStepTargetsByStepIDParams) ([]EscalationStepTarget, error)
 	ListEscalationStepsByPolicyID(ctx context.Context, arg ListEscalationStepsByPolicyIDParams) ([]EscalationStep, error)
 	ListHeartbeatMonitorsByServiceID(ctx context.Context, arg ListHeartbeatMonitorsByServiceIDParams) ([]HeartbeatMonitor, error)
+	ListIntegrationKeysByServiceID(ctx context.Context, arg ListIntegrationKeysByServiceIDParams) ([]IntegrationKey, error)
 	ListNotificationAttemptsByAlertID(ctx context.Context, arg ListNotificationAttemptsByAlertIDParams) ([]NotificationAttempt, error)
 	ListRotationsByScheduleID(ctx context.Context, arg ListRotationsByScheduleIDParams) ([]Rotation, error)
 	ListSchedulesByTeamID(ctx context.Context, arg ListSchedulesByTeamIDParams) ([]Schedule, error)
@@ -85,6 +87,7 @@ type Querier interface {
 	RecordHeartbeatPing(ctx context.Context, tokenHash string) (HeartbeatMonitor, error)
 	ResolveOpenAlert(ctx context.Context, arg ResolveOpenAlertParams) (Alert, error)
 	RevokeAllUserSessions(ctx context.Context, arg RevokeAllUserSessionsParams) error
+	RevokeIntegrationKey(ctx context.Context, arg RevokeIntegrationKeyParams) (IntegrationKey, error)
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
 	SessionsSchemaReady(ctx context.Context) (bool, error)
 	SoftDeleteOverride(ctx context.Context, arg SoftDeleteOverrideParams) (Override, error)

@@ -1497,6 +1497,98 @@ func (r *mutationResolver) CreateIntegrationKey(ctx context.Context, input model
 	return integrationKeyFromDB(key, &plaintext), nil
 }
 
+// RevokeIntegrationKey is the resolver for the revokeIntegrationKey field.
+func (r *mutationResolver) RevokeIntegrationKey(ctx context.Context, id string) (*model.IntegrationKey, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	keyID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	key, err := queries.RevokeIntegrationKey(ctx, db.RevokeIntegrationKeyParams{
+		ID:             keyID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "integration key not found")
+		}
+		r.logger.Error("revoke integration key failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.IntegrationKeyRevoked(ctx, queries, sc.User.OrganizationID, sc.User.ID, keyID)
+	return integrationKeyFromDB(key, nil), nil
+}
+
+// RotateIntegrationKey is the resolver for the rotateIntegrationKey field.
+func (r *mutationResolver) RotateIntegrationKey(ctx context.Context, id string) (*model.IntegrationKey, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	keyID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	existing, err := queries.GetIntegrationKeyByID(ctx, db.GetIntegrationKeyByIDParams{
+		ID:             keyID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "integration key not found")
+		}
+		r.logger.Error("load integration key failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	if existing.RevokedAt.Valid {
+		return nil, gqlerr.New(handlers.CodeValidation, "integration key is already revoked")
+	}
+
+	plaintext, tokenHash, prefix, err := auth.NewIntegrationKeyToken()
+	if err != nil {
+		r.logger.Error("generate integration key token failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	newKeyID := uuid.Must(uuid.NewV7())
+	newKey, err := queries.CreateIntegrationKey(ctx, db.CreateIntegrationKeyParams{
+		ID:             newKeyID,
+		ServiceID:      existing.ServiceID,
+		OrganizationID: sc.User.OrganizationID,
+		Token:          tokenHash,
+		Prefix:         prefix,
+		PluginName:     existing.PluginName,
+		Config:         existing.Config,
+	})
+	if err != nil {
+		r.logger.Error("create rotated integration key failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if _, err := queries.RevokeIntegrationKey(ctx, db.RevokeIntegrationKeyParams{
+		ID:             keyID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		r.logger.Error("revoke rotated integration key failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.IntegrationKeyCreated(ctx, queries, sc.User.OrganizationID, sc.User.ID, newKeyID)
+	r.audit.IntegrationKeyRevoked(ctx, queries, sc.User.OrganizationID, sc.User.ID, keyID)
+
+	return integrationKeyFromDB(newKey, &plaintext), nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	sc, ok := auth.SessionFromContext(ctx)
@@ -1949,6 +2041,47 @@ func (r *queryResolver) SlackSettings(ctx context.Context) (*model.SlackSettings
 	}
 
 	return slackSettingsFromDB(&settings), nil
+}
+
+// IntegrationKeys is the resolver for the integrationKeys field.
+func (r *queryResolver) IntegrationKeys(ctx context.Context, serviceID string) ([]*model.IntegrationKey, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	svcID, err := parseUUIDField(serviceID, "serviceId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             svcID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "service not found")
+		}
+		r.logger.Error("load service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	keys, err := queries.ListIntegrationKeysByServiceID(ctx, db.ListIntegrationKeysByServiceIDParams{
+		ServiceID:      svcID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list integration keys failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	result := make([]*model.IntegrationKey, 0, len(keys))
+	for _, key := range keys {
+		result = append(result, integrationKeyFromDB(key, nil))
+	}
+
+	return result, nil
 }
 
 // AlertUpdated is the resolver for the alertUpdated field.
