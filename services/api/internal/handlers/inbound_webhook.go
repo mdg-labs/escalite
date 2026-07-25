@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
+	"github.com/mdg-labs/escalite/services/api/internal/alerts"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/ratelimit"
 	"github.com/mdg-labs/escalite/services/integrations"
@@ -123,9 +124,24 @@ func (h *InboundWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if _, err := plugin.ParseAlert(body, r.Header); err != nil {
+	parsedAlerts, err := integrations.ParseAll(plugin, body, r.Header)
+	if err != nil {
 		WriteAPIError(w, http.StatusBadRequest, CodeValidation, "invalid webhook payload")
 		return
+	}
+
+	for _, alertEvent := range parsedAlerts {
+		if err := alerts.ProcessInbound(ctx, queries, h.logger, key, alertEvent); err != nil {
+			h.logger.Error("process inbound alert failed",
+				"integration_key_id", key.ID,
+				"service_id", key.ServiceID,
+				"plugin", pluginName,
+				"dedup_key", alertEvent.DedupKey,
+				"error", err,
+			)
+			WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
+			return
+		}
 	}
 
 	h.logger.Info("webhook received",

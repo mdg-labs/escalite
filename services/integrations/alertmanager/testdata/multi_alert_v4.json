@@ -1,0 +1,47 @@
+{
+  "receiver": "escalite",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "InstanceDown",
+        "instance": "10.3.205.79:9100",
+        "severity": "warning"
+      },
+      "annotations": {
+        "summary": "Instance 10.3.205.79:9100 down"
+      },
+      "startsAt": "2025-05-28T02:28:23.089Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus:9090/graph",
+      "fingerprint": "a8c518a872e3149a"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "InstanceDown",
+        "instance": "10.3.205.80:9100",
+        "severity": "info"
+      },
+      "annotations": {
+        "summary": "Instance 10.3.205.80:9100 down"
+      },
+      "startsAt": "2025-05-28T02:28:23.089Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus:9090/graph",
+      "fingerprint": "8b581f60e6fd0de1"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "InstanceDown"
+  },
+  "commonLabels": {
+    "alertname": "InstanceDown"
+  },
+  "commonAnnotations": {},
+  "externalURL": "http://alertmanager:9093",
+  "version": "4",
+  "groupKey": "{}/{job=\"host\"}:{alertname=\"InstanceDown\"}",
+  "truncatedAlerts": 0
+}

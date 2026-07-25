@@ -31,6 +31,14 @@ WHERE id = $1
   AND organization_id = $2
 LIMIT 1;
 
+-- name: GetOpenAlertByServiceDedupKey :one
+SELECT *
+FROM alerts
+WHERE service_id = $1
+  AND dedup_key = $2
+  AND status IN ('triggered', 'acknowledged')
+LIMIT 1;
+
 -- name: UpdateAlertEscalationState :one
 UPDATE alerts
 SET escalation_state = $3,

@@ -23,6 +23,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/ratelimit"
 	"github.com/mdg-labs/escalite/services/api/internal/server"
 	_ "github.com/mdg-labs/escalite/services/engine/channelsinstall"
+	_ "github.com/mdg-labs/escalite/services/integrations/install"
 )
 
 const serviceName = "api"

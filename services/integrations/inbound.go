@@ -37,3 +37,21 @@ type InboundPlugin interface {
 	ValidateConfig(cfg json.RawMessage) error
 	ConfigSchema() json.RawMessage
 }
+
+// MultiAlertInboundPlugin parses payloads that may contain multiple alerts.
+type MultiAlertInboundPlugin interface {
+	InboundPlugin
+	ParseAlerts(raw []byte, headers http.Header) ([]AlertCreate, error)
+}
+
+// ParseAll returns every alert in a payload, using ParseAlerts when implemented.
+func ParseAll(plugin InboundPlugin, raw []byte, headers http.Header) ([]AlertCreate, error) {
+	if batch, ok := plugin.(MultiAlertInboundPlugin); ok {
+		return batch.ParseAlerts(raw, headers)
+	}
+	alert, err := plugin.ParseAlert(raw, headers)
+	if err != nil {
+		return nil, err
+	}
+	return []AlertCreate{alert}, nil
+}

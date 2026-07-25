@@ -213,6 +213,44 @@ func (q *Queries) GetAlertByID(ctx context.Context, arg GetAlertByIDParams) (Ale
 	return i, err
 }
 
+const getOpenAlertByServiceDedupKey = `-- name: GetOpenAlertByServiceDedupKey :one
+SELECT id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
+FROM alerts
+WHERE service_id = $1
+  AND dedup_key = $2
+  AND status IN ('triggered', 'acknowledged')
+LIMIT 1
+`
+
+type GetOpenAlertByServiceDedupKeyParams struct {
+	ServiceID uuid.UUID `json:"service_id"`
+	DedupKey  string    `json:"dedup_key"`
+}
+
+func (q *Queries) GetOpenAlertByServiceDedupKey(ctx context.Context, arg GetOpenAlertByServiceDedupKeyParams) (Alert, error) {
+	row := q.db.QueryRow(ctx, getOpenAlertByServiceDedupKey, arg.ServiceID, arg.DedupKey)
+	var i Alert
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.ServiceID,
+		&i.IntegrationKeyID,
+		&i.Status,
+		&i.DedupKey,
+		&i.Summary,
+		&i.Description,
+		&i.Priority,
+		&i.EventCount,
+		&i.EscalationState,
+		&i.AcknowledgedAt,
+		&i.AcknowledgedByUserID,
+		&i.ClosedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const reEscalateAlert = `-- name: ReEscalateAlert :one
 UPDATE alerts
 SET status = 'triggered',

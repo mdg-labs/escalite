@@ -1,0 +1,6 @@
+// Package install registers built-in inbound integration plugins.
+package install
+
+import (
+	_ "github.com/mdg-labs/escalite/services/integrations/alertmanager"
+)

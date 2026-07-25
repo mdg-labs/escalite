@@ -16,12 +16,12 @@ func TestEventTypeConstants(t *testing.T) {
 }
 
 func TestGetUnknownPlugin(t *testing.T) {
-	_, err := integrations.Get("prometheus-alertmanager")
+	_, err := integrations.Get("nonexistent-plugin")
 	require.Error(t, err)
 
 	var unknown integrations.ErrUnknownPlugin
 	require.ErrorAs(t, err, &unknown)
-	require.Equal(t, "prometheus-alertmanager", unknown.Name)
+	require.Equal(t, "nonexistent-plugin", unknown.Name)
 }
 
 func TestValidateConfigUnknownPlugin(t *testing.T) {
