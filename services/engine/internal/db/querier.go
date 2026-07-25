@@ -46,6 +46,8 @@ type Querier interface {
 	MarkHeartbeatMonitorTriggered(ctx context.Context, arg MarkHeartbeatMonitorTriggeredParams) (HeartbeatMonitor, error)
 	MarkHeartbeatMonitorsOverdue(ctx context.Context) (int64, error)
 	ReEscalateAlert(ctx context.Context, arg ReEscalateAlertParams) (Alert, error)
+	ServiceHasActiveIngestionSuppression(ctx context.Context, arg ServiceHasActiveIngestionSuppressionParams) (bool, error)
+	ServiceHasActiveNotificationSuppression(ctx context.Context, arg ServiceHasActiveNotificationSuppressionParams) (bool, error)
 	UpdateAlertEscalationState(ctx context.Context, arg UpdateAlertEscalationStateParams) (Alert, error)
 	UpsertUserNotificationRule(ctx context.Context, arg UpsertUserNotificationRuleParams) (UserNotificationRule, error)
 }

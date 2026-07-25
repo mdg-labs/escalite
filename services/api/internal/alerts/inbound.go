@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -55,6 +56,19 @@ func createTriggered(
 	})
 	if err != nil {
 		return uuid.Nil, err
+	}
+
+	now := time.Now().UTC()
+	suppressed, err := queries.ServiceHasActiveIngestionSuppression(ctx, db.ServiceHasActiveIngestionSuppressionParams{
+		ServiceID:      key.ServiceID,
+		OrganizationID: key.OrganizationID,
+		StartsAt:       pgtype.Timestamptz{Time: now, Valid: true},
+	})
+	if err != nil {
+		return uuid.Nil, err
+	}
+	if suppressed {
+		return uuid.Nil, nil
 	}
 
 	dedupWindowSeconds := service.DedupWindowSeconds

@@ -52,6 +52,16 @@ type Query {
   heartbeatMonitors(serviceId: ID!): [HeartbeatMonitor!]!
 
   """
+  List maintenance windows for a service (org admin only).
+  """
+  maintenanceWindows(serviceId: ID!): [MaintenanceWindow!]!
+
+  """
+  Fetch a single maintenance window by ID (org admin only).
+  """
+  maintenanceWindow(id: ID!): MaintenanceWindow
+
+  """
   Fetch a single schedule by ID (org admin only).
   """
   schedule(id: ID!): Schedule
@@ -139,6 +149,21 @@ type Mutation {
   Delete a heartbeat monitor (org admin only).
   """
   deleteHeartbeatMonitor(id: ID!): Boolean!
+
+  """
+  Create a maintenance window for a service (org admin only).
+  """
+  createMaintenanceWindow(input: CreateMaintenanceWindowInput!): MaintenanceWindow!
+
+  """
+  Update a maintenance window (org admin only).
+  """
+  updateMaintenanceWindow(input: UpdateMaintenanceWindowInput!): MaintenanceWindow!
+
+  """
+  Delete a maintenance window (org admin only).
+  """
+  deleteMaintenanceWindow(id: ID!): Boolean!
 
   """
   Create an escalation policy with ordered steps (org admin only).

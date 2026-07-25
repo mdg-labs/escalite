@@ -28,3 +28,7 @@ models:
   JSON:
     model:
       - github.com/99designs/gqlgen/graphql.Map
+  Service:
+    fields:
+      activeMaintenanceWindows:
+        resolver: true

@@ -31,6 +31,7 @@ type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Service() ServiceResolver
 	Subscription() SubscriptionResolver
 }
 
@@ -113,6 +114,19 @@ type ComplexityRoot struct {
 		User func(childComplexity int) int
 	}
 
+	MaintenanceWindow struct {
+		CreatedAt             func(childComplexity int) int
+		Description           func(childComplexity int) int
+		EndsAt                func(childComplexity int) int
+		ID                    func(childComplexity int) int
+		OrganizationID        func(childComplexity int) int
+		ServiceID             func(childComplexity int) int
+		StartsAt              func(childComplexity int) int
+		SuppressIngestion     func(childComplexity int) int
+		SuppressNotifications func(childComplexity int) int
+		UpdatedAt             func(childComplexity int) int
+	}
+
 	MobileDevice struct {
 		CreatedAt        func(childComplexity int) int
 		DeviceLabel      func(childComplexity int) int
@@ -125,38 +139,41 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AcknowledgeAlert       func(childComplexity int, id string) int
-		CloseAlert             func(childComplexity int, id string) int
-		CreateEscalationPolicy func(childComplexity int, input model.CreateEscalationPolicyInput) int
-		CreateHeartbeatMonitor func(childComplexity int, input model.CreateHeartbeatMonitorInput) int
-		CreateIntegrationKey   func(childComplexity int, input model.CreateIntegrationKeyInput) int
-		CreateOverride         func(childComplexity int, input model.CreateOverrideInput) int
-		CreateRotation         func(childComplexity int, input model.CreateRotationInput) int
-		CreateSchedule         func(childComplexity int, input model.CreateScheduleInput) int
-		CreateService          func(childComplexity int, input model.CreateServiceInput) int
-		DeleteEscalationPolicy func(childComplexity int, id string) int
-		DeleteHeartbeatMonitor func(childComplexity int, id string) int
-		DeleteNotificationRule func(childComplexity int, priority model.AlertPriority) int
-		DeleteOverride         func(childComplexity int, id string) int
-		DeleteRotation         func(childComplexity int, id string) int
-		DeleteSchedule         func(childComplexity int, id string) int
-		DeleteService          func(childComplexity int, id string) int
-		Login                  func(childComplexity int, input model.LoginInput) int
-		ReEscalateAlert        func(childComplexity int, id string) int
-		RegisterMobileDevice   func(childComplexity int, input model.RegisterMobileDeviceInput) int
-		RevokeIntegrationKey   func(childComplexity int, id string) int
-		RevokeMobileDevice     func(childComplexity int, id string) int
-		RotateIntegrationKey   func(childComplexity int, id string) int
-		SaveNotificationRule   func(childComplexity int, input model.SaveNotificationRuleInput) int
-		SaveSlackSettings      func(childComplexity int, input model.SaveSlackSettingsInput) int
-		SaveUserContactMethod  func(childComplexity int, input model.SaveUserContactMethodInput) int
-		Setup                  func(childComplexity int, input model.SetupInput) int
-		SnoozeAlert            func(childComplexity int, id string, durationMinutes int) int
-		UpdateEscalationPolicy func(childComplexity int, input model.UpdateEscalationPolicyInput) int
-		UpdateHeartbeatMonitor func(childComplexity int, input model.UpdateHeartbeatMonitorInput) int
-		UpdateRotation         func(childComplexity int, input model.UpdateRotationInput) int
-		UpdateSchedule         func(childComplexity int, input model.UpdateScheduleInput) int
-		UpdateService          func(childComplexity int, input model.UpdateServiceInput) int
+		AcknowledgeAlert        func(childComplexity int, id string) int
+		CloseAlert              func(childComplexity int, id string) int
+		CreateEscalationPolicy  func(childComplexity int, input model.CreateEscalationPolicyInput) int
+		CreateHeartbeatMonitor  func(childComplexity int, input model.CreateHeartbeatMonitorInput) int
+		CreateIntegrationKey    func(childComplexity int, input model.CreateIntegrationKeyInput) int
+		CreateMaintenanceWindow func(childComplexity int, input model.CreateMaintenanceWindowInput) int
+		CreateOverride          func(childComplexity int, input model.CreateOverrideInput) int
+		CreateRotation          func(childComplexity int, input model.CreateRotationInput) int
+		CreateSchedule          func(childComplexity int, input model.CreateScheduleInput) int
+		CreateService           func(childComplexity int, input model.CreateServiceInput) int
+		DeleteEscalationPolicy  func(childComplexity int, id string) int
+		DeleteHeartbeatMonitor  func(childComplexity int, id string) int
+		DeleteMaintenanceWindow func(childComplexity int, id string) int
+		DeleteNotificationRule  func(childComplexity int, priority model.AlertPriority) int
+		DeleteOverride          func(childComplexity int, id string) int
+		DeleteRotation          func(childComplexity int, id string) int
+		DeleteSchedule          func(childComplexity int, id string) int
+		DeleteService           func(childComplexity int, id string) int
+		Login                   func(childComplexity int, input model.LoginInput) int
+		ReEscalateAlert         func(childComplexity int, id string) int
+		RegisterMobileDevice    func(childComplexity int, input model.RegisterMobileDeviceInput) int
+		RevokeIntegrationKey    func(childComplexity int, id string) int
+		RevokeMobileDevice      func(childComplexity int, id string) int
+		RotateIntegrationKey    func(childComplexity int, id string) int
+		SaveNotificationRule    func(childComplexity int, input model.SaveNotificationRuleInput) int
+		SaveSlackSettings       func(childComplexity int, input model.SaveSlackSettingsInput) int
+		SaveUserContactMethod   func(childComplexity int, input model.SaveUserContactMethodInput) int
+		Setup                   func(childComplexity int, input model.SetupInput) int
+		SnoozeAlert             func(childComplexity int, id string, durationMinutes int) int
+		UpdateEscalationPolicy  func(childComplexity int, input model.UpdateEscalationPolicyInput) int
+		UpdateHeartbeatMonitor  func(childComplexity int, input model.UpdateHeartbeatMonitorInput) int
+		UpdateMaintenanceWindow func(childComplexity int, input model.UpdateMaintenanceWindowInput) int
+		UpdateRotation          func(childComplexity int, input model.UpdateRotationInput) int
+		UpdateSchedule          func(childComplexity int, input model.UpdateScheduleInput) int
+		UpdateService           func(childComplexity int, input model.UpdateServiceInput) int
 	}
 
 	NotificationChannelDefinition struct {
@@ -217,6 +234,8 @@ type ComplexityRoot struct {
 		HeartbeatMonitor     func(childComplexity int, id string) int
 		HeartbeatMonitors    func(childComplexity int, serviceID string) int
 		IntegrationKeys      func(childComplexity int, serviceID string) int
+		MaintenanceWindow    func(childComplexity int, id string) int
+		MaintenanceWindows   func(childComplexity int, serviceID string) int
 		Me                   func(childComplexity int) int
 		MobileDevices        func(childComplexity int) int
 		NotificationChannels func(childComplexity int) int
@@ -255,12 +274,13 @@ type ComplexityRoot struct {
 	}
 
 	Service struct {
-		CreatedAt      func(childComplexity int) int
-		ID             func(childComplexity int) int
-		Name           func(childComplexity int) int
-		OrganizationID func(childComplexity int) int
-		TeamID         func(childComplexity int) int
-		UpdatedAt      func(childComplexity int) int
+		ActiveMaintenanceWindows func(childComplexity int) int
+		CreatedAt                func(childComplexity int) int
+		ID                       func(childComplexity int) int
+		Name                     func(childComplexity int) int
+		OrganizationID           func(childComplexity int) int
+		TeamID                   func(childComplexity int) int
+		UpdatedAt                func(childComplexity int) int
 	}
 
 	SetupPayload struct {
@@ -324,6 +344,9 @@ type MutationResolver interface {
 	CreateHeartbeatMonitor(ctx context.Context, input model.CreateHeartbeatMonitorInput) (*model.HeartbeatMonitor, error)
 	UpdateHeartbeatMonitor(ctx context.Context, input model.UpdateHeartbeatMonitorInput) (*model.HeartbeatMonitor, error)
 	DeleteHeartbeatMonitor(ctx context.Context, id string) (bool, error)
+	CreateMaintenanceWindow(ctx context.Context, input model.CreateMaintenanceWindowInput) (*model.MaintenanceWindow, error)
+	UpdateMaintenanceWindow(ctx context.Context, input model.UpdateMaintenanceWindowInput) (*model.MaintenanceWindow, error)
+	DeleteMaintenanceWindow(ctx context.Context, id string) (bool, error)
 	CreateEscalationPolicy(ctx context.Context, input model.CreateEscalationPolicyInput) (*model.EscalationPolicy, error)
 	UpdateEscalationPolicy(ctx context.Context, input model.UpdateEscalationPolicyInput) (*model.EscalationPolicy, error)
 	DeleteEscalationPolicy(ctx context.Context, id string) (bool, error)
@@ -361,6 +384,8 @@ type QueryResolver interface {
 	EscalationPolicies(ctx context.Context, serviceID string) ([]*model.EscalationPolicy, error)
 	HeartbeatMonitor(ctx context.Context, id string) (*model.HeartbeatMonitor, error)
 	HeartbeatMonitors(ctx context.Context, serviceID string) ([]*model.HeartbeatMonitor, error)
+	MaintenanceWindows(ctx context.Context, serviceID string) ([]*model.MaintenanceWindow, error)
+	MaintenanceWindow(ctx context.Context, id string) (*model.MaintenanceWindow, error)
 	Schedule(ctx context.Context, id string) (*model.Schedule, error)
 	Schedules(ctx context.Context, teamID string) ([]*model.Schedule, error)
 	OnCallNow(ctx context.Context, scheduleID string, at *time.Time) (*model.OnCallNow, error)
@@ -373,6 +398,9 @@ type QueryResolver interface {
 	Teams(ctx context.Context) ([]*model.Team, error)
 	Services(ctx context.Context) ([]*model.Service, error)
 	Service(ctx context.Context, id string) (*model.Service, error)
+}
+type ServiceResolver interface {
+	ActiveMaintenanceWindows(ctx context.Context, obj *model.Service) ([]*model.MaintenanceWindow, error)
 }
 type SubscriptionResolver interface {
 	AlertUpdated(ctx context.Context, orgID string) (<-chan *model.Alert, error)
@@ -728,6 +756,67 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.LoginPayload.User(childComplexity), true
 
+	case "MaintenanceWindow.createdAt":
+		if e.ComplexityRoot.MaintenanceWindow.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MaintenanceWindow.CreatedAt(childComplexity), true
+	case "MaintenanceWindow.description":
+		if e.ComplexityRoot.MaintenanceWindow.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MaintenanceWindow.Description(childComplexity), true
+	case "MaintenanceWindow.endsAt":
+		if e.ComplexityRoot.MaintenanceWindow.EndsAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MaintenanceWindow.EndsAt(childComplexity), true
+	case "MaintenanceWindow.id":
+		if e.ComplexityRoot.MaintenanceWindow.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MaintenanceWindow.ID(childComplexity), true
+	case "MaintenanceWindow.organizationId":
+		if e.ComplexityRoot.MaintenanceWindow.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MaintenanceWindow.OrganizationID(childComplexity), true
+	case "MaintenanceWindow.serviceId":
+		if e.ComplexityRoot.MaintenanceWindow.ServiceID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MaintenanceWindow.ServiceID(childComplexity), true
+	case "MaintenanceWindow.startsAt":
+		if e.ComplexityRoot.MaintenanceWindow.StartsAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MaintenanceWindow.StartsAt(childComplexity), true
+	case "MaintenanceWindow.suppressIngestion":
+		if e.ComplexityRoot.MaintenanceWindow.SuppressIngestion == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MaintenanceWindow.SuppressIngestion(childComplexity), true
+	case "MaintenanceWindow.suppressNotifications":
+		if e.ComplexityRoot.MaintenanceWindow.SuppressNotifications == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MaintenanceWindow.SuppressNotifications(childComplexity), true
+	case "MaintenanceWindow.updatedAt":
+		if e.ComplexityRoot.MaintenanceWindow.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MaintenanceWindow.UpdatedAt(childComplexity), true
+
 	case "MobileDevice.createdAt":
 		if e.ComplexityRoot.MobileDevice.CreatedAt == nil {
 			break
@@ -832,6 +921,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateIntegrationKey(childComplexity, args["input"].(model.CreateIntegrationKeyInput)), true
+	case "Mutation.createMaintenanceWindow":
+		if e.ComplexityRoot.Mutation.CreateMaintenanceWindow == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createMaintenanceWindow_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateMaintenanceWindow(childComplexity, args["input"].(model.CreateMaintenanceWindowInput)), true
 	case "Mutation.createOverride":
 		if e.ComplexityRoot.Mutation.CreateOverride == nil {
 			break
@@ -898,6 +998,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteHeartbeatMonitor(childComplexity, args["id"].(string)), true
+	case "Mutation.deleteMaintenanceWindow":
+		if e.ComplexityRoot.Mutation.DeleteMaintenanceWindow == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteMaintenanceWindow_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteMaintenanceWindow(childComplexity, args["id"].(string)), true
 	case "Mutation.deleteNotificationRule":
 		if e.ComplexityRoot.Mutation.DeleteNotificationRule == nil {
 			break
@@ -1096,6 +1207,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateHeartbeatMonitor(childComplexity, args["input"].(model.UpdateHeartbeatMonitorInput)), true
+	case "Mutation.updateMaintenanceWindow":
+		if e.ComplexityRoot.Mutation.UpdateMaintenanceWindow == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateMaintenanceWindow_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateMaintenanceWindow(childComplexity, args["input"].(model.UpdateMaintenanceWindowInput)), true
 	case "Mutation.updateRotation":
 		if e.ComplexityRoot.Mutation.UpdateRotation == nil {
 			break
@@ -1389,6 +1511,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.IntegrationKeys(childComplexity, args["serviceId"].(string)), true
 
+	case "Query.maintenanceWindow":
+		if e.ComplexityRoot.Query.MaintenanceWindow == nil {
+			break
+		}
+
+		args, err := ec.field_Query_maintenanceWindow_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.MaintenanceWindow(childComplexity, args["id"].(string)), true
+	case "Query.maintenanceWindows":
+		if e.ComplexityRoot.Query.MaintenanceWindows == nil {
+			break
+		}
+
+		args, err := ec.field_Query_maintenanceWindows_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.MaintenanceWindows(childComplexity, args["serviceId"].(string)), true
 	case "Query.me":
 		if e.ComplexityRoot.Query.Me == nil {
 			break
@@ -1591,6 +1735,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Schedule.UpdatedAt(childComplexity), true
 
+	case "Service.activeMaintenanceWindows":
+		if e.ComplexityRoot.Service.ActiveMaintenanceWindows == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Service.ActiveMaintenanceWindows(childComplexity), true
 	case "Service.createdAt":
 		if e.ComplexityRoot.Service.CreatedAt == nil {
 			break
@@ -1830,6 +1980,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateEscalationPolicyInput,
 		ec.unmarshalInputCreateHeartbeatMonitorInput,
 		ec.unmarshalInputCreateIntegrationKeyInput,
+		ec.unmarshalInputCreateMaintenanceWindowInput,
 		ec.unmarshalInputCreateOverrideInput,
 		ec.unmarshalInputCreateRotationInput,
 		ec.unmarshalInputCreateScheduleInput,
@@ -1845,6 +1996,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputSetupInput,
 		ec.unmarshalInputUpdateEscalationPolicyInput,
 		ec.unmarshalInputUpdateHeartbeatMonitorInput,
+		ec.unmarshalInputUpdateMaintenanceWindowInput,
 		ec.unmarshalInputUpdateRotationInput,
 		ec.unmarshalInputUpdateScheduleInput,
 		ec.unmarshalInputUpdateServiceInput,
@@ -2102,6 +2254,24 @@ input UpdateServiceInput {
   id: ID!
   name: String!
 }
+
+input CreateMaintenanceWindowInput {
+  serviceId: ID!
+  description: String!
+  startsAt: DateTime!
+  endsAt: DateTime!
+  suppressNotifications: Boolean = true
+  suppressIngestion: Boolean = false
+}
+
+input UpdateMaintenanceWindowInput {
+  id: ID!
+  description: String!
+  startsAt: DateTime!
+  endsAt: DateTime!
+  suppressNotifications: Boolean!
+  suppressIngestion: Boolean!
+}
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Subscription {
   """
@@ -2155,6 +2325,16 @@ type Query {
   List heartbeat monitors for a service (org admin only).
   """
   heartbeatMonitors(serviceId: ID!): [HeartbeatMonitor!]!
+
+  """
+  List maintenance windows for a service (org admin only).
+  """
+  maintenanceWindows(serviceId: ID!): [MaintenanceWindow!]!
+
+  """
+  Fetch a single maintenance window by ID (org admin only).
+  """
+  maintenanceWindow(id: ID!): MaintenanceWindow
 
   """
   Fetch a single schedule by ID (org admin only).
@@ -2244,6 +2424,21 @@ type Mutation {
   Delete a heartbeat monitor (org admin only).
   """
   deleteHeartbeatMonitor(id: ID!): Boolean!
+
+  """
+  Create a maintenance window for a service (org admin only).
+  """
+  createMaintenanceWindow(input: CreateMaintenanceWindowInput!): MaintenanceWindow!
+
+  """
+  Update a maintenance window (org admin only).
+  """
+  updateMaintenanceWindow(input: UpdateMaintenanceWindowInput!): MaintenanceWindow!
+
+  """
+  Delete a maintenance window (org admin only).
+  """
+  deleteMaintenanceWindow(id: ID!): Boolean!
 
   """
   Create an escalation policy with ordered steps (org admin only).
@@ -2427,6 +2622,21 @@ type Service {
   organizationId: ID!
   teamId: ID!
   name: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  """Maintenance windows currently suppressing this service."""
+  activeMaintenanceWindows: [MaintenanceWindow!]!
+}
+
+type MaintenanceWindow {
+  id: ID!
+  organizationId: ID!
+  serviceId: ID!
+  description: String!
+  startsAt: DateTime!
+  endsAt: DateTime!
+  suppressNotifications: Boolean!
+  suppressIngestion: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -2790,6 +3000,32 @@ func (ec *executionContext) childFields_LoginPayload(ctx context.Context, field 
 	return nil, fmt.Errorf("no field named %q was found under type LoginPayload", field.Name)
 }
 
+func (ec *executionContext) childFields_MaintenanceWindow(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_MaintenanceWindow_id(ctx, field)
+	case "organizationId":
+		return ec.fieldContext_MaintenanceWindow_organizationId(ctx, field)
+	case "serviceId":
+		return ec.fieldContext_MaintenanceWindow_serviceId(ctx, field)
+	case "description":
+		return ec.fieldContext_MaintenanceWindow_description(ctx, field)
+	case "startsAt":
+		return ec.fieldContext_MaintenanceWindow_startsAt(ctx, field)
+	case "endsAt":
+		return ec.fieldContext_MaintenanceWindow_endsAt(ctx, field)
+	case "suppressNotifications":
+		return ec.fieldContext_MaintenanceWindow_suppressNotifications(ctx, field)
+	case "suppressIngestion":
+		return ec.fieldContext_MaintenanceWindow_suppressIngestion(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_MaintenanceWindow_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_MaintenanceWindow_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type MaintenanceWindow", field.Name)
+}
+
 func (ec *executionContext) childFields_MobileDevice(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "id":
@@ -2970,6 +3206,8 @@ func (ec *executionContext) childFields_Service(ctx context.Context, field graph
 		return ec.fieldContext_Service_createdAt(ctx, field)
 	case "updatedAt":
 		return ec.fieldContext_Service_updatedAt(ctx, field)
+	case "activeMaintenanceWindows":
+		return ec.fieldContext_Service_activeMaintenanceWindows(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Service", field.Name)
 }
@@ -3250,6 +3488,20 @@ func (ec *executionContext) field_Mutation_createIntegrationKey_args(ctx context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createMaintenanceWindow_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateMaintenanceWindowInput, error) {
+			return ec.unmarshalNCreateMaintenanceWindowInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateMaintenanceWindowInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createOverride_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3321,6 +3573,20 @@ func (ec *executionContext) field_Mutation_deleteEscalationPolicy_args(ctx conte
 }
 
 func (ec *executionContext) field_Mutation_deleteHeartbeatMonitor_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteMaintenanceWindow_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
@@ -3594,6 +3860,20 @@ func (ec *executionContext) field_Mutation_updateHeartbeatMonitor_args(ctx conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updateMaintenanceWindow_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateMaintenanceWindowInput, error) {
+			return ec.unmarshalNUpdateMaintenanceWindowInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateMaintenanceWindowInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updateRotation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3743,6 +4023,34 @@ func (ec *executionContext) field_Query_heartbeatMonitors_args(ctx context.Conte
 }
 
 func (ec *executionContext) field_Query_integrationKeys_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "serviceId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["serviceId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_maintenanceWindow_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_maintenanceWindows_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "serviceId",
@@ -5191,6 +5499,236 @@ func (ec *executionContext) fieldContext_LoginPayload_user(_ context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _MaintenanceWindow_id(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MaintenanceWindow_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MaintenanceWindow_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MaintenanceWindow", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _MaintenanceWindow_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MaintenanceWindow_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MaintenanceWindow_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MaintenanceWindow", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _MaintenanceWindow_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MaintenanceWindow_serviceId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MaintenanceWindow_serviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MaintenanceWindow", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _MaintenanceWindow_description(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MaintenanceWindow_description(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MaintenanceWindow_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MaintenanceWindow", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _MaintenanceWindow_startsAt(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MaintenanceWindow_startsAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StartsAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MaintenanceWindow_startsAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MaintenanceWindow", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _MaintenanceWindow_endsAt(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MaintenanceWindow_endsAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EndsAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MaintenanceWindow_endsAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MaintenanceWindow", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _MaintenanceWindow_suppressNotifications(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MaintenanceWindow_suppressNotifications(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.SuppressNotifications, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MaintenanceWindow_suppressNotifications(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MaintenanceWindow", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _MaintenanceWindow_suppressIngestion(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MaintenanceWindow_suppressIngestion(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.SuppressIngestion, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MaintenanceWindow_suppressIngestion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MaintenanceWindow", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _MaintenanceWindow_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MaintenanceWindow_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MaintenanceWindow_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MaintenanceWindow", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _MaintenanceWindow_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MaintenanceWindow_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MaintenanceWindow_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MaintenanceWindow", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
 func (ec *executionContext) _MobileDevice_id(ctx context.Context, field graphql.CollectedField, obj *model.MobileDevice) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5589,6 +6127,138 @@ func (ec *executionContext) fieldContext_Mutation_deleteHeartbeatMonitor(ctx con
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deleteHeartbeatMonitor_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createMaintenanceWindow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createMaintenanceWindow(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateMaintenanceWindow(ctx, fc.Args["input"].(model.CreateMaintenanceWindowInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.MaintenanceWindow) graphql.Marshaler {
+			return ec.marshalNMaintenanceWindow2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMaintenanceWindow(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createMaintenanceWindow(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_MaintenanceWindow(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createMaintenanceWindow_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateMaintenanceWindow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateMaintenanceWindow(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateMaintenanceWindow(ctx, fc.Args["input"].(model.UpdateMaintenanceWindowInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.MaintenanceWindow) graphql.Marshaler {
+			return ec.marshalNMaintenanceWindow2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMaintenanceWindow(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateMaintenanceWindow(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_MaintenanceWindow(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateMaintenanceWindow_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteMaintenanceWindow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteMaintenanceWindow(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteMaintenanceWindow(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteMaintenanceWindow(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteMaintenanceWindow_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -7764,6 +8434,94 @@ func (ec *executionContext) fieldContext_Query_heartbeatMonitors(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_maintenanceWindows(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_maintenanceWindows(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().MaintenanceWindows(ctx, fc.Args["serviceId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.MaintenanceWindow) graphql.Marshaler {
+			return ec.marshalNMaintenanceWindow2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMaintenanceWindowᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_maintenanceWindows(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_MaintenanceWindow(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_maintenanceWindows_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_maintenanceWindow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_maintenanceWindow(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().MaintenanceWindow(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.MaintenanceWindow) graphql.Marshaler {
+			return ec.marshalOMaintenanceWindow2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMaintenanceWindow(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_maintenanceWindow(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_MaintenanceWindow(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_maintenanceWindow_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_schedule(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -8832,6 +9590,38 @@ func (ec *executionContext) _Service_updatedAt(ctx context.Context, field graphq
 }
 func (ec *executionContext) fieldContext_Service_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Service", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _Service_activeMaintenanceWindows(ctx context.Context, field graphql.CollectedField, obj *model.Service) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Service_activeMaintenanceWindows(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Service().ActiveMaintenanceWindows(ctx, obj)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.MaintenanceWindow) graphql.Marshaler {
+			return ec.marshalNMaintenanceWindow2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMaintenanceWindowᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Service_activeMaintenanceWindows(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Service",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_MaintenanceWindow(ctx, field)
+		},
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _SetupPayload_organization(ctx context.Context, field graphql.CollectedField, obj *model.SetupPayload) (ret graphql.Marshaler) {
@@ -10768,6 +11558,78 @@ func (ec *executionContext) unmarshalInputCreateIntegrationKeyInput(ctx context.
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateMaintenanceWindowInput(ctx context.Context, obj any) (model.CreateMaintenanceWindowInput, error) {
+	var it model.CreateMaintenanceWindowInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["suppressNotifications"]; !present {
+		asMap["suppressNotifications"] = true
+	}
+	if _, present := asMap["suppressIngestion"]; !present {
+		asMap["suppressIngestion"] = false
+	}
+
+	fieldsInOrder := [...]string{"serviceId", "description", "startsAt", "endsAt", "suppressNotifications", "suppressIngestion"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "serviceId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceID = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "startsAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startsAt"))
+			data, err := ec.unmarshalNDateTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartsAt = data
+		case "endsAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endsAt"))
+			data, err := ec.unmarshalNDateTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EndsAt = data
+		case "suppressNotifications":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("suppressNotifications"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SuppressNotifications = data
+		case "suppressIngestion":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("suppressIngestion"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SuppressIngestion = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateOverrideInput(ctx context.Context, obj any) (model.CreateOverrideInput, error) {
 	var it model.CreateOverrideInput
 	if obj == nil {
@@ -11439,6 +12301,71 @@ func (ec *executionContext) unmarshalInputUpdateHeartbeatMonitorInput(ctx contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateMaintenanceWindowInput(ctx context.Context, obj any) (model.UpdateMaintenanceWindowInput, error) {
+	var it model.UpdateMaintenanceWindowInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "description", "startsAt", "endsAt", "suppressNotifications", "suppressIngestion"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "startsAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startsAt"))
+			data, err := ec.unmarshalNDateTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartsAt = data
+		case "endsAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endsAt"))
+			data, err := ec.unmarshalNDateTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EndsAt = data
+		case "suppressNotifications":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("suppressNotifications"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SuppressNotifications = data
+		case "suppressIngestion":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("suppressIngestion"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SuppressIngestion = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUpdateRotationInput(ctx context.Context, obj any) (model.UpdateRotationInput, error) {
 	var it model.UpdateRotationInput
 	if obj == nil {
@@ -12087,6 +13014,89 @@ func (ec *executionContext) _LoginPayload(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var maintenanceWindowImplementors = []string{"MaintenanceWindow"}
+
+func (ec *executionContext) _MaintenanceWindow(ctx context.Context, sel ast.SelectionSet, obj *model.MaintenanceWindow) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, maintenanceWindowImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaintenanceWindow")
+		case "id":
+			out.Values[i] = ec._MaintenanceWindow_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "organizationId":
+			out.Values[i] = ec._MaintenanceWindow_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceId":
+			out.Values[i] = ec._MaintenanceWindow_serviceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._MaintenanceWindow_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startsAt":
+			out.Values[i] = ec._MaintenanceWindow_startsAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "endsAt":
+			out.Values[i] = ec._MaintenanceWindow_endsAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "suppressNotifications":
+			out.Values[i] = ec._MaintenanceWindow_suppressNotifications(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "suppressIngestion":
+			out.Values[i] = ec._MaintenanceWindow_suppressIngestion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._MaintenanceWindow_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._MaintenanceWindow_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var mobileDeviceImplementors = []string{"MobileDevice"}
 
 func (ec *executionContext) _MobileDevice(ctx context.Context, sel ast.SelectionSet, obj *model.MobileDevice) graphql.Marshaler {
@@ -12211,6 +13221,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteHeartbeatMonitor":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteHeartbeatMonitor(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createMaintenanceWindow":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createMaintenanceWindow(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateMaintenanceWindow":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateMaintenanceWindow(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteMaintenanceWindow":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteMaintenanceWindow(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -12992,6 +14023,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "maintenanceWindows":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_maintenanceWindows(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "maintenanceWindow":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_maintenanceWindow(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "schedule":
 			field := field
 
@@ -13457,33 +14532,71 @@ func (ec *executionContext) _Service(ctx context.Context, sel ast.SelectionSet, 
 		case "id":
 			out.Values[i] = ec._Service_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "organizationId":
 			out.Values[i] = ec._Service_organizationId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "teamId":
 			out.Values[i] = ec._Service_teamId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Service_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Service_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Service_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "activeMaintenanceWindows":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Service_activeMaintenanceWindows(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14333,6 +15446,11 @@ func (ec *executionContext) unmarshalNCreateIntegrationKeyInput2githubᚗcomᚋm
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateMaintenanceWindowInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateMaintenanceWindowInput(ctx context.Context, v any) (model.CreateMaintenanceWindowInput, error) {
+	res, err := ec.unmarshalInputCreateMaintenanceWindowInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateOverrideInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateOverrideInput(ctx context.Context, v any) (model.CreateOverrideInput, error) {
 	res, err := ec.unmarshalInputCreateOverrideInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -14647,6 +15765,36 @@ func (ec *executionContext) marshalNLoginPayload2ᚖgithubᚗcomᚋmdgᚑlabsᚋ
 		return graphql.Null
 	}
 	return ec._LoginPayload(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMaintenanceWindow2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMaintenanceWindow(ctx context.Context, sel ast.SelectionSet, v model.MaintenanceWindow) graphql.Marshaler {
+	return ec._MaintenanceWindow(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMaintenanceWindow2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMaintenanceWindowᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MaintenanceWindow) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNMaintenanceWindow2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMaintenanceWindow(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMaintenanceWindow2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMaintenanceWindow(ctx context.Context, sel ast.SelectionSet, v *model.MaintenanceWindow) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MaintenanceWindow(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNMobileDevice2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMobileDevice(ctx context.Context, sel ast.SelectionSet, v model.MobileDevice) graphql.Marshaler {
@@ -15025,6 +16173,11 @@ func (ec *executionContext) unmarshalNUpdateHeartbeatMonitorInput2githubᚗcom�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNUpdateMaintenanceWindowInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateMaintenanceWindowInput(ctx context.Context, v any) (model.UpdateMaintenanceWindowInput, error) {
+	res, err := ec.unmarshalInputUpdateMaintenanceWindowInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNUpdateRotationInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateRotationInput(ctx context.Context, v any) (model.UpdateRotationInput, error) {
 	res, err := ec.unmarshalInputUpdateRotationInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -15363,6 +16516,13 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOMaintenanceWindow2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMaintenanceWindow(ctx context.Context, sel ast.SelectionSet, v *model.MaintenanceWindow) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MaintenanceWindow(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOOnCallNow2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOnCallNow(ctx context.Context, sel ast.SelectionSet, v *model.OnCallNow) graphql.Marshaler {

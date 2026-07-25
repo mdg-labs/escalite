@@ -664,6 +664,91 @@ table "escalation_policies" {
   }
 }
 
+table "maintenance_windows" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "service_id" {
+    null = false
+    type = uuid
+  }
+  column "description" {
+    null = false
+    type = text
+  }
+  column "starts_at" {
+    null = false
+    type = timestamptz
+  }
+  column "ends_at" {
+    null = false
+    type = timestamptz
+  }
+  column "suppress_notifications" {
+    null    = false
+    type    = boolean
+    default = true
+  }
+  column "suppress_ingestion" {
+    null    = false
+    type    = boolean
+    default = false
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "maintenance_windows_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "maintenance_windows_service_id_organization_id_fkey" {
+    columns     = [column.service_id, column.organization_id]
+    ref_columns = [table.services.column.id, table.services.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "maintenance_windows_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "maintenance_windows_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  index "maintenance_windows_service_id_idx" {
+    columns = [column.service_id]
+  }
+
+  index "maintenance_windows_service_id_active_idx" {
+    columns = [column.service_id, column.starts_at, column.ends_at]
+  }
+
+  check "maintenance_windows_window_check" {
+    expr = "(ends_at > starts_at)"
+  }
+}
+
 table "heartbeat_monitors" {
   schema = schema.public
 

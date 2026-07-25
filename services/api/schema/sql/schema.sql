@@ -51,10 +51,10 @@ CREATE TABLE "services" (
   CONSTRAINT "services_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
   CONSTRAINT "services_team_id_organization_id_fkey" FOREIGN KEY ("team_id", "organization_id") REFERENCES "teams" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
--- Create index "services_organization_id_idx" to table: "services"
-CREATE INDEX "services_organization_id_idx" ON "services" ("organization_id");
 -- Create index "services_active_organization_id_idx" to table: "services"
 CREATE INDEX "services_active_organization_id_idx" ON "services" ("organization_id") WHERE (deleted_at IS NULL);
+-- Create index "services_organization_id_idx" to table: "services"
+CREATE INDEX "services_organization_id_idx" ON "services" ("organization_id");
 -- Create index "services_team_id_idx" to table: "services"
 CREATE INDEX "services_team_id_idx" ON "services" ("team_id");
 -- Create "integration_keys" table
@@ -240,6 +240,96 @@ CREATE TABLE "heartbeat_monitors" (
 CREATE INDEX "heartbeat_monitors_organization_id_idx" ON "heartbeat_monitors" ("organization_id");
 -- Create index "heartbeat_monitors_service_id_idx" to table: "heartbeat_monitors"
 CREATE INDEX "heartbeat_monitors_service_id_idx" ON "heartbeat_monitors" ("service_id");
+-- Create "maintenance_windows" table
+CREATE TABLE "maintenance_windows" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "service_id" uuid NOT NULL,
+  "description" text NOT NULL,
+  "starts_at" timestamptz NOT NULL,
+  "ends_at" timestamptz NOT NULL,
+  "suppress_notifications" boolean NOT NULL DEFAULT true,
+  "suppress_ingestion" boolean NOT NULL DEFAULT false,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "maintenance_windows_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "maintenance_windows_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "maintenance_windows_service_id_organization_id_fkey" FOREIGN KEY ("service_id", "organization_id") REFERENCES "services" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "maintenance_windows_window_check" CHECK (ends_at > starts_at)
+);
+-- Create index "maintenance_windows_organization_id_idx" to table: "maintenance_windows"
+CREATE INDEX "maintenance_windows_organization_id_idx" ON "maintenance_windows" ("organization_id");
+-- Create index "maintenance_windows_service_id_active_idx" to table: "maintenance_windows"
+CREATE INDEX "maintenance_windows_service_id_active_idx" ON "maintenance_windows" ("service_id", "starts_at", "ends_at");
+-- Create index "maintenance_windows_service_id_idx" to table: "maintenance_windows"
+CREATE INDEX "maintenance_windows_service_id_idx" ON "maintenance_windows" ("service_id");
+-- Create "mobile_auth_codes" table
+CREATE TABLE "mobile_auth_codes" (
+  "id" uuid NOT NULL,
+  "user_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "code_hash" text NOT NULL,
+  "expires_at" timestamptz NOT NULL,
+  "used_at" timestamptz NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "mobile_auth_codes_code_hash_key" UNIQUE ("code_hash"),
+  CONSTRAINT "mobile_auth_codes_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "mobile_auth_codes_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "mobile_auth_codes_user_id_organization_id_fkey" FOREIGN KEY ("user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "mobile_auth_codes_expires_at_idx" to table: "mobile_auth_codes"
+CREATE INDEX "mobile_auth_codes_expires_at_idx" ON "mobile_auth_codes" ("expires_at");
+-- Create index "mobile_auth_codes_user_id_idx" to table: "mobile_auth_codes"
+CREATE INDEX "mobile_auth_codes_user_id_idx" ON "mobile_auth_codes" ("user_id");
+-- Create "refresh_tokens" table
+CREATE TABLE "refresh_tokens" (
+  "id" uuid NOT NULL,
+  "user_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "token_hash" text NOT NULL,
+  "user_agent" text NULL,
+  "revoked_at" timestamptz NULL,
+  "expires_at" timestamptz NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "refresh_tokens_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "refresh_tokens_token_hash_key" UNIQUE ("token_hash"),
+  CONSTRAINT "refresh_tokens_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "refresh_tokens_user_id_organization_id_fkey" FOREIGN KEY ("user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "refresh_tokens_organization_id_idx" to table: "refresh_tokens"
+CREATE INDEX "refresh_tokens_organization_id_idx" ON "refresh_tokens" ("organization_id");
+-- Create index "refresh_tokens_user_id_idx" to table: "refresh_tokens"
+CREATE INDEX "refresh_tokens_user_id_idx" ON "refresh_tokens" ("user_id");
+-- Create "mobile_devices" table
+CREATE TABLE "mobile_devices" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "user_id" uuid NOT NULL,
+  "refresh_token_id" uuid NULL,
+  "expo_push_token" text NOT NULL,
+  "push_token_prefix" text NOT NULL,
+  "platform" text NULL,
+  "device_label" text NULL,
+  "revoked_at" timestamptz NULL,
+  "last_registered_at" timestamptz NOT NULL DEFAULT now(),
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "mobile_devices_expo_push_token_key" UNIQUE ("expo_push_token"),
+  CONSTRAINT "mobile_devices_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "mobile_devices_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "mobile_devices_refresh_token_id_organization_id_fkey" FOREIGN KEY ("refresh_token_id", "organization_id") REFERENCES "refresh_tokens" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE SET NULL,
+  CONSTRAINT "mobile_devices_user_id_organization_id_fkey" FOREIGN KEY ("user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "mobile_devices_organization_id_idx" to table: "mobile_devices"
+CREATE INDEX "mobile_devices_organization_id_idx" ON "mobile_devices" ("organization_id");
+-- Create index "mobile_devices_user_id_idx" to table: "mobile_devices"
+CREATE INDEX "mobile_devices_user_id_idx" ON "mobile_devices" ("user_id");
 -- Create "notification_attempts" table
 CREATE TABLE "notification_attempts" (
   "id" uuid NOT NULL,
@@ -262,6 +352,17 @@ CREATE TABLE "notification_attempts" (
 CREATE INDEX "notification_attempts_alert_id_idx" ON "notification_attempts" ("alert_id");
 -- Create index "notification_attempts_organization_id_idx" to table: "notification_attempts"
 CREATE INDEX "notification_attempts_organization_id_idx" ON "notification_attempts" ("organization_id");
+-- Create "organization_slack_settings" table
+CREATE TABLE "organization_slack_settings" (
+  "organization_id" uuid NOT NULL,
+  "bot_token_ciphertext" bytea NOT NULL,
+  "encryption_key_id" text NOT NULL,
+  "token_hint" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("organization_id"),
+  CONSTRAINT "organization_slack_settings_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
 -- Create "rotations" table
 CREATE TABLE "rotations" (
   "id" uuid NOT NULL,
@@ -335,72 +436,6 @@ CREATE TABLE "password_reset_tokens" (
 CREATE INDEX "password_reset_tokens_expires_at_idx" ON "password_reset_tokens" ("expires_at");
 -- Create index "password_reset_tokens_user_id_idx" to table: "password_reset_tokens"
 CREATE INDEX "password_reset_tokens_user_id_idx" ON "password_reset_tokens" ("user_id");
--- Create "mobile_auth_codes" table
-CREATE TABLE "mobile_auth_codes" (
-  "id" uuid NOT NULL,
-  "user_id" uuid NOT NULL,
-  "organization_id" uuid NOT NULL,
-  "code_hash" text NOT NULL,
-  "expires_at" timestamptz NOT NULL,
-  "used_at" timestamptz NULL,
-  "created_at" timestamptz NOT NULL DEFAULT now(),
-  "updated_at" timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY ("id"),
-  CONSTRAINT "mobile_auth_codes_code_hash_key" UNIQUE ("code_hash"),
-  CONSTRAINT "mobile_auth_codes_id_organization_id_key" UNIQUE ("id", "organization_id"),
-  CONSTRAINT "mobile_auth_codes_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
-  CONSTRAINT "mobile_auth_codes_user_id_organization_id_fkey" FOREIGN KEY ("user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
-);
--- Create index "mobile_auth_codes_expires_at_idx" to table: "mobile_auth_codes"
-CREATE INDEX "mobile_auth_codes_expires_at_idx" ON "mobile_auth_codes" ("expires_at");
--- Create index "mobile_auth_codes_user_id_idx" to table: "mobile_auth_codes"
-CREATE INDEX "mobile_auth_codes_user_id_idx" ON "mobile_auth_codes" ("user_id");
--- Create "refresh_tokens" table
-CREATE TABLE "refresh_tokens" (
-  "id" uuid NOT NULL,
-  "user_id" uuid NOT NULL,
-  "organization_id" uuid NOT NULL,
-  "token_hash" text NOT NULL,
-  "user_agent" text NULL,
-  "revoked_at" timestamptz NULL,
-  "expires_at" timestamptz NOT NULL,
-  "created_at" timestamptz NOT NULL DEFAULT now(),
-  "updated_at" timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY ("id"),
-  CONSTRAINT "refresh_tokens_id_organization_id_key" UNIQUE ("id", "organization_id"),
-  CONSTRAINT "refresh_tokens_token_hash_key" UNIQUE ("token_hash"),
-  CONSTRAINT "refresh_tokens_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
-  CONSTRAINT "refresh_tokens_user_id_organization_id_fkey" FOREIGN KEY ("user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
-);
--- Create index "refresh_tokens_organization_id_idx" to table: "refresh_tokens"
-CREATE INDEX "refresh_tokens_organization_id_idx" ON "refresh_tokens" ("organization_id");
--- Create index "refresh_tokens_user_id_idx" to table: "refresh_tokens"
-CREATE INDEX "refresh_tokens_user_id_idx" ON "refresh_tokens" ("user_id");
--- Create "mobile_devices" table
-CREATE TABLE "mobile_devices" (
-  "id" uuid NOT NULL,
-  "organization_id" uuid NOT NULL,
-  "user_id" uuid NOT NULL,
-  "refresh_token_id" uuid NULL,
-  "expo_push_token" text NOT NULL,
-  "push_token_prefix" text NOT NULL,
-  "platform" text NULL,
-  "device_label" text NULL,
-  "revoked_at" timestamptz NULL,
-  "last_registered_at" timestamptz NOT NULL DEFAULT now(),
-  "created_at" timestamptz NOT NULL DEFAULT now(),
-  "updated_at" timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY ("id"),
-  CONSTRAINT "mobile_devices_expo_push_token_key" UNIQUE ("expo_push_token"),
-  CONSTRAINT "mobile_devices_id_organization_id_key" UNIQUE ("id", "organization_id"),
-  CONSTRAINT "mobile_devices_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
-  CONSTRAINT "mobile_devices_refresh_token_id_organization_id_fkey" FOREIGN KEY ("refresh_token_id", "organization_id") REFERENCES "refresh_tokens" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE SET NULL,
-  CONSTRAINT "mobile_devices_user_id_organization_id_fkey" FOREIGN KEY ("user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
-);
--- Create index "mobile_devices_organization_id_idx" to table: "mobile_devices"
-CREATE INDEX "mobile_devices_organization_id_idx" ON "mobile_devices" ("organization_id");
--- Create index "mobile_devices_user_id_idx" to table: "mobile_devices"
-CREATE INDEX "mobile_devices_user_id_idx" ON "mobile_devices" ("user_id");
 -- Create "sessions" table
 CREATE TABLE "sessions" (
   "id" uuid NOT NULL,
@@ -439,17 +474,6 @@ CREATE TABLE "team_memberships" (
 CREATE INDEX "team_memberships_team_id_idx" ON "team_memberships" ("team_id");
 -- Create index "team_memberships_user_id_idx" to table: "team_memberships"
 CREATE INDEX "team_memberships_user_id_idx" ON "team_memberships" ("user_id");
--- Create "organization_slack_settings" table
-CREATE TABLE "organization_slack_settings" (
-  "organization_id" uuid NOT NULL,
-  "bot_token_ciphertext" bytea NOT NULL,
-  "encryption_key_id" text NOT NULL,
-  "token_hint" text NOT NULL,
-  "created_at" timestamptz NOT NULL DEFAULT now(),
-  "updated_at" timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY ("organization_id"),
-  CONSTRAINT "organization_slack_settings_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
-);
 -- Create "user_contact_methods" table
 CREATE TABLE "user_contact_methods" (
   "id" uuid NOT NULL,

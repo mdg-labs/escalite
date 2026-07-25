@@ -126,3 +126,21 @@ input UpdateServiceInput {
   id: ID!
   name: String!
 }
+
+input CreateMaintenanceWindowInput {
+  serviceId: ID!
+  description: String!
+  startsAt: DateTime!
+  endsAt: DateTime!
+  suppressNotifications: Boolean = true
+  suppressIngestion: Boolean = false
+}
+
+input UpdateMaintenanceWindowInput {
+  id: ID!
+  description: String!
+  startsAt: DateTime!
+  endsAt: DateTime!
+  suppressNotifications: Boolean!
+  suppressIngestion: Boolean!
+}

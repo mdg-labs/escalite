@@ -46,6 +46,15 @@ type CreateIntegrationKeyInput struct {
 	Config     map[string]any `json:"config"`
 }
 
+type CreateMaintenanceWindowInput struct {
+	ServiceID             string    `json:"serviceId"`
+	Description           string    `json:"description"`
+	StartsAt              time.Time `json:"startsAt"`
+	EndsAt                time.Time `json:"endsAt"`
+	SuppressNotifications *bool     `json:"suppressNotifications,omitempty"`
+	SuppressIngestion     *bool     `json:"suppressIngestion,omitempty"`
+}
+
 type CreateOverrideInput struct {
 	ScheduleID string    `json:"scheduleId"`
 	RotationID string    `json:"rotationId"`
@@ -156,6 +165,19 @@ type LoginInput struct {
 
 type LoginPayload struct {
 	User *User `json:"user"`
+}
+
+type MaintenanceWindow struct {
+	ID                    string    `json:"id"`
+	OrganizationID        string    `json:"organizationId"`
+	ServiceID             string    `json:"serviceId"`
+	Description           string    `json:"description"`
+	StartsAt              time.Time `json:"startsAt"`
+	EndsAt                time.Time `json:"endsAt"`
+	SuppressNotifications bool      `json:"suppressNotifications"`
+	SuppressIngestion     bool      `json:"suppressIngestion"`
+	CreatedAt             time.Time `json:"createdAt"`
+	UpdatedAt             time.Time `json:"updatedAt"`
 }
 
 // Registered mobile device for Expo push delivery.
@@ -288,6 +310,8 @@ type Service struct {
 	Name           string    `json:"name"`
 	CreatedAt      time.Time `json:"createdAt"`
 	UpdatedAt      time.Time `json:"updatedAt"`
+	// Maintenance windows currently suppressing this service.
+	ActiveMaintenanceWindows []*MaintenanceWindow `json:"activeMaintenanceWindows"`
 }
 
 type SetupInput struct {
@@ -329,6 +353,15 @@ type UpdateHeartbeatMonitorInput struct {
 	Name            string `json:"name"`
 	IntervalSeconds int    `json:"intervalSeconds"`
 	GraceSeconds    int    `json:"graceSeconds"`
+}
+
+type UpdateMaintenanceWindowInput struct {
+	ID                    string    `json:"id"`
+	Description           string    `json:"description"`
+	StartsAt              time.Time `json:"startsAt"`
+	EndsAt                time.Time `json:"endsAt"`
+	SuppressNotifications bool      `json:"suppressNotifications"`
+	SuppressIngestion     bool      `json:"suppressIngestion"`
 }
 
 type UpdateRotationInput struct {

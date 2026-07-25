@@ -102,6 +102,19 @@ type IntegrationKey struct {
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
+type MaintenanceWindow struct {
+	ID                    uuid.UUID          `json:"id"`
+	OrganizationID        uuid.UUID          `json:"organization_id"`
+	ServiceID             uuid.UUID          `json:"service_id"`
+	Description           string             `json:"description"`
+	StartsAt              pgtype.Timestamptz `json:"starts_at"`
+	EndsAt                pgtype.Timestamptz `json:"ends_at"`
+	SuppressNotifications bool               `json:"suppress_notifications"`
+	SuppressIngestion     bool               `json:"suppress_ingestion"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+}
+
 type MobileAuthCode struct {
 	ID             uuid.UUID          `json:"id"`
 	UserID         uuid.UUID          `json:"user_id"`

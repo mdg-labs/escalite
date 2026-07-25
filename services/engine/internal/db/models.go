@@ -24,6 +24,8 @@ type Alert struct {
 	AcknowledgedAt       pgtype.Timestamptz `json:"acknowledged_at"`
 	AcknowledgedByUserID pgtype.UUID        `json:"acknowledged_by_user_id"`
 	ClosedAt             pgtype.Timestamptz `json:"closed_at"`
+	ResolvedAt           pgtype.Timestamptz `json:"resolved_at"`
+	ResolvedIntegration  pgtype.Text        `json:"resolved_integration"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
 }
@@ -98,6 +100,45 @@ type IntegrationKey struct {
 	RevokedAt      pgtype.Timestamptz `json:"revoked_at"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type MaintenanceWindow struct {
+	ID                    uuid.UUID          `json:"id"`
+	OrganizationID        uuid.UUID          `json:"organization_id"`
+	ServiceID             uuid.UUID          `json:"service_id"`
+	Description           string             `json:"description"`
+	StartsAt              pgtype.Timestamptz `json:"starts_at"`
+	EndsAt                pgtype.Timestamptz `json:"ends_at"`
+	SuppressNotifications bool               `json:"suppress_notifications"`
+	SuppressIngestion     bool               `json:"suppress_ingestion"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+}
+
+type MobileAuthCode struct {
+	ID             uuid.UUID          `json:"id"`
+	UserID         uuid.UUID          `json:"user_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	CodeHash       string             `json:"code_hash"`
+	ExpiresAt      pgtype.Timestamptz `json:"expires_at"`
+	UsedAt         pgtype.Timestamptz `json:"used_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type MobileDevice struct {
+	ID               uuid.UUID          `json:"id"`
+	OrganizationID   uuid.UUID          `json:"organization_id"`
+	UserID           uuid.UUID          `json:"user_id"`
+	RefreshTokenID   pgtype.UUID        `json:"refresh_token_id"`
+	ExpoPushToken    string             `json:"expo_push_token"`
+	PushTokenPrefix  string             `json:"push_token_prefix"`
+	Platform         pgtype.Text        `json:"platform"`
+	DeviceLabel      pgtype.Text        `json:"device_label"`
+	RevokedAt        pgtype.Timestamptz `json:"revoked_at"`
+	LastRegisteredAt pgtype.Timestamptz `json:"last_registered_at"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
 }
 
 type NotificationAttempt struct {
@@ -191,12 +232,14 @@ type Schedule struct {
 }
 
 type Service struct {
-	ID             uuid.UUID          `json:"id"`
-	OrganizationID uuid.UUID          `json:"organization_id"`
-	TeamID         uuid.UUID          `json:"team_id"`
-	Name           string             `json:"name"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	ID                 uuid.UUID          `json:"id"`
+	OrganizationID     uuid.UUID          `json:"organization_id"`
+	TeamID             uuid.UUID          `json:"team_id"`
+	Name               string             `json:"name"`
+	DedupWindowSeconds int32              `json:"dedup_window_seconds"`
+	DeletedAt          pgtype.Timestamptz `json:"deleted_at"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Session struct {

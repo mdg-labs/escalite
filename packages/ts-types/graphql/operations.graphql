@@ -274,6 +274,27 @@ fragment ServiceFields on Service {
   name
   createdAt
   updatedAt
+  activeMaintenanceWindows {
+    id
+    description
+    startsAt
+    endsAt
+    suppressNotifications
+    suppressIngestion
+  }
+}
+
+fragment MaintenanceWindowFields on MaintenanceWindow {
+  id
+  organizationId
+  serviceId
+  description
+  startsAt
+  endsAt
+  suppressNotifications
+  suppressIngestion
+  createdAt
+  updatedAt
 }
 
 fragment TeamFields on Team {
@@ -316,6 +337,28 @@ mutation UpdateService($input: UpdateServiceInput!) {
 
 mutation DeleteService($id: ID!) {
   deleteService(id: $id)
+}
+
+query MaintenanceWindows($serviceId: ID!) {
+  maintenanceWindows(serviceId: $serviceId) {
+    ...MaintenanceWindowFields
+  }
+}
+
+mutation CreateMaintenanceWindow($input: CreateMaintenanceWindowInput!) {
+  createMaintenanceWindow(input: $input) {
+    ...MaintenanceWindowFields
+  }
+}
+
+mutation UpdateMaintenanceWindow($input: UpdateMaintenanceWindowInput!) {
+  updateMaintenanceWindow(input: $input) {
+    ...MaintenanceWindowFields
+  }
+}
+
+mutation DeleteMaintenanceWindow($id: ID!) {
+  deleteMaintenanceWindow(id: $id)
 }
 
 query MobileDevices {

@@ -133,6 +133,14 @@ func scheduleStepNotifications(
 		return fmt.Errorf("step %d has no targets", stepOrder)
 	}
 
+	suppressed, err := notificationsSuppressed(ctx, q, alert.ServiceID, alert.OrganizationID, time.Now().UTC())
+	if err != nil {
+		return fmt.Errorf("check maintenance suppression: %w", err)
+	}
+	if suppressed {
+		return nil
+	}
+
 	state := State{
 		CurrentStep:        stepOrder,
 		RepeatCount:        priorState.RepeatCount,

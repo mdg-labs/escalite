@@ -29,6 +29,21 @@ type Service {
   name: String!
   createdAt: DateTime!
   updatedAt: DateTime!
+  """Maintenance windows currently suppressing this service."""
+  activeMaintenanceWindows: [MaintenanceWindow!]!
+}
+
+type MaintenanceWindow {
+  id: ID!
+  organizationId: ID!
+  serviceId: ID!
+  description: String!
+  startsAt: DateTime!
+  endsAt: DateTime!
+  suppressNotifications: Boolean!
+  suppressIngestion: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 type HeartbeatMonitor {

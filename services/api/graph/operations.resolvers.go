@@ -387,6 +387,151 @@ func (r *mutationResolver) DeleteHeartbeatMonitor(ctx context.Context, id string
 	return true, nil
 }
 
+// CreateMaintenanceWindow is the resolver for the createMaintenanceWindow field.
+func (r *mutationResolver) CreateMaintenanceWindow(ctx context.Context, input model.CreateMaintenanceWindowInput) (*model.MaintenanceWindow, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	description := strings.TrimSpace(input.Description)
+	startsAt := input.StartsAt.UTC()
+	endsAt := input.EndsAt.UTC()
+	if err := validateMaintenanceWindowInput(description, startsAt, endsAt); err != nil {
+		return nil, err
+	}
+
+	serviceID, err := parseUUIDField(input.ServiceID, "serviceId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             serviceID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "service not found")
+		}
+		r.logger.Error("load service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	suppressNotifications := true
+	if input.SuppressNotifications != nil {
+		suppressNotifications = *input.SuppressNotifications
+	}
+	suppressIngestion := false
+	if input.SuppressIngestion != nil {
+		suppressIngestion = *input.SuppressIngestion
+	}
+
+	windowID := uuid.Must(uuid.NewV7())
+	window, err := queries.CreateMaintenanceWindow(ctx, db.CreateMaintenanceWindowParams{
+		ID:                    windowID,
+		OrganizationID:        sc.User.OrganizationID,
+		ServiceID:             serviceID,
+		Description:           description,
+		StartsAt:              pgtype.Timestamptz{Time: startsAt, Valid: true},
+		EndsAt:                pgtype.Timestamptz{Time: endsAt, Valid: true},
+		SuppressNotifications: suppressNotifications,
+		SuppressIngestion:     suppressIngestion,
+	})
+	if err != nil {
+		r.logger.Error("create maintenance window failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.MaintenanceWindowCreated(ctx, queries, sc.User.OrganizationID, sc.User.ID, windowID)
+	return maintenanceWindowFromDB(window), nil
+}
+
+// UpdateMaintenanceWindow is the resolver for the updateMaintenanceWindow field.
+func (r *mutationResolver) UpdateMaintenanceWindow(ctx context.Context, input model.UpdateMaintenanceWindowInput) (*model.MaintenanceWindow, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	description := strings.TrimSpace(input.Description)
+	startsAt := input.StartsAt.UTC()
+	endsAt := input.EndsAt.UTC()
+	if err := validateMaintenanceWindowInput(description, startsAt, endsAt); err != nil {
+		return nil, err
+	}
+
+	windowID, err := parseUUIDField(input.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetMaintenanceWindowByID(ctx, db.GetMaintenanceWindowByIDParams{
+		ID:             windowID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "maintenance window not found")
+		}
+		r.logger.Error("load maintenance window failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	window, err := queries.UpdateMaintenanceWindow(ctx, db.UpdateMaintenanceWindowParams{
+		ID:                    windowID,
+		OrganizationID:        sc.User.OrganizationID,
+		Description:           description,
+		StartsAt:              pgtype.Timestamptz{Time: startsAt, Valid: true},
+		EndsAt:                pgtype.Timestamptz{Time: endsAt, Valid: true},
+		SuppressNotifications: input.SuppressNotifications,
+		SuppressIngestion:     input.SuppressIngestion,
+	})
+	if err != nil {
+		r.logger.Error("update maintenance window failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.MaintenanceWindowUpdated(ctx, queries, sc.User.OrganizationID, sc.User.ID, windowID)
+	return maintenanceWindowFromDB(window), nil
+}
+
+// DeleteMaintenanceWindow is the resolver for the deleteMaintenanceWindow field.
+func (r *mutationResolver) DeleteMaintenanceWindow(ctx context.Context, id string) (bool, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	windowID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return false, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetMaintenanceWindowByID(ctx, db.GetMaintenanceWindowByIDParams{
+		ID:             windowID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, gqlerr.New(handlers.CodeNotFound, "maintenance window not found")
+		}
+		r.logger.Error("load maintenance window failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if err := queries.DeleteMaintenanceWindow(ctx, db.DeleteMaintenanceWindowParams{
+		ID:             windowID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		r.logger.Error("delete maintenance window failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.MaintenanceWindowDeleted(ctx, queries, sc.User.OrganizationID, sc.User.ID, windowID)
+	return true, nil
+}
+
 // CreateEscalationPolicy is the resolver for the createEscalationPolicy field.
 func (r *mutationResolver) CreateEscalationPolicy(ctx context.Context, input model.CreateEscalationPolicyInput) (*model.EscalationPolicy, error) {
 	sc, err := requireAdminSession(ctx)
@@ -1949,6 +2094,70 @@ func (r *queryResolver) HeartbeatMonitors(ctx context.Context, serviceID string)
 	}
 
 	return result, nil
+}
+
+// MaintenanceWindows is the resolver for the maintenanceWindows field.
+func (r *queryResolver) MaintenanceWindows(ctx context.Context, serviceID string) ([]*model.MaintenanceWindow, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	svcID, err := parseUUIDField(serviceID, "serviceId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             svcID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "service not found")
+		}
+		r.logger.Error("load service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	windows, err := queries.ListMaintenanceWindowsByServiceID(ctx, db.ListMaintenanceWindowsByServiceIDParams{
+		ServiceID:      svcID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list maintenance windows failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return maintenanceWindowsFromDB(windows), nil
+}
+
+// MaintenanceWindow is the resolver for the maintenanceWindow field.
+func (r *queryResolver) MaintenanceWindow(ctx context.Context, id string) (*model.MaintenanceWindow, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	windowID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	window, err := queries.GetMaintenanceWindowByID(ctx, db.GetMaintenanceWindowByIDParams{
+		ID:             windowID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		r.logger.Error("load maintenance window failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return maintenanceWindowFromDB(window), nil
 }
 
 // Schedule is the resolver for the schedule field.

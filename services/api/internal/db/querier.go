@@ -24,6 +24,7 @@ type Querier interface {
 	CreateEscalationStepTarget(ctx context.Context, arg CreateEscalationStepTargetParams) (EscalationStepTarget, error)
 	CreateHeartbeatMonitor(ctx context.Context, arg CreateHeartbeatMonitorParams) (HeartbeatMonitor, error)
 	CreateIntegrationKey(ctx context.Context, arg CreateIntegrationKeyParams) (IntegrationKey, error)
+	CreateMaintenanceWindow(ctx context.Context, arg CreateMaintenanceWindowParams) (MaintenanceWindow, error)
 	CreateMobileAuthCode(ctx context.Context, arg CreateMobileAuthCodeParams) (MobileAuthCode, error)
 	CreateNotificationAttempt(ctx context.Context, arg CreateNotificationAttemptParams) (NotificationAttempt, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
@@ -41,6 +42,7 @@ type Querier interface {
 	DeleteEscalationPolicy(ctx context.Context, arg DeleteEscalationPolicyParams) error
 	DeleteEscalationStepsByPolicyID(ctx context.Context, arg DeleteEscalationStepsByPolicyIDParams) error
 	DeleteHeartbeatMonitor(ctx context.Context, arg DeleteHeartbeatMonitorParams) error
+	DeleteMaintenanceWindow(ctx context.Context, arg DeleteMaintenanceWindowParams) error
 	DeleteRotation(ctx context.Context, arg DeleteRotationParams) error
 	DeleteSchedule(ctx context.Context, arg DeleteScheduleParams) error
 	DeleteSession(ctx context.Context, arg DeleteSessionParams) error
@@ -53,6 +55,7 @@ type Querier interface {
 	GetFirstOrganization(ctx context.Context) (Organization, error)
 	GetHeartbeatMonitorByID(ctx context.Context, arg GetHeartbeatMonitorByIDParams) (HeartbeatMonitor, error)
 	GetIntegrationKeyByID(ctx context.Context, arg GetIntegrationKeyByIDParams) (IntegrationKey, error)
+	GetMaintenanceWindowByID(ctx context.Context, arg GetMaintenanceWindowByIDParams) (MaintenanceWindow, error)
 	GetMobileAuthCodeByHash(ctx context.Context, codeHash string) (MobileAuthCode, error)
 	GetOpenAlertByServiceDedupKey(ctx context.Context, arg GetOpenAlertByServiceDedupKeyParams) (Alert, error)
 	GetOpenAlertByServiceDedupKeyForResolve(ctx context.Context, arg GetOpenAlertByServiceDedupKeyForResolveParams) (Alert, error)
@@ -74,6 +77,7 @@ type Querier interface {
 	HasTeamMembership(ctx context.Context, arg HasTeamMembershipParams) (bool, error)
 	IncrementOpenAlertEventCount(ctx context.Context, arg IncrementOpenAlertEventCountParams) (Alert, error)
 	InvalidateUnusedPasswordResetTokensForUser(ctx context.Context, userID uuid.UUID) error
+	ListActiveMaintenanceWindowsByServiceID(ctx context.Context, arg ListActiveMaintenanceWindowsByServiceIDParams) ([]MaintenanceWindow, error)
 	ListActiveOverridesByScheduleAt(ctx context.Context, arg ListActiveOverridesByScheduleAtParams) ([]Override, error)
 	ListActiveOverridesByScheduleID(ctx context.Context, arg ListActiveOverridesByScheduleIDParams) ([]Override, error)
 	ListAlertsForOrgAdmin(ctx context.Context, arg ListAlertsForOrgAdminParams) ([]Alert, error)
@@ -84,6 +88,7 @@ type Querier interface {
 	ListEscalationStepsByPolicyID(ctx context.Context, arg ListEscalationStepsByPolicyIDParams) ([]EscalationStep, error)
 	ListHeartbeatMonitorsByServiceID(ctx context.Context, arg ListHeartbeatMonitorsByServiceIDParams) ([]HeartbeatMonitor, error)
 	ListIntegrationKeysByServiceID(ctx context.Context, arg ListIntegrationKeysByServiceIDParams) ([]IntegrationKey, error)
+	ListMaintenanceWindowsByServiceID(ctx context.Context, arg ListMaintenanceWindowsByServiceIDParams) ([]MaintenanceWindow, error)
 	ListMobileDevicesForUser(ctx context.Context, arg ListMobileDevicesForUserParams) ([]MobileDevice, error)
 	ListNotificationAttemptsByAlertID(ctx context.Context, arg ListNotificationAttemptsByAlertIDParams) ([]NotificationAttempt, error)
 	ListRotationsByScheduleID(ctx context.Context, arg ListRotationsByScheduleIDParams) ([]Rotation, error)
@@ -102,12 +107,15 @@ type Querier interface {
 	RevokeMobileDevice(ctx context.Context, arg RevokeMobileDeviceParams) (MobileDevice, error)
 	RevokeRefreshToken(ctx context.Context, arg RevokeRefreshTokenParams) error
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
+	ServiceHasActiveIngestionSuppression(ctx context.Context, arg ServiceHasActiveIngestionSuppressionParams) (bool, error)
+	ServiceHasActiveNotificationSuppression(ctx context.Context, arg ServiceHasActiveNotificationSuppressionParams) (bool, error)
 	SessionsSchemaReady(ctx context.Context) (bool, error)
 	SoftDeleteOverride(ctx context.Context, arg SoftDeleteOverrideParams) (Override, error)
 	SoftDeleteService(ctx context.Context, arg SoftDeleteServiceParams) (Service, error)
 	UpdateAlertEscalationState(ctx context.Context, arg UpdateAlertEscalationStateParams) (Alert, error)
 	UpdateEscalationPolicy(ctx context.Context, arg UpdateEscalationPolicyParams) (EscalationPolicy, error)
 	UpdateHeartbeatMonitor(ctx context.Context, arg UpdateHeartbeatMonitorParams) (HeartbeatMonitor, error)
+	UpdateMaintenanceWindow(ctx context.Context, arg UpdateMaintenanceWindowParams) (MaintenanceWindow, error)
 	UpdateRotation(ctx context.Context, arg UpdateRotationParams) (Rotation, error)
 	UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Schedule, error)
 	UpdateService(ctx context.Context, arg UpdateServiceParams) (Service, error)

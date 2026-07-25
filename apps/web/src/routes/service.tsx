@@ -31,6 +31,7 @@ import {
 import { AlertTriangleIcon, SettingsIcon } from 'lucide-react'
 
 import { IntegrationKeysPanel } from '../components/integration-keys-panel'
+import { MaintenanceWindowsPanel } from '../components/maintenance-windows-panel'
 import { AppShell } from '../components/app-shell'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
@@ -80,6 +81,7 @@ export function ServicePage(): ReactElement {
 
   const policies = policiesData?.escalationPolicies ?? []
   const schedules = schedulesData?.schedules ?? []
+  const activeMaintenance = service?.activeMaintenanceWindows ?? []
 
   async function handleSave(): Promise<void> {
     if (!serviceId) {
@@ -165,11 +167,29 @@ export function ServicePage(): ReactElement {
 
         {service ? (
           <div className="mt-6">
+            {activeMaintenance.length > 0 ? (
+              <Alert className="mb-6" variant="warning">
+                <AlertTriangleIcon />
+                <AlertTitle>{t('services.maintenance.banner.title')}</AlertTitle>
+                <AlertDescription>
+                  {activeMaintenance.map((window) => (
+                    <p key={window.id}>
+                      {t('services.maintenance.banner.description', {
+                        label: window.description,
+                        endsAt: new Date(window.endsAt).toLocaleString(),
+                      })}
+                    </p>
+                  ))}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
             <Tabs defaultValue="general">
               <TabsList variant="underline">
                 <TabsTab value="general">{t('services.tabs.general')}</TabsTab>
                 <TabsTab value="escalation">{t('services.tabs.escalation')}</TabsTab>
                 <TabsTab value="integrations">{t('services.tabs.integrations')}</TabsTab>
+                <TabsTab value="maintenance">{t('services.tabs.maintenance')}</TabsTab>
                 <TabsTab value="schedules">{t('services.tabs.schedules')}</TabsTab>
               </TabsList>
 
@@ -283,6 +303,10 @@ export function ServicePage(): ReactElement {
 
               <TabsPanel className="mt-6" value="integrations">
                 <IntegrationKeysPanel embedded serviceId={service.id} />
+              </TabsPanel>
+
+              <TabsPanel className="mt-6" value="maintenance">
+                <MaintenanceWindowsPanel serviceId={service.id} />
               </TabsPanel>
 
               <TabsPanel className="mt-6" value="schedules">

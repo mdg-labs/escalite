@@ -26,6 +26,9 @@ const (
 	ActionHeartbeatMonitorCreated = "heartbeat_monitor.created"
 	ActionHeartbeatMonitorUpdated = "heartbeat_monitor.updated"
 	ActionHeartbeatMonitorDeleted = "heartbeat_monitor.deleted"
+	ActionMaintenanceWindowCreated = "maintenance_window.created"
+	ActionMaintenanceWindowUpdated = "maintenance_window.updated"
+	ActionMaintenanceWindowDeleted = "maintenance_window.deleted"
 	ActionOverrideCreated         = "override.created"
 	ActionOverrideDeleted         = "override.deleted"
 	ActionAlertEscalationSnoozed   = "alert.escalation_snoozed"
@@ -38,6 +41,7 @@ const (
 	targetTypeIntegrationKey   = "integration_key"
 	targetTypeEscalationPolicy = "escalation_policy"
 	targetTypeHeartbeatMonitor = "heartbeat_monitor"
+	targetTypeMaintenanceWindow = "maintenance_window"
 	targetTypeOverride         = "override"
 	targetTypeAlert            = "alert"
 	targetTypeService          = "service"
@@ -245,6 +249,45 @@ func (r *Recorder) HeartbeatMonitorDeleted(ctx context.Context, q db.Querier, or
 		Action:         ActionHeartbeatMonitorDeleted,
 		TargetType:     pgtype.Text{String: targetTypeHeartbeatMonitor, Valid: true},
 		TargetID:       pgtype.UUID{Bytes: monitorID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// MaintenanceWindowCreated records maintenance window creation.
+func (r *Recorder) MaintenanceWindowCreated(ctx context.Context, q db.Querier, orgID, actorID, windowID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionMaintenanceWindowCreated,
+		TargetType:     pgtype.Text{String: targetTypeMaintenanceWindow, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: windowID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// MaintenanceWindowUpdated records maintenance window updates.
+func (r *Recorder) MaintenanceWindowUpdated(ctx context.Context, q db.Querier, orgID, actorID, windowID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionMaintenanceWindowUpdated,
+		TargetType:     pgtype.Text{String: targetTypeMaintenanceWindow, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: windowID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// MaintenanceWindowDeleted records maintenance window deletion.
+func (r *Recorder) MaintenanceWindowDeleted(ctx context.Context, q db.Querier, orgID, actorID, windowID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionMaintenanceWindowDeleted,
+		TargetType:     pgtype.Text{String: targetTypeMaintenanceWindow, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: windowID, Valid: true},
 		Metadata:       []byte("{}"),
 	})
 }
