@@ -650,6 +650,106 @@ table "escalation_policies" {
   }
 }
 
+table "heartbeat_monitors" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "service_id" {
+    null = false
+    type = uuid
+  }
+  column "name" {
+    null = false
+    type = text
+  }
+  column "interval_seconds" {
+    null = false
+    type = integer
+  }
+  column "grace_seconds" {
+    null = false
+    type = integer
+  }
+  column "token_hash" {
+    null = false
+    type = text
+  }
+  column "prefix" {
+    null = false
+    type = text
+  }
+  column "status" {
+    null    = false
+    type    = text
+    default = "healthy"
+  }
+  column "last_ping_at" {
+    null = true
+    type = timestamptz
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "heartbeat_monitors_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "heartbeat_monitors_service_id_organization_id_fkey" {
+    columns     = [column.service_id, column.organization_id]
+    ref_columns = [table.services.column.id, table.services.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "heartbeat_monitors_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  unique "heartbeat_monitors_token_hash_key" {
+    columns = [column.token_hash]
+  }
+
+  index "heartbeat_monitors_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  index "heartbeat_monitors_service_id_idx" {
+    columns = [column.service_id]
+  }
+
+  check "heartbeat_monitors_interval_seconds_check" {
+    expr = "(interval_seconds > 0)"
+  }
+
+  check "heartbeat_monitors_grace_seconds_check" {
+    expr = "(grace_seconds > 0)"
+  }
+
+  check "heartbeat_monitors_status_check" {
+    expr = "(status = ANY (ARRAY['healthy'::text, 'overdue'::text, 'triggered'::text]))"
+  }
+}
+
 table "escalation_steps" {
   schema = schema.public
 

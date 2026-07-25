@@ -186,6 +186,40 @@ func rotationFromDB(rotation db.Rotation) (*model.Rotation, error) {
 	}, nil
 }
 
+func heartbeatMonitorStatusFromDB(status string) model.HeartbeatMonitorStatus {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "overdue":
+		return model.HeartbeatMonitorStatusOverdue
+	case "triggered":
+		return model.HeartbeatMonitorStatusTriggered
+	default:
+		return model.HeartbeatMonitorStatusHealthy
+	}
+}
+
+func heartbeatMonitorFromDB(monitor db.HeartbeatMonitor, token *string) *model.HeartbeatMonitor {
+	var lastPingAt *time.Time
+	if monitor.LastPingAt.Valid {
+		t := monitor.LastPingAt.Time.UTC()
+		lastPingAt = &t
+	}
+
+	return &model.HeartbeatMonitor{
+		ID:              monitor.ID.String(),
+		OrganizationID:  monitor.OrganizationID.String(),
+		ServiceID:       monitor.ServiceID.String(),
+		Name:            monitor.Name,
+		IntervalSeconds: int(monitor.IntervalSeconds),
+		GraceSeconds:    int(monitor.GraceSeconds),
+		Status:          heartbeatMonitorStatusFromDB(monitor.Status),
+		TokenPrefix:     monitor.Prefix,
+		Token:           token,
+		LastPingAt:      lastPingAt,
+		CreatedAt:       timeFromDB(monitor.CreatedAt),
+		UpdatedAt:       timeFromDB(monitor.UpdatedAt),
+	}
+}
+
 func overrideFromDB(override db.Override) *model.Override {
 	var replacedUserID *string
 	if override.ReplacedUserID.Valid {

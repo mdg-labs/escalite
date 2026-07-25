@@ -22,6 +22,7 @@ type Querier interface {
 	CreateEscalationPolicy(ctx context.Context, arg CreateEscalationPolicyParams) (EscalationPolicy, error)
 	CreateEscalationStep(ctx context.Context, arg CreateEscalationStepParams) (EscalationStep, error)
 	CreateEscalationStepTarget(ctx context.Context, arg CreateEscalationStepTargetParams) (EscalationStepTarget, error)
+	CreateHeartbeatMonitor(ctx context.Context, arg CreateHeartbeatMonitorParams) (HeartbeatMonitor, error)
 	CreateNotificationAttempt(ctx context.Context, arg CreateNotificationAttemptParams) (NotificationAttempt, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
 	CreateOverride(ctx context.Context, arg CreateOverrideParams) (Override, error)
@@ -36,6 +37,7 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteEscalationPolicy(ctx context.Context, arg DeleteEscalationPolicyParams) error
 	DeleteEscalationStepsByPolicyID(ctx context.Context, arg DeleteEscalationStepsByPolicyIDParams) error
+	DeleteHeartbeatMonitor(ctx context.Context, arg DeleteHeartbeatMonitorParams) error
 	DeleteRotation(ctx context.Context, arg DeleteRotationParams) error
 	DeleteSchedule(ctx context.Context, arg DeleteScheduleParams) error
 	DeleteSession(ctx context.Context, arg DeleteSessionParams) error
@@ -44,6 +46,7 @@ type Querier interface {
 	GetEscalationPolicyByID(ctx context.Context, arg GetEscalationPolicyByIDParams) (EscalationPolicy, error)
 	GetEscalationStepByPolicyAndOrder(ctx context.Context, arg GetEscalationStepByPolicyAndOrderParams) (EscalationStep, error)
 	GetFirstOrganization(ctx context.Context) (Organization, error)
+	GetHeartbeatMonitorByID(ctx context.Context, arg GetHeartbeatMonitorByIDParams) (HeartbeatMonitor, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
 	GetOverrideByID(ctx context.Context, arg GetOverrideByIDParams) (Override, error)
 	GetPasswordResetTokenByHash(ctx context.Context, tokenHash string) (PasswordResetToken, error)
@@ -63,6 +66,7 @@ type Querier interface {
 	ListEscalationPoliciesByServiceID(ctx context.Context, arg ListEscalationPoliciesByServiceIDParams) ([]EscalationPolicy, error)
 	ListEscalationStepTargetsByStepID(ctx context.Context, arg ListEscalationStepTargetsByStepIDParams) ([]EscalationStepTarget, error)
 	ListEscalationStepsByPolicyID(ctx context.Context, arg ListEscalationStepsByPolicyIDParams) ([]EscalationStep, error)
+	ListHeartbeatMonitorsByServiceID(ctx context.Context, arg ListHeartbeatMonitorsByServiceIDParams) ([]HeartbeatMonitor, error)
 	ListNotificationAttemptsByAlertID(ctx context.Context, arg ListNotificationAttemptsByAlertIDParams) ([]NotificationAttempt, error)
 	ListRotationsByScheduleID(ctx context.Context, arg ListRotationsByScheduleIDParams) ([]Rotation, error)
 	ListSchedulesByTeamID(ctx context.Context, arg ListSchedulesByTeamIDParams) ([]Schedule, error)
@@ -75,6 +79,7 @@ type Querier interface {
 	SoftDeleteOverride(ctx context.Context, arg SoftDeleteOverrideParams) (Override, error)
 	UpdateAlertEscalationState(ctx context.Context, arg UpdateAlertEscalationStateParams) (Alert, error)
 	UpdateEscalationPolicy(ctx context.Context, arg UpdateEscalationPolicyParams) (EscalationPolicy, error)
+	UpdateHeartbeatMonitor(ctx context.Context, arg UpdateHeartbeatMonitorParams) (HeartbeatMonitor, error)
 	UpdateRotation(ctx context.Context, arg UpdateRotationParams) (Rotation, error)
 	UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Schedule, error)
 	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error

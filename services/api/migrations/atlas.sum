@@ -1,4 +1,4 @@
-h1:fdtVr6G1HlYpcFyV+p46RBCu5DE16FABVPv63looyNU=
+h1:BRHeSGiHBO1+Z4FJH4FlKQ+CIqsy03PIAkvpTc6iv+M=
 20260724152227_bootstrap.sql h1:WYv9xloOU0omzO45qOWDBOgKJ7DzGguHqhrhDqa2E4U=
 20260724153443_core_entities.sql h1:NkaRkIxu11UNWC8twLznio2v14tL8RNRwk5qjaO3How=
 20260724153823_service_integration.sql h1:S9SoDj8QwVLhYA3KlpxK/z/Qy/hbvMqDd8MswSvRJXY=
@@ -8,3 +8,4 @@ h1:fdtVr6G1HlYpcFyV+p46RBCu5DE16FABVPv63looyNU=
 20260724164719_password_reset_tokens.sql h1:keXvzWEvVnWottlCFVOVRxQk4zTTOBKe21Qr58DuyBA=
 20260724201235_escalation_step_targets.sql h1:E1YRvxelvYRR2SxGjXir+6MZNdEd3u+0kuAdDc9T2Gc=
 20260724213212_alert_acknowledged_by.sql h1:7sCcJ7cUJsj0THfdkrjmZNVoduurZpR8QE6PWvoQZEc=
+20260725060422_heartbeat_monitors.sql h1:0cdQkRhyietXsLyKBsD4IOs65BLbLy7BvxpdF3kDQXs=

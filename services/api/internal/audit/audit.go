@@ -23,6 +23,9 @@ const (
 	ActionEscalationPolicyCreated = "escalation_policy.created"
 	ActionEscalationPolicyUpdated = "escalation_policy.updated"
 	ActionEscalationPolicyDeleted = "escalation_policy.deleted"
+	ActionHeartbeatMonitorCreated = "heartbeat_monitor.created"
+	ActionHeartbeatMonitorUpdated = "heartbeat_monitor.updated"
+	ActionHeartbeatMonitorDeleted = "heartbeat_monitor.deleted"
 	ActionOverrideCreated         = "override.created"
 	ActionOverrideDeleted         = "override.deleted"
 	ActionAlertEscalationSnoozed   = "alert.escalation_snoozed"
@@ -31,6 +34,7 @@ const (
 	targetTypeUser             = "user"
 	targetTypeIntegrationKey   = "integration_key"
 	targetTypeEscalationPolicy = "escalation_policy"
+	targetTypeHeartbeatMonitor = "heartbeat_monitor"
 	targetTypeOverride         = "override"
 	targetTypeAlert            = "alert"
 )
@@ -198,6 +202,45 @@ func (r *Recorder) EscalationPolicyDeleted(ctx context.Context, q db.Querier, or
 		Action:         ActionEscalationPolicyDeleted,
 		TargetType:     pgtype.Text{String: targetTypeEscalationPolicy, Valid: true},
 		TargetID:       pgtype.UUID{Bytes: policyID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// HeartbeatMonitorCreated records heartbeat monitor creation.
+func (r *Recorder) HeartbeatMonitorCreated(ctx context.Context, q db.Querier, orgID, actorID, monitorID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionHeartbeatMonitorCreated,
+		TargetType:     pgtype.Text{String: targetTypeHeartbeatMonitor, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: monitorID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// HeartbeatMonitorUpdated records heartbeat monitor updates.
+func (r *Recorder) HeartbeatMonitorUpdated(ctx context.Context, q db.Querier, orgID, actorID, monitorID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionHeartbeatMonitorUpdated,
+		TargetType:     pgtype.Text{String: targetTypeHeartbeatMonitor, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: monitorID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// HeartbeatMonitorDeleted records heartbeat monitor deletion.
+func (r *Recorder) HeartbeatMonitorDeleted(ctx context.Context, q db.Querier, orgID, actorID, monitorID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionHeartbeatMonitorDeleted,
+		TargetType:     pgtype.Text{String: targetTypeHeartbeatMonitor, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: monitorID, Valid: true},
 		Metadata:       []byte("{}"),
 	})
 }

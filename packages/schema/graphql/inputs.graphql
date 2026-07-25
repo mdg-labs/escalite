@@ -16,6 +16,20 @@ input EscalationStepInput {
   maxRepeats: Int
 }
 
+input CreateHeartbeatMonitorInput {
+  serviceId: ID!
+  name: String!
+  intervalSeconds: Int!
+  graceSeconds: Int!
+}
+
+input UpdateHeartbeatMonitorInput {
+  id: ID!
+  name: String!
+  intervalSeconds: Int!
+  graceSeconds: Int!
+}
+
 input CreateEscalationPolicyInput {
   serviceId: ID!
   name: String!

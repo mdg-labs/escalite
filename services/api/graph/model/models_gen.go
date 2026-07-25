@@ -33,6 +33,13 @@ type CreateEscalationPolicyInput struct {
 	Steps     []*EscalationStepInput `json:"steps"`
 }
 
+type CreateHeartbeatMonitorInput struct {
+	ServiceID       string `json:"serviceId"`
+	Name            string `json:"name"`
+	IntervalSeconds int    `json:"intervalSeconds"`
+	GraceSeconds    int    `json:"graceSeconds"`
+}
+
 type CreateOverrideInput struct {
 	ScheduleID string    `json:"scheduleId"`
 	RotationID string    `json:"rotationId"`
@@ -86,6 +93,25 @@ type EscalationStepInput struct {
 
 type Health struct {
 	Status string `json:"status"`
+}
+
+type HeartbeatMonitor struct {
+	ID             string `json:"id"`
+	OrganizationID string `json:"organizationId"`
+	ServiceID      string `json:"serviceId"`
+	Name           string `json:"name"`
+	// Expected ping interval in seconds.
+	IntervalSeconds int `json:"intervalSeconds"`
+	// Grace period after a missed ping, in seconds.
+	GraceSeconds int                    `json:"graceSeconds"`
+	Status       HeartbeatMonitorStatus `json:"status"`
+	// Display prefix for the ping token (doc 07).
+	TokenPrefix string `json:"tokenPrefix"`
+	// Plaintext ping token; only returned from createHeartbeatMonitor.
+	Token      *string    `json:"token,omitempty"`
+	LastPingAt *time.Time `json:"lastPingAt,omitempty"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	UpdatedAt  time.Time  `json:"updatedAt"`
 }
 
 type LoginInput struct {
@@ -196,6 +222,13 @@ type UpdateEscalationPolicyInput struct {
 	ID    string                 `json:"id"`
 	Name  string                 `json:"name"`
 	Steps []*EscalationStepInput `json:"steps"`
+}
+
+type UpdateHeartbeatMonitorInput struct {
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	IntervalSeconds int    `json:"intervalSeconds"`
+	GraceSeconds    int    `json:"graceSeconds"`
 }
 
 type UpdateRotationInput struct {
@@ -330,6 +363,64 @@ func (e *AlertStatus) UnmarshalJSON(b []byte) error {
 }
 
 func (e AlertStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+// Heartbeat monitor status (doc 02).
+type HeartbeatMonitorStatus string
+
+const (
+	HeartbeatMonitorStatusHealthy   HeartbeatMonitorStatus = "HEALTHY"
+	HeartbeatMonitorStatusOverdue   HeartbeatMonitorStatus = "OVERDUE"
+	HeartbeatMonitorStatusTriggered HeartbeatMonitorStatus = "TRIGGERED"
+)
+
+var AllHeartbeatMonitorStatus = []HeartbeatMonitorStatus{
+	HeartbeatMonitorStatusHealthy,
+	HeartbeatMonitorStatusOverdue,
+	HeartbeatMonitorStatusTriggered,
+}
+
+func (e HeartbeatMonitorStatus) IsValid() bool {
+	switch e {
+	case HeartbeatMonitorStatusHealthy, HeartbeatMonitorStatusOverdue, HeartbeatMonitorStatusTriggered:
+		return true
+	}
+	return false
+}
+
+func (e HeartbeatMonitorStatus) String() string {
+	return string(e)
+}
+
+func (e *HeartbeatMonitorStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = HeartbeatMonitorStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid HeartbeatMonitorStatus", str)
+	}
+	return nil
+}
+
+func (e HeartbeatMonitorStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *HeartbeatMonitorStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e HeartbeatMonitorStatus) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

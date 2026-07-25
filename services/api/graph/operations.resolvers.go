@@ -218,6 +218,163 @@ func (r *mutationResolver) Setup(ctx context.Context, input model.SetupInput) (*
 	}, nil
 }
 
+// CreateHeartbeatMonitor is the resolver for the createHeartbeatMonitor field.
+func (r *mutationResolver) CreateHeartbeatMonitor(ctx context.Context, input model.CreateHeartbeatMonitorInput) (*model.HeartbeatMonitor, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+	if err := validatePositiveDurationSeconds(input.IntervalSeconds, "intervalSeconds"); err != nil {
+		return nil, err
+	}
+	if err := validatePositiveDurationSeconds(input.GraceSeconds, "graceSeconds"); err != nil {
+		return nil, err
+	}
+
+	serviceID, err := parseUUIDField(input.ServiceID, "serviceId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             serviceID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "service not found")
+		}
+		r.logger.Error("load service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	plaintext, tokenHash, prefix, err := auth.NewHeartbeatToken()
+	if err != nil {
+		r.logger.Error("generate heartbeat token failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	monitorID := uuid.Must(uuid.NewV7())
+	monitor, err := queries.CreateHeartbeatMonitor(ctx, db.CreateHeartbeatMonitorParams{
+		ID:              monitorID,
+		OrganizationID:  sc.User.OrganizationID,
+		ServiceID:       serviceID,
+		Name:            name,
+		IntervalSeconds: int32(input.IntervalSeconds),
+		GraceSeconds:    int32(input.GraceSeconds),
+		TokenHash:       tokenHash,
+		Prefix:          prefix,
+		Status:          "healthy",
+	})
+	if err != nil {
+		if isHeartbeatDurationCheckViolation(err) {
+			return nil, gqlerr.New(handlers.CodeValidation, "intervalSeconds and graceSeconds must be positive")
+		}
+		r.logger.Error("create heartbeat monitor failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.HeartbeatMonitorCreated(ctx, queries, sc.User.OrganizationID, sc.User.ID, monitorID)
+
+	return heartbeatMonitorFromDB(monitor, &plaintext), nil
+}
+
+// UpdateHeartbeatMonitor is the resolver for the updateHeartbeatMonitor field.
+func (r *mutationResolver) UpdateHeartbeatMonitor(ctx context.Context, input model.UpdateHeartbeatMonitorInput) (*model.HeartbeatMonitor, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+	if err := validatePositiveDurationSeconds(input.IntervalSeconds, "intervalSeconds"); err != nil {
+		return nil, err
+	}
+	if err := validatePositiveDurationSeconds(input.GraceSeconds, "graceSeconds"); err != nil {
+		return nil, err
+	}
+
+	monitorID, err := parseUUIDField(input.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetHeartbeatMonitorByID(ctx, db.GetHeartbeatMonitorByIDParams{
+		ID:             monitorID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "heartbeat monitor not found")
+		}
+		r.logger.Error("load heartbeat monitor failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	monitor, err := queries.UpdateHeartbeatMonitor(ctx, db.UpdateHeartbeatMonitorParams{
+		ID:              monitorID,
+		OrganizationID:  sc.User.OrganizationID,
+		Name:            name,
+		IntervalSeconds: int32(input.IntervalSeconds),
+		GraceSeconds:    int32(input.GraceSeconds),
+	})
+	if err != nil {
+		if isHeartbeatDurationCheckViolation(err) {
+			return nil, gqlerr.New(handlers.CodeValidation, "intervalSeconds and graceSeconds must be positive")
+		}
+		r.logger.Error("update heartbeat monitor failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.HeartbeatMonitorUpdated(ctx, queries, sc.User.OrganizationID, sc.User.ID, monitorID)
+
+	return heartbeatMonitorFromDB(monitor, nil), nil
+}
+
+// DeleteHeartbeatMonitor is the resolver for the deleteHeartbeatMonitor field.
+func (r *mutationResolver) DeleteHeartbeatMonitor(ctx context.Context, id string) (bool, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	monitorID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return false, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetHeartbeatMonitorByID(ctx, db.GetHeartbeatMonitorByIDParams{
+		ID:             monitorID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, gqlerr.New(handlers.CodeNotFound, "heartbeat monitor not found")
+		}
+		r.logger.Error("load heartbeat monitor failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if err := queries.DeleteHeartbeatMonitor(ctx, db.DeleteHeartbeatMonitorParams{
+		ID:             monitorID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		r.logger.Error("delete heartbeat monitor failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.HeartbeatMonitorDeleted(ctx, queries, sc.User.OrganizationID, sc.User.ID, monitorID)
+	return true, nil
+}
+
 // CreateEscalationPolicy is the resolver for the createEscalationPolicy field.
 func (r *mutationResolver) CreateEscalationPolicy(ctx context.Context, input model.CreateEscalationPolicyInput) (*model.EscalationPolicy, error) {
 	sc, err := requireAdminSession(ctx)
@@ -1238,6 +1395,75 @@ func (r *queryResolver) EscalationPolicies(ctx context.Context, serviceID string
 			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 		}
 		result = append(result, escalationPolicyFromDB(policy, steps))
+	}
+
+	return result, nil
+}
+
+// HeartbeatMonitor is the resolver for the heartbeatMonitor field.
+func (r *queryResolver) HeartbeatMonitor(ctx context.Context, id string) (*model.HeartbeatMonitor, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	monitorID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	monitor, err := queries.GetHeartbeatMonitorByID(ctx, db.GetHeartbeatMonitorByIDParams{
+		ID:             monitorID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		r.logger.Error("load heartbeat monitor failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return heartbeatMonitorFromDB(monitor, nil), nil
+}
+
+// HeartbeatMonitors is the resolver for the heartbeatMonitors field.
+func (r *queryResolver) HeartbeatMonitors(ctx context.Context, serviceID string) ([]*model.HeartbeatMonitor, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	svcID, err := parseUUIDField(serviceID, "serviceId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             svcID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "service not found")
+		}
+		r.logger.Error("load service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	monitors, err := queries.ListHeartbeatMonitorsByServiceID(ctx, db.ListHeartbeatMonitorsByServiceIDParams{
+		ServiceID:      svcID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list heartbeat monitors failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	result := make([]*model.HeartbeatMonitor, 0, len(monitors))
+	for _, monitor := range monitors {
+		result = append(result, heartbeatMonitorFromDB(monitor, nil))
 	}
 
 	return result, nil

@@ -72,6 +72,21 @@ type EscalationStepTarget struct {
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
+type HeartbeatMonitor struct {
+	ID              uuid.UUID          `json:"id"`
+	OrganizationID  uuid.UUID          `json:"organization_id"`
+	ServiceID       uuid.UUID          `json:"service_id"`
+	Name            string             `json:"name"`
+	IntervalSeconds int32              `json:"interval_seconds"`
+	GraceSeconds    int32              `json:"grace_seconds"`
+	TokenHash       string             `json:"token_hash"`
+	Prefix          string             `json:"prefix"`
+	Status          string             `json:"status"`
+	LastPingAt      pgtype.Timestamptz `json:"last_ping_at"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
 type IntegrationKey struct {
 	ID             uuid.UUID          `json:"id"`
 	ServiceID      uuid.UUID          `json:"service_id"`

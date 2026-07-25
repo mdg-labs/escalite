@@ -80,6 +80,21 @@ type ComplexityRoot struct {
 		Status func(childComplexity int) int
 	}
 
+	HeartbeatMonitor struct {
+		CreatedAt       func(childComplexity int) int
+		GraceSeconds    func(childComplexity int) int
+		ID              func(childComplexity int) int
+		IntervalSeconds func(childComplexity int) int
+		LastPingAt      func(childComplexity int) int
+		Name            func(childComplexity int) int
+		OrganizationID  func(childComplexity int) int
+		ServiceID       func(childComplexity int) int
+		Status          func(childComplexity int) int
+		Token           func(childComplexity int) int
+		TokenPrefix     func(childComplexity int) int
+		UpdatedAt       func(childComplexity int) int
+	}
+
 	LoginPayload struct {
 		User func(childComplexity int) int
 	}
@@ -88,10 +103,12 @@ type ComplexityRoot struct {
 		AcknowledgeAlert       func(childComplexity int, id string) int
 		CloseAlert             func(childComplexity int, id string) int
 		CreateEscalationPolicy func(childComplexity int, input model.CreateEscalationPolicyInput) int
+		CreateHeartbeatMonitor func(childComplexity int, input model.CreateHeartbeatMonitorInput) int
 		CreateOverride         func(childComplexity int, input model.CreateOverrideInput) int
 		CreateRotation         func(childComplexity int, input model.CreateRotationInput) int
 		CreateSchedule         func(childComplexity int, input model.CreateScheduleInput) int
 		DeleteEscalationPolicy func(childComplexity int, id string) int
+		DeleteHeartbeatMonitor func(childComplexity int, id string) int
 		DeleteOverride         func(childComplexity int, id string) int
 		DeleteRotation         func(childComplexity int, id string) int
 		DeleteSchedule         func(childComplexity int, id string) int
@@ -100,6 +117,7 @@ type ComplexityRoot struct {
 		Setup                  func(childComplexity int, input model.SetupInput) int
 		SnoozeAlert            func(childComplexity int, id string, durationMinutes int) int
 		UpdateEscalationPolicy func(childComplexity int, input model.UpdateEscalationPolicyInput) int
+		UpdateHeartbeatMonitor func(childComplexity int, input model.UpdateHeartbeatMonitorInput) int
 		UpdateRotation         func(childComplexity int, input model.UpdateRotationInput) int
 		UpdateSchedule         func(childComplexity int, input model.UpdateScheduleInput) int
 	}
@@ -142,6 +160,8 @@ type ComplexityRoot struct {
 		EscalationPolicies func(childComplexity int, serviceID string) int
 		EscalationPolicy   func(childComplexity int, id string) int
 		Health             func(childComplexity int) int
+		HeartbeatMonitor   func(childComplexity int, id string) int
+		HeartbeatMonitors  func(childComplexity int, serviceID string) int
 		Me                 func(childComplexity int) int
 		OnCallNow          func(childComplexity int, scheduleID string, at *time.Time) int
 		Overrides          func(childComplexity int, scheduleID string) int
@@ -211,6 +231,9 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (*model.LoginPayload, error)
 	Setup(ctx context.Context, input model.SetupInput) (*model.SetupPayload, error)
+	CreateHeartbeatMonitor(ctx context.Context, input model.CreateHeartbeatMonitorInput) (*model.HeartbeatMonitor, error)
+	UpdateHeartbeatMonitor(ctx context.Context, input model.UpdateHeartbeatMonitorInput) (*model.HeartbeatMonitor, error)
+	DeleteHeartbeatMonitor(ctx context.Context, id string) (bool, error)
 	CreateEscalationPolicy(ctx context.Context, input model.CreateEscalationPolicyInput) (*model.EscalationPolicy, error)
 	UpdateEscalationPolicy(ctx context.Context, input model.UpdateEscalationPolicyInput) (*model.EscalationPolicy, error)
 	DeleteEscalationPolicy(ctx context.Context, id string) (bool, error)
@@ -232,6 +255,8 @@ type QueryResolver interface {
 	Health(ctx context.Context) (*model.Health, error)
 	EscalationPolicy(ctx context.Context, id string) (*model.EscalationPolicy, error)
 	EscalationPolicies(ctx context.Context, serviceID string) ([]*model.EscalationPolicy, error)
+	HeartbeatMonitor(ctx context.Context, id string) (*model.HeartbeatMonitor, error)
+	HeartbeatMonitors(ctx context.Context, serviceID string) ([]*model.HeartbeatMonitor, error)
 	Schedule(ctx context.Context, id string) (*model.Schedule, error)
 	Schedules(ctx context.Context, teamID string) ([]*model.Schedule, error)
 	OnCallNow(ctx context.Context, scheduleID string, at *time.Time) (*model.OnCallNow, error)
@@ -446,6 +471,79 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Health.Status(childComplexity), true
 
+	case "HeartbeatMonitor.createdAt":
+		if e.ComplexityRoot.HeartbeatMonitor.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HeartbeatMonitor.CreatedAt(childComplexity), true
+	case "HeartbeatMonitor.graceSeconds":
+		if e.ComplexityRoot.HeartbeatMonitor.GraceSeconds == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HeartbeatMonitor.GraceSeconds(childComplexity), true
+	case "HeartbeatMonitor.id":
+		if e.ComplexityRoot.HeartbeatMonitor.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HeartbeatMonitor.ID(childComplexity), true
+	case "HeartbeatMonitor.intervalSeconds":
+		if e.ComplexityRoot.HeartbeatMonitor.IntervalSeconds == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HeartbeatMonitor.IntervalSeconds(childComplexity), true
+	case "HeartbeatMonitor.lastPingAt":
+		if e.ComplexityRoot.HeartbeatMonitor.LastPingAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HeartbeatMonitor.LastPingAt(childComplexity), true
+	case "HeartbeatMonitor.name":
+		if e.ComplexityRoot.HeartbeatMonitor.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HeartbeatMonitor.Name(childComplexity), true
+	case "HeartbeatMonitor.organizationId":
+		if e.ComplexityRoot.HeartbeatMonitor.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HeartbeatMonitor.OrganizationID(childComplexity), true
+	case "HeartbeatMonitor.serviceId":
+		if e.ComplexityRoot.HeartbeatMonitor.ServiceID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HeartbeatMonitor.ServiceID(childComplexity), true
+	case "HeartbeatMonitor.status":
+		if e.ComplexityRoot.HeartbeatMonitor.Status == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HeartbeatMonitor.Status(childComplexity), true
+	case "HeartbeatMonitor.token":
+		if e.ComplexityRoot.HeartbeatMonitor.Token == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HeartbeatMonitor.Token(childComplexity), true
+	case "HeartbeatMonitor.tokenPrefix":
+		if e.ComplexityRoot.HeartbeatMonitor.TokenPrefix == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HeartbeatMonitor.TokenPrefix(childComplexity), true
+	case "HeartbeatMonitor.updatedAt":
+		if e.ComplexityRoot.HeartbeatMonitor.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HeartbeatMonitor.UpdatedAt(childComplexity), true
+
 	case "LoginPayload.user":
 		if e.ComplexityRoot.LoginPayload.User == nil {
 			break
@@ -486,6 +584,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateEscalationPolicy(childComplexity, args["input"].(model.CreateEscalationPolicyInput)), true
+	case "Mutation.createHeartbeatMonitor":
+		if e.ComplexityRoot.Mutation.CreateHeartbeatMonitor == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createHeartbeatMonitor_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateHeartbeatMonitor(childComplexity, args["input"].(model.CreateHeartbeatMonitorInput)), true
 	case "Mutation.createOverride":
 		if e.ComplexityRoot.Mutation.CreateOverride == nil {
 			break
@@ -530,6 +639,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteEscalationPolicy(childComplexity, args["id"].(string)), true
+	case "Mutation.deleteHeartbeatMonitor":
+		if e.ComplexityRoot.Mutation.DeleteHeartbeatMonitor == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteHeartbeatMonitor_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteHeartbeatMonitor(childComplexity, args["id"].(string)), true
 	case "Mutation.deleteOverride":
 		if e.ComplexityRoot.Mutation.DeleteOverride == nil {
 			break
@@ -618,6 +738,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateEscalationPolicy(childComplexity, args["input"].(model.UpdateEscalationPolicyInput)), true
+	case "Mutation.updateHeartbeatMonitor":
+		if e.ComplexityRoot.Mutation.UpdateHeartbeatMonitor == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateHeartbeatMonitor_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateHeartbeatMonitor(childComplexity, args["input"].(model.UpdateHeartbeatMonitorInput)), true
 	case "Mutation.updateRotation":
 		if e.ComplexityRoot.Mutation.UpdateRotation == nil {
 			break
@@ -805,6 +936,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Health(childComplexity), true
+	case "Query.heartbeatMonitor":
+		if e.ComplexityRoot.Query.HeartbeatMonitor == nil {
+			break
+		}
+
+		args, err := ec.field_Query_heartbeatMonitor_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.HeartbeatMonitor(childComplexity, args["id"].(string)), true
+	case "Query.heartbeatMonitors":
+		if e.ComplexityRoot.Query.HeartbeatMonitors == nil {
+			break
+		}
+
+		args, err := ec.field_Query_heartbeatMonitors_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.HeartbeatMonitors(childComplexity, args["serviceId"].(string)), true
 
 	case "Query.me":
 		if e.ComplexityRoot.Query.Me == nil {
@@ -1088,6 +1241,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	ec := newExecutionContext(opCtx, e, make(chan graphql.DeferredResult))
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputCreateEscalationPolicyInput,
+		ec.unmarshalInputCreateHeartbeatMonitorInput,
 		ec.unmarshalInputCreateOverrideInput,
 		ec.unmarshalInputCreateRotationInput,
 		ec.unmarshalInputCreateScheduleInput,
@@ -1095,6 +1249,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputSetupInput,
 		ec.unmarshalInputUpdateEscalationPolicyInput,
+		ec.unmarshalInputUpdateHeartbeatMonitorInput,
 		ec.unmarshalInputUpdateRotationInput,
 		ec.unmarshalInputUpdateScheduleInput,
 	)
@@ -1196,6 +1351,15 @@ enum AlertPriority {
   LOW
   HIGH
 }
+
+"""
+Heartbeat monitor status (doc 02).
+"""
+enum HeartbeatMonitorStatus {
+  HEALTHY
+  OVERDUE
+  TRIGGERED
+}
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/inputs.graphql", Input: `input LoginInput {
   email: String!
@@ -1213,6 +1377,20 @@ input EscalationStepInput {
   delayMinutes: Int!
   repeatLastStep: Boolean = false
   maxRepeats: Int
+}
+
+input CreateHeartbeatMonitorInput {
+  serviceId: ID!
+  name: String!
+  intervalSeconds: Int!
+  graceSeconds: Int!
+}
+
+input UpdateHeartbeatMonitorInput {
+  id: ID!
+  name: String!
+  intervalSeconds: Int!
+  graceSeconds: Int!
 }
 
 input CreateEscalationPolicyInput {
@@ -1285,6 +1463,16 @@ input CreateOverrideInput {
   escalationPolicies(serviceId: ID!): [EscalationPolicy!]!
 
   """
+  Fetch a single heartbeat monitor by ID (org admin only).
+  """
+  heartbeatMonitor(id: ID!): HeartbeatMonitor
+
+  """
+  List heartbeat monitors for a service (org admin only).
+  """
+  heartbeatMonitors(serviceId: ID!): [HeartbeatMonitor!]!
+
+  """
   Fetch a single schedule by ID (org admin only).
   """
   schedule(id: ID!): Schedule
@@ -1317,6 +1505,21 @@ type Mutation {
   Bootstrap the first organization and admin user when no users exist.
   """
   setup(input: SetupInput!): SetupPayload!
+
+  """
+  Create a heartbeat monitor for a service (org admin only).
+  """
+  createHeartbeatMonitor(input: CreateHeartbeatMonitorInput!): HeartbeatMonitor!
+
+  """
+  Update a heartbeat monitor (org admin only).
+  """
+  updateHeartbeatMonitor(input: UpdateHeartbeatMonitorInput!): HeartbeatMonitor!
+
+  """
+  Delete a heartbeat monitor (org admin only).
+  """
+  deleteHeartbeatMonitor(id: ID!): Boolean!
 
   """
   Create an escalation policy with ordered steps (org admin only).
@@ -1433,6 +1636,27 @@ type Service {
   organizationId: ID!
   teamId: ID!
   name: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type HeartbeatMonitor {
+  id: ID!
+  organizationId: ID!
+  serviceId: ID!
+  name: String!
+  """Expected ping interval in seconds."""
+  intervalSeconds: Int!
+  """Grace period after a missed ping, in seconds."""
+  graceSeconds: Int!
+  status: HeartbeatMonitorStatus!
+  """Display prefix for the ping token (doc 07)."""
+  tokenPrefix: String!
+  """
+  Plaintext ping token; only returned from createHeartbeatMonitor.
+  """
+  token: String
+  lastPingAt: DateTime
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -1634,6 +1858,36 @@ func (ec *executionContext) childFields_Health(ctx context.Context, field graphq
 		return ec.fieldContext_Health_status(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Health", field.Name)
+}
+
+func (ec *executionContext) childFields_HeartbeatMonitor(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_HeartbeatMonitor_id(ctx, field)
+	case "organizationId":
+		return ec.fieldContext_HeartbeatMonitor_organizationId(ctx, field)
+	case "serviceId":
+		return ec.fieldContext_HeartbeatMonitor_serviceId(ctx, field)
+	case "name":
+		return ec.fieldContext_HeartbeatMonitor_name(ctx, field)
+	case "intervalSeconds":
+		return ec.fieldContext_HeartbeatMonitor_intervalSeconds(ctx, field)
+	case "graceSeconds":
+		return ec.fieldContext_HeartbeatMonitor_graceSeconds(ctx, field)
+	case "status":
+		return ec.fieldContext_HeartbeatMonitor_status(ctx, field)
+	case "tokenPrefix":
+		return ec.fieldContext_HeartbeatMonitor_tokenPrefix(ctx, field)
+	case "token":
+		return ec.fieldContext_HeartbeatMonitor_token(ctx, field)
+	case "lastPingAt":
+		return ec.fieldContext_HeartbeatMonitor_lastPingAt(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_HeartbeatMonitor_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_HeartbeatMonitor_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type HeartbeatMonitor", field.Name)
 }
 
 func (ec *executionContext) childFields_LoginPayload(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1944,6 +2198,20 @@ func (ec *executionContext) field_Mutation_createEscalationPolicy_args(ctx conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createHeartbeatMonitor_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateHeartbeatMonitorInput, error) {
+			return ec.unmarshalNCreateHeartbeatMonitorInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateHeartbeatMonitorInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createOverride_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1987,6 +2255,20 @@ func (ec *executionContext) field_Mutation_createSchedule_args(ctx context.Conte
 }
 
 func (ec *executionContext) field_Mutation_deleteEscalationPolicy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteHeartbeatMonitor_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
@@ -2120,6 +2402,20 @@ func (ec *executionContext) field_Mutation_updateEscalationPolicy_args(ctx conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updateHeartbeatMonitor_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateHeartbeatMonitorInput, error) {
+			return ec.unmarshalNUpdateHeartbeatMonitorInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateHeartbeatMonitorInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updateRotation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2187,6 +2483,34 @@ func (ec *executionContext) field_Query_escalationPolicy_args(ctx context.Contex
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_heartbeatMonitor_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_heartbeatMonitors_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "serviceId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["serviceId"] = arg0
 	return args, nil
 }
 
@@ -3045,6 +3369,282 @@ func (ec *executionContext) fieldContext_Health_status(_ context.Context, field 
 	return graphql.NewScalarFieldContext("Health", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _HeartbeatMonitor_id(ctx context.Context, field graphql.CollectedField, obj *model.HeartbeatMonitor) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HeartbeatMonitor_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HeartbeatMonitor_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _HeartbeatMonitor_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.HeartbeatMonitor) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HeartbeatMonitor_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HeartbeatMonitor_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _HeartbeatMonitor_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.HeartbeatMonitor) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HeartbeatMonitor_serviceId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HeartbeatMonitor_serviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _HeartbeatMonitor_name(ctx context.Context, field graphql.CollectedField, obj *model.HeartbeatMonitor) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HeartbeatMonitor_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HeartbeatMonitor_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _HeartbeatMonitor_intervalSeconds(ctx context.Context, field graphql.CollectedField, obj *model.HeartbeatMonitor) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HeartbeatMonitor_intervalSeconds(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IntervalSeconds, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HeartbeatMonitor_intervalSeconds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _HeartbeatMonitor_graceSeconds(ctx context.Context, field graphql.CollectedField, obj *model.HeartbeatMonitor) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HeartbeatMonitor_graceSeconds(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.GraceSeconds, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HeartbeatMonitor_graceSeconds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _HeartbeatMonitor_status(ctx context.Context, field graphql.CollectedField, obj *model.HeartbeatMonitor) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HeartbeatMonitor_status(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.HeartbeatMonitorStatus) graphql.Marshaler {
+			return ec.marshalNHeartbeatMonitorStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitorStatus(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HeartbeatMonitor_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type HeartbeatMonitorStatus does not have child fields"))
+}
+
+func (ec *executionContext) _HeartbeatMonitor_tokenPrefix(ctx context.Context, field graphql.CollectedField, obj *model.HeartbeatMonitor) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HeartbeatMonitor_tokenPrefix(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TokenPrefix, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HeartbeatMonitor_tokenPrefix(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _HeartbeatMonitor_token(ctx context.Context, field graphql.CollectedField, obj *model.HeartbeatMonitor) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HeartbeatMonitor_token(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Token, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_HeartbeatMonitor_token(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _HeartbeatMonitor_lastPingAt(ctx context.Context, field graphql.CollectedField, obj *model.HeartbeatMonitor) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HeartbeatMonitor_lastPingAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.LastPingAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalODateTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_HeartbeatMonitor_lastPingAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _HeartbeatMonitor_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.HeartbeatMonitor) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HeartbeatMonitor_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HeartbeatMonitor_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _HeartbeatMonitor_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.HeartbeatMonitor) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HeartbeatMonitor_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HeartbeatMonitor_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
 func (ec *executionContext) _LoginPayload_user(ctx context.Context, field graphql.CollectedField, obj *model.LoginPayload) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3159,6 +3759,138 @@ func (ec *executionContext) fieldContext_Mutation_setup(ctx context.Context, fie
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_setup_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createHeartbeatMonitor(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createHeartbeatMonitor(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateHeartbeatMonitor(ctx, fc.Args["input"].(model.CreateHeartbeatMonitorInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.HeartbeatMonitor) graphql.Marshaler {
+			return ec.marshalNHeartbeatMonitor2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitor(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createHeartbeatMonitor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_HeartbeatMonitor(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createHeartbeatMonitor_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateHeartbeatMonitor(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateHeartbeatMonitor(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateHeartbeatMonitor(ctx, fc.Args["input"].(model.UpdateHeartbeatMonitorInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.HeartbeatMonitor) graphql.Marshaler {
+			return ec.marshalNHeartbeatMonitor2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitor(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateHeartbeatMonitor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_HeartbeatMonitor(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateHeartbeatMonitor_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteHeartbeatMonitor(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteHeartbeatMonitor(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteHeartbeatMonitor(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteHeartbeatMonitor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteHeartbeatMonitor_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4486,6 +5218,94 @@ func (ec *executionContext) fieldContext_Query_escalationPolicies(ctx context.Co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_escalationPolicies_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_heartbeatMonitor(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_heartbeatMonitor(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().HeartbeatMonitor(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.HeartbeatMonitor) graphql.Marshaler {
+			return ec.marshalOHeartbeatMonitor2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitor(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_heartbeatMonitor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_HeartbeatMonitor(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_heartbeatMonitor_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_heartbeatMonitors(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_heartbeatMonitors(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().HeartbeatMonitors(ctx, fc.Args["serviceId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.HeartbeatMonitor) graphql.Marshaler {
+			return ec.marshalNHeartbeatMonitor2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitorᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_heartbeatMonitors(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_HeartbeatMonitor(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_heartbeatMonitors_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6702,6 +7522,57 @@ func (ec *executionContext) unmarshalInputCreateEscalationPolicyInput(ctx contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateHeartbeatMonitorInput(ctx context.Context, obj any) (model.CreateHeartbeatMonitorInput, error) {
+	var it model.CreateHeartbeatMonitorInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"serviceId", "name", "intervalSeconds", "graceSeconds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "serviceId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "intervalSeconds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalSeconds"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IntervalSeconds = data
+		case "graceSeconds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("graceSeconds"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.GraceSeconds = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateOverrideInput(ctx context.Context, obj any) (model.CreateOverrideInput, error) {
 	var it model.CreateOverrideInput
 	if obj == nil {
@@ -7037,6 +7908,57 @@ func (ec *executionContext) unmarshalInputUpdateEscalationPolicyInput(ctx contex
 				return it, err
 			}
 			it.Steps = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateHeartbeatMonitorInput(ctx context.Context, obj any) (model.UpdateHeartbeatMonitorInput, error) {
+	var it model.UpdateHeartbeatMonitorInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "intervalSeconds", "graceSeconds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "intervalSeconds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalSeconds"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IntervalSeconds = data
+		case "graceSeconds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("graceSeconds"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.GraceSeconds = data
 		}
 	}
 	return it, nil
@@ -7439,6 +8361,99 @@ func (ec *executionContext) _Health(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var heartbeatMonitorImplementors = []string{"HeartbeatMonitor"}
+
+func (ec *executionContext) _HeartbeatMonitor(ctx context.Context, sel ast.SelectionSet, obj *model.HeartbeatMonitor) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, heartbeatMonitorImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HeartbeatMonitor")
+		case "id":
+			out.Values[i] = ec._HeartbeatMonitor_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "organizationId":
+			out.Values[i] = ec._HeartbeatMonitor_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceId":
+			out.Values[i] = ec._HeartbeatMonitor_serviceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._HeartbeatMonitor_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "intervalSeconds":
+			out.Values[i] = ec._HeartbeatMonitor_intervalSeconds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "graceSeconds":
+			out.Values[i] = ec._HeartbeatMonitor_graceSeconds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._HeartbeatMonitor_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tokenPrefix":
+			out.Values[i] = ec._HeartbeatMonitor_tokenPrefix(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "token":
+			out.Values[i] = ec._HeartbeatMonitor_token(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "lastPingAt":
+			out.Values[i] = ec._HeartbeatMonitor_lastPingAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._HeartbeatMonitor_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._HeartbeatMonitor_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var loginPayloadImplementors = []string{"LoginPayload"}
 
 func (ec *executionContext) _LoginPayload(ctx context.Context, sel ast.SelectionSet, obj *model.LoginPayload) graphql.Marshaler {
@@ -7507,6 +8522,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "setup":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_setup(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createHeartbeatMonitor":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createHeartbeatMonitor(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateHeartbeatMonitor":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateHeartbeatMonitor(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteHeartbeatMonitor":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteHeartbeatMonitor(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -7975,6 +9011,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_escalationPolicies(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "heartbeatMonitor":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_heartbeatMonitor(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "heartbeatMonitors":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_heartbeatMonitors(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -8935,6 +10015,11 @@ func (ec *executionContext) unmarshalNCreateEscalationPolicyInput2githubᚗcom�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateHeartbeatMonitorInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateHeartbeatMonitorInput(ctx context.Context, v any) (model.CreateHeartbeatMonitorInput, error) {
+	res, err := ec.unmarshalInputCreateHeartbeatMonitorInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateOverrideInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateOverrideInput(ctx context.Context, v any) (model.CreateOverrideInput, error) {
 	res, err := ec.unmarshalInputCreateOverrideInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -9053,6 +10138,46 @@ func (ec *executionContext) marshalNHealth2ᚖgithubᚗcomᚋmdgᚑlabsᚋescali
 		return graphql.Null
 	}
 	return ec._Health(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNHeartbeatMonitor2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitor(ctx context.Context, sel ast.SelectionSet, v model.HeartbeatMonitor) graphql.Marshaler {
+	return ec._HeartbeatMonitor(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNHeartbeatMonitor2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitorᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.HeartbeatMonitor) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNHeartbeatMonitor2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitor(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNHeartbeatMonitor2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitor(ctx context.Context, sel ast.SelectionSet, v *model.HeartbeatMonitor) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._HeartbeatMonitor(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNHeartbeatMonitorStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitorStatus(ctx context.Context, v any) (model.HeartbeatMonitorStatus, error) {
+	var res model.HeartbeatMonitorStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNHeartbeatMonitorStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitorStatus(ctx context.Context, sel ast.SelectionSet, v model.HeartbeatMonitorStatus) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
@@ -9301,6 +10426,11 @@ func (ec *executionContext) unmarshalNUpdateEscalationPolicyInput2githubᚗcom�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNUpdateHeartbeatMonitorInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateHeartbeatMonitorInput(ctx context.Context, v any) (model.UpdateHeartbeatMonitorInput, error) {
+	res, err := ec.unmarshalInputUpdateHeartbeatMonitorInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNUpdateRotationInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateRotationInput(ctx context.Context, v any) (model.UpdateRotationInput, error) {
 	res, err := ec.unmarshalInputUpdateRotationInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -9524,6 +10654,13 @@ func (ec *executionContext) marshalOEscalationPolicy2ᚖgithubᚗcomᚋmdgᚑlab
 		return graphql.Null
 	}
 	return ec._EscalationPolicy(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOHeartbeatMonitor2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitor(ctx context.Context, sel ast.SelectionSet, v *model.HeartbeatMonitor) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._HeartbeatMonitor(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {

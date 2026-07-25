@@ -6,6 +6,23 @@ CREATE TABLE "organizations" (
   "updated_at" timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY ("id")
 );
+-- Create "users" table
+CREATE TABLE "users" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "email" text NOT NULL,
+  "password_hash" text NULL,
+  "role" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "users_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "users_organization_id_email_key" UNIQUE ("organization_id", "email"),
+  CONSTRAINT "users_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "users_role_check" CHECK (role = ANY (ARRAY['admin'::text, 'member'::text]))
+);
+-- Create index "users_organization_id_idx" to table: "users"
+CREATE INDEX "users_organization_id_idx" ON "users" ("organization_id");
 -- Create "teams" table
 CREATE TABLE "teams" (
   "id" uuid NOT NULL,
@@ -76,8 +93,8 @@ CREATE TABLE "alerts" (
   "updated_at" timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY ("id"),
   CONSTRAINT "alerts_id_organization_id_key" UNIQUE ("id", "organization_id"),
-  CONSTRAINT "alerts_integration_key_id_fkey" FOREIGN KEY ("integration_key_id") REFERENCES "integration_keys" ("id") ON UPDATE NO ACTION ON DELETE SET NULL,
   CONSTRAINT "alerts_acknowledged_by_user_id_organization_id_fkey" FOREIGN KEY ("acknowledged_by_user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE SET NULL,
+  CONSTRAINT "alerts_integration_key_id_fkey" FOREIGN KEY ("integration_key_id") REFERENCES "integration_keys" ("id") ON UPDATE NO ACTION ON DELETE SET NULL,
   CONSTRAINT "alerts_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
   CONSTRAINT "alerts_service_id_organization_id_fkey" FOREIGN KEY ("service_id", "organization_id") REFERENCES "services" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
   CONSTRAINT "alerts_priority_check" CHECK (priority = ANY (ARRAY['low'::text, 'high'::text])),
@@ -91,23 +108,6 @@ CREATE INDEX "alerts_service_id_dedup_key_idx" ON "alerts" ("service_id", "dedup
 CREATE INDEX "alerts_service_id_idx" ON "alerts" ("service_id");
 -- Create index "alerts_status_idx" to table: "alerts"
 CREATE INDEX "alerts_status_idx" ON "alerts" ("status");
--- Create "users" table
-CREATE TABLE "users" (
-  "id" uuid NOT NULL,
-  "organization_id" uuid NOT NULL,
-  "email" text NOT NULL,
-  "password_hash" text NULL,
-  "role" text NOT NULL,
-  "created_at" timestamptz NOT NULL DEFAULT now(),
-  "updated_at" timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY ("id"),
-  CONSTRAINT "users_id_organization_id_key" UNIQUE ("id", "organization_id"),
-  CONSTRAINT "users_organization_id_email_key" UNIQUE ("organization_id", "email"),
-  CONSTRAINT "users_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
-  CONSTRAINT "users_role_check" CHECK (role = ANY (ARRAY['admin'::text, 'member'::text]))
-);
--- Create index "users_organization_id_idx" to table: "users"
-CREATE INDEX "users_organization_id_idx" ON "users" ("organization_id");
 -- Create "audit_events" table
 CREATE TABLE "audit_events" (
   "id" uuid NOT NULL,
@@ -165,6 +165,25 @@ CREATE TABLE "escalation_steps" (
 );
 -- Create index "escalation_steps_escalation_policy_id_idx" to table: "escalation_steps"
 CREATE INDEX "escalation_steps_escalation_policy_id_idx" ON "escalation_steps" ("escalation_policy_id");
+-- Create "schedules" table
+CREATE TABLE "schedules" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "team_id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "timezone" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "schedules_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "schedules_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "schedules_team_id_organization_id_fkey" FOREIGN KEY ("team_id", "organization_id") REFERENCES "teams" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "schedules_timezone_check" CHECK (timezone(timezone, '2000-01-01 00:00:00+00'::timestamp with time zone) IS NOT NULL)
+);
+-- Create index "schedules_organization_id_idx" to table: "schedules"
+CREATE INDEX "schedules_organization_id_idx" ON "schedules" ("organization_id");
+-- Create index "schedules_team_id_idx" to table: "schedules"
+CREATE INDEX "schedules_team_id_idx" ON "schedules" ("team_id");
 -- Create "escalation_step_targets" table
 CREATE TABLE "escalation_step_targets" (
   "id" uuid NOT NULL,
@@ -188,6 +207,33 @@ CREATE TABLE "escalation_step_targets" (
 CREATE INDEX "escalation_step_targets_escalation_step_id_idx" ON "escalation_step_targets" ("escalation_step_id");
 -- Create index "escalation_step_targets_organization_id_idx" to table: "escalation_step_targets"
 CREATE INDEX "escalation_step_targets_organization_id_idx" ON "escalation_step_targets" ("organization_id");
+-- Create "heartbeat_monitors" table
+CREATE TABLE "heartbeat_monitors" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "service_id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "interval_seconds" integer NOT NULL,
+  "grace_seconds" integer NOT NULL,
+  "token_hash" text NOT NULL,
+  "prefix" text NOT NULL,
+  "status" text NOT NULL DEFAULT 'healthy',
+  "last_ping_at" timestamptz NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "heartbeat_monitors_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "heartbeat_monitors_token_hash_key" UNIQUE ("token_hash"),
+  CONSTRAINT "heartbeat_monitors_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "heartbeat_monitors_service_id_organization_id_fkey" FOREIGN KEY ("service_id", "organization_id") REFERENCES "services" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "heartbeat_monitors_grace_seconds_check" CHECK (grace_seconds > 0),
+  CONSTRAINT "heartbeat_monitors_interval_seconds_check" CHECK (interval_seconds > 0),
+  CONSTRAINT "heartbeat_monitors_status_check" CHECK (status = ANY (ARRAY['healthy'::text, 'overdue'::text, 'triggered'::text]))
+);
+-- Create index "heartbeat_monitors_organization_id_idx" to table: "heartbeat_monitors"
+CREATE INDEX "heartbeat_monitors_organization_id_idx" ON "heartbeat_monitors" ("organization_id");
+-- Create index "heartbeat_monitors_service_id_idx" to table: "heartbeat_monitors"
+CREATE INDEX "heartbeat_monitors_service_id_idx" ON "heartbeat_monitors" ("service_id");
 -- Create "notification_attempts" table
 CREATE TABLE "notification_attempts" (
   "id" uuid NOT NULL,
@@ -210,25 +256,6 @@ CREATE TABLE "notification_attempts" (
 CREATE INDEX "notification_attempts_alert_id_idx" ON "notification_attempts" ("alert_id");
 -- Create index "notification_attempts_organization_id_idx" to table: "notification_attempts"
 CREATE INDEX "notification_attempts_organization_id_idx" ON "notification_attempts" ("organization_id");
--- Create "schedules" table
-CREATE TABLE "schedules" (
-  "id" uuid NOT NULL,
-  "organization_id" uuid NOT NULL,
-  "team_id" uuid NOT NULL,
-  "name" text NOT NULL,
-  "timezone" text NOT NULL,
-  "created_at" timestamptz NOT NULL DEFAULT now(),
-  "updated_at" timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY ("id"),
-  CONSTRAINT "schedules_id_organization_id_key" UNIQUE ("id", "organization_id"),
-  CONSTRAINT "schedules_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
-  CONSTRAINT "schedules_team_id_organization_id_fkey" FOREIGN KEY ("team_id", "organization_id") REFERENCES "teams" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
-  CONSTRAINT "schedules_timezone_check" CHECK (timezone(timezone, '2000-01-01 00:00:00+00'::timestamp with time zone) IS NOT NULL)
-);
--- Create index "schedules_organization_id_idx" to table: "schedules"
-CREATE INDEX "schedules_organization_id_idx" ON "schedules" ("organization_id");
--- Create index "schedules_team_id_idx" to table: "schedules"
-CREATE INDEX "schedules_team_id_idx" ON "schedules" ("team_id");
 -- Create "rotations" table
 CREATE TABLE "rotations" (
   "id" uuid NOT NULL,

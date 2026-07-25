@@ -20,6 +20,16 @@ type Query {
   escalationPolicies(serviceId: ID!): [EscalationPolicy!]!
 
   """
+  Fetch a single heartbeat monitor by ID (org admin only).
+  """
+  heartbeatMonitor(id: ID!): HeartbeatMonitor
+
+  """
+  List heartbeat monitors for a service (org admin only).
+  """
+  heartbeatMonitors(serviceId: ID!): [HeartbeatMonitor!]!
+
+  """
   Fetch a single schedule by ID (org admin only).
   """
   schedule(id: ID!): Schedule
@@ -52,6 +62,21 @@ type Mutation {
   Bootstrap the first organization and admin user when no users exist.
   """
   setup(input: SetupInput!): SetupPayload!
+
+  """
+  Create a heartbeat monitor for a service (org admin only).
+  """
+  createHeartbeatMonitor(input: CreateHeartbeatMonitorInput!): HeartbeatMonitor!
+
+  """
+  Update a heartbeat monitor (org admin only).
+  """
+  updateHeartbeatMonitor(input: UpdateHeartbeatMonitorInput!): HeartbeatMonitor!
+
+  """
+  Delete a heartbeat monitor (org admin only).
+  """
+  deleteHeartbeatMonitor(id: ID!): Boolean!
 
   """
   Create an escalation policy with ordered steps (org admin only).

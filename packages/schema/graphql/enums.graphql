@@ -22,3 +22,12 @@ enum AlertPriority {
   LOW
   HIGH
 }
+
+"""
+Heartbeat monitor status (doc 02).
+"""
+enum HeartbeatMonitorStatus {
+  HEALTHY
+  OVERDUE
+  TRIGGERED
+}

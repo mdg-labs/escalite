@@ -31,6 +31,27 @@ type Service {
   updatedAt: DateTime!
 }
 
+type HeartbeatMonitor {
+  id: ID!
+  organizationId: ID!
+  serviceId: ID!
+  name: String!
+  """Expected ping interval in seconds."""
+  intervalSeconds: Int!
+  """Grace period after a missed ping, in seconds."""
+  graceSeconds: Int!
+  status: HeartbeatMonitorStatus!
+  """Display prefix for the ping token (doc 07)."""
+  tokenPrefix: String!
+  """
+  Plaintext ping token; only returned from createHeartbeatMonitor.
+  """
+  token: String
+  lastPingAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type EscalationPolicy {
   id: ID!
   organizationId: ID!
