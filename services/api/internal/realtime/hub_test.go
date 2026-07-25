@@ -77,3 +77,36 @@ func TestNextBackoff(t *testing.T) {
 	require.Equal(t, 10*time.Second, nextBackoff(8*time.Second, 10*time.Second))
 	require.Equal(t, 10*time.Second, nextBackoff(10*time.Second, 10*time.Second))
 }
+
+func TestHubPublishTimelineScopedByIncident(t *testing.T) {
+	hub := NewHub()
+	incidentA := uuid.Must(uuid.NewV7())
+	incidentB := uuid.Must(uuid.NewV7())
+
+	chA, cancelA := hub.SubscribeTimeline(incidentA)
+	defer cancelA()
+	chB, cancelB := hub.SubscribeTimeline(incidentB)
+	defer cancelB()
+
+	event := TimelineEvent{
+		TimelineEventID: uuid.Must(uuid.NewV7()),
+		IncidentID:      incidentA,
+		OrganizationID:  uuid.Must(uuid.NewV7()),
+		EventType:       "note",
+		Op:              "INSERT",
+	}
+	hub.PublishTimeline(event)
+
+	select {
+	case got := <-chA:
+		require.Equal(t, event, got)
+	case <-time.After(time.Second):
+		t.Fatal("expected timeline event on incidentA subscriber")
+	}
+
+	select {
+	case <-chB:
+		t.Fatal("incidentB subscriber should not receive incidentA event")
+	case <-time.After(50 * time.Millisecond):
+	}
+}

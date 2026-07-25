@@ -5,6 +5,7 @@ import { useMeQuery } from '@escalite/ts-types'
 import { AlertsPage } from './routes/alerts'
 import { DashboardPage } from './routes/dashboard'
 import { EscalationPolicyPage } from './routes/escalation-policy'
+import { IncidentsPage } from './routes/incidents'
 import { IntegrationsPage } from './routes/integrations'
 import { LoginPage } from './routes/login'
 import { LoginMobilePage } from './routes/login-mobile'
@@ -77,6 +78,14 @@ export function App(): ReactElement {
         element={
           <ProtectedRoute>
             <AlertsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/incidents/:incidentId?"
+        element={
+          <ProtectedRoute>
+            <IncidentsPage />
           </ProtectedRoute>
         }
       />

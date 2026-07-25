@@ -24,6 +24,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/escalation"
 	"github.com/mdg-labs/escalite/services/api/internal/gqlerr"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
+	"github.com/mdg-labs/escalite/services/api/internal/orgbootstrap"
 	"github.com/mdg-labs/escalite/services/engine/escalationapi"
 	"github.com/mdg-labs/escalite/services/engine/oncall"
 	"github.com/mdg-labs/escalite/services/integrations"
@@ -169,6 +170,11 @@ func (r *mutationResolver) Setup(ctx context.Context, input model.SetupInput) (*
 	})
 	if err != nil {
 		r.logger.Error("bootstrap organization failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if err := orgbootstrap.SeedDefaultIncidentRoleDefinitions(ctx, txQueries, orgID); err != nil {
+		r.logger.Error("seed default incident role definitions failed", "error", err)
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
 
@@ -2949,7 +2955,7 @@ func (r *queryResolver) Incidents(ctx context.Context, status *model.IncidentSta
 
 // IncidentRoleDefinitions is the resolver for the incidentRoleDefinitions field.
 func (r *queryResolver) IncidentRoleDefinitions(ctx context.Context) ([]*model.IncidentRoleDefinition, error) {
-	sc, err := requireAdminSession(ctx)
+	sc, err := requireAuthSession(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -2980,6 +2986,15 @@ func (r *subscriptionResolver) OnCallUpdated(ctx context.Context, orgID string) 
 		return nil, err
 	}
 	return r.streamOnCallUpdates(ctx, orgUUID)
+}
+
+// IncidentTimelineUpdated is the resolver for the incidentTimelineUpdated field.
+func (r *subscriptionResolver) IncidentTimelineUpdated(ctx context.Context, incidentID string) (<-chan *model.TimelineEvent, error) {
+	_, incidentUUID, orgUUID, err := requireIncidentSubscriptionAccess(ctx, r.Resolver, incidentID)
+	if err != nil {
+		return nil, err
+	}
+	return r.streamIncidentTimelineUpdates(ctx, incidentUUID, orgUUID)
 }
 
 // Mutation returns MutationResolver implementation.

@@ -16,6 +16,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/gqlerr"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
+	"github.com/mdg-labs/escalite/services/api/internal/realtime"
 )
 
 func (r *Resolver) loadIncidentWithTeamAccess(
@@ -80,6 +81,17 @@ func (r *mutationResolver) insertTimelineEvent(
 		r.logger.Error("create timeline event failed", "error", err)
 		return db.TimelineEvent{}, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
+
+	if r.realtime != nil {
+		r.realtime.PublishTimeline(realtime.TimelineEvent{
+			TimelineEventID: event.ID,
+			IncidentID:      incidentID,
+			OrganizationID:  orgID,
+			EventType:       eventType,
+			Op:              "INSERT",
+		})
+	}
+
 	return event, nil
 }
 

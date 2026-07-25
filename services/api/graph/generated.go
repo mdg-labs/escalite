@@ -353,8 +353,9 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		AlertUpdated  func(childComplexity int, orgID string) int
-		OnCallUpdated func(childComplexity int, orgID string) int
+		AlertUpdated            func(childComplexity int, orgID string) int
+		IncidentTimelineUpdated func(childComplexity int, incidentID string) int
+		OnCallUpdated           func(childComplexity int, orgID string) int
 	}
 
 	Team struct {
@@ -502,6 +503,7 @@ type ServiceResolver interface {
 type SubscriptionResolver interface {
 	AlertUpdated(ctx context.Context, orgID string) (<-chan *model.Alert, error)
 	OnCallUpdated(ctx context.Context, orgID string) (<-chan *model.OnCallUpdatedEvent, error)
+	IncidentTimelineUpdated(ctx context.Context, incidentID string) (<-chan *model.TimelineEvent, error)
 }
 type TimelineEventResolver interface {
 	Actor(ctx context.Context, obj *model.TimelineEvent) (*model.User, error)
@@ -2232,6 +2234,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Subscription.AlertUpdated(childComplexity, args["orgId"].(string)), true
+	case "Subscription.incidentTimelineUpdated":
+		if e.ComplexityRoot.Subscription.IncidentTimelineUpdated == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_incidentTimelineUpdated_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Subscription.IncidentTimelineUpdated(childComplexity, args["incidentId"].(string)), true
 	case "Subscription.onCallUpdated":
 		if e.ComplexityRoot.Subscription.OnCallUpdated == nil {
 			break
@@ -2823,6 +2836,11 @@ input PromoteAlertToIncidentInput {
   Emits when schedule-related data changes that may affect on-call assignments.
   """
   onCallUpdated(orgId: ID!): OnCallUpdatedEvent!
+
+  """
+  Emits when a timeline event is appended to an incident.
+  """
+  incidentTimelineUpdated(incidentId: ID!): TimelineEvent!
 }
 
 type Query {
@@ -5092,6 +5110,20 @@ func (ec *executionContext) field_Subscription_alertUpdated_args(ctx context.Con
 		return nil, err
 	}
 	args["orgId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_incidentTimelineUpdated_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "incidentId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["incidentId"] = arg0
 	return args, nil
 }
 
@@ -12071,6 +12103,50 @@ func (ec *executionContext) fieldContext_Subscription_onCallUpdated(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Subscription_incidentTimelineUpdated(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
+	return graphql.ResolveFieldStream(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Subscription_incidentTimelineUpdated(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Subscription().IncidentTimelineUpdated(ctx, fc.Args["incidentId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.TimelineEvent) graphql.Marshaler {
+			return ec.marshalNTimelineEvent2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTimelineEvent(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Subscription_incidentTimelineUpdated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_TimelineEvent(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Subscription_incidentTimelineUpdated_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Team_id(ctx context.Context, field graphql.CollectedField, obj *model.Team) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -18162,6 +18238,8 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 		return ec._Subscription_alertUpdated(ctx, fields[0])
 	case "onCallUpdated":
 		return ec._Subscription_onCallUpdated(ctx, fields[0])
+	case "incidentTimelineUpdated":
+		return ec._Subscription_incidentTimelineUpdated(ctx, fields[0])
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}

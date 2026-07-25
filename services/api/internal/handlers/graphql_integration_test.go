@@ -287,3 +287,33 @@ func TestGraphQLSetupMutation(t *testing.T) {
 	sessionCookie := findSessionCookie(t, rec)
 	require.Equal(t, auth.SessionCookieName, sessionCookie.Name)
 }
+
+func TestIncidentRoleDefinitionsSeededAfterSetup(t *testing.T) {
+	handler, _, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	cookie := bootstrapAdmin(t, handler)
+
+	rec := postGraphQL(t, handler, `{
+		incidentRoleDefinitions {
+			name
+			sortOrder
+		}
+	}`, cookie)
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	var resp struct {
+		Data struct {
+			IncidentRoleDefinitions []struct {
+				Name      string `json:"name"`
+				SortOrder int    `json:"sortOrder"`
+			} `json:"incidentRoleDefinitions"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	require.Len(t, resp.Data.IncidentRoleDefinitions, 2)
+	require.Equal(t, "IC", resp.Data.IncidentRoleDefinitions[0].Name)
+	require.Equal(t, 0, resp.Data.IncidentRoleDefinitions[0].SortOrder)
+	require.Equal(t, "Comms Lead", resp.Data.IncidentRoleDefinitions[1].Name)
+	require.Equal(t, 1, resp.Data.IncidentRoleDefinitions[1].SortOrder)
+}

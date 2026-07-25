@@ -21,6 +21,7 @@
     "./primitives/popover": "./primitives/popover.tsx",
     "./primitives/table": "./primitives/table.tsx",
     "./primitives/input": "./primitives/input.tsx",
+    "./primitives/textarea": "./primitives/textarea.tsx",
     "./primitives/toast": "./primitives/toast.tsx",
     "./primitives/frame": "./primitives/frame.tsx",
     "./primitives/collapsible": "./primitives/collapsible.tsx",

@@ -149,3 +149,106 @@ func onCallUpdatedEventFromRealtime(evt realtime.ScheduleEvent) *model.OnCallUpd
 		OrganizationID: evt.OrganizationID.String(),
 	}
 }
+
+func (r *Resolver) loadTimelineEventForSubscription(
+	ctx context.Context,
+	timelineEventID, incidentID, orgID uuid.UUID,
+) (*model.TimelineEvent, error) {
+	queries := db.New(r.pool)
+
+	event, err := queries.GetTimelineEventByID(ctx, db.GetTimelineEventByIDParams{
+		ID:             timelineEventID,
+		OrganizationID: orgID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "timeline event not found")
+		}
+		r.logger.Error("load subscription timeline event failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	if event.IncidentID != incidentID {
+		return nil, gqlerr.New(handlers.CodeNotFound, "timeline event not found")
+	}
+
+	result := timelineEventFromDB(event)
+	if event.ActorID.Valid {
+		user, err := queries.GetUserByID(ctx, db.GetUserByIDParams{
+			ID:             event.ActorID.Bytes,
+			OrganizationID: orgID,
+		})
+		if err != nil {
+			r.logger.Error("load subscription timeline actor failed", "error", err)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+		result.Actor = userFromDB(user)
+	}
+
+	return result, nil
+}
+
+func (r *Resolver) streamIncidentTimelineUpdates(
+	ctx context.Context,
+	incidentID uuid.UUID,
+	orgID uuid.UUID,
+) (<-chan *model.TimelineEvent, error) {
+	if r.realtime == nil {
+		ch := make(chan *model.TimelineEvent)
+		close(ch)
+		return ch, nil
+	}
+
+	events, cancel := r.realtime.SubscribeTimeline(incidentID)
+	out := make(chan *model.TimelineEvent)
+
+	go func() {
+		defer cancel()
+		defer close(out)
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case evt, ok := <-events:
+				if !ok {
+					return
+				}
+				timelineEvent, err := r.loadTimelineEventForSubscription(ctx, evt.TimelineEventID, incidentID, orgID)
+				if err != nil {
+					r.logger.Warn("subscription timeline update skipped", "error", err, "timeline_event_id", evt.TimelineEventID)
+					continue
+				}
+				select {
+				case out <- timelineEvent:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+
+	return out, nil
+}
+
+func requireIncidentSubscriptionAccess(
+	ctx context.Context,
+	r *Resolver,
+	incidentID string,
+) (auth.SessionContext, uuid.UUID, uuid.UUID, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return auth.SessionContext{}, uuid.Nil, uuid.Nil, err
+	}
+
+	incidentUUID, err := uuid.Parse(incidentID)
+	if err != nil {
+		return auth.SessionContext{}, uuid.Nil, uuid.Nil, gqlerr.New(handlers.CodeValidation, "invalid incident id")
+	}
+
+	queries := db.New(r.pool)
+	if _, err := r.loadIncidentWithTeamAccess(ctx, queries, sc, incidentUUID); err != nil {
+		return auth.SessionContext{}, uuid.Nil, uuid.Nil, err
+	}
+
+	return sc, incidentUUID, sc.User.OrganizationID, nil
+}

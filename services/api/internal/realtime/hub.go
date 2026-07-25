@@ -16,20 +16,27 @@ type scheduleSubscription struct {
 	ch             chan ScheduleEvent
 }
 
+type timelineSubscription struct {
+	incidentID uuid.UUID
+	ch         chan TimelineEvent
+}
+
 // Hub fans out database NOTIFY events to in-process subscribers.
 // GraphQL subscription resolvers (#97) subscribe per organization.
 type Hub struct {
-	mu        sync.RWMutex
-	nextID    int
-	alertSubs map[int]alertSubscription
-	schedSubs map[int]scheduleSubscription
+	mu           sync.RWMutex
+	nextID       int
+	alertSubs    map[int]alertSubscription
+	schedSubs    map[int]scheduleSubscription
+	timelineSubs map[int]timelineSubscription
 }
 
 // NewHub returns an empty realtime event hub.
 func NewHub() *Hub {
 	return &Hub{
-		alertSubs: make(map[int]alertSubscription),
-		schedSubs: make(map[int]scheduleSubscription),
+		alertSubs:    make(map[int]alertSubscription),
+		schedSubs:    make(map[int]scheduleSubscription),
+		timelineSubs: make(map[int]timelineSubscription),
 	}
 }
 
@@ -111,6 +118,49 @@ func (h *Hub) PublishSchedule(event ScheduleEvent) {
 
 	for _, sub := range h.schedSubs {
 		if sub.organizationID != event.OrganizationID {
+			continue
+		}
+		select {
+		case sub.ch <- event:
+		default:
+		}
+	}
+}
+
+// SubscribeTimeline registers for timeline events scoped to incidentID.
+func (h *Hub) SubscribeTimeline(incidentID uuid.UUID) (<-chan TimelineEvent, func()) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	id := h.nextID
+	h.nextID++
+	ch := make(chan TimelineEvent, 16)
+	h.timelineSubs[id] = timelineSubscription{
+		incidentID: incidentID,
+		ch:         ch,
+	}
+
+	cancel := func() {
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		sub, ok := h.timelineSubs[id]
+		if !ok {
+			return
+		}
+		delete(h.timelineSubs, id)
+		close(sub.ch)
+	}
+
+	return ch, cancel
+}
+
+// PublishTimeline delivers a timeline event to matching subscribers.
+func (h *Hub) PublishTimeline(event TimelineEvent) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	for _, sub := range h.timelineSubs {
+		if sub.incidentID != event.IncidentID {
 			continue
 		}
 		select {

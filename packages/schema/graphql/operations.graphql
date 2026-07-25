@@ -8,6 +8,11 @@ type Subscription {
   Emits when schedule-related data changes that may affect on-call assignments.
   """
   onCallUpdated(orgId: ID!): OnCallUpdatedEvent!
+
+  """
+  Emits when a timeline event is appended to an incident.
+  """
+  incidentTimelineUpdated(incidentId: ID!): TimelineEvent!
 }
 
 type Query {

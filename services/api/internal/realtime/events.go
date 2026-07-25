@@ -7,6 +7,15 @@ const (
 	ChannelSchedules = "escalite_schedules"
 )
 
+// TimelineEvent is emitted when a timeline_events row is inserted.
+type TimelineEvent struct {
+	TimelineEventID uuid.UUID
+	IncidentID      uuid.UUID
+	OrganizationID  uuid.UUID
+	EventType       string
+	Op              string
+}
+
 // AlertEvent is emitted when an alert row is inserted or its status changes.
 type AlertEvent struct {
 	AlertID        uuid.UUID

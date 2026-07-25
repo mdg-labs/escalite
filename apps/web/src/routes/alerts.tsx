@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import {
   AlertStatus,
   type AlertFieldsFragment,
@@ -394,7 +394,14 @@ export function AlertsPage(): ReactElement {
                   {selectedAlert.incidentId ? (
                     <div className="flex justify-between gap-4">
                       <dt className="text-muted-foreground">{t('alerts.detail.incident')}</dt>
-                      <dd className="font-mono text-xs">{selectedAlert.incidentId}</dd>
+                      <dd>
+                        <Link
+                          className="font-mono text-xs text-primary hover:underline"
+                          to={`/incidents/${selectedAlert.incidentId}`}
+                        >
+                          {t('alerts.detail.viewIncident')}
+                        </Link>
+                      </dd>
                     </div>
                   ) : null}
                 </dl>

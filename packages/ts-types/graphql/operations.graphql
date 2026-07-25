@@ -404,3 +404,106 @@ mutation RevokeMobileDevice($id: ID!) {
     revokedAt
   }
 }
+
+fragment UserSummary on User {
+  id
+  email
+}
+
+fragment IncidentRoleDefinitionFields on IncidentRoleDefinition {
+  id
+  name
+  sortOrder
+}
+
+fragment IncidentRoleAssignmentFields on IncidentRoleAssignment {
+  id
+  role {
+    ...IncidentRoleDefinitionFields
+  }
+  user {
+    ...UserSummary
+  }
+  assignedBy {
+    ...UserSummary
+  }
+  createdAt
+}
+
+fragment TimelineEventFields on TimelineEvent {
+  id
+  incidentId
+  eventType
+  body
+  metadata
+  createdAt
+  actor {
+    ...UserSummary
+  }
+}
+
+fragment IncidentFields on Incident {
+  id
+  organizationId
+  teamId
+  title
+  status
+  resolvedAt
+  createdAt
+  updatedAt
+  createdBy {
+    ...UserSummary
+  }
+  timelineEvents {
+    ...TimelineEventFields
+  }
+  roleAssignments {
+    ...IncidentRoleAssignmentFields
+  }
+}
+
+query Incident($id: ID!) {
+  incident(id: $id) {
+    ...IncidentFields
+  }
+}
+
+query Incidents($status: IncidentStatus, $teamId: ID, $limit: Int) {
+  incidents(status: $status, teamId: $teamId, limit: $limit) {
+    id
+    title
+    status
+    updatedAt
+    createdAt
+  }
+}
+
+query IncidentRoleDefinitions {
+  incidentRoleDefinitions {
+    ...IncidentRoleDefinitionFields
+  }
+}
+
+mutation AddIncidentTimelineNote($input: AddIncidentTimelineNoteInput!) {
+  addIncidentTimelineNote(input: $input) {
+    ...TimelineEventFields
+  }
+}
+
+mutation UpdateIncidentStatus($input: UpdateIncidentStatusInput!) {
+  updateIncidentStatus(input: $input) {
+    ...IncidentFields
+  }
+}
+
+mutation AssignIncidentRole($input: AssignIncidentRoleInput!) {
+  assignIncidentRole(input: $input) {
+    ...IncidentRoleAssignmentFields
+  }
+}
+
+subscription IncidentTimelineUpdated($incidentId: ID!) {
+  incidentTimelineUpdated(incidentId: $incidentId) {
+    ...TimelineEventFields
+  }
+}

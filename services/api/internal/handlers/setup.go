@@ -15,6 +15,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/audit"
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
+	"github.com/mdg-labs/escalite/services/api/internal/orgbootstrap"
 )
 
 const minPasswordLength = 8
@@ -134,6 +135,12 @@ func (h *SetupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		h.logger.Error("bootstrap organization failed", "error", err)
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
+	}
+
+	if err := orgbootstrap.SeedDefaultIncidentRoleDefinitions(ctx, txQueries, orgID); err != nil {
+		h.logger.Error("seed default incident role definitions failed", "error", err)
 		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}

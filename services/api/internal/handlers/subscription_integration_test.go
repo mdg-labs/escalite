@@ -247,3 +247,82 @@ func TestGraphQLAlertUpdatedSubscriptionRejectsUnauthenticated(t *testing.T) {
 
 	t.Fatal("timed out waiting for unauthenticated subscription rejection")
 }
+
+func TestGraphQLIncidentTimelineUpdatedSubscriptionReceivesNoteWithinTwoSeconds(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	adminCookie := bootstrapAdmin(t, handler)
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+	alert := seedTriggeredAlert(t, pool, admin.OrganizationID, service.ID, "cpu-high")
+
+	promoteRec := postGraphQL(t, handler, `mutation {
+		promoteAlertToIncident(input: {
+			alertId: "`+alert.ID.String()+`"
+			title: "Checkout degradation"
+		}) {
+			incidentId
+		}
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, promoteRec.Code)
+
+	var promoteResp struct {
+		Data struct {
+			PromoteAlertToIncident struct {
+				IncidentID *string `json:"incidentId"`
+			} `json:"promoteAlertToIncident"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	require.NoError(t, json.Unmarshal(promoteRec.Body.Bytes(), &promoteResp))
+	require.Empty(t, promoteResp.Errors)
+	require.NotNil(t, promoteResp.Data.PromoteAlertToIncident.IncidentID)
+
+	incidentID := *promoteResp.Data.PromoteAlertToIncident.IncidentID
+
+	client := dialGraphQLWS(t, handler, adminCookie)
+	client.subscribe(t, "1", fmt.Sprintf(`subscription {
+		incidentTimelineUpdated(incidentId: "%s") {
+			id
+			eventType
+			body
+		}
+	}`, incidentID), nil)
+
+	// Allow the subscription resolver to register on the hub before publishing.
+	time.Sleep(100 * time.Millisecond)
+
+	noteRec := postGraphQL(t, handler, `mutation {
+		addIncidentTimelineNote(input: {
+			incidentId: "`+incidentID+`"
+			body: "Customer impact confirmed"
+		}) {
+			id
+			eventType
+			body
+		}
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, noteRec.Code)
+
+	payload := client.waitForNext(t, "1", 2*time.Second)
+
+	var data struct {
+		IncidentTimelineUpdated struct {
+			ID        string `json:"id"`
+			EventType string `json:"eventType"`
+			Body      string `json:"body"`
+		} `json:"incidentTimelineUpdated"`
+	}
+	require.NoError(t, json.Unmarshal(payload.Data, &data))
+	require.Empty(t, payload.Errors)
+	require.Equal(t, "NOTE", data.IncidentTimelineUpdated.EventType)
+	require.Equal(t, "Customer impact confirmed", data.IncidentTimelineUpdated.Body)
+}
