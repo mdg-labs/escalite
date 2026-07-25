@@ -23,24 +23,8 @@ func (fn slackRoundTripFunc) Do(req *http.Request) (*http.Response, error) {
 }
 
 func TestGraphQLPromoteAlertToIncidentCreatesSlackChannel(t *testing.T) {
-	slackchannel.SetHTTPClient(slackRoundTripFunc(func(req *http.Request) (*http.Response, error) {
-		require.Equal(t, "https://slack.com/api/conversations.create", req.URL.String())
-		body, err := io.ReadAll(req.Body)
-		require.NoError(t, err)
-
-		var payload struct {
-			Name string `json:"name"`
-		}
-		require.NoError(t, json.Unmarshal(body, &payload))
-		require.True(t, strings.HasPrefix(payload.Name, "incident-"))
-
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(strings.NewReader(`{"ok":true,"channel":{"id":"CINCIDENT1"}}`)),
-			Header:     make(http.Header),
-		}, nil
-	}))
-	t.Cleanup(func() { slackchannel.SetHTTPClient(nil) })
+	mock := newSlackAPIMock()
+	mock.install(t)
 
 	handler, pool, cleanup := newTestHandler(t)
 	defer cleanup()
@@ -54,17 +38,7 @@ func TestGraphQLPromoteAlertToIncidentCreatesSlackChannel(t *testing.T) {
 	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 	alert := seedTriggeredAlert(t, pool, admin.OrganizationID, service.ID, "memory-high")
 
-	secrets := testSecretsBox(t)
-	const botToken = "xoxb-1234567890abcdefghijklmnop"
-	encrypted, err := secrets.Encrypt([]byte(botToken))
-	require.NoError(t, err)
-	_, err = queries.UpsertOrganizationSlackSettings(context.Background(), db.UpsertOrganizationSlackSettingsParams{
-		OrganizationID:     admin.OrganizationID,
-		BotTokenCiphertext: encrypted.Ciphertext,
-		EncryptionKeyID:    encrypted.KeyID,
-		TokenHint:          crypto.SecretHint(botToken),
-	})
-	require.NoError(t, err)
+	seedSlackSettings(t, queries, admin.OrganizationID)
 
 	promoteRec := postGraphQL(t, handler, `mutation {
 		promoteAlertToIncident(input: {
@@ -97,6 +71,8 @@ func TestGraphQLPromoteAlertToIncidentCreatesSlackChannel(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, incident.SlackChannelID.Valid)
 	require.Equal(t, "CINCIDENT1", incident.SlackChannelID.String)
+	require.True(t, incident.SlackThreadTs.Valid)
+	require.Equal(t, mock.anchorTS, incident.SlackThreadTs.String)
 }
 
 func TestGraphQLPromoteAlertToIncidentKeepsIncidentWhenSlackChannelFails(t *testing.T) {

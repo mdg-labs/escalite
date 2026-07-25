@@ -99,6 +99,7 @@ type Incident struct {
 	CreatedByUserID uuid.UUID          `json:"created_by_user_id"`
 	ResolvedAt      pgtype.Timestamptz `json:"resolved_at"`
 	SlackChannelID  pgtype.Text        `json:"slack_channel_id"`
+	SlackThreadTs   pgtype.Text        `json:"slack_thread_ts"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }

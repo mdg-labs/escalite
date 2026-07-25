@@ -92,6 +92,8 @@ func (r *mutationResolver) insertTimelineEvent(
 		})
 	}
 
+	r.scheduleMirrorTimelineEventToSlack(orgID, incidentID, actorID, eventType, body, metadata)
+
 	return event, nil
 }
 

@@ -31,6 +31,14 @@ WHERE id = $1
   AND organization_id = $2
 RETURNING *;
 
+-- name: UpdateIncidentSlackThreadTS :one
+UPDATE incidents
+SET slack_thread_ts = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+RETURNING *;
+
 -- name: ListIncidentsForOrgAdmin :many
 SELECT *
 FROM incidents

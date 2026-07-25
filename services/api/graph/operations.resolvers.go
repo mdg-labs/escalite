@@ -2016,6 +2016,7 @@ func (r *mutationResolver) UpdateIncidentStatus(ctx context.Context, input model
 	r.audit.IncidentStatusUpdated(ctx, queries, sc.User.OrganizationID, sc.User.ID, incidentID, newStatus)
 
 	if newStatus == "resolved" && current.Status != "resolved" {
+		r.schedulePostIncidentResolveSummary(incident)
 		if err := escalationapi.ResumeEscalationOnIncidentClose(
 			ctx,
 			r.pool,

@@ -142,6 +142,7 @@ type Querier interface {
 	UpdateHeartbeatMonitor(ctx context.Context, arg UpdateHeartbeatMonitorParams) (HeartbeatMonitor, error)
 	UpdateIncidentRoleDefinition(ctx context.Context, arg UpdateIncidentRoleDefinitionParams) (IncidentRoleDefinition, error)
 	UpdateIncidentSlackChannelID(ctx context.Context, arg UpdateIncidentSlackChannelIDParams) (Incident, error)
+	UpdateIncidentSlackThreadTS(ctx context.Context, arg UpdateIncidentSlackThreadTSParams) (Incident, error)
 	UpdateIncidentStatus(ctx context.Context, arg UpdateIncidentStatusParams) (Incident, error)
 	UpdateMaintenanceWindow(ctx context.Context, arg UpdateMaintenanceWindowParams) (MaintenanceWindow, error)
 	UpdateRotation(ctx context.Context, arg UpdateRotationParams) (Rotation, error)

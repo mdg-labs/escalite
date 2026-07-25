@@ -71,5 +71,31 @@ func (r *Resolver) tryCreateIncidentSlackChannel(ctx context.Context, queries *d
 			"organization_id", incident.OrganizationID,
 			"slack_channel_id", channelID,
 		)
+		return
+	}
+
+	anchorText := slackchannel.FormatIncidentAnchor(incident.Title, incident.ID)
+	threadTS, err := slackchannel.PostMessage(ctx, string(token), channelID, anchorText)
+	if err != nil {
+		r.logger.Error("post slack incident anchor message failed",
+			"error", err,
+			"incident_id", incident.ID,
+			"organization_id", incident.OrganizationID,
+			"slack_channel_id", channelID,
+		)
+		return
+	}
+
+	if _, err := queries.UpdateIncidentSlackThreadTS(ctx, db.UpdateIncidentSlackThreadTSParams{
+		ID:             incident.ID,
+		OrganizationID: incident.OrganizationID,
+		SlackThreadTs:  pgtype.Text{String: threadTS, Valid: true},
+	}); err != nil {
+		r.logger.Error("persist slack incident thread ts failed",
+			"error", err,
+			"incident_id", incident.ID,
+			"organization_id", incident.OrganizationID,
+			"slack_thread_ts", threadTS,
+		)
 	}
 }
