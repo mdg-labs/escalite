@@ -20,6 +20,8 @@ const (
 	encryptionKeyEnv   = "ESCALITE_ENCRYPTION_KEY"
 	encryptionKeyBytes = 32
 	encryptionKeyHint  = "generate with: openssl rand -hex 32 (see .env.example and docs/specs/07-security-and-auth.md)"
+
+	defaultSlackIncidentChannelNameTemplate = "incident-{short_id}"
 )
 
 // SMTPConfig holds optional outbound SMTP settings. Nil means email is not sent.
@@ -33,12 +35,13 @@ type SMTPConfig struct {
 
 // Config holds parsed ESCALITE_* environment configuration.
 type Config struct {
-	ListenAddr            string
-	DatabaseURL           string
-	LogLevel              string
-	EncryptionKey         []byte
-	HeartbeatScanInterval time.Duration
-	SMTP                  *SMTPConfig
+	ListenAddr                       string
+	DatabaseURL                      string
+	LogLevel                         string
+	EncryptionKey                    []byte
+	HeartbeatScanInterval              time.Duration
+	SMTP                             *SMTPConfig
+	SlackIncidentChannelNameTemplate string
 }
 
 // Load reads and validates configuration from the environment.
@@ -78,6 +81,7 @@ func Load(opts Options) (Config, error) {
 		return Config{}, err
 	}
 	cfg.SMTP = smtpCfg
+	cfg.SlackIncidentChannelNameTemplate = loadSlackIncidentChannelNameTemplate()
 
 	if strings.TrimSpace(cfg.ListenAddr) == "" {
 		return Config{}, fmt.Errorf("ESCALITE_HTTP_ADDR must not be empty")
@@ -203,4 +207,12 @@ func loadSMTP() (*SMTPConfig, error) {
 		Password: os.Getenv("ESCALITE_SMTP_PASSWORD"),
 		From:     from,
 	}, nil
+}
+
+func loadSlackIncidentChannelNameTemplate() string {
+	template := strings.TrimSpace(os.Getenv("ESCALITE_SLACK_INCIDENT_CHANNEL_NAME_TEMPLATE"))
+	if template == "" {
+		return defaultSlackIncidentChannelNameTemplate
+	}
+	return template
 }

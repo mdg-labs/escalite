@@ -1056,6 +1056,10 @@ table "incidents" {
     null = true
     type = timestamptz
   }
+  column "slack_channel_id" {
+    null = true
+    type = text
+  }
   column "created_at" {
     null    = false
     type    = timestamptz

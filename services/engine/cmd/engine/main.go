@@ -12,7 +12,9 @@ import (
 
 	"github.com/mdg-labs/escalite/services/engine/channelsinstall"
 	"github.com/mdg-labs/escalite/services/engine/internal/config"
+	"github.com/mdg-labs/escalite/services/engine/internal/crypto"
 	"github.com/mdg-labs/escalite/services/engine/internal/email"
+	"github.com/mdg-labs/escalite/services/engine/internal/incident"
 	"github.com/mdg-labs/escalite/services/engine/internal/log"
 	"github.com/mdg-labs/escalite/services/engine/internal/queue"
 	"github.com/mdg-labs/escalite/services/engine/internal/server"
@@ -47,6 +49,17 @@ func run() int {
 		return 1
 	}
 	channelsinstall.ConfigureSMS(logger, smsCfg)
+
+	secrets, err := crypto.NewBox(cfg.EncryptionKey)
+	if err != nil {
+		logger.Error("encryption setup failed", "error", err)
+		return 1
+	}
+	incident.ConfigureSlackChannels(incident.SlackChannelConfig{
+		Template: cfg.SlackIncidentChannelNameTemplate,
+		Secrets:  secrets,
+		Logger:   logger,
+	})
 
 	ctx := context.Background()
 	queueClient, err := queue.New(ctx, queue.Options{

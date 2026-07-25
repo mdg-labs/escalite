@@ -125,9 +125,10 @@ func run() int {
 			RequireAuthenticated: cfg.InboundEmail.RequireAuthenticated,
 		},
 		GraphQL: graphql.Options{
-			Production:    cfg.IsProduction(),
-			MaxDepth:      cfg.GraphQL.MaxDepth,
-			MaxComplexity: cfg.GraphQL.MaxComplexity,
+			Production:                       cfg.IsProduction(),
+			MaxDepth:                         cfg.GraphQL.MaxDepth,
+			MaxComplexity:                    cfg.GraphQL.MaxComplexity,
+			SlackIncidentChannelNameTemplate: cfg.SlackIncidentChannelNameTemplate,
 		},
 		Realtime: realtimeBridge.Hub,
 	})

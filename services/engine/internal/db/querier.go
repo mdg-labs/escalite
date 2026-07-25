@@ -59,6 +59,7 @@ type Querier interface {
 	ServiceHasActiveIngestionSuppression(ctx context.Context, arg ServiceHasActiveIngestionSuppressionParams) (bool, error)
 	ServiceHasActiveNotificationSuppression(ctx context.Context, arg ServiceHasActiveNotificationSuppressionParams) (bool, error)
 	UpdateAlertEscalationState(ctx context.Context, arg UpdateAlertEscalationStateParams) (Alert, error)
+	UpdateIncidentSlackChannelID(ctx context.Context, arg UpdateIncidentSlackChannelIDParams) (Incident, error)
 	UpsertUserNotificationRule(ctx context.Context, arg UpsertUserNotificationRuleParams) (UserNotificationRule, error)
 }
 

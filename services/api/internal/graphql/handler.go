@@ -18,6 +18,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/api/internal/queue"
 	"github.com/mdg-labs/escalite/services/api/internal/realtime"
+	"github.com/mdg-labs/escalite/services/engine/channels/slackchannel"
 )
 
 const (
@@ -27,10 +28,11 @@ const (
 
 // Options configures the GraphQL HTTP handler.
 type Options struct {
-	Production           bool
-	MaxDepth             int
-	MaxComplexity        int
-	SlackOAuthInstallURL string
+	Production                       bool
+	MaxDepth                         int
+	MaxComplexity                    int
+	SlackOAuthInstallURL             string
+	SlackIncidentChannelNameTemplate string
 }
 
 // NewHandler returns a gqlgen server configured with transport hardening and error codes.
@@ -45,8 +47,21 @@ func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, s
 		maxComplexity = defaultMaxComplexity
 	}
 
+	channelNameTemplate := opts.SlackIncidentChannelNameTemplate
+	if channelNameTemplate == "" {
+		channelNameTemplate = slackchannel.DefaultNameTemplate
+	}
+
 	srv := gqlhandler.New(graph.NewExecutableSchema(graph.Config{
-		Resolvers: graph.NewResolver(pool, logger, jobs, secrets, hub, opts.SlackOAuthInstallURL),
+		Resolvers: graph.NewResolver(
+			pool,
+			logger,
+			jobs,
+			secrets,
+			hub,
+			opts.SlackOAuthInstallURL,
+			channelNameTemplate,
+		),
 	}))
 
 	srv.AddTransport(transport.Websocket{

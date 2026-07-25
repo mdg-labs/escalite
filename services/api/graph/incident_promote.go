@@ -80,6 +80,16 @@ func (r *mutationResolver) promoteAlertToNewIncident(
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
 
+	incident, err := queries.GetIncidentByID(ctx, db.GetIncidentByIDParams{
+		ID:             incidentID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("load incident after promote failed", "error", err)
+	} else {
+		r.tryCreateIncidentSlackChannel(ctx, queries, incident)
+	}
+
 	r.audit.IncidentCreated(ctx, queries, sc.User.OrganizationID, sc.User.ID, incidentID)
 	return alertFromDB(updated, nil), nil
 }

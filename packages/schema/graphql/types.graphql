@@ -274,6 +274,7 @@ type Incident {
   status: IncidentStatus!
   createdBy: User!
   resolvedAt: DateTime
+  slackChannelId: String
   alerts: [Alert!]!
   timelineEvents: [TimelineEvent!]!
   roleAssignments: [IncidentRoleAssignment!]!

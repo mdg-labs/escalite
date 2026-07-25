@@ -97,6 +97,12 @@ func incidentFromDB(incident db.Incident) *model.Incident {
 		resolvedAt = &t
 	}
 
+	var slackChannelID *string
+	if incident.SlackChannelID.Valid && incident.SlackChannelID.String != "" {
+		value := incident.SlackChannelID.String
+		slackChannelID = &value
+	}
+
 	return &model.Incident{
 		ID:             incident.ID.String(),
 		OrganizationID: incident.OrganizationID.String(),
@@ -104,6 +110,7 @@ func incidentFromDB(incident db.Incident) *model.Incident {
 		Title:          incident.Title,
 		Status:         incidentStatusFromDB(incident.Status),
 		ResolvedAt:     resolvedAt,
+		SlackChannelID: slackChannelID,
 		CreatedAt:      timeFromDB(incident.CreatedAt),
 		UpdatedAt:      timeFromDB(incident.UpdatedAt),
 	}

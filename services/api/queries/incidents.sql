@@ -23,6 +23,14 @@ WHERE id = $1
   AND organization_id = $2
 LIMIT 1;
 
+-- name: UpdateIncidentSlackChannelID :one
+UPDATE incidents
+SET slack_channel_id = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+RETURNING *;
+
 -- name: ListIncidentsForOrgAdmin :many
 SELECT *
 FROM incidents

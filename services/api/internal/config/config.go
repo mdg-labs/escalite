@@ -70,6 +70,8 @@ type GraphQLConfig struct {
 	MaxComplexity int
 }
 
+const defaultSlackIncidentChannelNameTemplate = "incident-{short_id}"
+
 // InboundEmailConfig controls inbound email relay authentication.
 type InboundEmailConfig struct {
 	RelaySecret          string
@@ -91,8 +93,9 @@ type Config struct {
 	SMTP          *SMTPConfig
 	InboundEmail  InboundEmailConfig
 	PasswordReset PasswordResetRateLimitConfig
-	HeartbeatPing HeartbeatPingRateLimitConfig
-	GraphQL       GraphQLConfig
+	HeartbeatPing                     HeartbeatPingRateLimitConfig
+	GraphQL                           GraphQLConfig
+	SlackIncidentChannelNameTemplate string
 }
 
 // Load reads and validates configuration from the environment.
@@ -147,6 +150,7 @@ func Load(opts Options) (Config, error) {
 	cfg.HeartbeatPing = loadHeartbeatPingRateLimit()
 	cfg.Environment = loadEnvironment()
 	cfg.GraphQL = loadGraphQLConfig()
+	cfg.SlackIncidentChannelNameTemplate = loadSlackIncidentChannelNameTemplate()
 
 	if err := validateLogLevel(cfg.LogLevel); err != nil {
 		return Config{}, err
@@ -204,7 +208,7 @@ func loadOIDC() (*OIDCConfig, error) {
 // defaultSlackBotScopes are the Slack bot token scopes requested by the "Add to Slack"
 // OAuth v2 install flow: posting alerts/incidents (chat:write*), reading channel/user
 // metadata for the channel-per-incident and interactive-buttons follow-up tasks.
-var defaultSlackBotScopes = []string{"chat:write", "chat:write.public", "channels:read", "users:read"}
+var defaultSlackBotScopes = []string{"chat:write", "chat:write.public", "channels:manage", "channels:read", "users:read"}
 
 func loadSlackOAuth() (*SlackOAuthConfig, error) {
 	clientID := strings.TrimSpace(os.Getenv("ESCALITE_SLACK_CLIENT_ID"))
@@ -344,6 +348,14 @@ func loadGraphQLConfig() GraphQLConfig {
 		MaxDepth:      envIntOrDefault("ESCALITE_GRAPHQL_MAX_DEPTH", 15),
 		MaxComplexity: envIntOrDefault("ESCALITE_GRAPHQL_MAX_COMPLEXITY", 100),
 	}
+}
+
+func loadSlackIncidentChannelNameTemplate() string {
+	template := strings.TrimSpace(os.Getenv("ESCALITE_SLACK_INCIDENT_CHANNEL_NAME_TEMPLATE"))
+	if template == "" {
+		return defaultSlackIncidentChannelNameTemplate
+	}
+	return template
 }
 
 func (c Config) IsProduction() bool {

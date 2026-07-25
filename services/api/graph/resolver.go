@@ -13,13 +13,14 @@ import (
 
 // Resolver is the root GraphQL resolver with shared dependencies.
 type Resolver struct {
-	pool                *pgxpool.Pool
-	logger              *slog.Logger
-	audit               *audit.Recorder
-	jobs                *queue.Producer
-	secrets             *crypto.Box
-	realtime            *realtime.Hub
-	slackOAuthInstallURL string
+	pool                             *pgxpool.Pool
+	logger                           *slog.Logger
+	audit                            *audit.Recorder
+	jobs                             *queue.Producer
+	secrets                          *crypto.Box
+	realtime                         *realtime.Hub
+	slackOAuthInstallURL             string
+	slackIncidentChannelNameTemplate string
 }
 
 // NewResolver returns a resolver wired with database and logging dependencies.
@@ -30,14 +31,16 @@ func NewResolver(
 	secrets *crypto.Box,
 	hub *realtime.Hub,
 	slackOAuthInstallURL string,
+	slackIncidentChannelNameTemplate string,
 ) *Resolver {
 	return &Resolver{
-		pool:                pool,
-		logger:              logger,
-		audit:               audit.NewRecorder(logger),
-		jobs:                jobs,
-		secrets:             secrets,
-		realtime:            hub,
-		slackOAuthInstallURL: slackOAuthInstallURL,
+		pool:                             pool,
+		logger:                           logger,
+		audit:                            audit.NewRecorder(logger),
+		jobs:                             jobs,
+		secrets:                          secrets,
+		realtime:                         hub,
+		slackOAuthInstallURL:             slackOAuthInstallURL,
+		slackIncidentChannelNameTemplate: slackIncidentChannelNameTemplate,
 	}
 }

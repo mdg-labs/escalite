@@ -83,6 +83,8 @@ func MaybeAutoPromote(ctx context.Context, q db.Querier, alert db.Alert) error {
 		}); err != nil {
 			return fmt.Errorf("create auto-promote timeline event: %w", err)
 		}
+
+		maybeCreateSlackChannel(ctx, q, incident)
 	}
 
 	return nil

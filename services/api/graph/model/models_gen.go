@@ -174,6 +174,7 @@ type Incident struct {
 	Status          IncidentStatus            `json:"status"`
 	CreatedBy       *User                     `json:"createdBy"`
 	ResolvedAt      *time.Time                `json:"resolvedAt,omitempty"`
+	SlackChannelID  *string                   `json:"slackChannelId,omitempty"`
 	Alerts          []*Alert                  `json:"alerts"`
 	TimelineEvents  []*TimelineEvent          `json:"timelineEvents"`
 	RoleAssignments []*IncidentRoleAssignment `json:"roleAssignments"`

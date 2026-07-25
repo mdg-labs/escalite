@@ -45,6 +45,7 @@ CREATE TABLE "incidents" (
   "status" text NOT NULL DEFAULT 'investigating',
   "created_by_user_id" uuid NOT NULL,
   "resolved_at" timestamptz NULL,
+  "slack_channel_id" text NULL,
   "created_at" timestamptz NOT NULL DEFAULT now(),
   "updated_at" timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY ("id"),

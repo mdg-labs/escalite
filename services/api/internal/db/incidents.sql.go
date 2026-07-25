@@ -28,7 +28,7 @@ INSERT INTO incidents (
     'investigating',
     $5
 )
-RETURNING id, organization_id, team_id, title, status, created_by_user_id, resolved_at, created_at, updated_at
+RETURNING id, organization_id, team_id, title, status, created_by_user_id, resolved_at, slack_channel_id, created_at, updated_at
 `
 
 type CreateIncidentParams struct {
@@ -56,6 +56,7 @@ func (q *Queries) CreateIncident(ctx context.Context, arg CreateIncidentParams) 
 		&i.Status,
 		&i.CreatedByUserID,
 		&i.ResolvedAt,
+		&i.SlackChannelID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -241,7 +242,7 @@ func (q *Queries) DeleteIncidentRoleDefinition(ctx context.Context, arg DeleteIn
 }
 
 const getIncidentByID = `-- name: GetIncidentByID :one
-SELECT id, organization_id, team_id, title, status, created_by_user_id, resolved_at, created_at, updated_at
+SELECT id, organization_id, team_id, title, status, created_by_user_id, resolved_at, slack_channel_id, created_at, updated_at
 FROM incidents
 WHERE id = $1
   AND organization_id = $2
@@ -264,6 +265,7 @@ func (q *Queries) GetIncidentByID(ctx context.Context, arg GetIncidentByIDParams
 		&i.Status,
 		&i.CreatedByUserID,
 		&i.ResolvedAt,
+		&i.SlackChannelID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -326,7 +328,7 @@ func (q *Queries) GetIncidentRoleDefinitionByID(ctx context.Context, arg GetInci
 }
 
 const getOpenIncidentForTeam = `-- name: GetOpenIncidentForTeam :one
-SELECT id, organization_id, team_id, title, status, created_by_user_id, resolved_at, created_at, updated_at
+SELECT id, organization_id, team_id, title, status, created_by_user_id, resolved_at, slack_channel_id, created_at, updated_at
 FROM incidents
 WHERE organization_id = $1
   AND team_id = $2
@@ -351,6 +353,7 @@ func (q *Queries) GetOpenIncidentForTeam(ctx context.Context, arg GetOpenInciden
 		&i.Status,
 		&i.CreatedByUserID,
 		&i.ResolvedAt,
+		&i.SlackChannelID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -358,7 +361,7 @@ func (q *Queries) GetOpenIncidentForTeam(ctx context.Context, arg GetOpenInciden
 }
 
 const getOpenIncidentForTeamWithServiceAlerts = `-- name: GetOpenIncidentForTeamWithServiceAlerts :one
-SELECT DISTINCT i.id, i.organization_id, i.team_id, i.title, i.status, i.created_by_user_id, i.resolved_at, i.created_at, i.updated_at
+SELECT DISTINCT i.id, i.organization_id, i.team_id, i.title, i.status, i.created_by_user_id, i.resolved_at, i.slack_channel_id, i.created_at, i.updated_at
 FROM incidents i
 INNER JOIN alerts a
   ON a.incident_id = i.id
@@ -388,6 +391,7 @@ func (q *Queries) GetOpenIncidentForTeamWithServiceAlerts(ctx context.Context, a
 		&i.Status,
 		&i.CreatedByUserID,
 		&i.ResolvedAt,
+		&i.SlackChannelID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -552,7 +556,7 @@ func (q *Queries) ListIncidentRoleDefinitions(ctx context.Context, organizationI
 }
 
 const listIncidentsForOrgAdmin = `-- name: ListIncidentsForOrgAdmin :many
-SELECT id, organization_id, team_id, title, status, created_by_user_id, resolved_at, created_at, updated_at
+SELECT id, organization_id, team_id, title, status, created_by_user_id, resolved_at, slack_channel_id, created_at, updated_at
 FROM incidents
 WHERE organization_id = $1
   AND (
@@ -596,6 +600,7 @@ func (q *Queries) ListIncidentsForOrgAdmin(ctx context.Context, arg ListIncident
 			&i.Status,
 			&i.CreatedByUserID,
 			&i.ResolvedAt,
+			&i.SlackChannelID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -610,7 +615,7 @@ func (q *Queries) ListIncidentsForOrgAdmin(ctx context.Context, arg ListIncident
 }
 
 const listIncidentsForTeamMember = `-- name: ListIncidentsForTeamMember :many
-SELECT i.id, i.organization_id, i.team_id, i.title, i.status, i.created_by_user_id, i.resolved_at, i.created_at, i.updated_at
+SELECT i.id, i.organization_id, i.team_id, i.title, i.status, i.created_by_user_id, i.resolved_at, i.slack_channel_id, i.created_at, i.updated_at
 FROM incidents i
 INNER JOIN team_memberships tm
   ON tm.team_id = i.team_id
@@ -660,6 +665,7 @@ func (q *Queries) ListIncidentsForTeamMember(ctx context.Context, arg ListIncide
 			&i.Status,
 			&i.CreatedByUserID,
 			&i.ResolvedAt,
+			&i.SlackChannelID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -751,6 +757,39 @@ func (q *Queries) UpdateIncidentRoleDefinition(ctx context.Context, arg UpdateIn
 	return i, err
 }
 
+const updateIncidentSlackChannelID = `-- name: UpdateIncidentSlackChannelID :one
+UPDATE incidents
+SET slack_channel_id = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+RETURNING id, organization_id, team_id, title, status, created_by_user_id, resolved_at, slack_channel_id, created_at, updated_at
+`
+
+type UpdateIncidentSlackChannelIDParams struct {
+	ID             uuid.UUID   `json:"id"`
+	OrganizationID uuid.UUID   `json:"organization_id"`
+	SlackChannelID pgtype.Text `json:"slack_channel_id"`
+}
+
+func (q *Queries) UpdateIncidentSlackChannelID(ctx context.Context, arg UpdateIncidentSlackChannelIDParams) (Incident, error) {
+	row := q.db.QueryRow(ctx, updateIncidentSlackChannelID, arg.ID, arg.OrganizationID, arg.SlackChannelID)
+	var i Incident
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.TeamID,
+		&i.Title,
+		&i.Status,
+		&i.CreatedByUserID,
+		&i.ResolvedAt,
+		&i.SlackChannelID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const updateIncidentStatus = `-- name: UpdateIncidentStatus :one
 UPDATE incidents
 SET status = $3,
@@ -761,7 +800,7 @@ SET status = $3,
     updated_at = now()
 WHERE id = $1
   AND organization_id = $2
-RETURNING id, organization_id, team_id, title, status, created_by_user_id, resolved_at, created_at, updated_at
+RETURNING id, organization_id, team_id, title, status, created_by_user_id, resolved_at, slack_channel_id, created_at, updated_at
 `
 
 type UpdateIncidentStatusParams struct {
@@ -781,6 +820,7 @@ func (q *Queries) UpdateIncidentStatus(ctx context.Context, arg UpdateIncidentSt
 		&i.Status,
 		&i.CreatedByUserID,
 		&i.ResolvedAt,
+		&i.SlackChannelID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
