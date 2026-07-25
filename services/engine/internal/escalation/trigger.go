@@ -181,7 +181,9 @@ func scheduleStepNotifications(
 				if _, err := inserter.Insert(ctx, jobs.NotifyArgs{
 					NotificationAttemptID: attemptID,
 					OrganizationID:      alert.OrganizationID,
-				}, nil); err != nil {
+				}, &river.InsertOpts{
+					MaxAttempts: jobs.NotifyMaxAttempts,
+				}); err != nil {
 					return fmt.Errorf("enqueue notify job: %w", err)
 				}
 			}

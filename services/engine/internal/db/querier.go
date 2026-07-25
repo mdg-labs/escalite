@@ -30,6 +30,7 @@ type Querier interface {
 	GetEscalationStepByPolicyAndOrder(ctx context.Context, arg GetEscalationStepByPolicyAndOrderParams) (EscalationStep, error)
 	GetNotificationAttemptByID(ctx context.Context, arg GetNotificationAttemptByIDParams) (NotificationAttempt, error)
 	GetScheduleByID(ctx context.Context, arg GetScheduleByIDParams) (Schedule, error)
+	GetServiceByID(ctx context.Context, arg GetServiceByIDParams) (Service, error)
 	GetUserByID(ctx context.Context, arg GetUserByIDParams) (User, error)
 	ListActiveOverridesByScheduleAt(ctx context.Context, arg ListActiveOverridesByScheduleAtParams) ([]Override, error)
 	ListEscalationPoliciesByServiceID(ctx context.Context, arg ListEscalationPoliciesByServiceIDParams) ([]EscalationPolicy, error)

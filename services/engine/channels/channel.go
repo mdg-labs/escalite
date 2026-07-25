@@ -10,6 +10,7 @@ type Target struct {
 	Type   string `json:"type"`
 	UserID string `json:"user_id,omitempty"`
 	Email  string `json:"email,omitempty"`
+	URL    string `json:"url,omitempty"`
 }
 
 // Alert is the alert payload passed to channel Send implementations.
@@ -17,6 +18,7 @@ type Alert struct {
 	ID             string `json:"id"`
 	OrganizationID string `json:"organization_id"`
 	ServiceID      string `json:"service_id"`
+	ServiceName    string `json:"service_name,omitempty"`
 	Summary        string `json:"summary"`
 	Description    string `json:"description,omitempty"`
 	Priority       string `json:"priority"`

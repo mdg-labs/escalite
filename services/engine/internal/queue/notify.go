@@ -53,12 +53,22 @@ func (w *NotifyWorker) Work(ctx context.Context, job *river.Job[jobs.NotifyArgs]
 		return fmt.Errorf("load alert: %w", err)
 	}
 
+	serviceName := ""
+	service, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             alert.ServiceID,
+		OrganizationID: attempt.OrganizationID,
+	})
+	if err != nil {
+		return fmt.Errorf("load service: %w", err)
+	}
+	serviceName = service.Name
+
 	channel, err := channels.Get(attempt.Channel)
 	if err != nil {
 		return w.finishAttempt(ctx, queries, attempt, notificationStatusFailed, err.Error())
 	}
 
-	target, err := parseRecipient(attempt.Recipient)
+	target, channelConfig, err := parseRecipient(attempt.Recipient)
 	if err != nil {
 		return w.finishAttempt(ctx, queries, attempt, notificationStatusFailed, err.Error())
 	}
@@ -69,11 +79,13 @@ func (w *NotifyWorker) Work(ctx context.Context, job *river.Job[jobs.NotifyArgs]
 			ID:             alert.ID.String(),
 			OrganizationID: alert.OrganizationID.String(),
 			ServiceID:      alert.ServiceID.String(),
+			ServiceName:    serviceName,
 			Summary:        alert.Summary,
 			Description:    alert.Description.String,
 			Priority:       alert.Priority,
 			Status:         alert.Status,
 		},
+		Config: channelConfig,
 	})
 	if sendErr != nil {
 		w.logger.Warn(
@@ -81,8 +93,13 @@ func (w *NotifyWorker) Work(ctx context.Context, job *river.Job[jobs.NotifyArgs]
 			"notification_attempt_id", attempt.ID,
 			"channel", attempt.Channel,
 			"alert_id", attempt.AlertID,
+			"attempt", notifyAttemptNumber(job),
+			"max_attempts", notifyMaxAttempts(job),
 			"error", sendErr.Error(),
 		)
+		if shouldRetryDelivery(attempt.Channel, sendErr) && notifyAttemptNumber(job) < notifyMaxAttempts(job) {
+			return sendErr
+		}
 		return w.finishAttempt(ctx, queries, attempt, notificationStatusFailed, sendErr.Error())
 	}
 
@@ -118,18 +135,39 @@ func (w *NotifyWorker) finishAttempt(
 	return nil
 }
 
-func parseRecipient(raw []byte) (channels.Target, error) {
+func parseRecipient(raw []byte) (channels.Target, json.RawMessage, error) {
 	var recipient struct {
-		Type   string `json:"type"`
-		UserID string `json:"user_id"`
-		Email  string `json:"email"`
+		Type   string          `json:"type"`
+		UserID string          `json:"user_id"`
+		Email  string          `json:"email"`
+		URL    string          `json:"url"`
+		Config json.RawMessage `json:"config"`
 	}
 	if err := json.Unmarshal(raw, &recipient); err != nil {
-		return channels.Target{}, fmt.Errorf("parse recipient: %w", err)
+		return channels.Target{}, nil, fmt.Errorf("parse recipient: %w", err)
 	}
 	return channels.Target{
 		Type:   recipient.Type,
 		UserID: recipient.UserID,
 		Email:  recipient.Email,
-	}, nil
+		URL:    recipient.URL,
+	}, recipient.Config, nil
+}
+
+func notifyMaxAttempts(job *river.Job[jobs.NotifyArgs]) int {
+	if job.MaxAttempts > 0 {
+		return job.MaxAttempts
+	}
+	return jobs.NotifyMaxAttempts
+}
+
+func notifyAttemptNumber(job *river.Job[jobs.NotifyArgs]) int {
+	if job.Attempt > 0 {
+		return job.Attempt
+	}
+	return 1
+}
+
+func shouldRetryDelivery(channelName string, err error) bool {
+	return channelName == "webhook" && err != nil
 }

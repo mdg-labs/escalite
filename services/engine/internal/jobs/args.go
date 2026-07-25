@@ -32,3 +32,6 @@ type NotifyArgs struct {
 }
 
 func (NotifyArgs) Kind() string { return NotifyKind }
+
+// NotifyMaxAttempts is the River retry budget for outbound notification jobs.
+const NotifyMaxAttempts = 3
