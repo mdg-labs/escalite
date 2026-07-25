@@ -2,3 +2,8 @@
 RFC 3339 UTC timestamp.
 """
 scalar DateTime
+
+"""
+Arbitrary JSON object.
+"""
+scalar JSON

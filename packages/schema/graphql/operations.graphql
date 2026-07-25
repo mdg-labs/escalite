@@ -50,6 +50,11 @@ type Query {
   Soft-deleted overrides are excluded.
   """
   overrides(scheduleId: ID!): [Override!]!
+
+  """
+  List registered notification channels and config schemas for form generation.
+  """
+  notificationChannels: [NotificationChannelDefinition!]!
 }
 
 type Mutation {
@@ -152,4 +157,9 @@ type Mutation {
   Soft-delete an override (org admin only).
   """
   deleteOverride(id: ID!): Boolean!
+
+  """
+  Save the current user's contact method config for a notification channel.
+  """
+  saveUserContactMethod(input: SaveUserContactMethodInput!): UserContactMethod!
 }

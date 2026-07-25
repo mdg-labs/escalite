@@ -25,3 +25,6 @@ models:
   ID:
     model:
       - github.com/99designs/gqlgen/graphql.ID
+  JSON:
+    model:
+      - github.com/99designs/gqlgen/graphql.Map

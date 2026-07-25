@@ -14,6 +14,7 @@ import (
 	"github.com/mdg-labs/escalite/services/engine/internal/log"
 	"github.com/mdg-labs/escalite/services/engine/internal/queue"
 	"github.com/mdg-labs/escalite/services/engine/internal/server"
+	_ "github.com/mdg-labs/escalite/services/engine/channelsinstall"
 )
 
 const serviceName = "engine"

@@ -77,3 +77,8 @@ input CreateOverrideInput {
   startsAt: DateTime!
   endsAt: DateTime!
 }
+
+input SaveUserContactMethodInput {
+  channel: String!
+  config: JSON!
+}

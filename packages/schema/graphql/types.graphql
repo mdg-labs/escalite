@@ -157,3 +157,19 @@ type Override {
   createdAt: DateTime!
   updatedAt: DateTime!
 }
+
+"""Registered outbound notification channel and its JSON Schema config form."""
+type NotificationChannelDefinition {
+  name: String!
+  configSchema: JSON!
+}
+
+"""Per-user contact method configuration for a notification channel."""
+type UserContactMethod {
+  id: ID!
+  userId: ID!
+  channel: String!
+  config: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

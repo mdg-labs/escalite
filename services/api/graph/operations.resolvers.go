@@ -1300,6 +1300,33 @@ func (r *mutationResolver) DeleteOverride(ctx context.Context, id string) (bool,
 	return true, nil
 }
 
+// SaveUserContactMethod is the resolver for the saveUserContactMethod field.
+func (r *mutationResolver) SaveUserContactMethod(ctx context.Context, input model.SaveUserContactMethodInput) (*model.UserContactMethod, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := validateNotificationChannelConfig(input.Channel, input.Config); err != nil {
+		return nil, gqlerr.New(handlers.CodeValidation, err.Error())
+	}
+
+	config := input.Config
+	if config == nil {
+		config = map[string]any{}
+	}
+
+	now := time.Now().UTC()
+	return &model.UserContactMethod{
+		ID:        uuid.Must(uuid.NewV7()).String(),
+		UserID:    sc.User.ID.String(),
+		Channel:   input.Channel,
+		Config:    config,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}, nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	sc, ok := auth.SessionFromContext(ctx)
@@ -1695,6 +1722,14 @@ func (r *queryResolver) Overrides(ctx context.Context, scheduleID string) ([]*mo
 		result = append(result, overrideFromDB(override))
 	}
 	return result, nil
+}
+
+// NotificationChannels is the resolver for the notificationChannels field.
+func (r *queryResolver) NotificationChannels(ctx context.Context) ([]*model.NotificationChannelDefinition, error) {
+	if _, err := requireAuthSession(ctx); err != nil {
+		return nil, err
+	}
+	return notificationChannelDefinitions(), nil
 }
 
 // Mutation returns MutationResolver implementation.

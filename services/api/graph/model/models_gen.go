@@ -126,6 +126,12 @@ type LoginPayload struct {
 type Mutation struct {
 }
 
+// Registered outbound notification channel and its JSON Schema config form.
+type NotificationChannelDefinition struct {
+	Name         string         `json:"name"`
+	ConfigSchema map[string]any `json:"configSchema"`
+}
+
 // On-call user for a single rotation layer.
 type OnCallLayer struct {
 	Layer      int    `json:"layer"`
@@ -177,6 +183,11 @@ type Rotation struct {
 	ParticipantIds []string  `json:"participantIds"`
 	CreatedAt      time.Time `json:"createdAt"`
 	UpdatedAt      time.Time `json:"updatedAt"`
+}
+
+type SaveUserContactMethodInput struct {
+	Channel string         `json:"channel"`
+	Config  map[string]any `json:"config"`
 }
 
 type Schedule struct {
@@ -252,6 +263,16 @@ type User struct {
 	OrganizationID string    `json:"organizationId"`
 	CreatedAt      time.Time `json:"createdAt"`
 	UpdatedAt      time.Time `json:"updatedAt"`
+}
+
+// Per-user contact method configuration for a notification channel.
+type UserContactMethod struct {
+	ID        string         `json:"id"`
+	UserID    string         `json:"userId"`
+	Channel   string         `json:"channel"`
+	Config    map[string]any `json:"config"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
 }
 
 // Alert priority levels (doc 02).
