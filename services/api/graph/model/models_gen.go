@@ -96,10 +96,18 @@ type EscalationStep struct {
 }
 
 type EscalationStepInput struct {
-	StepOrder      int   `json:"stepOrder"`
-	DelayMinutes   int   `json:"delayMinutes"`
-	RepeatLastStep *bool `json:"repeatLastStep,omitempty"`
-	MaxRepeats     *int  `json:"maxRepeats,omitempty"`
+	StepOrder      int                          `json:"stepOrder"`
+	DelayMinutes   int                          `json:"delayMinutes"`
+	RepeatLastStep *bool                        `json:"repeatLastStep,omitempty"`
+	MaxRepeats     *int                         `json:"maxRepeats,omitempty"`
+	Targets        []*EscalationStepTargetInput `json:"targets"`
+}
+
+type EscalationStepTargetInput struct {
+	TargetType string  `json:"targetType"`
+	UserID     *string `json:"userId,omitempty"`
+	ScheduleID *string `json:"scheduleId,omitempty"`
+	WebhookURL *string `json:"webhookUrl,omitempty"`
 }
 
 type Health struct {

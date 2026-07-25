@@ -39,14 +39,23 @@ func TestGraphQLEscalationPolicyCRUD(t *testing.T) {
 
 	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
 	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+	adminUserID := admin.ID.String()
 
 	createRec := postGraphQL(t, handler, `mutation {
 		createEscalationPolicy(input: {
 			serviceId: "`+service.ID.String()+`"
 			name: "Default"
 			steps: [
-				{ stepOrder: 1, delayMinutes: 0 }
-				{ stepOrder: 2, delayMinutes: 15 }
+				{
+					stepOrder: 1
+					delayMinutes: 0
+					targets: [{ targetType: "user", userId: "`+adminUserID+`" }]
+				}
+				{
+					stepOrder: 2
+					delayMinutes: 15
+					targets: [{ targetType: "user", userId: "`+adminUserID+`" }]
+				}
 			]
 		}) {
 			id
@@ -95,8 +104,12 @@ func TestGraphQLEscalationPolicyCRUD(t *testing.T) {
 			serviceId: "`+service.ID.String()+`"
 			name: "Broken"
 			steps: [
-				{ stepOrder: 1, delayMinutes: 0 }
-				{ stepOrder: 3, delayMinutes: 5 }
+				{
+					stepOrder: 1
+					delayMinutes: 0
+					targets: [{ targetType: "user", userId: "`+adminUserID+`" }]
+				}
+				{ stepOrder: 3, delayMinutes: 5, targets: [] }
 			]
 		}) { id }
 	}`, adminCookie)
@@ -141,8 +154,16 @@ func TestGraphQLEscalationPolicyCRUD(t *testing.T) {
 			id: "`+policyID+`"
 			name: "Updated"
 			steps: [
-				{ stepOrder: 1, delayMinutes: 0 }
-				{ stepOrder: 2, delayMinutes: 30 }
+				{
+					stepOrder: 1
+					delayMinutes: 0
+					targets: [{ targetType: "user", userId: "`+adminUserID+`" }]
+				}
+				{
+					stepOrder: 2
+					delayMinutes: 30
+					targets: [{ targetType: "user", userId: "`+adminUserID+`" }]
+				}
 			]
 		}) {
 			id
@@ -202,6 +223,38 @@ func TestGraphQLEscalationPolicyCRUD(t *testing.T) {
 	require.True(t, foundDelete, "expected escalation_policy.deleted audit event")
 }
 
+func TestGraphQLEscalationPolicyRejectsStepsWithoutTargets(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	adminCookie := bootstrapAdmin(t, handler)
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+
+	rec := postGraphQL(t, handler, `mutation {
+		createEscalationPolicy(input: {
+			serviceId: "`+service.ID.String()+`"
+			name: "No targets"
+			steps: [{ stepOrder: 1, delayMinutes: 0, targets: [] }]
+		}) { id }
+	}`, adminCookie)
+	require.Equal(t, 200, rec.Code)
+
+	var resp struct {
+		Errors []struct {
+			Extensions map[string]interface{} `json:"extensions"`
+		} `json:"errors"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	require.NotEmpty(t, resp.Errors)
+	require.Equal(t, handlers.CodeValidation, resp.Errors[0].Extensions["code"])
+}
+
 func TestGraphQLEscalationPolicyRequiresAdmin(t *testing.T) {
 	handler, pool, cleanup := newTestHandler(t)
 	defer cleanup()
@@ -221,7 +274,11 @@ func TestGraphQLEscalationPolicyRequiresAdmin(t *testing.T) {
 		createEscalationPolicy(input: {
 			serviceId: "`+service.ID.String()+`"
 			name: "Default"
-			steps: [{ stepOrder: 1, delayMinutes: 0 }]
+			steps: [{
+				stepOrder: 1
+				delayMinutes: 0
+				targets: [{ targetType: "user", userId: "`+member.ID.String()+`" }]
+			}]
 		}) { id }
 	}`, memberCookie)
 	require.Equal(t, 200, rec.Code)

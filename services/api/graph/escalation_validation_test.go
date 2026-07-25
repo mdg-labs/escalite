@@ -11,18 +11,26 @@ import (
 )
 
 func TestValidateEscalationStepInputs(t *testing.T) {
+	validUserTarget := func() *model.EscalationStepTargetInput {
+		userID := "550e8400-e29b-41d4-a716-446655440000"
+		return &model.EscalationStepTargetInput{
+			TargetType: "user",
+			UserID:     &userID,
+		}
+	}
+
 	t.Run("accepts contiguous orders", func(t *testing.T) {
 		err := validateEscalationStepInputs([]*model.EscalationStepInput{
-			{StepOrder: 1, DelayMinutes: 0},
-			{StepOrder: 2, DelayMinutes: 5},
+			{StepOrder: 1, DelayMinutes: 0, Targets: []*model.EscalationStepTargetInput{validUserTarget()}},
+			{StepOrder: 2, DelayMinutes: 5, Targets: []*model.EscalationStepTargetInput{validUserTarget()}},
 		})
 		require.NoError(t, err)
 	})
 
 	t.Run("rejects order gaps", func(t *testing.T) {
 		err := validateEscalationStepInputs([]*model.EscalationStepInput{
-			{StepOrder: 1, DelayMinutes: 0},
-			{StepOrder: 3, DelayMinutes: 5},
+			{StepOrder: 1, DelayMinutes: 0, Targets: []*model.EscalationStepTargetInput{validUserTarget()}},
+			{StepOrder: 3, DelayMinutes: 5, Targets: []*model.EscalationStepTargetInput{validUserTarget()}},
 		})
 		require.Error(t, err)
 
@@ -33,6 +41,34 @@ func TestValidateEscalationStepInputs(t *testing.T) {
 
 	t.Run("rejects empty steps", func(t *testing.T) {
 		err := validateEscalationStepInputs(nil)
+		require.Error(t, err)
+
+		var coded *gqlerr.CodedError
+		require.ErrorAs(t, err, &coded)
+		require.Equal(t, handlers.CodeValidation, coded.Code)
+	})
+
+	t.Run("rejects steps without targets", func(t *testing.T) {
+		err := validateEscalationStepInputs([]*model.EscalationStepInput{
+			{StepOrder: 1, DelayMinutes: 0, Targets: []*model.EscalationStepTargetInput{}},
+		})
+		require.Error(t, err)
+
+		var coded *gqlerr.CodedError
+		require.ErrorAs(t, err, &coded)
+		require.Equal(t, handlers.CodeValidation, coded.Code)
+	})
+
+	t.Run("rejects incomplete targets", func(t *testing.T) {
+		err := validateEscalationStepInputs([]*model.EscalationStepInput{
+			{
+				StepOrder:    1,
+				DelayMinutes: 0,
+				Targets: []*model.EscalationStepTargetInput{
+					{TargetType: "webhook"},
+				},
+			},
+		})
 		require.Error(t, err)
 
 		var coded *gqlerr.CodedError

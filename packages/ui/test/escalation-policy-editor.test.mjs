@@ -80,8 +80,20 @@ test('toEscalationPolicySavePayload normalizes order after reorder', () => {
   assert.deepEqual(payload, {
     name: 'On-call',
     steps: [
-      { stepOrder: 1, delayMinutes: 0, repeatLastStep: false, maxRepeats: undefined },
-      { stepOrder: 2, delayMinutes: 5, repeatLastStep: false, maxRepeats: undefined },
+      {
+        stepOrder: 1,
+        delayMinutes: 0,
+        repeatLastStep: false,
+        maxRepeats: undefined,
+        targets: [{ targetType: 'user', userId: 'user-1' }],
+      },
+      {
+        stepOrder: 2,
+        delayMinutes: 5,
+        repeatLastStep: false,
+        maxRepeats: undefined,
+        targets: [{ targetType: 'user', userId: 'user-1' }],
+      },
     ],
   })
 })

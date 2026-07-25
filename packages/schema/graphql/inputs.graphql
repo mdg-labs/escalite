@@ -9,11 +9,19 @@ input SetupInput {
   password: String!
 }
 
+input EscalationStepTargetInput {
+  targetType: String!
+  userId: ID
+  scheduleId: ID
+  webhookUrl: String
+}
+
 input EscalationStepInput {
   stepOrder: Int!
   delayMinutes: Int!
   repeatLastStep: Boolean = false
   maxRepeats: Int
+  targets: [EscalationStepTargetInput!]!
 }
 
 input CreateHeartbeatMonitorInput {

@@ -63,6 +63,31 @@ export function canSaveEscalationPolicy(steps: EscalationEditorStep[]): boolean 
   return validateEscalationPolicySteps(steps).length === 0
 }
 
+function toTargetInputPayload(
+  target: EscalationStepTarget,
+): EscalationPolicySavePayload['steps'][number]['targets'][number] {
+  const payload: EscalationPolicySavePayload['steps'][number]['targets'][number] = {
+    targetType: target.targetType,
+  }
+
+  const userId = target.userId?.trim()
+  if (userId) {
+    payload.userId = userId
+  }
+
+  const scheduleId = target.scheduleId?.trim()
+  if (scheduleId) {
+    payload.scheduleId = scheduleId
+  }
+
+  const webhookUrl = target.webhookUrl?.trim()
+  if (webhookUrl) {
+    payload.webhookUrl = webhookUrl
+  }
+
+  return payload
+}
+
 export function toEscalationPolicySavePayload(
   name: string,
   steps: EscalationEditorStep[],
@@ -74,6 +99,7 @@ export function toEscalationPolicySavePayload(
       delayMinutes: index === 0 ? 0 : step.delayMinutes,
       repeatLastStep: step.repeatLastStep,
       maxRepeats: step.maxRepeats ?? undefined,
+      targets: step.targets.map(toTargetInputPayload),
     })),
   }
 }

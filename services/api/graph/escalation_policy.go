@@ -32,6 +32,14 @@ func validateEscalationStepInputs(steps []*model.EscalationStepInput) error {
 		if step.DelayMinutes < 0 {
 			return gqlerr.New(handlers.CodeValidation, "delayMinutes must be non-negative")
 		}
+		if len(step.Targets) == 0 {
+			return gqlerr.New(handlers.CodeValidation, "each step must include at least one target")
+		}
+		for _, target := range step.Targets {
+			if err := validateEscalationStepTargetInput(target); err != nil {
+				return err
+			}
+		}
 		orders = append(orders, step.StepOrder)
 	}
 
@@ -40,6 +48,37 @@ func validateEscalationStepInputs(steps []*model.EscalationStepInput) error {
 		if order != i+1 {
 			return gqlerr.New(handlers.CodeValidation, "step orders must be contiguous starting at 1")
 		}
+	}
+
+	return nil
+}
+
+func validateEscalationStepTargetInput(target *model.EscalationStepTargetInput) error {
+	if target == nil {
+		return gqlerr.New(handlers.CodeValidation, "target is required")
+	}
+
+	switch strings.TrimSpace(target.TargetType) {
+	case "user":
+		if target.UserID == nil || strings.TrimSpace(*target.UserID) == "" {
+			return gqlerr.New(handlers.CodeValidation, "userId is required for user targets")
+		}
+		if _, err := parseUUIDField(*target.UserID, "userId"); err != nil {
+			return err
+		}
+	case "rotation":
+		if target.ScheduleID == nil || strings.TrimSpace(*target.ScheduleID) == "" {
+			return gqlerr.New(handlers.CodeValidation, "scheduleId is required for rotation targets")
+		}
+		if _, err := parseUUIDField(*target.ScheduleID, "scheduleId"); err != nil {
+			return err
+		}
+	case "webhook":
+		if target.WebhookURL == nil || strings.TrimSpace(*target.WebhookURL) == "" {
+			return gqlerr.New(handlers.CodeValidation, "webhookUrl is required for webhook targets")
+		}
+	default:
+		return gqlerr.New(handlers.CodeValidation, "targetType must be user, rotation, or webhook")
 	}
 
 	return nil
@@ -94,7 +133,57 @@ func insertEscalationSteps(
 		if err != nil {
 			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 		}
+
+		if err := insertEscalationStepTargets(ctx, q, orgID, step.ID, input.Targets); err != nil {
+			return nil, err
+		}
+
 		steps = append(steps, step)
 	}
 	return steps, nil
+}
+
+func insertEscalationStepTargets(
+	ctx context.Context,
+	q db.Querier,
+	orgID, stepID uuid.UUID,
+	inputs []*model.EscalationStepTargetInput,
+) error {
+	for _, input := range inputs {
+		userID := pgtype.UUID{}
+		scheduleID := pgtype.UUID{}
+		webhookURL := pgtype.Text{}
+
+		switch strings.TrimSpace(input.TargetType) {
+		case "user":
+			parsedUserID, err := parseUUIDField(*input.UserID, "userId")
+			if err != nil {
+				return err
+			}
+			userID = pgtype.UUID{Bytes: parsedUserID, Valid: true}
+		case "rotation":
+			parsedScheduleID, err := parseUUIDField(*input.ScheduleID, "scheduleId")
+			if err != nil {
+				return err
+			}
+			scheduleID = pgtype.UUID{Bytes: parsedScheduleID, Valid: true}
+		case "webhook":
+			webhookURL = pgtype.Text{String: strings.TrimSpace(*input.WebhookURL), Valid: true}
+		}
+
+		if _, err := q.CreateEscalationStepTarget(ctx, db.CreateEscalationStepTargetParams{
+			ID:               uuid.Must(uuid.NewV7()),
+			EscalationStepID: stepID,
+			OrganizationID:   orgID,
+			TargetType:       strings.TrimSpace(input.TargetType),
+			UserID:           userID,
+			ScheduleID:       scheduleID,
+			WebhookUrl:       webhookURL,
+			Channels:         []byte("[]"),
+		}); err != nil {
+			return gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+	}
+
+	return nil
 }

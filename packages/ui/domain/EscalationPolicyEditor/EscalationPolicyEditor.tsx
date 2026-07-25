@@ -62,7 +62,7 @@ import {
   type EscalationStepTarget,
   type EscalationTargetType,
 } from './types'
-import { canSaveEscalationPolicy, validateEscalationPolicySteps } from './validation'
+import { canSaveEscalationPolicy, toEscalationPolicySavePayload, validateEscalationPolicySteps } from './validation'
 
 const TARGET_TYPE_LABELS: Record<EscalationTargetType, string> = {
   user: 'User',
@@ -389,15 +389,7 @@ export function EscalationPolicyEditor({
       return
     }
 
-    await onSave({
-      name: policy.name.trim(),
-      steps: policy.steps.map((step, index) => ({
-        stepOrder: index + 1,
-        delayMinutes: index === 0 ? 0 : step.delayMinutes,
-        repeatLastStep: step.repeatLastStep,
-        maxRepeats: step.maxRepeats ?? undefined,
-      })),
-    })
+    await onSave(toEscalationPolicySavePayload(policy.name, policy.steps))
   }
 
   const saveDisabled =

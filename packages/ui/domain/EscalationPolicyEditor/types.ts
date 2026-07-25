@@ -33,11 +33,19 @@ export type EscalationEditorOptions = {
   schedules: EscalationTargetOption[]
 }
 
+export type EscalationStepTargetInputPayload = {
+  targetType: EscalationTargetType
+  userId?: string
+  scheduleId?: string
+  webhookUrl?: string
+}
+
 export type EscalationStepInputPayload = {
   stepOrder: number
   delayMinutes: number
   repeatLastStep?: boolean
   maxRepeats?: number | null
+  targets: EscalationStepTargetInputPayload[]
 }
 
 export type EscalationPolicySavePayload = {

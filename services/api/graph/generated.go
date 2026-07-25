@@ -1741,6 +1741,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateScheduleInput,
 		ec.unmarshalInputCreateServiceInput,
 		ec.unmarshalInputEscalationStepInput,
+		ec.unmarshalInputEscalationStepTargetInput,
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputNotificationRuleStepInput,
 		ec.unmarshalInputSaveNotificationRuleInput,
@@ -1889,11 +1890,19 @@ input SetupInput {
   password: String!
 }
 
+input EscalationStepTargetInput {
+  targetType: String!
+  userId: ID
+  scheduleId: ID
+  webhookUrl: String
+}
+
 input EscalationStepInput {
   stepOrder: Int!
   delayMinutes: Int!
   repeatLastStep: Boolean = false
   maxRepeats: Int
+  targets: [EscalationStepTargetInput!]!
 }
 
 input CreateHeartbeatMonitorInput {
@@ -10488,7 +10497,7 @@ func (ec *executionContext) unmarshalInputEscalationStepInput(ctx context.Contex
 		asMap["repeatLastStep"] = false
 	}
 
-	fieldsInOrder := [...]string{"stepOrder", "delayMinutes", "repeatLastStep", "maxRepeats"}
+	fieldsInOrder := [...]string{"stepOrder", "delayMinutes", "repeatLastStep", "maxRepeats", "targets"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -10523,6 +10532,64 @@ func (ec *executionContext) unmarshalInputEscalationStepInput(ctx context.Contex
 				return it, err
 			}
 			it.MaxRepeats = data
+		case "targets":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targets"))
+			data, err := ec.unmarshalNEscalationStepTargetInput2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepTargetInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Targets = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputEscalationStepTargetInput(ctx context.Context, obj any) (model.EscalationStepTargetInput, error) {
+	var it model.EscalationStepTargetInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"targetType", "userId", "scheduleId", "webhookUrl"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "targetType":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetType"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TargetType = data
+		case "userId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserID = data
+		case "scheduleId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduleId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ScheduleID = data
+		case "webhookUrl":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("webhookUrl"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WebhookURL = data
 		}
 	}
 	return it, nil
@@ -13738,6 +13805,25 @@ func (ec *executionContext) unmarshalNEscalationStepInput2ᚕᚖgithubᚗcomᚋm
 
 func (ec *executionContext) unmarshalNEscalationStepInput2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepInput(ctx context.Context, v any) (*model.EscalationStepInput, error) {
 	res, err := ec.unmarshalInputEscalationStepInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNEscalationStepTargetInput2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepTargetInputᚄ(ctx context.Context, v any) ([]*model.EscalationStepTargetInput, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]*model.EscalationStepTargetInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNEscalationStepTargetInput2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepTargetInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNEscalationStepTargetInput2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepTargetInput(ctx context.Context, v any) (*model.EscalationStepTargetInput, error) {
+	res, err := ec.unmarshalInputEscalationStepTargetInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
