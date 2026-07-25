@@ -1507,3 +1507,75 @@ table "user_contact_methods" {
     columns = [column.user_id]
   }
 }
+
+table "user_notification_rules" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "user_id" {
+    null = false
+    type = uuid
+  }
+  column "priority" {
+    null = false
+    type = text
+  }
+  column "steps" {
+    null    = false
+    type    = jsonb
+    default = sql("'[]'::jsonb")
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "user_notification_rules_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "user_notification_rules_user_id_organization_id_fkey" {
+    columns     = [column.user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "user_notification_rules_organization_id_user_id_priority_key" {
+    columns = [column.organization_id, column.user_id, column.priority]
+  }
+
+  unique "user_notification_rules_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "user_notification_rules_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  index "user_notification_rules_user_id_idx" {
+    columns = [column.user_id]
+  }
+
+  check "user_notification_rules_priority_check" {
+    expr = "(priority = ANY (ARRAY['low'::text, 'high'::text]))"
+  }
+}

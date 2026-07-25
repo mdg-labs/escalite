@@ -109,11 +109,13 @@ type ComplexityRoot struct {
 		CreateSchedule         func(childComplexity int, input model.CreateScheduleInput) int
 		DeleteEscalationPolicy func(childComplexity int, id string) int
 		DeleteHeartbeatMonitor func(childComplexity int, id string) int
+		DeleteNotificationRule func(childComplexity int, priority model.AlertPriority) int
 		DeleteOverride         func(childComplexity int, id string) int
 		DeleteRotation         func(childComplexity int, id string) int
 		DeleteSchedule         func(childComplexity int, id string) int
 		Login                  func(childComplexity int, input model.LoginInput) int
 		ReEscalateAlert        func(childComplexity int, id string) int
+		SaveNotificationRule   func(childComplexity int, input model.SaveNotificationRuleInput) int
 		SaveSlackSettings      func(childComplexity int, input model.SaveSlackSettingsInput) int
 		SaveUserContactMethod  func(childComplexity int, input model.SaveUserContactMethodInput) int
 		Setup                  func(childComplexity int, input model.SetupInput) int
@@ -127,6 +129,11 @@ type ComplexityRoot struct {
 	NotificationChannelDefinition struct {
 		ConfigSchema func(childComplexity int) int
 		Name         func(childComplexity int) int
+	}
+
+	NotificationRuleStep struct {
+		Channel      func(childComplexity int) int
+		DelayMinutes func(childComplexity int) int
 	}
 
 	OnCallLayer struct {
@@ -171,6 +178,7 @@ type ComplexityRoot struct {
 		HeartbeatMonitors    func(childComplexity int, serviceID string) int
 		Me                   func(childComplexity int) int
 		NotificationChannels func(childComplexity int) int
+		NotificationRules    func(childComplexity int) int
 		OnCallNow            func(childComplexity int, scheduleID string, at *time.Time) int
 		Overrides            func(childComplexity int, scheduleID string) int
 		Schedule             func(childComplexity int, id string) int
@@ -245,6 +253,15 @@ type ComplexityRoot struct {
 		UpdatedAt func(childComplexity int) int
 		UserID    func(childComplexity int) int
 	}
+
+	UserNotificationRule struct {
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Priority  func(childComplexity int) int
+		Steps     func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		UserID    func(childComplexity int) int
+	}
 }
 
 // endregion ***************************** api!.gotpl *****************************
@@ -273,6 +290,8 @@ type MutationResolver interface {
 	CreateOverride(ctx context.Context, input model.CreateOverrideInput) (*model.Override, error)
 	DeleteOverride(ctx context.Context, id string) (bool, error)
 	SaveUserContactMethod(ctx context.Context, input model.SaveUserContactMethodInput) (*model.UserContactMethod, error)
+	SaveNotificationRule(ctx context.Context, input model.SaveNotificationRuleInput) (*model.UserNotificationRule, error)
+	DeleteNotificationRule(ctx context.Context, priority model.AlertPriority) (bool, error)
 	SaveSlackSettings(ctx context.Context, input model.SaveSlackSettingsInput) (*model.SlackSettings, error)
 }
 type QueryResolver interface {
@@ -287,6 +306,7 @@ type QueryResolver interface {
 	OnCallNow(ctx context.Context, scheduleID string, at *time.Time) (*model.OnCallNow, error)
 	Overrides(ctx context.Context, scheduleID string) ([]*model.Override, error)
 	NotificationChannels(ctx context.Context) ([]*model.NotificationChannelDefinition, error)
+	NotificationRules(ctx context.Context) ([]*model.UserNotificationRule, error)
 	SlackSettings(ctx context.Context) (*model.SlackSettings, error)
 }
 
@@ -677,6 +697,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteHeartbeatMonitor(childComplexity, args["id"].(string)), true
+	case "Mutation.deleteNotificationRule":
+		if e.ComplexityRoot.Mutation.DeleteNotificationRule == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteNotificationRule_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteNotificationRule(childComplexity, args["priority"].(model.AlertPriority)), true
 	case "Mutation.deleteOverride":
 		if e.ComplexityRoot.Mutation.DeleteOverride == nil {
 			break
@@ -732,6 +763,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.ReEscalateAlert(childComplexity, args["id"].(string)), true
+	case "Mutation.saveNotificationRule":
+		if e.ComplexityRoot.Mutation.SaveNotificationRule == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveNotificationRule_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SaveNotificationRule(childComplexity, args["input"].(model.SaveNotificationRuleInput)), true
 	case "Mutation.saveSlackSettings":
 		if e.ComplexityRoot.Mutation.SaveSlackSettings == nil {
 			break
@@ -833,6 +875,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.NotificationChannelDefinition.Name(childComplexity), true
+
+	case "NotificationRuleStep.channel":
+		if e.ComplexityRoot.NotificationRuleStep.Channel == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationRuleStep.Channel(childComplexity), true
+	case "NotificationRuleStep.delayMinutes":
+		if e.ComplexityRoot.NotificationRuleStep.DelayMinutes == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationRuleStep.DelayMinutes(childComplexity), true
 
 	case "OnCallLayer.layer":
 		if e.ComplexityRoot.OnCallLayer.Layer == nil {
@@ -1033,6 +1088,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.NotificationChannels(childComplexity), true
+	case "Query.notificationRules":
+		if e.ComplexityRoot.Query.NotificationRules == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.NotificationRules(childComplexity), true
 	case "Query.onCallNow":
 		if e.ComplexityRoot.Query.OnCallNow == nil {
 			break
@@ -1356,6 +1417,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.UserContactMethod.UserID(childComplexity), true
 
+	case "UserNotificationRule.createdAt":
+		if e.ComplexityRoot.UserNotificationRule.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.UserNotificationRule.CreatedAt(childComplexity), true
+	case "UserNotificationRule.id":
+		if e.ComplexityRoot.UserNotificationRule.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.UserNotificationRule.ID(childComplexity), true
+	case "UserNotificationRule.priority":
+		if e.ComplexityRoot.UserNotificationRule.Priority == nil {
+			break
+		}
+
+		return e.ComplexityRoot.UserNotificationRule.Priority(childComplexity), true
+	case "UserNotificationRule.steps":
+		if e.ComplexityRoot.UserNotificationRule.Steps == nil {
+			break
+		}
+
+		return e.ComplexityRoot.UserNotificationRule.Steps(childComplexity), true
+	case "UserNotificationRule.updatedAt":
+		if e.ComplexityRoot.UserNotificationRule.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.UserNotificationRule.UpdatedAt(childComplexity), true
+	case "UserNotificationRule.userId":
+		if e.ComplexityRoot.UserNotificationRule.UserID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.UserNotificationRule.UserID(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -1371,6 +1469,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateScheduleInput,
 		ec.unmarshalInputEscalationStepInput,
 		ec.unmarshalInputLoginInput,
+		ec.unmarshalInputNotificationRuleStepInput,
+		ec.unmarshalInputSaveNotificationRuleInput,
 		ec.unmarshalInputSaveSlackSettingsInput,
 		ec.unmarshalInputSaveUserContactMethodInput,
 		ec.unmarshalInputSetupInput,
@@ -1572,6 +1672,16 @@ input SaveUserContactMethodInput {
   config: JSON!
 }
 
+input NotificationRuleStepInput {
+  channel: String!
+  delayMinutes: Int!
+}
+
+input SaveNotificationRuleInput {
+  priority: AlertPriority!
+  steps: [NotificationRuleStepInput!]!
+}
+
 input SaveSlackSettingsInput {
   botToken: String!
 }
@@ -1633,6 +1743,11 @@ input SaveSlackSettingsInput {
   List registered notification channels and config schemas for form generation.
   """
   notificationChannels: [NotificationChannelDefinition!]!
+
+  """
+  List the current user's notification rules by alert priority.
+  """
+  notificationRules: [UserNotificationRule!]!
 
   """
   Organization Slack bot token status (org admin only).
@@ -1745,6 +1860,16 @@ type Mutation {
   Save the current user's contact method config for a notification channel.
   """
   saveUserContactMethod(input: SaveUserContactMethodInput!): UserContactMethod!
+
+  """
+  Save the current user's notification rule for an alert priority.
+  """
+  saveNotificationRule(input: SaveNotificationRuleInput!): UserNotificationRule!
+
+  """
+  Delete the current user's notification rule for an alert priority.
+  """
+  deleteNotificationRule(priority: AlertPriority!): Boolean!
 
   """
   Save the organization Slack bot token (org admin only). Returns last-4 hint only.
@@ -1943,6 +2068,22 @@ type UserContactMethod {
   updatedAt: DateTime!
 }
 
+"""Ordered notification channel step for a user priority rule."""
+type NotificationRuleStep {
+  channel: String!
+  delayMinutes: Int!
+}
+
+"""Per-user notification rule for an alert priority."""
+type UserNotificationRule {
+  id: ID!
+  userId: ID!
+  priority: AlertPriority!
+  steps: [NotificationRuleStep!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 """Organization Slack bot token configuration (hint only after save)."""
 type SlackSettings {
   configured: Boolean!
@@ -2088,6 +2229,16 @@ func (ec *executionContext) childFields_NotificationChannelDefinition(ctx contex
 		return ec.fieldContext_NotificationChannelDefinition_configSchema(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type NotificationChannelDefinition", field.Name)
+}
+
+func (ec *executionContext) childFields_NotificationRuleStep(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "channel":
+		return ec.fieldContext_NotificationRuleStep_channel(ctx, field)
+	case "delayMinutes":
+		return ec.fieldContext_NotificationRuleStep_delayMinutes(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type NotificationRuleStep", field.Name)
 }
 
 func (ec *executionContext) childFields_OnCallLayer(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2258,6 +2409,24 @@ func (ec *executionContext) childFields_UserContactMethod(ctx context.Context, f
 		return ec.fieldContext_UserContactMethod_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type UserContactMethod", field.Name)
+}
+
+func (ec *executionContext) childFields_UserNotificationRule(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_UserNotificationRule_id(ctx, field)
+	case "userId":
+		return ec.fieldContext_UserNotificationRule_userId(ctx, field)
+	case "priority":
+		return ec.fieldContext_UserNotificationRule_priority(ctx, field)
+	case "steps":
+		return ec.fieldContext_UserNotificationRule_steps(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_UserNotificationRule_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_UserNotificationRule_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type UserNotificationRule", field.Name)
 }
 
 func (ec *executionContext) childFields___Directive(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2502,6 +2671,20 @@ func (ec *executionContext) field_Mutation_deleteHeartbeatMonitor_args(ctx conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteNotificationRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "priority",
+		func(ctx context.Context, v any) (model.AlertPriority, error) {
+			return ec.unmarshalNAlertPriority2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriority(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["priority"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteOverride_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2569,6 +2752,20 @@ func (ec *executionContext) field_Mutation_reEscalateAlert_args(ctx context.Cont
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_saveNotificationRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.SaveNotificationRuleInput, error) {
+			return ec.unmarshalNSaveNotificationRuleInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveNotificationRuleInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -4849,6 +5046,94 @@ func (ec *executionContext) fieldContext_Mutation_saveUserContactMethod(ctx cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_saveNotificationRule(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_saveNotificationRule(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SaveNotificationRule(ctx, fc.Args["input"].(model.SaveNotificationRuleInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.UserNotificationRule) graphql.Marshaler {
+			return ec.marshalNUserNotificationRule2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUserNotificationRule(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_saveNotificationRule(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_UserNotificationRule(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveNotificationRule_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteNotificationRule(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteNotificationRule(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteNotificationRule(ctx, fc.Args["priority"].(model.AlertPriority))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteNotificationRule(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteNotificationRule_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_saveSlackSettings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4937,6 +5222,52 @@ func (ec *executionContext) _NotificationChannelDefinition_configSchema(ctx cont
 }
 func (ec *executionContext) fieldContext_NotificationChannelDefinition_configSchema(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("NotificationChannelDefinition", field, false, false, errors.New("field of type JSON does not have child fields"))
+}
+
+func (ec *executionContext) _NotificationRuleStep_channel(ctx context.Context, field graphql.CollectedField, obj *model.NotificationRuleStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_NotificationRuleStep_channel(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Channel, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_NotificationRuleStep_channel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("NotificationRuleStep", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _NotificationRuleStep_delayMinutes(ctx context.Context, field graphql.CollectedField, obj *model.NotificationRuleStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_NotificationRuleStep_delayMinutes(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DelayMinutes, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_NotificationRuleStep_delayMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("NotificationRuleStep", field, false, false, errors.New("field of type Int does not have child fields"))
 }
 
 func (ec *executionContext) _OnCallLayer_layer(ctx context.Context, field graphql.CollectedField, obj *model.OnCallLayer) (ret graphql.Marshaler) {
@@ -5897,6 +6228,38 @@ func (ec *executionContext) fieldContext_Query_notificationChannels(_ context.Co
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_NotificationChannelDefinition(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_notificationRules(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_notificationRules(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().NotificationRules(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.UserNotificationRule) graphql.Marshaler {
+			return ec.marshalNUserNotificationRule2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUserNotificationRuleᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_notificationRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_UserNotificationRule(ctx, field)
 		},
 	}
 	return fc, nil
@@ -7047,6 +7410,153 @@ func (ec *executionContext) _UserContactMethod_updatedAt(ctx context.Context, fi
 }
 func (ec *executionContext) fieldContext_UserContactMethod_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("UserContactMethod", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _UserNotificationRule_id(ctx context.Context, field graphql.CollectedField, obj *model.UserNotificationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_UserNotificationRule_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_UserNotificationRule_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("UserNotificationRule", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _UserNotificationRule_userId(ctx context.Context, field graphql.CollectedField, obj *model.UserNotificationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_UserNotificationRule_userId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_UserNotificationRule_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("UserNotificationRule", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _UserNotificationRule_priority(ctx context.Context, field graphql.CollectedField, obj *model.UserNotificationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_UserNotificationRule_priority(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Priority, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.AlertPriority) graphql.Marshaler {
+			return ec.marshalNAlertPriority2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriority(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_UserNotificationRule_priority(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("UserNotificationRule", field, false, false, errors.New("field of type AlertPriority does not have child fields"))
+}
+
+func (ec *executionContext) _UserNotificationRule_steps(ctx context.Context, field graphql.CollectedField, obj *model.UserNotificationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_UserNotificationRule_steps(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Steps, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.NotificationRuleStep) graphql.Marshaler {
+			return ec.marshalNNotificationRuleStep2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationRuleStepᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_UserNotificationRule_steps(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserNotificationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_NotificationRuleStep(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserNotificationRule_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.UserNotificationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_UserNotificationRule_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_UserNotificationRule_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("UserNotificationRule", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _UserNotificationRule_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.UserNotificationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_UserNotificationRule_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_UserNotificationRule_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("UserNotificationRule", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -8455,6 +8965,80 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj an
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputNotificationRuleStepInput(ctx context.Context, obj any) (model.NotificationRuleStepInput, error) {
+	var it model.NotificationRuleStepInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"channel", "delayMinutes"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "channel":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channel"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Channel = data
+		case "delayMinutes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("delayMinutes"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DelayMinutes = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSaveNotificationRuleInput(ctx context.Context, obj any) (model.SaveNotificationRuleInput, error) {
+	var it model.SaveNotificationRuleInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"priority", "steps"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "priority":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("priority"))
+			data, err := ec.unmarshalNAlertPriority2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriority(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Priority = data
+		case "steps":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("steps"))
+			data, err := ec.unmarshalNNotificationRuleStepInput2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationRuleStepInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Steps = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSaveSlackSettingsInput(ctx context.Context, obj any) (model.SaveSlackSettingsInput, error) {
 	var it model.SaveSlackSettingsInput
 	if obj == nil {
@@ -9356,6 +9940,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "saveNotificationRule":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveNotificationRule(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteNotificationRule":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteNotificationRule(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "saveSlackSettings":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveSlackSettings(ctx, field)
@@ -9403,6 +10001,49 @@ func (ec *executionContext) _NotificationChannelDefinition(ctx context.Context, 
 			}
 		case "configSchema":
 			out.Values[i] = ec._NotificationChannelDefinition_configSchema(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var notificationRuleStepImplementors = []string{"NotificationRuleStep"}
+
+func (ec *executionContext) _NotificationRuleStep(ctx context.Context, sel ast.SelectionSet, obj *model.NotificationRuleStep) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, notificationRuleStepImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NotificationRuleStep")
+		case "channel":
+			out.Values[i] = ec._NotificationRuleStep_channel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "delayMinutes":
+			out.Values[i] = ec._NotificationRuleStep_delayMinutes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -9919,6 +10560,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_notificationChannels(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "notificationRules":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_notificationRules(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -10448,6 +11111,69 @@ func (ec *executionContext) _UserContactMethod(ctx context.Context, sel ast.Sele
 			}
 		case "updatedAt":
 			out.Values[i] = ec._UserContactMethod_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var userNotificationRuleImplementors = []string{"UserNotificationRule"}
+
+func (ec *executionContext) _UserNotificationRule(ctx context.Context, sel ast.SelectionSet, obj *model.UserNotificationRule) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userNotificationRuleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserNotificationRule")
+		case "id":
+			out.Values[i] = ec._UserNotificationRule_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userId":
+			out.Values[i] = ec._UserNotificationRule_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "priority":
+			out.Values[i] = ec._UserNotificationRule_priority(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "steps":
+			out.Values[i] = ec._UserNotificationRule_steps(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._UserNotificationRule_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._UserNotificationRule_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -11212,6 +11938,51 @@ func (ec *executionContext) marshalNNotificationChannelDefinition2ᚖgithubᚗco
 	return ec._NotificationChannelDefinition(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNNotificationRuleStep2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationRuleStepᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.NotificationRuleStep) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNNotificationRuleStep2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationRuleStep(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNNotificationRuleStep2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationRuleStep(ctx context.Context, sel ast.SelectionSet, v *model.NotificationRuleStep) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._NotificationRuleStep(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNNotificationRuleStepInput2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationRuleStepInputᚄ(ctx context.Context, v any) ([]*model.NotificationRuleStepInput, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]*model.NotificationRuleStepInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNNotificationRuleStepInput2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationRuleStepInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNNotificationRuleStepInput2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationRuleStepInput(ctx context.Context, v any) (*model.NotificationRuleStepInput, error) {
+	res, err := ec.unmarshalInputNotificationRuleStepInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNOnCallLayer2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOnCallLayerᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.OnCallLayer) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -11306,6 +12077,11 @@ func (ec *executionContext) marshalNRotation2ᚖgithubᚗcomᚋmdgᚑlabsᚋesca
 		return graphql.Null
 	}
 	return ec._Rotation(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNSaveNotificationRuleInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveNotificationRuleInput(ctx context.Context, v any) (model.SaveNotificationRuleInput, error) {
+	res, err := ec.unmarshalInputSaveNotificationRuleInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNSaveSlackSettingsInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveSlackSettingsInput(ctx context.Context, v any) (model.SaveSlackSettingsInput, error) {
@@ -11439,6 +12215,36 @@ func (ec *executionContext) marshalNUserContactMethod2ᚖgithubᚗcomᚋmdgᚑla
 		return graphql.Null
 	}
 	return ec._UserContactMethod(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUserNotificationRule2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUserNotificationRule(ctx context.Context, sel ast.SelectionSet, v model.UserNotificationRule) graphql.Marshaler {
+	return ec._UserNotificationRule(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserNotificationRule2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUserNotificationRuleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.UserNotificationRule) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNUserNotificationRule2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUserNotificationRule(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNUserNotificationRule2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUserNotificationRule(ctx context.Context, sel ast.SelectionSet, v *model.UserNotificationRule) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UserNotificationRule(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNUserRole2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUserRole(ctx context.Context, v any) (model.UserRole, error) {

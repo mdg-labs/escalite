@@ -57,6 +57,11 @@ type Query {
   notificationChannels: [NotificationChannelDefinition!]!
 
   """
+  List the current user's notification rules by alert priority.
+  """
+  notificationRules: [UserNotificationRule!]!
+
+  """
   Organization Slack bot token status (org admin only).
   """
   slackSettings: SlackSettings!
@@ -167,6 +172,16 @@ type Mutation {
   Save the current user's contact method config for a notification channel.
   """
   saveUserContactMethod(input: SaveUserContactMethodInput!): UserContactMethod!
+
+  """
+  Save the current user's notification rule for an alert priority.
+  """
+  saveNotificationRule(input: SaveNotificationRuleInput!): UserNotificationRule!
+
+  """
+  Delete the current user's notification rule for an alert priority.
+  """
+  deleteNotificationRule(priority: AlertPriority!): Boolean!
 
   """
   Save the organization Slack bot token (org admin only). Returns last-4 hint only.

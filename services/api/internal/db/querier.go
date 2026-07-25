@@ -41,6 +41,7 @@ type Querier interface {
 	DeleteRotation(ctx context.Context, arg DeleteRotationParams) error
 	DeleteSchedule(ctx context.Context, arg DeleteScheduleParams) error
 	DeleteSession(ctx context.Context, arg DeleteSessionParams) error
+	DeleteUserNotificationRule(ctx context.Context, arg DeleteUserNotificationRuleParams) error
 	GetActiveSessionByID(ctx context.Context, id uuid.UUID) (Session, error)
 	GetAlertByID(ctx context.Context, arg GetAlertByIDParams) (Alert, error)
 	GetEscalationPolicyByID(ctx context.Context, arg GetEscalationPolicyByIDParams) (EscalationPolicy, error)
@@ -60,6 +61,7 @@ type Querier interface {
 	GetUserByEmailForAuth(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, arg GetUserByIDParams) (User, error)
 	GetUserContactMethodByChannel(ctx context.Context, arg GetUserContactMethodByChannelParams) (UserContactMethod, error)
+	GetUserNotificationRuleByPriority(ctx context.Context, arg GetUserNotificationRuleByPriorityParams) (UserNotificationRule, error)
 	HasTeamMembership(ctx context.Context, arg HasTeamMembershipParams) (bool, error)
 	InvalidateUnusedPasswordResetTokensForUser(ctx context.Context, userID uuid.UUID) error
 	ListActiveOverridesByScheduleAt(ctx context.Context, arg ListActiveOverridesByScheduleAtParams) ([]Override, error)
@@ -72,6 +74,7 @@ type Querier interface {
 	ListNotificationAttemptsByAlertID(ctx context.Context, arg ListNotificationAttemptsByAlertIDParams) ([]NotificationAttempt, error)
 	ListRotationsByScheduleID(ctx context.Context, arg ListRotationsByScheduleIDParams) ([]Rotation, error)
 	ListSchedulesByTeamID(ctx context.Context, arg ListSchedulesByTeamIDParams) ([]Schedule, error)
+	ListUserNotificationRules(ctx context.Context, arg ListUserNotificationRulesParams) ([]UserNotificationRule, error)
 	MarkPasswordResetTokenUsed(ctx context.Context, id uuid.UUID) error
 	PingDatabase(ctx context.Context) (int32, error)
 	ReEscalateAlert(ctx context.Context, arg ReEscalateAlertParams) (Alert, error)
@@ -88,6 +91,7 @@ type Querier interface {
 	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
 	UpsertOrganizationSlackSettings(ctx context.Context, arg UpsertOrganizationSlackSettingsParams) (OrganizationSlackSetting, error)
 	UpsertUserContactMethod(ctx context.Context, arg UpsertUserContactMethodParams) (UserContactMethod, error)
+	UpsertUserNotificationRule(ctx context.Context, arg UpsertUserNotificationRuleParams) (UserNotificationRule, error)
 }
 
 var _ Querier = (*Queries)(nil)

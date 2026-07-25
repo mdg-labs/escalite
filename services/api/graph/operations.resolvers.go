@@ -1338,6 +1338,69 @@ func (r *mutationResolver) SaveUserContactMethod(ctx context.Context, input mode
 	return userContactMethodFromDB(method)
 }
 
+// SaveNotificationRule is the resolver for the saveNotificationRule field.
+func (r *mutationResolver) SaveNotificationRule(ctx context.Context, input model.SaveNotificationRuleInput) (*model.UserNotificationRule, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	priority, err := alertPriorityToDB(input.Priority)
+	if err != nil {
+		return nil, gqlerr.New(handlers.CodeValidation, err.Error())
+	}
+
+	steps, err := validateNotificationRuleSteps(input.Steps)
+	if err != nil {
+		return nil, gqlerr.New(handlers.CodeValidation, err.Error())
+	}
+
+	rawSteps, err := notificationRuleStepsToRaw(steps)
+	if err != nil {
+		return nil, gqlerr.New(handlers.CodeValidation, "steps must be a JSON array")
+	}
+
+	queries := db.New(r.pool)
+	rule, err := queries.UpsertUserNotificationRule(ctx, db.UpsertUserNotificationRuleParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: sc.User.OrganizationID,
+		UserID:         sc.User.ID,
+		Priority:       priority,
+		Steps:          rawSteps,
+	})
+	if err != nil {
+		r.logger.Error("save notification rule failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return userNotificationRuleFromDB(rule)
+}
+
+// DeleteNotificationRule is the resolver for the deleteNotificationRule field.
+func (r *mutationResolver) DeleteNotificationRule(ctx context.Context, priority model.AlertPriority) (bool, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	priorityDB, err := alertPriorityToDB(priority)
+	if err != nil {
+		return false, gqlerr.New(handlers.CodeValidation, err.Error())
+	}
+
+	queries := db.New(r.pool)
+	if err := queries.DeleteUserNotificationRule(ctx, db.DeleteUserNotificationRuleParams{
+		OrganizationID: sc.User.OrganizationID,
+		UserID:         sc.User.ID,
+		Priority:       priorityDB,
+	}); err != nil {
+		r.logger.Error("delete notification rule failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return true, nil
+}
+
 // SaveSlackSettings is the resolver for the saveSlackSettings field.
 func (r *mutationResolver) SaveSlackSettings(ctx context.Context, input model.SaveSlackSettingsInput) (*model.SlackSettings, error) {
 	sc, err := requireAdminSession(ctx)
@@ -1773,6 +1836,35 @@ func (r *queryResolver) NotificationChannels(ctx context.Context) ([]*model.Noti
 		return nil, err
 	}
 	return notificationChannelDefinitions(), nil
+}
+
+// NotificationRules is the resolver for the notificationRules field.
+func (r *queryResolver) NotificationRules(ctx context.Context) ([]*model.UserNotificationRule, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	rules, err := queries.ListUserNotificationRules(ctx, db.ListUserNotificationRulesParams{
+		OrganizationID: sc.User.OrganizationID,
+		UserID:         sc.User.ID,
+	})
+	if err != nil {
+		r.logger.Error("list notification rules failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	out := make([]*model.UserNotificationRule, 0, len(rules))
+	for _, rule := range rules {
+		gqlRule, err := userNotificationRuleFromDB(rule)
+		if err != nil {
+			r.logger.Error("map notification rule failed", "error", err)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+		out = append(out, gqlRule)
+	}
+	return out, nil
 }
 
 // SlackSettings is the resolver for the slackSettings field.

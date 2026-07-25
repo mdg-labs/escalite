@@ -202,3 +202,142 @@ func TestTriggeredAlertSchedulesStep1NotificationsWithin5s(t *testing.T) {
 	require.NoError(t, json.Unmarshal(updatedAlert.EscalationState, &escalationState))
 	require.Equal(t, 1, escalationState["current_step"])
 }
+
+func TestTriggeredAlertUsesHighPriorityNotificationRuleOrdering(t *testing.T) {
+	ctx := context.Background()
+	databaseURL, cleanup, err := testutil.StartPostgres(ctx)
+	require.NoError(t, err)
+	defer cleanup()
+
+	require.NoError(t, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+
+	queueClient, err := queue.New(ctx, queue.Options{
+		DatabaseURL: databaseURL,
+		Logger:      slog.Default(),
+	})
+	require.NoError(t, err)
+	defer queueClient.Close()
+
+	require.NoError(t, queueClient.Start(ctx))
+	defer func() {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = queueClient.Stop(stopCtx)
+	}()
+
+	queries := db.New(queueClient.Pool())
+
+	orgID := uuid.Must(uuid.NewV7())
+	adminID := uuid.Must(uuid.NewV7())
+	teamID := uuid.Must(uuid.NewV7())
+	serviceID := uuid.Must(uuid.NewV7())
+	policyID := uuid.Must(uuid.NewV7())
+	stepID := uuid.Must(uuid.NewV7())
+
+	_, err = queries.BootstrapOrganizationWithAdmin(ctx, db.BootstrapOrganizationWithAdminParams{
+		OrgID:        orgID,
+		OrgName:      "Acme",
+		UserID:       adminID,
+		Email:        "admin@example.com",
+		PasswordHash: pgtype.Text{String: "hash", Valid: true},
+	})
+	require.NoError(t, err)
+
+	_, err = queries.CreateTeam(ctx, db.CreateTeamParams{
+		ID:             teamID,
+		OrganizationID: orgID,
+		Name:           "Platform",
+	})
+	require.NoError(t, err)
+
+	_, err = queries.CreateService(ctx, db.CreateServiceParams{
+		ID:             serviceID,
+		OrganizationID: orgID,
+		TeamID:         teamID,
+		Name:           "checkout-api",
+	})
+	require.NoError(t, err)
+
+	_, err = queries.CreateEscalationPolicy(ctx, db.CreateEscalationPolicyParams{
+		ID:             policyID,
+		OrganizationID: orgID,
+		ServiceID:      serviceID,
+		Name:           "Default",
+	})
+	require.NoError(t, err)
+
+	_, err = queries.CreateEscalationStep(ctx, db.CreateEscalationStepParams{
+		ID:                 stepID,
+		EscalationPolicyID: policyID,
+		OrganizationID:     orgID,
+		StepOrder:          1,
+		DelayMinutes:       0,
+		RepeatLastStep:     false,
+		MaxRepeats:         pgtype.Int4{},
+	})
+	require.NoError(t, err)
+
+	adminChannels, err := json.Marshal([]string{"email", "push"})
+	require.NoError(t, err)
+	_, err = queries.CreateEscalationStepTarget(ctx, db.CreateEscalationStepTargetParams{
+		ID:               uuid.Must(uuid.NewV7()),
+		EscalationStepID: stepID,
+		OrganizationID:   orgID,
+		TargetType:       "user",
+		UserID:           pgtype.UUID{Bytes: adminID, Valid: true},
+		ScheduleID:       pgtype.UUID{},
+		WebhookUrl:       pgtype.Text{},
+		Channels:         adminChannels,
+	})
+	require.NoError(t, err)
+
+	highRuleSteps, err := json.Marshal([]map[string]any{
+		{"channel": "push", "delay_minutes": 0},
+		{"channel": "email", "delay_minutes": 2},
+	})
+	require.NoError(t, err)
+	_, err = queries.UpsertUserNotificationRule(ctx, db.UpsertUserNotificationRuleParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		UserID:         adminID,
+		Priority:       "high",
+		Steps:          highRuleSteps,
+	})
+	require.NoError(t, err)
+
+	alertID := uuid.Must(uuid.NewV7())
+	_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
+		AlertID:        alertID,
+		OrganizationID: orgID,
+		ServiceID:      serviceID,
+		DedupKey:       "cpu-high",
+		Summary:        "CPU above threshold",
+		Priority:       "high",
+	})
+	require.NoError(t, err)
+
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		attempts, err := queries.ListNotificationAttemptsByAlertID(ctx, db.ListNotificationAttemptsByAlertIDParams{
+			AlertID:        alertID,
+			OrganizationID: orgID,
+		})
+		require.NoError(t, err)
+		if len(attempts) == 2 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("expected 2 notification attempts within 5s, got %d", len(attempts))
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	attempts, err := queries.ListNotificationAttemptsByAlertID(ctx, db.ListNotificationAttemptsByAlertIDParams{
+		AlertID:        alertID,
+		OrganizationID: orgID,
+	})
+	require.NoError(t, err)
+	require.Len(t, attempts, 2)
+	require.Equal(t, "push", attempts[0].Channel)
+	require.Equal(t, "email", attempts[1].Channel)
+}

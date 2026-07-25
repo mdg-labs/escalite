@@ -18,6 +18,7 @@ import (
 
 	"github.com/mdg-labs/escalite/services/engine/internal/db"
 	"github.com/mdg-labs/escalite/services/engine/internal/jobs"
+	"github.com/mdg-labs/escalite/services/engine/internal/notificationrules"
 	"github.com/mdg-labs/escalite/services/engine/oncall"
 )
 
@@ -160,7 +161,25 @@ func scheduleStepNotifications(
 		}
 
 		for _, item := range resolved {
-			for _, channel := range item.channels {
+			userID, err := uuid.Parse(strings.TrimSpace(item.recipient.UserID))
+			if err != nil {
+				return fmt.Errorf("invalid user id for notification rules: %w", err)
+			}
+
+			channelSchedules, err := notificationrules.ResolveChannelSchedule(
+				ctx,
+				q,
+				alert.OrganizationID,
+				userID,
+				alert.Priority,
+				item.channels,
+			)
+			if err != nil {
+				return err
+			}
+
+			for _, schedule := range channelSchedules {
+				channel := schedule.Channel
 				recipient := item.recipient
 				if channel == "slack-dm" {
 					config, skip, err := slackDMRecipientConfig(ctx, q, alert.OrganizationID, recipient.UserID, alert.ID)
@@ -198,11 +217,13 @@ func scheduleStepNotifications(
 					return fmt.Errorf("create notification attempt: %w", err)
 				}
 
+				scheduledAt := time.Now().UTC().Add(time.Duration(schedule.DelayMinutes) * time.Minute)
 				if _, err := inserter.Insert(ctx, jobs.NotifyArgs{
 					NotificationAttemptID: attemptID,
 					OrganizationID:      alert.OrganizationID,
 				}, &river.InsertOpts{
 					MaxAttempts: jobs.NotifyMaxAttempts,
+					ScheduledAt: scheduledAt,
 				}); err != nil {
 					return fmt.Errorf("enqueue notify job: %w", err)
 				}

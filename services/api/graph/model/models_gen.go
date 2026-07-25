@@ -132,6 +132,17 @@ type NotificationChannelDefinition struct {
 	ConfigSchema map[string]any `json:"configSchema"`
 }
 
+// Ordered notification channel step for a user priority rule.
+type NotificationRuleStep struct {
+	Channel      string `json:"channel"`
+	DelayMinutes int    `json:"delayMinutes"`
+}
+
+type NotificationRuleStepInput struct {
+	Channel      string `json:"channel"`
+	DelayMinutes int    `json:"delayMinutes"`
+}
+
 // On-call user for a single rotation layer.
 type OnCallLayer struct {
 	Layer      int    `json:"layer"`
@@ -183,6 +194,11 @@ type Rotation struct {
 	ParticipantIds []string  `json:"participantIds"`
 	CreatedAt      time.Time `json:"createdAt"`
 	UpdatedAt      time.Time `json:"updatedAt"`
+}
+
+type SaveNotificationRuleInput struct {
+	Priority AlertPriority                `json:"priority"`
+	Steps    []*NotificationRuleStepInput `json:"steps"`
 }
 
 type SaveSlackSettingsInput struct {
@@ -283,6 +299,16 @@ type UserContactMethod struct {
 	Config    map[string]any `json:"config"`
 	CreatedAt time.Time      `json:"createdAt"`
 	UpdatedAt time.Time      `json:"updatedAt"`
+}
+
+// Per-user notification rule for an alert priority.
+type UserNotificationRule struct {
+	ID        string                  `json:"id"`
+	UserID    string                  `json:"userId"`
+	Priority  AlertPriority           `json:"priority"`
+	Steps     []*NotificationRuleStep `json:"steps"`
+	CreatedAt time.Time               `json:"createdAt"`
+	UpdatedAt time.Time               `json:"updatedAt"`
 }
 
 // Alert priority levels (doc 02).

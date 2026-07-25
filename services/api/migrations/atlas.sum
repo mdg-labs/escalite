@@ -1,4 +1,4 @@
-h1:fzSfT0hMcafsG+ZBeeJdDBLeFX+K2UZZxT2wMQgc4vk=
+h1:adA+5/YvEzeIQjZOPFNtxEHPlQ7da0N3OHXyRoRWsdg=
 20260724152227_bootstrap.sql h1:WYv9xloOU0omzO45qOWDBOgKJ7DzGguHqhrhDqa2E4U=
 20260724153443_core_entities.sql h1:NkaRkIxu11UNWC8twLznio2v14tL8RNRwk5qjaO3How=
 20260724153823_service_integration.sql h1:S9SoDj8QwVLhYA3KlpxK/z/Qy/hbvMqDd8MswSvRJXY=
@@ -10,3 +10,4 @@ h1:fzSfT0hMcafsG+ZBeeJdDBLeFX+K2UZZxT2wMQgc4vk=
 20260724213212_alert_acknowledged_by.sql h1:7sCcJ7cUJsj0THfdkrjmZNVoduurZpR8QE6PWvoQZEc=
 20260725060422_heartbeat_monitors.sql h1:0cdQkRhyietXsLyKBsD4IOs65BLbLy7BvxpdF3kDQXs=
 20260725063733_slack_notification_settings.sql h1:Nt4zCKubzI9DNSbIkWW25VT7xIUXkUCEs279zsyR/bs=
+20260725065144_user_notification_rules.sql h1:mWeDLwFLc3Bjer2B0aKScw5HiO8z4NUs55VNA1TwdNc=

@@ -83,6 +83,16 @@ input SaveUserContactMethodInput {
   config: JSON!
 }
 
+input NotificationRuleStepInput {
+  channel: String!
+  delayMinutes: Int!
+}
+
+input SaveNotificationRuleInput {
+  priority: AlertPriority!
+  steps: [NotificationRuleStepInput!]!
+}
+
 input SaveSlackSettingsInput {
   botToken: String!
 }
