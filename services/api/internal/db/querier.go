@@ -42,6 +42,7 @@ type Querier interface {
 	DeleteSchedule(ctx context.Context, arg DeleteScheduleParams) error
 	DeleteSession(ctx context.Context, arg DeleteSessionParams) error
 	DeleteUserNotificationRule(ctx context.Context, arg DeleteUserNotificationRuleParams) error
+	GetActiveIntegrationKeyByTokenHash(ctx context.Context, token string) (IntegrationKey, error)
 	GetActiveSessionByID(ctx context.Context, id uuid.UUID) (Session, error)
 	GetAlertByID(ctx context.Context, arg GetAlertByIDParams) (Alert, error)
 	GetEscalationPolicyByID(ctx context.Context, arg GetEscalationPolicyByIDParams) (EscalationPolicy, error)

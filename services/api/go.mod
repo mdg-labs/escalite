@@ -12,6 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/mdg-labs/escalite/services/engine v0.0.0
+	github.com/mdg-labs/escalite/services/integrations v0.0.0
 	github.com/riverqueue/river v0.41.0
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.41.0
 	github.com/riverqueue/river/rivertype v0.41.0
@@ -25,6 +26,8 @@ require (
 )
 
 replace github.com/mdg-labs/escalite/services/engine => ../engine
+
+replace github.com/mdg-labs/escalite/services/integrations => ../integrations
 
 require (
 	dario.cat/mergo v1.0.2 // indirect

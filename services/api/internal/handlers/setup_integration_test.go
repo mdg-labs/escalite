@@ -58,11 +58,12 @@ func startPostgres(t *testing.T) (string, func()) {
 }
 
 type testServerOptions struct {
-	Mail          email.Sender
-	PublicURL     string
-	PasswordReset *server.PasswordResetOptions
-	HeartbeatPing *server.HeartbeatPingOptions
-	Secrets       *crypto.Box
+	Mail           email.Sender
+	PublicURL      string
+	PasswordReset  *server.PasswordResetOptions
+	HeartbeatPing  *server.HeartbeatPingOptions
+	InboundWebhook *server.InboundWebhookOptions
+	Secrets        *crypto.Box
 }
 
 const testEncryptionKeyHex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -108,6 +109,7 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 		PublicURL:     opts.PublicURL,
 		PasswordReset: opts.PasswordReset,
 		HeartbeatPing: opts.HeartbeatPing,
+		InboundWebhook: opts.InboundWebhook,
 	})
 
 	return handler, pool, func() {

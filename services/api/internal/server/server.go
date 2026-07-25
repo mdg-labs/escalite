@@ -31,8 +31,9 @@ type Dependencies struct {
 	PublicURL     string
 	AppOrigin     string
 	PasswordReset *PasswordResetOptions
-	HeartbeatPing *HeartbeatPingOptions
-	GraphQL       graphql.Options
+	HeartbeatPing   *HeartbeatPingOptions
+	InboundWebhook  *InboundWebhookOptions
+	GraphQL         graphql.Options
 }
 
 // PasswordResetOptions overrides password reset wiring (primarily for tests).
@@ -45,6 +46,11 @@ type PasswordResetOptions struct {
 // HeartbeatPingOptions overrides heartbeat ping wiring (primarily for tests).
 type HeartbeatPingOptions struct {
 	TokenLimiter ratelimit.Limiter
+}
+
+// InboundWebhookOptions overrides inbound webhook wiring (primarily for tests).
+type InboundWebhookOptions struct {
+	KeyLimiter ratelimit.Limiter
 }
 
 // OIDCServices holds optional OIDC login handlers when ESCALITE_OIDC_* is configured.
@@ -105,6 +111,12 @@ func New(deps Dependencies) http.Handler {
 		}
 		heartbeatPing := handlers.NewHeartbeatPingHandler(deps.Pool, deps.Logger, heartbeatCfg)
 
+		webhookCfg := handlers.InboundWebhookConfig{}
+		if deps.InboundWebhook != nil {
+			webhookCfg.KeyLimiter = deps.InboundWebhook.KeyLimiter
+		}
+		inboundWebhook := handlers.NewInboundWebhookHandler(deps.Pool, deps.Logger, webhookCfg)
+
 		r.Post("/api/v1/setup", setup.ServeHTTP)
 		r.Post("/api/v1/login", login.ServeHTTP)
 		r.Post("/api/v1/password-reset/request", passwordReset.Request)
@@ -114,6 +126,8 @@ func New(deps Dependencies) http.Handler {
 			r.Get("/{token}", heartbeatPing.ServeHTTP)
 			r.Post("/{token}", heartbeatPing.ServeHTTP)
 		})
+
+		r.Post("/webhook/{plugin}/{token}", inboundWebhook.ServeHTTP)
 
 		if deps.OIDC != nil {
 			r.Get("/api/v1/auth/oidc/login", deps.OIDC.Login)
