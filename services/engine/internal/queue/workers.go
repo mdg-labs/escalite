@@ -12,7 +12,7 @@ import (
 // NewWorkers registers engine workers on a River workers bundle.
 func NewWorkers(logger *slog.Logger, pool *pgxpool.Pool, inserter escalation.JobInserter) *river.Workers {
 	workers := river.NewWorkers()
-	river.AddWorker(workers, NewHeartbeatScanWorker(logger))
+	river.AddWorker(workers, NewHeartbeatScanWorker(logger, pool, inserter))
 	river.AddWorker(workers, NewEscalationTriggerWorker(logger, pool, inserter))
 	river.AddWorker(workers, NewEscalationStepWorker(logger, pool, inserter))
 	river.AddWorker(workers, NewNotifyWorker(logger, pool))

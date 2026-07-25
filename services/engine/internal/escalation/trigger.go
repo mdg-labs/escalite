@@ -339,6 +339,7 @@ type CreateTriggeredAlertParams struct {
 	Summary        string
 	Description    pgtype.Text
 	Priority       string
+	Source         string
 }
 
 // CreateTriggeredAlert inserts a triggered alert and enqueues step-1 escalation in one transaction.
@@ -358,7 +359,10 @@ func CreateTriggeredAlert(
 
 	q := db.New(tx)
 
-	initialState := []byte(`{}`)
+	initialState, err := initialEscalationState(params.Source)
+	if err != nil {
+		return db.Alert{}, fmt.Errorf("marshal escalation state: %w", err)
+	}
 	alert, err := q.CreateTriggeredAlert(ctx, db.CreateTriggeredAlertParams{
 		ID:               params.AlertID,
 		OrganizationID:   params.OrganizationID,
@@ -386,4 +390,11 @@ func CreateTriggeredAlert(
 	}
 
 	return alert, nil
+}
+
+func initialEscalationState(source string) ([]byte, error) {
+	if source == "" {
+		return []byte(`{}`), nil
+	}
+	return json.Marshal(map[string]string{"source": source})
 }

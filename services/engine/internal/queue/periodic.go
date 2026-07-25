@@ -8,7 +8,7 @@ import (
 
 const heartbeatScanPeriodicJobID = "heartbeat_scan"
 
-// DefaultHeartbeatScanInterval is the noop scan cadence until Phase 1 makes it configurable.
+// DefaultHeartbeatScanInterval is used when ESCALITE_HEARTBEAT_SCAN_INTERVAL is unset.
 const DefaultHeartbeatScanInterval = time.Minute
 
 // NewPeriodicJobs registers engine periodic enqueue schedules.
