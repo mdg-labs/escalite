@@ -41,6 +41,17 @@ func TestInboundWebhookAlertmanagerCreatesAndResolvesAlert(t *testing.T) {
 	require.Equal(t, "BlackBox Probe Failure: https://server.example.org", alert.Summary)
 	require.Equal(t, "high", alert.Priority)
 
+	rec = postInboundWebhook(t, handler, "prometheus-alertmanager", token, firing)
+	require.Equal(t, 202, rec.Code, rec.Body.String())
+
+	collapsed, err := queries.GetOpenAlertByServiceDedupKey(context.Background(), db.GetOpenAlertByServiceDedupKeyParams{
+		ServiceID: service.ID,
+		DedupKey:  "1a30ba71cca2921f",
+	})
+	require.NoError(t, err)
+	require.Equal(t, alert.ID, collapsed.ID)
+	require.Equal(t, int32(2), collapsed.EventCount)
+
 	resolved := loadAlertmanagerFixture(t, "resolved_v4.json")
 	rec = postInboundWebhook(t, handler, "prometheus-alertmanager", token, resolved)
 	require.Equal(t, 202, rec.Code, rec.Body.String())

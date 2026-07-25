@@ -66,6 +66,7 @@ type Querier interface {
 	GetUserContactMethodByChannel(ctx context.Context, arg GetUserContactMethodByChannelParams) (UserContactMethod, error)
 	GetUserNotificationRuleByPriority(ctx context.Context, arg GetUserNotificationRuleByPriorityParams) (UserNotificationRule, error)
 	HasTeamMembership(ctx context.Context, arg HasTeamMembershipParams) (bool, error)
+	IncrementOpenAlertEventCount(ctx context.Context, arg IncrementOpenAlertEventCountParams) (Alert, error)
 	InvalidateUnusedPasswordResetTokensForUser(ctx context.Context, userID uuid.UUID) error
 	ListActiveOverridesByScheduleAt(ctx context.Context, arg ListActiveOverridesByScheduleAtParams) ([]Override, error)
 	ListActiveOverridesByScheduleID(ctx context.Context, arg ListActiveOverridesByScheduleIDParams) ([]Override, error)

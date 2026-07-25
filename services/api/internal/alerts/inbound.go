@@ -34,6 +34,24 @@ func ProcessInbound(
 }
 
 func createTriggered(ctx context.Context, queries *db.Queries, key db.IntegrationKey, event integrations.AlertCreate) (uuid.UUID, error) {
+	_, err := queries.GetOpenAlertByServiceDedupKey(ctx, db.GetOpenAlertByServiceDedupKeyParams{
+		ServiceID: key.ServiceID,
+		DedupKey:  event.DedupKey,
+	})
+	if err == nil {
+		updated, err := queries.IncrementOpenAlertEventCount(ctx, db.IncrementOpenAlertEventCountParams{
+			ServiceID: key.ServiceID,
+			DedupKey:  event.DedupKey,
+		})
+		if err != nil {
+			return uuid.Nil, err
+		}
+		return updated.ID, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return uuid.Nil, err
+	}
+
 	description := pgtype.Text{}
 	if event.Description != "" {
 		description = pgtype.Text{String: event.Description, Valid: true}
