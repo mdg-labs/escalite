@@ -41,6 +41,12 @@ type SlackOAuthConfig struct {
 	SuccessURL   string
 }
 
+// SlackInteractiveConfig holds Slack interactive endpoint settings. Empty SigningSecret
+// disables POST /api/v1/integrations/slack/interactive.
+type SlackInteractiveConfig struct {
+	SigningSecret string
+}
+
 // SMTPConfig holds optional outbound SMTP settings. Nil means email is not sent (noop sender).
 type SMTPConfig struct {
 	Host     string
@@ -89,8 +95,9 @@ type Config struct {
 	AppOrigin     string
 	Environment   string
 	OIDC          *OIDCConfig
-	SlackOAuth    *SlackOAuthConfig
-	SMTP          *SMTPConfig
+	SlackOAuth       *SlackOAuthConfig
+	SlackInteractive SlackInteractiveConfig
+	SMTP             *SMTPConfig
 	InboundEmail  InboundEmailConfig
 	PasswordReset PasswordResetRateLimitConfig
 	HeartbeatPing                     HeartbeatPingRateLimitConfig
@@ -131,6 +138,7 @@ func Load(opts Options) (Config, error) {
 		return Config{}, err
 	}
 	cfg.SlackOAuth = slackOAuthCfg
+	cfg.SlackInteractive = loadSlackInteractive()
 
 	smtpCfg, err := loadSMTP()
 	if err != nil {
@@ -347,6 +355,12 @@ func loadGraphQLConfig() GraphQLConfig {
 	return GraphQLConfig{
 		MaxDepth:      envIntOrDefault("ESCALITE_GRAPHQL_MAX_DEPTH", 15),
 		MaxComplexity: envIntOrDefault("ESCALITE_GRAPHQL_MAX_COMPLEXITY", 100),
+	}
+}
+
+func loadSlackInteractive() SlackInteractiveConfig {
+	return SlackInteractiveConfig{
+		SigningSecret: strings.TrimSpace(os.Getenv("ESCALITE_SLACK_SIGNING_SECRET")),
 	}
 }
 

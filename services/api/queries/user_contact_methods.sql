@@ -6,6 +6,14 @@ WHERE organization_id = $1
   AND channel = $3
 LIMIT 1;
 
+-- name: GetUserIDBySlackUserID :one
+SELECT user_id
+FROM user_contact_methods
+WHERE organization_id = sqlc.arg(organization_id)
+  AND channel = 'slack-dm'
+  AND config->>'slack_user_id' = sqlc.arg(slack_user_id)::text
+LIMIT 1;
+
 -- name: UpsertUserContactMethod :one
 INSERT INTO user_contact_methods (
     id,

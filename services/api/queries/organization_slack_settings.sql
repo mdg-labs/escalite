@@ -4,6 +4,12 @@ FROM organization_slack_settings
 WHERE organization_id = $1
 LIMIT 1;
 
+-- name: GetOrganizationSlackSettingsByWorkspaceID :one
+SELECT *
+FROM organization_slack_settings
+WHERE workspace_id = sqlc.arg(workspace_id)
+LIMIT 1;
+
 -- name: UpsertOrganizationSlackSettings :one
 INSERT INTO organization_slack_settings (
     organization_id,

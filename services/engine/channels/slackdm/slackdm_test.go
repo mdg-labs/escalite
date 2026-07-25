@@ -60,6 +60,33 @@ func TestSendPostsDirectMessage(t *testing.T) {
 	require.Equal(t, postMessageRequest{
 		Channel: "U12345678",
 		Text:    "*[HIGH] Disk full*\nService: checkout-api | Status: triggered\nVolume /data is full\nAlert ID: alert-1",
+		Blocks: []slackBlock{
+			{
+				Type: "section",
+				Text: &slackTextBlock{
+					Type: "mrkdwn",
+					Text: "*[HIGH] Disk full*\nService: checkout-api | Status: triggered\nVolume /data is full\nAlert ID: alert-1",
+				},
+			},
+			{
+				Type: "actions",
+				Elements: []slackElement{
+					{
+						Type: "button",
+						Text: slackPlainText{Type: "plain_text", Text: "Acknowledge"},
+						Style:    "primary",
+						ActionID: "escalite_ack",
+						Value:    `{"alert_id":"alert-1"}`,
+					},
+					{
+						Type: "button",
+						Text: slackPlainText{Type: "plain_text", Text: "Escalate"},
+						ActionID: "escalite_escalate",
+						Value:    `{"alert_id":"alert-1"}`,
+					},
+				},
+			},
+		},
 	}, received)
 }
 
@@ -116,6 +143,31 @@ func TestValidateConfigRequiresSlackUserID(t *testing.T) {
 }
 
 type postMessageRequest struct {
-	Channel string `json:"channel"`
-	Text    string `json:"text"`
+	Channel string       `json:"channel"`
+	Text    string       `json:"text"`
+	Blocks  []slackBlock `json:"blocks,omitempty"`
+}
+
+type slackBlock struct {
+	Type     string          `json:"type"`
+	Text     *slackTextBlock `json:"text,omitempty"`
+	Elements []slackElement  `json:"elements,omitempty"`
+}
+
+type slackTextBlock struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type slackElement struct {
+	Type     string         `json:"type"`
+	Text     slackPlainText `json:"text"`
+	Style    string         `json:"style,omitempty"`
+	ActionID string         `json:"action_id"`
+	Value    string         `json:"value"`
+}
+
+type slackPlainText struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
 }

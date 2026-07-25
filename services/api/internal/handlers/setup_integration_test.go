@@ -59,13 +59,14 @@ func startPostgres(t *testing.T) (string, func()) {
 }
 
 type testServerOptions struct {
-	Mail           email.Sender
-	PublicURL      string
-	PasswordReset  *server.PasswordResetOptions
-	HeartbeatPing  *server.HeartbeatPingOptions
-	InboundWebhook *server.InboundWebhookOptions
-	InboundEmail   *server.InboundEmailOptions
-	Secrets        *crypto.Box
+	Mail             email.Sender
+	PublicURL        string
+	PasswordReset    *server.PasswordResetOptions
+	HeartbeatPing    *server.HeartbeatPingOptions
+	InboundWebhook   *server.InboundWebhookOptions
+	InboundEmail     *server.InboundEmailOptions
+	SlackInteractive *server.SlackInteractiveOptions
+	Secrets          *crypto.Box
 }
 
 const testEncryptionKeyHex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -106,16 +107,17 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 	realtimeBridge.Start(ctx)
 
 	handler := server.New(server.Dependencies{
-		Logger:        slog.Default(),
-		Pool:          pool,
-		Jobs:          jobs,
-		Secrets:       secrets,
-		Mail:          opts.Mail,
-		PublicURL:     opts.PublicURL,
-		PasswordReset: opts.PasswordReset,
-		HeartbeatPing: opts.HeartbeatPing,
+		Logger:         slog.Default(),
+		Pool:           pool,
+		Jobs:           jobs,
+		Secrets:        secrets,
+		Mail:           opts.Mail,
+		PublicURL:      opts.PublicURL,
+		PasswordReset:  opts.PasswordReset,
+		HeartbeatPing:  opts.HeartbeatPing,
 		InboundWebhook: opts.InboundWebhook,
 		InboundEmail:   opts.InboundEmail,
+		SlackInteractive: opts.SlackInteractive,
 		Realtime:       realtimeBridge.Hub,
 	})
 

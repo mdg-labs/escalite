@@ -42,9 +42,10 @@ type Dependencies struct {
 	AppOrigin      string
 	PasswordReset  *PasswordResetOptions
 	HeartbeatPing  *HeartbeatPingOptions
-	InboundWebhook *InboundWebhookOptions
-	InboundEmail   *InboundEmailOptions
-	GraphQL        graphql.Options
+	InboundWebhook   *InboundWebhookOptions
+	InboundEmail     *InboundEmailOptions
+	SlackInteractive *SlackInteractiveOptions
+	GraphQL          graphql.Options
 	Realtime       *realtime.Hub
 }
 
@@ -78,6 +79,11 @@ type SlackOAuthServices struct {
 	Handler  *handlers.SlackOAuthHandler
 	Install  http.HandlerFunc
 	Callback http.HandlerFunc
+}
+
+// SlackInteractiveOptions overrides Slack interactive endpoint wiring.
+type SlackInteractiveOptions struct {
+	SigningSecret string
 }
 
 // New returns an HTTP server with health, readiness, and API routes.
@@ -148,6 +154,12 @@ func New(deps Dependencies) http.Handler {
 		}
 		inboundEmail := handlers.NewInboundEmailHandler(deps.Pool, deps.Jobs, deps.Logger, emailCfg)
 
+		slackInteractiveCfg := handlers.SlackInteractiveConfig{}
+		if deps.SlackInteractive != nil {
+			slackInteractiveCfg.SigningSecret = deps.SlackInteractive.SigningSecret
+		}
+		slackInteractive := handlers.NewSlackInteractiveHandler(deps.Pool, deps.Jobs, deps.Logger, slackInteractiveCfg)
+
 		mobileAuth := handlers.NewMobileAuthHandler(deps.Pool, deps.Logger)
 
 		r.Post("/api/v1/setup", setup.ServeHTTP)
@@ -164,6 +176,9 @@ func New(deps Dependencies) http.Handler {
 		r.Post("/api/v1/alerts", inboundAlerts.ServeHTTP)
 		if emailCfg.Enabled() {
 			r.Post("/api/v1/inbound/email", inboundEmail.ServeHTTP)
+		}
+		if slackInteractiveCfg.SigningSecret != "" {
+			r.Post("/api/v1/integrations/slack/interactive", slackInteractive.ServeHTTP)
 		}
 
 		r.Post("/api/v1/mobile/auth/exchange", mobileAuth.Exchange)

@@ -44,8 +44,33 @@ type channelConfig struct {
 }
 
 type postMessageRequest struct {
-	Channel string `json:"channel"`
-	Text    string `json:"text"`
+	Channel string        `json:"channel"`
+	Text    string        `json:"text"`
+	Blocks  []slackBlock  `json:"blocks,omitempty"`
+}
+
+type slackBlock struct {
+	Type     string          `json:"type"`
+	Text     *slackTextBlock `json:"text,omitempty"`
+	Elements []slackElement  `json:"elements,omitempty"`
+}
+
+type slackTextBlock struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type slackElement struct {
+	Type     string         `json:"type"`
+	Text     slackPlainText `json:"text"`
+	Style    string         `json:"style,omitempty"`
+	ActionID string         `json:"action_id"`
+	Value    string         `json:"value"`
+}
+
+type slackPlainText struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
 }
 
 type postMessageResponse struct {
@@ -81,6 +106,7 @@ func (c *channel) Send(ctx context.Context, params channels.SendParams) error {
 	body, err := json.Marshal(postMessageRequest{
 		Channel: slackUserID,
 		Text:    buildMessage(params.Alert),
+		Blocks:  buildBlocks(params.Alert),
 	})
 	if err != nil {
 		return fmt.Errorf("marshal slack payload: %w", err)
@@ -176,4 +202,43 @@ func buildMessage(alert channels.Alert) string {
 	body.WriteString("Alert ID: ")
 	body.WriteString(alert.ID)
 	return body.String()
+}
+
+func buildBlocks(alert channels.Alert) []slackBlock {
+	messageText := buildMessage(alert)
+	buttonValue := ButtonValue(alert.ID)
+
+	return []slackBlock{
+		{
+			Type: "section",
+			Text: &slackTextBlock{
+				Type: "mrkdwn",
+				Text: messageText,
+			},
+		},
+		{
+			Type: "actions",
+			Elements: []slackElement{
+				{
+					Type: "button",
+					Text: slackPlainText{
+						Type: "plain_text",
+						Text: "Acknowledge",
+					},
+					Style:    "primary",
+					ActionID: ActionAck,
+					Value:    buttonValue,
+				},
+				{
+					Type: "button",
+					Text: slackPlainText{
+						Type: "plain_text",
+						Text: "Escalate",
+					},
+					ActionID: ActionEscalate,
+					Value:    buttonValue,
+				},
+			},
+		},
+	}
 }

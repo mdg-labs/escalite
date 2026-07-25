@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
@@ -75,6 +76,7 @@ type Querier interface {
 	GetOpenIncidentForTeamWithServiceAlerts(ctx context.Context, arg GetOpenIncidentForTeamWithServiceAlertsParams) (Incident, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
 	GetOrganizationSlackSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSlackSetting, error)
+	GetOrganizationSlackSettingsByWorkspaceID(ctx context.Context, workspaceID pgtype.Text) (OrganizationSlackSetting, error)
 	GetOverrideByID(ctx context.Context, arg GetOverrideByIDParams) (Override, error)
 	GetPasswordResetTokenByHash(ctx context.Context, tokenHash string) (PasswordResetToken, error)
 	GetRefreshTokenByHash(ctx context.Context, tokenHash string) (RefreshToken, error)
@@ -88,6 +90,7 @@ type Querier interface {
 	GetUserByEmailForAuth(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, arg GetUserByIDParams) (User, error)
 	GetUserContactMethodByChannel(ctx context.Context, arg GetUserContactMethodByChannelParams) (UserContactMethod, error)
+	GetUserIDBySlackUserID(ctx context.Context, arg GetUserIDBySlackUserIDParams) (uuid.UUID, error)
 	GetUserNotificationRuleByPriority(ctx context.Context, arg GetUserNotificationRuleByPriorityParams) (UserNotificationRule, error)
 	HasTeamMembership(ctx context.Context, arg HasTeamMembershipParams) (bool, error)
 	IncrementOpenAlertEventCount(ctx context.Context, arg IncrementOpenAlertEventCountParams) (Alert, error)

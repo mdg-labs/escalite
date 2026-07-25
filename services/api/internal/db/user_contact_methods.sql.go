@@ -41,6 +41,27 @@ func (q *Queries) GetUserContactMethodByChannel(ctx context.Context, arg GetUser
 	return i, err
 }
 
+const getUserIDBySlackUserID = `-- name: GetUserIDBySlackUserID :one
+SELECT user_id
+FROM user_contact_methods
+WHERE organization_id = $1
+  AND channel = 'slack-dm'
+  AND config->>'slack_user_id' = $2::text
+LIMIT 1
+`
+
+type GetUserIDBySlackUserIDParams struct {
+	OrganizationID uuid.UUID `json:"organization_id"`
+	SlackUserID    string    `json:"slack_user_id"`
+}
+
+func (q *Queries) GetUserIDBySlackUserID(ctx context.Context, arg GetUserIDBySlackUserIDParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, getUserIDBySlackUserID, arg.OrganizationID, arg.SlackUserID)
+	var user_id uuid.UUID
+	err := row.Scan(&user_id)
+	return user_id, err
+}
+
 const upsertUserContactMethod = `-- name: UpsertUserContactMethod :one
 INSERT INTO user_contact_methods (
     id,

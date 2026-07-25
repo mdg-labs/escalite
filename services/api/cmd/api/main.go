@@ -92,6 +92,9 @@ func run() int {
 	if cfg.SlackOAuth != nil {
 		logger.Info("slack oauth install enabled")
 	}
+	if cfg.SlackInteractive.SigningSecret != "" {
+		logger.Info("slack interactive endpoint enabled")
+	}
 
 	handler := server.New(server.Dependencies{
 		Logger:     logger,
@@ -123,6 +126,9 @@ func run() int {
 			RelaySecret:          cfg.InboundEmail.RelaySecret,
 			Domain:               cfg.InboundEmail.Domain,
 			RequireAuthenticated: cfg.InboundEmail.RequireAuthenticated,
+		},
+		SlackInteractive: &server.SlackInteractiveOptions{
+			SigningSecret: cfg.SlackInteractive.SigningSecret,
 		},
 		GraphQL: graphql.Options{
 			Production:                       cfg.IsProduction(),

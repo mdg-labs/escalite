@@ -37,6 +37,31 @@ func (q *Queries) GetOrganizationSlackSettings(ctx context.Context, organization
 	return i, err
 }
 
+const getOrganizationSlackSettingsByWorkspaceID = `-- name: GetOrganizationSlackSettingsByWorkspaceID :one
+SELECT organization_id, bot_token_ciphertext, encryption_key_id, token_hint, workspace_id, workspace_name, bot_user_id, scope, created_at, updated_at
+FROM organization_slack_settings
+WHERE workspace_id = $1
+LIMIT 1
+`
+
+func (q *Queries) GetOrganizationSlackSettingsByWorkspaceID(ctx context.Context, workspaceID pgtype.Text) (OrganizationSlackSetting, error) {
+	row := q.db.QueryRow(ctx, getOrganizationSlackSettingsByWorkspaceID, workspaceID)
+	var i OrganizationSlackSetting
+	err := row.Scan(
+		&i.OrganizationID,
+		&i.BotTokenCiphertext,
+		&i.EncryptionKeyID,
+		&i.TokenHint,
+		&i.WorkspaceID,
+		&i.WorkspaceName,
+		&i.BotUserID,
+		&i.Scope,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const upsertOrganizationSlackOAuthInstall = `-- name: UpsertOrganizationSlackOAuthInstall :one
 INSERT INTO organization_slack_settings (
     organization_id,
