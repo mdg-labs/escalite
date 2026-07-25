@@ -18,6 +18,16 @@ type Query {
   List escalation policies for a service (org admin only).
   """
   escalationPolicies(serviceId: ID!): [EscalationPolicy!]!
+
+  """
+  Fetch a single schedule by ID (org admin only).
+  """
+  schedule(id: ID!): Schedule
+
+  """
+  List schedules for a team (org admin only).
+  """
+  schedules(teamId: ID!): [Schedule!]!
 }
 
 type Mutation {
@@ -65,4 +75,34 @@ type Mutation {
   Reset escalation to step 1 and enqueue step-1 notifications.
   """
   reEscalateAlert(id: ID!): Alert!
+
+  """
+  Create a schedule (org admin only).
+  """
+  createSchedule(input: CreateScheduleInput!): Schedule!
+
+  """
+  Update a schedule (org admin only).
+  """
+  updateSchedule(input: UpdateScheduleInput!): Schedule!
+
+  """
+  Delete a schedule and its rotations (org admin only).
+  """
+  deleteSchedule(id: ID!): Boolean!
+
+  """
+  Create a rotation on a schedule (org admin only).
+  """
+  createRotation(input: CreateRotationInput!): Rotation!
+
+  """
+  Update a rotation (org admin only).
+  """
+  updateRotation(input: UpdateRotationInput!): Rotation!
+
+  """
+  Delete a rotation (org admin only).
+  """
+  deleteRotation(id: ID!): Boolean!
 }

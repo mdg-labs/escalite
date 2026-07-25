@@ -33,6 +33,20 @@ type CreateEscalationPolicyInput struct {
 	Steps     []*EscalationStepInput `json:"steps"`
 }
 
+type CreateRotationInput struct {
+	ScheduleID     string   `json:"scheduleId"`
+	Name           string   `json:"name"`
+	Layer          int      `json:"layer"`
+	Rrule          string   `json:"rrule"`
+	ParticipantIds []string `json:"participantIds"`
+}
+
+type CreateScheduleInput struct {
+	TeamID   string `json:"teamId"`
+	Name     string `json:"name"`
+	Timezone string `json:"timezone"`
+}
+
 type EscalationPolicy struct {
 	ID             string            `json:"id"`
 	OrganizationID string            `json:"organizationId"`
@@ -88,6 +102,29 @@ type Organization struct {
 type Query struct {
 }
 
+type Rotation struct {
+	ID             string    `json:"id"`
+	ScheduleID     string    `json:"scheduleId"`
+	OrganizationID string    `json:"organizationId"`
+	Name           string    `json:"name"`
+	Layer          int       `json:"layer"`
+	Rrule          string    `json:"rrule"`
+	ParticipantIds []string  `json:"participantIds"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
+}
+
+type Schedule struct {
+	ID             string      `json:"id"`
+	OrganizationID string      `json:"organizationId"`
+	TeamID         string      `json:"teamId"`
+	Name           string      `json:"name"`
+	Timezone       string      `json:"timezone"`
+	Rotations      []*Rotation `json:"rotations"`
+	CreatedAt      time.Time   `json:"createdAt"`
+	UpdatedAt      time.Time   `json:"updatedAt"`
+}
+
 type Service struct {
 	ID             string    `json:"id"`
 	OrganizationID string    `json:"organizationId"`
@@ -120,6 +157,20 @@ type UpdateEscalationPolicyInput struct {
 	ID    string                 `json:"id"`
 	Name  string                 `json:"name"`
 	Steps []*EscalationStepInput `json:"steps"`
+}
+
+type UpdateRotationInput struct {
+	ID             string   `json:"id"`
+	Name           string   `json:"name"`
+	Layer          int      `json:"layer"`
+	Rrule          string   `json:"rrule"`
+	ParticipantIds []string `json:"participantIds"`
+}
+
+type UpdateScheduleInput struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Timezone string `json:"timezone"`
 }
 
 type User struct {

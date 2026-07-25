@@ -82,3 +82,26 @@ type Alert {
   createdAt: DateTime!
   updatedAt: DateTime!
 }
+
+type Schedule {
+  id: ID!
+  organizationId: ID!
+  teamId: ID!
+  name: String!
+  timezone: String!
+  rotations: [Rotation!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Rotation {
+  id: ID!
+  scheduleId: ID!
+  organizationId: ID!
+  name: String!
+  layer: Int!
+  rrule: String!
+  participantIds: [ID!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

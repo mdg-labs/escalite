@@ -27,3 +27,31 @@ input UpdateEscalationPolicyInput {
   name: String!
   steps: [EscalationStepInput!]!
 }
+
+input CreateScheduleInput {
+  teamId: ID!
+  name: String!
+  timezone: String!
+}
+
+input UpdateScheduleInput {
+  id: ID!
+  name: String!
+  timezone: String!
+}
+
+input CreateRotationInput {
+  scheduleId: ID!
+  name: String!
+  layer: Int!
+  rrule: String!
+  participantIds: [ID!]!
+}
+
+input UpdateRotationInput {
+  id: ID!
+  name: String!
+  layer: Int!
+  rrule: String!
+  participantIds: [ID!]!
+}

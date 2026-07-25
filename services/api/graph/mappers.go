@@ -143,3 +143,44 @@ func alertPriorityFromDB(priority string) model.AlertPriority {
 		return model.AlertPriorityHigh
 	}
 }
+
+func scheduleFromDB(schedule db.Schedule, rotations []db.Rotation) *model.Schedule {
+	gqlRotations := make([]*model.Rotation, 0, len(rotations))
+	for _, rotation := range rotations {
+		gqlRotation, err := rotationFromDB(rotation)
+		if err != nil {
+			continue
+		}
+		gqlRotations = append(gqlRotations, gqlRotation)
+	}
+
+	return &model.Schedule{
+		ID:             schedule.ID.String(),
+		OrganizationID: schedule.OrganizationID.String(),
+		TeamID:         schedule.TeamID.String(),
+		Name:           schedule.Name,
+		Timezone:       schedule.Timezone,
+		Rotations:      gqlRotations,
+		CreatedAt:      timeFromDB(schedule.CreatedAt),
+		UpdatedAt:      timeFromDB(schedule.UpdatedAt),
+	}
+}
+
+func rotationFromDB(rotation db.Rotation) (*model.Rotation, error) {
+	participantIDs, err := decodeParticipantIDs(rotation.Participants)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Rotation{
+		ID:             rotation.ID.String(),
+		ScheduleID:     rotation.ScheduleID.String(),
+		OrganizationID: rotation.OrganizationID.String(),
+		Name:           rotation.Name,
+		Layer:          int(rotation.Layer),
+		Rrule:          rotation.Rrule,
+		ParticipantIds: participantIDs,
+		CreatedAt:      timeFromDB(rotation.CreatedAt),
+		UpdatedAt:      timeFromDB(rotation.UpdatedAt),
+	}, nil
+}
