@@ -40,6 +40,12 @@ type CreateHeartbeatMonitorInput struct {
 	GraceSeconds    int    `json:"graceSeconds"`
 }
 
+type CreateIntegrationKeyInput struct {
+	ServiceID  string         `json:"serviceId"`
+	PluginName string         `json:"pluginName"`
+	Config     map[string]any `json:"config"`
+}
+
 type CreateOverrideInput struct {
 	ScheduleID string    `json:"scheduleId"`
 	RotationID string    `json:"rotationId"`
@@ -112,6 +118,21 @@ type HeartbeatMonitor struct {
 	LastPingAt *time.Time `json:"lastPingAt,omitempty"`
 	CreatedAt  time.Time  `json:"createdAt"`
 	UpdatedAt  time.Time  `json:"updatedAt"`
+}
+
+// Inbound integration key for a service.
+type IntegrationKey struct {
+	ID             string         `json:"id"`
+	OrganizationID string         `json:"organizationId"`
+	ServiceID      string         `json:"serviceId"`
+	PluginName     string         `json:"pluginName"`
+	Config         map[string]any `json:"config"`
+	// Display prefix for the token (last-4 style).
+	TokenPrefix string `json:"tokenPrefix"`
+	// Plaintext webhook token; only returned from createIntegrationKey.
+	Token     *string   `json:"token,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type LoginInput struct {

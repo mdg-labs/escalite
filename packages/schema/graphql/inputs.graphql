@@ -96,3 +96,9 @@ input SaveNotificationRuleInput {
 input SaveSlackSettingsInput {
   botToken: String!
 }
+
+input CreateIntegrationKeyInput {
+  serviceId: ID!
+  pluginName: String!
+  config: JSON!
+}

@@ -23,6 +23,7 @@ type Querier interface {
 	CreateEscalationStep(ctx context.Context, arg CreateEscalationStepParams) (EscalationStep, error)
 	CreateEscalationStepTarget(ctx context.Context, arg CreateEscalationStepTargetParams) (EscalationStepTarget, error)
 	CreateHeartbeatMonitor(ctx context.Context, arg CreateHeartbeatMonitorParams) (HeartbeatMonitor, error)
+	CreateIntegrationKey(ctx context.Context, arg CreateIntegrationKeyParams) (IntegrationKey, error)
 	CreateNotificationAttempt(ctx context.Context, arg CreateNotificationAttemptParams) (NotificationAttempt, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
 	CreateOverride(ctx context.Context, arg CreateOverrideParams) (Override, error)

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router'
 import { useMeQuery } from '@escalite/ts-types'
 
 import { DashboardPage } from './routes/dashboard'
+import { IntegrationsPage } from './routes/integrations'
 import { LoginPage } from './routes/login'
 import { SetupPage } from './routes/setup'
 
@@ -59,6 +60,14 @@ export function App(): ReactElement {
           <GuestRoute>
             <SetupPage />
           </GuestRoute>
+        }
+      />
+      <Route
+        path="/integrations"
+        element={
+          <ProtectedRoute>
+            <IntegrationsPage />
+          </ProtectedRoute>
         }
       />
       <Route

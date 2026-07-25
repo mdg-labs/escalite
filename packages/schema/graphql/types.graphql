@@ -195,3 +195,20 @@ type SlackSettings {
   configured: Boolean!
   tokenHint: String
 }
+
+"""Inbound integration key for a service."""
+type IntegrationKey {
+  id: ID!
+  organizationId: ID!
+  serviceId: ID!
+  pluginName: String!
+  config: JSON!
+  """Display prefix for the token (last-4 style)."""
+  tokenPrefix: String!
+  """
+  Plaintext webhook token; only returned from createIntegrationKey.
+  """
+  token: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

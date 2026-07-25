@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -217,6 +218,28 @@ func heartbeatMonitorFromDB(monitor db.HeartbeatMonitor, token *string) *model.H
 		LastPingAt:      lastPingAt,
 		CreatedAt:       timeFromDB(monitor.CreatedAt),
 		UpdatedAt:       timeFromDB(monitor.UpdatedAt),
+	}
+}
+
+func integrationKeyFromDB(key db.IntegrationKey, token *string) *model.IntegrationKey {
+	var config map[string]any
+	if len(key.Config) > 0 {
+		_ = json.Unmarshal(key.Config, &config)
+	}
+	if config == nil {
+		config = map[string]any{}
+	}
+
+	return &model.IntegrationKey{
+		ID:             key.ID.String(),
+		OrganizationID: key.OrganizationID.String(),
+		ServiceID:      key.ServiceID.String(),
+		PluginName:     key.PluginName,
+		Config:         config,
+		TokenPrefix:    key.Prefix,
+		Token:          token,
+		CreatedAt:      timeFromDB(key.CreatedAt),
+		UpdatedAt:      timeFromDB(key.UpdatedAt),
 	}
 }
 

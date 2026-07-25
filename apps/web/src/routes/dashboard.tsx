@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import { Link } from 'react-router'
 import { useMeQuery } from '@escalite/ts-types'
 
 export function DashboardPage(): ReactElement {
@@ -24,6 +25,11 @@ export function DashboardPage(): ReactElement {
           <p className="mt-2 text-sm text-muted-foreground">
             Your on-call workspace shell is ready. Incident and alerting features arrive in later
             phases.
+          </p>
+          <p className="mt-4 text-sm">
+            <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/integrations">
+              Add an integration
+            </Link>
           </p>
         </section>
       </main>

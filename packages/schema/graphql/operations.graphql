@@ -187,4 +187,9 @@ type Mutation {
   Save the organization Slack bot token (org admin only). Returns last-4 hint only.
   """
   saveSlackSettings(input: SaveSlackSettingsInput!): SlackSettings!
+
+  """
+  Create an inbound integration key for a service (org admin only).
+  """
+  createIntegrationKey(input: CreateIntegrationKeyInput!): IntegrationKey!
 }

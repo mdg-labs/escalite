@@ -7,7 +7,66 @@ package db
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
+
+const createIntegrationKey = `-- name: CreateIntegrationKey :one
+INSERT INTO integration_keys (
+    id,
+    service_id,
+    organization_id,
+    token,
+    prefix,
+    plugin_name,
+    config
+) VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7
+)
+RETURNING id, service_id, organization_id, token, prefix, plugin_name, config, revoked_at, created_at, updated_at
+`
+
+type CreateIntegrationKeyParams struct {
+	ID             uuid.UUID `json:"id"`
+	ServiceID      uuid.UUID `json:"service_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	Token          string    `json:"token"`
+	Prefix         string    `json:"prefix"`
+	PluginName     string    `json:"plugin_name"`
+	Config         []byte    `json:"config"`
+}
+
+func (q *Queries) CreateIntegrationKey(ctx context.Context, arg CreateIntegrationKeyParams) (IntegrationKey, error) {
+	row := q.db.QueryRow(ctx, createIntegrationKey,
+		arg.ID,
+		arg.ServiceID,
+		arg.OrganizationID,
+		arg.Token,
+		arg.Prefix,
+		arg.PluginName,
+		arg.Config,
+	)
+	var i IntegrationKey
+	err := row.Scan(
+		&i.ID,
+		&i.ServiceID,
+		&i.OrganizationID,
+		&i.Token,
+		&i.Prefix,
+		&i.PluginName,
+		&i.Config,
+		&i.RevokedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
 
 const getActiveIntegrationKeyByTokenHash = `-- name: GetActiveIntegrationKeyByTokenHash :one
 SELECT id, service_id, organization_id, token, prefix, plugin_name, config, revoked_at, created_at, updated_at

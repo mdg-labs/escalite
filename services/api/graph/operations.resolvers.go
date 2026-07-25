@@ -26,6 +26,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/engine/escalationapi"
 	"github.com/mdg-labs/escalite/services/engine/oncall"
+	"github.com/mdg-labs/escalite/services/integrations"
 )
 
 // Login is the resolver for the login field.
@@ -1431,6 +1432,69 @@ func (r *mutationResolver) SaveSlackSettings(ctx context.Context, input model.Sa
 	}
 
 	return slackSettingsFromDB(&settings), nil
+}
+
+// CreateIntegrationKey is the resolver for the createIntegrationKey field.
+func (r *mutationResolver) CreateIntegrationKey(ctx context.Context, input model.CreateIntegrationKeyInput) (*model.IntegrationKey, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	pluginName := strings.TrimSpace(input.PluginName)
+	if pluginName == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "pluginName is required")
+	}
+
+	serviceID, err := parseUUIDField(input.ServiceID, "serviceId")
+	if err != nil {
+		return nil, err
+	}
+
+	configBytes, err := json.Marshal(input.Config)
+	if err != nil {
+		return nil, gqlerr.New(handlers.CodeValidation, "config must be a JSON object")
+	}
+	if err := integrations.ValidateConfig(pluginName, configBytes); err != nil {
+		return nil, gqlerr.New(handlers.CodeValidation, "invalid integration config")
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             serviceID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "service not found")
+		}
+		r.logger.Error("load service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	plaintext, tokenHash, prefix, err := auth.NewIntegrationKeyToken()
+	if err != nil {
+		r.logger.Error("generate integration key token failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	keyID := uuid.Must(uuid.NewV7())
+	key, err := queries.CreateIntegrationKey(ctx, db.CreateIntegrationKeyParams{
+		ID:             keyID,
+		ServiceID:      serviceID,
+		OrganizationID: sc.User.OrganizationID,
+		Token:          tokenHash,
+		Prefix:         prefix,
+		PluginName:     pluginName,
+		Config:         configBytes,
+	})
+	if err != nil {
+		r.logger.Error("create integration key failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.IntegrationKeyCreated(ctx, queries, sc.User.OrganizationID, sc.User.ID, keyID)
+
+	return integrationKeyFromDB(key, &plaintext), nil
 }
 
 // Me is the resolver for the me field.

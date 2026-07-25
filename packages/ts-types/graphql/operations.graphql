@@ -40,3 +40,15 @@ mutation Setup($input: SetupInput!) {
     }
   }
 }
+
+mutation CreateIntegrationKey($input: CreateIntegrationKeyInput!) {
+  createIntegrationKey(input: $input) {
+    id
+    serviceId
+    pluginName
+    config
+    tokenPrefix
+    token
+    createdAt
+  }
+}

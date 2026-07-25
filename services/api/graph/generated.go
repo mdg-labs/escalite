@@ -95,6 +95,18 @@ type ComplexityRoot struct {
 		UpdatedAt       func(childComplexity int) int
 	}
 
+	IntegrationKey struct {
+		Config         func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		OrganizationID func(childComplexity int) int
+		PluginName     func(childComplexity int) int
+		ServiceID      func(childComplexity int) int
+		Token          func(childComplexity int) int
+		TokenPrefix    func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
+	}
+
 	LoginPayload struct {
 		User func(childComplexity int) int
 	}
@@ -104,6 +116,7 @@ type ComplexityRoot struct {
 		CloseAlert             func(childComplexity int, id string) int
 		CreateEscalationPolicy func(childComplexity int, input model.CreateEscalationPolicyInput) int
 		CreateHeartbeatMonitor func(childComplexity int, input model.CreateHeartbeatMonitorInput) int
+		CreateIntegrationKey   func(childComplexity int, input model.CreateIntegrationKeyInput) int
 		CreateOverride         func(childComplexity int, input model.CreateOverrideInput) int
 		CreateRotation         func(childComplexity int, input model.CreateRotationInput) int
 		CreateSchedule         func(childComplexity int, input model.CreateScheduleInput) int
@@ -293,6 +306,7 @@ type MutationResolver interface {
 	SaveNotificationRule(ctx context.Context, input model.SaveNotificationRuleInput) (*model.UserNotificationRule, error)
 	DeleteNotificationRule(ctx context.Context, priority model.AlertPriority) (bool, error)
 	SaveSlackSettings(ctx context.Context, input model.SaveSlackSettingsInput) (*model.SlackSettings, error)
+	CreateIntegrationKey(ctx context.Context, input model.CreateIntegrationKeyInput) (*model.IntegrationKey, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
@@ -591,6 +605,61 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.HeartbeatMonitor.UpdatedAt(childComplexity), true
 
+	case "IntegrationKey.config":
+		if e.ComplexityRoot.IntegrationKey.Config == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IntegrationKey.Config(childComplexity), true
+	case "IntegrationKey.createdAt":
+		if e.ComplexityRoot.IntegrationKey.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IntegrationKey.CreatedAt(childComplexity), true
+	case "IntegrationKey.id":
+		if e.ComplexityRoot.IntegrationKey.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IntegrationKey.ID(childComplexity), true
+	case "IntegrationKey.organizationId":
+		if e.ComplexityRoot.IntegrationKey.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IntegrationKey.OrganizationID(childComplexity), true
+	case "IntegrationKey.pluginName":
+		if e.ComplexityRoot.IntegrationKey.PluginName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IntegrationKey.PluginName(childComplexity), true
+	case "IntegrationKey.serviceId":
+		if e.ComplexityRoot.IntegrationKey.ServiceID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IntegrationKey.ServiceID(childComplexity), true
+	case "IntegrationKey.token":
+		if e.ComplexityRoot.IntegrationKey.Token == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IntegrationKey.Token(childComplexity), true
+	case "IntegrationKey.tokenPrefix":
+		if e.ComplexityRoot.IntegrationKey.TokenPrefix == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IntegrationKey.TokenPrefix(childComplexity), true
+	case "IntegrationKey.updatedAt":
+		if e.ComplexityRoot.IntegrationKey.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IntegrationKey.UpdatedAt(childComplexity), true
+
 	case "LoginPayload.user":
 		if e.ComplexityRoot.LoginPayload.User == nil {
 			break
@@ -642,6 +711,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateHeartbeatMonitor(childComplexity, args["input"].(model.CreateHeartbeatMonitorInput)), true
+	case "Mutation.createIntegrationKey":
+		if e.ComplexityRoot.Mutation.CreateIntegrationKey == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createIntegrationKey_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateIntegrationKey(childComplexity, args["input"].(model.CreateIntegrationKeyInput)), true
 	case "Mutation.createOverride":
 		if e.ComplexityRoot.Mutation.CreateOverride == nil {
 			break
@@ -1464,6 +1544,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputCreateEscalationPolicyInput,
 		ec.unmarshalInputCreateHeartbeatMonitorInput,
+		ec.unmarshalInputCreateIntegrationKeyInput,
 		ec.unmarshalInputCreateOverrideInput,
 		ec.unmarshalInputCreateRotationInput,
 		ec.unmarshalInputCreateScheduleInput,
@@ -1685,6 +1766,12 @@ input SaveNotificationRuleInput {
 input SaveSlackSettingsInput {
   botToken: String!
 }
+
+input CreateIntegrationKeyInput {
+  serviceId: ID!
+  pluginName: String!
+  config: JSON!
+}
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Query {
   """
@@ -1875,6 +1962,11 @@ type Mutation {
   Save the organization Slack bot token (org admin only). Returns last-4 hint only.
   """
   saveSlackSettings(input: SaveSlackSettingsInput!): SlackSettings!
+
+  """
+  Create an inbound integration key for a service (org admin only).
+  """
+  createIntegrationKey(input: CreateIntegrationKeyInput!): IntegrationKey!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/scalars.graphql", Input: `"""
@@ -2089,6 +2181,23 @@ type SlackSettings {
   configured: Boolean!
   tokenHint: String
 }
+
+"""Inbound integration key for a service."""
+type IntegrationKey {
+  id: ID!
+  organizationId: ID!
+  serviceId: ID!
+  pluginName: String!
+  config: JSON!
+  """Display prefix for the token (last-4 style)."""
+  tokenPrefix: String!
+  """
+  Plaintext webhook token; only returned from createIntegrationKey.
+  """
+  token: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -2211,6 +2320,30 @@ func (ec *executionContext) childFields_HeartbeatMonitor(ctx context.Context, fi
 		return ec.fieldContext_HeartbeatMonitor_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type HeartbeatMonitor", field.Name)
+}
+
+func (ec *executionContext) childFields_IntegrationKey(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_IntegrationKey_id(ctx, field)
+	case "organizationId":
+		return ec.fieldContext_IntegrationKey_organizationId(ctx, field)
+	case "serviceId":
+		return ec.fieldContext_IntegrationKey_serviceId(ctx, field)
+	case "pluginName":
+		return ec.fieldContext_IntegrationKey_pluginName(ctx, field)
+	case "config":
+		return ec.fieldContext_IntegrationKey_config(ctx, field)
+	case "tokenPrefix":
+		return ec.fieldContext_IntegrationKey_tokenPrefix(ctx, field)
+	case "token":
+		return ec.fieldContext_IntegrationKey_token(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_IntegrationKey_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_IntegrationKey_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type IntegrationKey", field.Name)
 }
 
 func (ec *executionContext) childFields_LoginPayload(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2593,6 +2726,20 @@ func (ec *executionContext) field_Mutation_createHeartbeatMonitor_args(ctx conte
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.CreateHeartbeatMonitorInput, error) {
 			return ec.unmarshalNCreateHeartbeatMonitorInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateHeartbeatMonitorInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createIntegrationKey_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateIntegrationKeyInput, error) {
+			return ec.unmarshalNCreateIntegrationKeyInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateIntegrationKeyInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -4090,6 +4237,213 @@ func (ec *executionContext) fieldContext_HeartbeatMonitor_updatedAt(_ context.Co
 	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
+func (ec *executionContext) _IntegrationKey_id(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationKey) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IntegrationKey_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IntegrationKey_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _IntegrationKey_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationKey) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IntegrationKey_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IntegrationKey_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _IntegrationKey_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationKey) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IntegrationKey_serviceId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IntegrationKey_serviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _IntegrationKey_pluginName(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationKey) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IntegrationKey_pluginName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PluginName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IntegrationKey_pluginName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _IntegrationKey_config(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationKey) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IntegrationKey_config(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Config, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v map[string]any) graphql.Marshaler {
+			return ec.marshalNJSON2map(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IntegrationKey_config(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type JSON does not have child fields"))
+}
+
+func (ec *executionContext) _IntegrationKey_tokenPrefix(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationKey) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IntegrationKey_tokenPrefix(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TokenPrefix, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IntegrationKey_tokenPrefix(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _IntegrationKey_token(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationKey) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IntegrationKey_token(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Token, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_IntegrationKey_token(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _IntegrationKey_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationKey) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IntegrationKey_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IntegrationKey_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _IntegrationKey_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationKey) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IntegrationKey_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IntegrationKey_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
 func (ec *executionContext) _LoginPayload_user(ctx context.Context, field graphql.CollectedField, obj *model.LoginPayload) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5172,6 +5526,50 @@ func (ec *executionContext) fieldContext_Mutation_saveSlackSettings(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_saveSlackSettings_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createIntegrationKey(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createIntegrationKey(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateIntegrationKey(ctx, fc.Args["input"].(model.CreateIntegrationKeyInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.IntegrationKey) graphql.Marshaler {
+			return ec.marshalNIntegrationKey2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationKey(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createIntegrationKey(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_IntegrationKey(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createIntegrationKey_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -8713,6 +9111,50 @@ func (ec *executionContext) unmarshalInputCreateHeartbeatMonitorInput(ctx contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateIntegrationKeyInput(ctx context.Context, obj any) (model.CreateIntegrationKeyInput, error) {
+	var it model.CreateIntegrationKeyInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"serviceId", "pluginName", "config"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "serviceId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceID = data
+		case "pluginName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pluginName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PluginName = data
+		case "config":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
+			data, err := ec.unmarshalNJSON2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Config = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateOverrideInput(ctx context.Context, obj any) (model.CreateOverrideInput, error) {
 	var it model.CreateOverrideInput
 	if obj == nil {
@@ -9735,6 +10177,84 @@ func (ec *executionContext) _HeartbeatMonitor(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var integrationKeyImplementors = []string{"IntegrationKey"}
+
+func (ec *executionContext) _IntegrationKey(ctx context.Context, sel ast.SelectionSet, obj *model.IntegrationKey) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, integrationKeyImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("IntegrationKey")
+		case "id":
+			out.Values[i] = ec._IntegrationKey_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "organizationId":
+			out.Values[i] = ec._IntegrationKey_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceId":
+			out.Values[i] = ec._IntegrationKey_serviceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pluginName":
+			out.Values[i] = ec._IntegrationKey_pluginName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "config":
+			out.Values[i] = ec._IntegrationKey_config(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tokenPrefix":
+			out.Values[i] = ec._IntegrationKey_tokenPrefix(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "token":
+			out.Values[i] = ec._IntegrationKey_token(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._IntegrationKey_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._IntegrationKey_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var loginPayloadImplementors = []string{"LoginPayload"}
 
 func (ec *executionContext) _LoginPayload(ctx context.Context, sel ast.SelectionSet, obj *model.LoginPayload) graphql.Marshaler {
@@ -9957,6 +10477,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "saveSlackSettings":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveSlackSettings(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createIntegrationKey":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createIntegrationKey(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -11650,6 +12177,11 @@ func (ec *executionContext) unmarshalNCreateHeartbeatMonitorInput2githubᚗcom�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateIntegrationKeyInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateIntegrationKeyInput(ctx context.Context, v any) (model.CreateIntegrationKeyInput, error) {
+	res, err := ec.unmarshalInputCreateIntegrationKeyInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateOverrideInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateOverrideInput(ctx context.Context, v any) (model.CreateOverrideInput, error) {
 	res, err := ec.unmarshalInputCreateOverrideInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -11869,6 +12401,20 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNIntegrationKey2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationKey(ctx context.Context, sel ast.SelectionSet, v model.IntegrationKey) graphql.Marshaler {
+	return ec._IntegrationKey(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNIntegrationKey2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationKey(ctx context.Context, sel ast.SelectionSet, v *model.IntegrationKey) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._IntegrationKey(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNJSON2map(ctx context.Context, v any) (map[string]any, error) {
