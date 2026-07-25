@@ -18,9 +18,12 @@ import (
 	"github.com/mdg-labs/escalite/services/api/graph/model"
 	"github.com/mdg-labs/escalite/services/api/internal/audit"
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
+	"github.com/mdg-labs/escalite/services/api/internal/authz"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
+	"github.com/mdg-labs/escalite/services/api/internal/escalation"
 	"github.com/mdg-labs/escalite/services/api/internal/gqlerr"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
+	"github.com/mdg-labs/escalite/services/engine/escalationapi"
 )
 
 // Login is the resolver for the login field.
@@ -214,6 +217,931 @@ func (r *mutationResolver) Setup(ctx context.Context, input model.SetupInput) (*
 	}, nil
 }
 
+// CreateEscalationPolicy is the resolver for the createEscalationPolicy field.
+func (r *mutationResolver) CreateEscalationPolicy(ctx context.Context, input model.CreateEscalationPolicyInput) (*model.EscalationPolicy, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+	if err := validateEscalationStepInputs(input.Steps); err != nil {
+		return nil, err
+	}
+
+	serviceID, err := parseUUIDField(input.ServiceID, "serviceId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             serviceID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "service not found")
+		}
+		r.logger.Error("load service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	policyID := uuid.Must(uuid.NewV7())
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		r.logger.Error("begin transaction failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	txQueries := queries.WithTx(tx)
+
+	policy, err := txQueries.CreateEscalationPolicy(ctx, db.CreateEscalationPolicyParams{
+		ID:             policyID,
+		OrganizationID: sc.User.OrganizationID,
+		ServiceID:      serviceID,
+		Name:           name,
+	})
+	if err != nil {
+		r.logger.Error("create escalation policy failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	steps, err := insertEscalationSteps(ctx, txQueries, sc.User.OrganizationID, policyID, input.Steps)
+	if err != nil {
+		return nil, err
+	}
+
+	r.audit.EscalationPolicyCreated(ctx, txQueries, sc.User.OrganizationID, sc.User.ID, policyID)
+
+	if err := tx.Commit(ctx); err != nil {
+		r.logger.Error("commit transaction failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return escalationPolicyFromDB(policy, steps), nil
+}
+
+// UpdateEscalationPolicy is the resolver for the updateEscalationPolicy field.
+func (r *mutationResolver) UpdateEscalationPolicy(ctx context.Context, input model.UpdateEscalationPolicyInput) (*model.EscalationPolicy, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+	if err := validateEscalationStepInputs(input.Steps); err != nil {
+		return nil, err
+	}
+
+	policyID, err := parseUUIDField(input.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetEscalationPolicyByID(ctx, db.GetEscalationPolicyByIDParams{
+		ID:             policyID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "escalation policy not found")
+		}
+		r.logger.Error("load escalation policy failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		r.logger.Error("begin transaction failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	txQueries := queries.WithTx(tx)
+
+	policy, err := txQueries.UpdateEscalationPolicy(ctx, db.UpdateEscalationPolicyParams{
+		ID:             policyID,
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+	})
+	if err != nil {
+		r.logger.Error("update escalation policy failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if err := txQueries.DeleteEscalationStepsByPolicyID(ctx, db.DeleteEscalationStepsByPolicyIDParams{
+		EscalationPolicyID: policyID,
+		OrganizationID:     sc.User.OrganizationID,
+	}); err != nil {
+		r.logger.Error("delete escalation steps failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	steps, err := insertEscalationSteps(ctx, txQueries, sc.User.OrganizationID, policyID, input.Steps)
+	if err != nil {
+		return nil, err
+	}
+
+	r.audit.EscalationPolicyUpdated(ctx, txQueries, sc.User.OrganizationID, sc.User.ID, policyID)
+
+	if err := tx.Commit(ctx); err != nil {
+		r.logger.Error("commit transaction failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return escalationPolicyFromDB(policy, steps), nil
+}
+
+// DeleteEscalationPolicy is the resolver for the deleteEscalationPolicy field.
+func (r *mutationResolver) DeleteEscalationPolicy(ctx context.Context, id string) (bool, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	policyID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return false, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetEscalationPolicyByID(ctx, db.GetEscalationPolicyByIDParams{
+		ID:             policyID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, gqlerr.New(handlers.CodeNotFound, "escalation policy not found")
+		}
+		r.logger.Error("load escalation policy failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if err := queries.DeleteEscalationPolicy(ctx, db.DeleteEscalationPolicyParams{
+		ID:             policyID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		r.logger.Error("delete escalation policy failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.EscalationPolicyDeleted(ctx, queries, sc.User.OrganizationID, sc.User.ID, policyID)
+	return true, nil
+}
+
+// AcknowledgeAlert is the resolver for the acknowledgeAlert field.
+func (r *mutationResolver) AcknowledgeAlert(ctx context.Context, id string) (*model.Alert, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	alertID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	alert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+		ID:             alertID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "alert not found")
+		}
+		r.logger.Error("load alert failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if alert.Status == "closed" {
+		return nil, gqlerr.New(handlers.CodeValidation, "cannot acknowledge a closed alert")
+	}
+	if alert.Status == "acknowledged" {
+		return nil, gqlerr.New(handlers.CodeValidation, "alert is already acknowledged")
+	}
+
+	service, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             alert.ServiceID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("load service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if _, err := authz.CheckTeamAccess(ctx, queries, sc.User, service.TeamID); err != nil {
+		if errors.Is(err, authz.ErrNotFound) || errors.Is(err, authz.ErrForbidden) {
+			return nil, gqlerr.New(handlers.CodeForbidden, "access denied")
+		}
+		r.logger.Error("check team access failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	state, err := escalation.ParseState(alert.EscalationState)
+	if err != nil {
+		r.logger.Error("parse escalation state failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	state = escalation.ClearedTimerState(state)
+
+	raw, err := escalation.MarshalState(state)
+	if err != nil {
+		r.logger.Error("marshal escalation state failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	acknowledged, err := queries.AcknowledgeAlert(ctx, db.AcknowledgeAlertParams{
+		ID:                   alertID,
+		OrganizationID:       sc.User.OrganizationID,
+		EscalationState:      raw,
+		AcknowledgedByUserID: pgtype.UUID{Bytes: sc.User.ID, Valid: true},
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeValidation, "cannot acknowledge alert in its current state")
+		}
+		r.logger.Error("acknowledge alert failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return alertFromDB(acknowledged, &sc.User), nil
+}
+
+// CloseAlert is the resolver for the closeAlert field.
+func (r *mutationResolver) CloseAlert(ctx context.Context, id string) (*model.Alert, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	alertID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	alert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+		ID:             alertID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "alert not found")
+		}
+		r.logger.Error("load alert failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if alert.Status == "closed" {
+		return nil, gqlerr.New(handlers.CodeValidation, "alert is already closed")
+	}
+
+	service, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             alert.ServiceID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("load service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if _, err := authz.CheckTeamAccess(ctx, queries, sc.User, service.TeamID); err != nil {
+		if errors.Is(err, authz.ErrNotFound) || errors.Is(err, authz.ErrForbidden) {
+			return nil, gqlerr.New(handlers.CodeForbidden, "access denied")
+		}
+		r.logger.Error("check team access failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	state, err := escalation.ParseState(alert.EscalationState)
+	if err != nil {
+		r.logger.Error("parse escalation state failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	state = escalation.ClearedTimerState(state)
+
+	raw, err := escalation.MarshalState(state)
+	if err != nil {
+		r.logger.Error("marshal escalation state failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	closed, err := queries.CloseAlert(ctx, db.CloseAlertParams{
+		ID:              alertID,
+		OrganizationID:  sc.User.OrganizationID,
+		EscalationState: raw,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeValidation, "cannot close alert in its current state")
+		}
+		r.logger.Error("close alert failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	var acknowledgedBy *db.User
+	if closed.AcknowledgedByUserID.Valid {
+		user, err := queries.GetUserByID(ctx, db.GetUserByIDParams{
+			ID:             uuid.UUID(closed.AcknowledgedByUserID.Bytes),
+			OrganizationID: sc.User.OrganizationID,
+		})
+		if err == nil {
+			acknowledgedBy = &user
+		}
+	}
+
+	return alertFromDB(closed, acknowledgedBy), nil
+}
+
+// SnoozeAlert is the resolver for the snoozeAlert field.
+func (r *mutationResolver) SnoozeAlert(ctx context.Context, id string, durationMinutes int) (*model.Alert, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	alertID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	alert, service, err := r.loadAlertWithTeamAccess(ctx, queries, sc, alertID)
+	if err != nil {
+		return nil, err
+	}
+	_ = service
+
+	if err := escalationapi.SnoozeAlert(
+		ctx,
+		r.pool,
+		r.jobs,
+		alertID,
+		sc.User.OrganizationID,
+		int32(durationMinutes),
+	); err != nil {
+		if isEscalationValidationError(err) {
+			return nil, gqlerr.New(handlers.CodeValidation, err.Error())
+		}
+		r.logger.Error("snooze alert failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	snoozed, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+		ID:             alertID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("reload snoozed alert failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	state, err := escalation.ParseState(snoozed.EscalationState)
+	if err != nil {
+		r.logger.Error("parse escalation state failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	if state.NextEscalationAt != nil {
+		r.audit.AlertEscalationSnoozed(
+			ctx,
+			queries,
+			sc.User.OrganizationID,
+			sc.User.ID,
+			alert.ID,
+			int32(durationMinutes),
+			state.NextEscalationAt.UTC().Format(time.RFC3339),
+		)
+	}
+
+	return alertFromDB(snoozed, nil), nil
+}
+
+// ReEscalateAlert is the resolver for the reEscalateAlert field.
+func (r *mutationResolver) ReEscalateAlert(ctx context.Context, id string) (*model.Alert, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	alertID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	alert, service, err := r.loadAlertWithTeamAccess(ctx, queries, sc, alertID)
+	if err != nil {
+		return nil, err
+	}
+	_ = service
+
+	if err := escalationapi.ReEscalateAlert(
+		ctx,
+		r.pool,
+		r.jobs,
+		alertID,
+		sc.User.OrganizationID,
+	); err != nil {
+		if isEscalationValidationError(err) {
+			return nil, gqlerr.New(handlers.CodeValidation, err.Error())
+		}
+		r.logger.Error("re-escalate alert failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	reEscalated, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+		ID:             alertID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("reload re-escalated alert failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.AlertReEscalated(ctx, queries, sc.User.OrganizationID, sc.User.ID, alert.ID)
+
+	return alertFromDB(reEscalated, nil), nil
+}
+
+// CreateSchedule is the resolver for the createSchedule field.
+func (r *mutationResolver) CreateSchedule(ctx context.Context, input model.CreateScheduleInput) (*model.Schedule, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+	if err := validateTimezone(input.Timezone); err != nil {
+		return nil, err
+	}
+
+	teamID, err := parseUUIDField(input.TeamID, "teamId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetTeamByID(ctx, db.GetTeamByIDParams{
+		ID:             teamID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "team not found")
+		}
+		r.logger.Error("load team failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	scheduleID := uuid.Must(uuid.NewV7())
+	schedule, err := queries.CreateSchedule(ctx, db.CreateScheduleParams{
+		ID:             scheduleID,
+		OrganizationID: sc.User.OrganizationID,
+		TeamID:         teamID,
+		Name:           name,
+		Timezone:       strings.TrimSpace(input.Timezone),
+	})
+	if err != nil {
+		if isTimezoneCheckViolation(err) {
+			return nil, gqlerr.New(handlers.CodeValidation, "timezone must be a valid IANA timezone")
+		}
+		r.logger.Error("create schedule failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return scheduleFromDB(schedule, nil), nil
+}
+
+// UpdateSchedule is the resolver for the updateSchedule field.
+func (r *mutationResolver) UpdateSchedule(ctx context.Context, input model.UpdateScheduleInput) (*model.Schedule, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+	if err := validateTimezone(input.Timezone); err != nil {
+		return nil, err
+	}
+
+	scheduleID, err := parseUUIDField(input.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetScheduleByID(ctx, db.GetScheduleByIDParams{
+		ID:             scheduleID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "schedule not found")
+		}
+		r.logger.Error("load schedule failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	schedule, err := queries.UpdateSchedule(ctx, db.UpdateScheduleParams{
+		ID:             scheduleID,
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+		Timezone:       strings.TrimSpace(input.Timezone),
+	})
+	if err != nil {
+		if isTimezoneCheckViolation(err) {
+			return nil, gqlerr.New(handlers.CodeValidation, "timezone must be a valid IANA timezone")
+		}
+		r.logger.Error("update schedule failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	rotations, err := queries.ListRotationsByScheduleID(ctx, db.ListRotationsByScheduleIDParams{
+		ScheduleID:     scheduleID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list rotations failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return scheduleFromDB(schedule, rotations), nil
+}
+
+// DeleteSchedule is the resolver for the deleteSchedule field.
+func (r *mutationResolver) DeleteSchedule(ctx context.Context, id string) (bool, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	scheduleID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return false, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetScheduleByID(ctx, db.GetScheduleByIDParams{
+		ID:             scheduleID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, gqlerr.New(handlers.CodeNotFound, "schedule not found")
+		}
+		r.logger.Error("load schedule failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if err := queries.DeleteSchedule(ctx, db.DeleteScheduleParams{
+		ID:             scheduleID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		r.logger.Error("delete schedule failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return true, nil
+}
+
+// CreateRotation is the resolver for the createRotation field.
+func (r *mutationResolver) CreateRotation(ctx context.Context, input model.CreateRotationInput) (*model.Rotation, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+	if err := validateRotationLayer(input.Layer); err != nil {
+		return nil, err
+	}
+	if err := validateRRule(input.Rrule); err != nil {
+		return nil, err
+	}
+
+	scheduleID, err := parseUUIDField(input.ScheduleID, "scheduleId")
+	if err != nil {
+		return nil, err
+	}
+
+	participantIDs, err := parseParticipantIDs(input.ParticipantIds)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetScheduleByID(ctx, db.GetScheduleByIDParams{
+		ID:             scheduleID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "schedule not found")
+		}
+		r.logger.Error("load schedule failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if err := ensureParticipantsExist(ctx, queries, sc.User.OrganizationID, participantIDs); err != nil {
+		return nil, err
+	}
+
+	participantsJSON, err := encodeParticipantIDs(participantIDs)
+	if err != nil {
+		r.logger.Error("encode participants failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	rotation, err := queries.CreateRotation(ctx, db.CreateRotationParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		ScheduleID:     scheduleID,
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+		Layer:          int32(input.Layer),
+		Rrule:          strings.TrimSpace(input.Rrule),
+		Participants:   participantsJSON,
+	})
+	if err != nil {
+		if isRotationLayerConflict(err) {
+			return nil, gqlerr.New(handlers.CodeValidation, "layer already exists on this schedule")
+		}
+		r.logger.Error("create rotation failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	gqlRotation, err := rotationFromDB(rotation)
+	if err != nil {
+		r.logger.Error("decode rotation participants failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	return gqlRotation, nil
+}
+
+// UpdateRotation is the resolver for the updateRotation field.
+func (r *mutationResolver) UpdateRotation(ctx context.Context, input model.UpdateRotationInput) (*model.Rotation, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+	if err := validateRotationLayer(input.Layer); err != nil {
+		return nil, err
+	}
+	if err := validateRRule(input.Rrule); err != nil {
+		return nil, err
+	}
+
+	rotationID, err := parseUUIDField(input.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	participantIDs, err := parseParticipantIDs(input.ParticipantIds)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetRotationByID(ctx, db.GetRotationByIDParams{
+		ID:             rotationID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "rotation not found")
+		}
+		r.logger.Error("load rotation failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if err := ensureParticipantsExist(ctx, queries, sc.User.OrganizationID, participantIDs); err != nil {
+		return nil, err
+	}
+
+	participantsJSON, err := encodeParticipantIDs(participantIDs)
+	if err != nil {
+		r.logger.Error("encode participants failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	rotation, err := queries.UpdateRotation(ctx, db.UpdateRotationParams{
+		ID:             rotationID,
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+		Layer:          int32(input.Layer),
+		Rrule:          strings.TrimSpace(input.Rrule),
+		Participants:   participantsJSON,
+	})
+	if err != nil {
+		if isRotationLayerConflict(err) {
+			return nil, gqlerr.New(handlers.CodeValidation, "layer already exists on this schedule")
+		}
+		r.logger.Error("update rotation failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	gqlRotation, err := rotationFromDB(rotation)
+	if err != nil {
+		r.logger.Error("decode rotation participants failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	return gqlRotation, nil
+}
+
+// DeleteRotation is the resolver for the deleteRotation field.
+func (r *mutationResolver) DeleteRotation(ctx context.Context, id string) (bool, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	rotationID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return false, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetRotationByID(ctx, db.GetRotationByIDParams{
+		ID:             rotationID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, gqlerr.New(handlers.CodeNotFound, "rotation not found")
+		}
+		r.logger.Error("load rotation failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if err := queries.DeleteRotation(ctx, db.DeleteRotationParams{
+		ID:             rotationID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		r.logger.Error("delete rotation failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return true, nil
+}
+
+// CreateOverride is the resolver for the createOverride field.
+func (r *mutationResolver) CreateOverride(ctx context.Context, input model.CreateOverrideInput) (*model.Override, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	scheduleID, err := parseUUIDField(input.ScheduleID, "scheduleId")
+	if err != nil {
+		return nil, err
+	}
+	rotationID, err := parseUUIDField(input.RotationID, "rotationId")
+	if err != nil {
+		return nil, err
+	}
+	userID, err := parseUUIDField(input.UserID, "userId")
+	if err != nil {
+		return nil, err
+	}
+
+	startsAt := input.StartsAt.UTC()
+	endsAt := input.EndsAt.UTC()
+	if !endsAt.After(startsAt) {
+		return nil, gqlerr.New(handlers.CodeValidation, "endsAt must be after startsAt")
+	}
+
+	queries := db.New(r.pool)
+
+	schedule, err := queries.GetScheduleByID(ctx, db.GetScheduleByIDParams{
+		ID:             scheduleID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "schedule not found")
+		}
+		r.logger.Error("load schedule failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	rotation, err := queries.GetRotationByID(ctx, db.GetRotationByIDParams{
+		ID:             rotationID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "rotation not found")
+		}
+		r.logger.Error("load rotation failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	if rotation.ScheduleID != scheduleID {
+		return nil, gqlerr.New(handlers.CodeValidation, "rotation does not belong to schedule")
+	}
+
+	if _, err := queries.GetUserByID(ctx, db.GetUserByIDParams{
+		ID:             userID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeValidation, "user not found")
+		}
+		r.logger.Error("load override user failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	replacedUserID := computeReplacedUserID(schedule.Timezone, rotation, startsAt)
+
+	overrideID := uuid.Must(uuid.NewV7())
+	override, err := queries.CreateOverride(ctx, db.CreateOverrideParams{
+		ID:              overrideID,
+		ScheduleID:      scheduleID,
+		RotationID:      rotationID,
+		OrganizationID:  sc.User.OrganizationID,
+		UserID:          userID,
+		ReplacedUserID:  replacedUserID,
+		StartsAt:        pgtype.Timestamptz{Time: startsAt, Valid: true},
+		EndsAt:          pgtype.Timestamptz{Time: endsAt, Valid: true},
+		CreatedByUserID: sc.User.ID,
+	})
+	if err != nil {
+		r.logger.Error("create override failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	auditMeta := map[string]any{
+		"schedule_id": scheduleID.String(),
+		"rotation_id": rotationID.String(),
+		"user_id":     userID.String(),
+		"starts_at":   startsAt.Format(time.RFC3339),
+		"ends_at":     endsAt.Format(time.RFC3339),
+	}
+	if replacedUserID.Valid {
+		auditMeta["replaced_user_id"] = uuid.UUID(replacedUserID.Bytes).String()
+	}
+	r.audit.OverrideCreated(ctx, queries, sc.User.OrganizationID, sc.User.ID, overrideID, auditMeta)
+
+	return overrideFromDB(override), nil
+}
+
+// DeleteOverride is the resolver for the deleteOverride field.
+func (r *mutationResolver) DeleteOverride(ctx context.Context, id string) (bool, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	overrideID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return false, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetOverrideByID(ctx, db.GetOverrideByIDParams{
+		ID:             overrideID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, gqlerr.New(handlers.CodeNotFound, "override not found")
+		}
+		r.logger.Error("load override failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if _, err := queries.SoftDeleteOverride(ctx, db.SoftDeleteOverrideParams{
+		ID:             overrideID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, gqlerr.New(handlers.CodeNotFound, "override not found")
+		}
+		r.logger.Error("delete override failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.OverrideDeleted(ctx, queries, sc.User.OrganizationID, sc.User.ID, overrideID)
+	return true, nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	sc, ok := auth.SessionFromContext(ctx)
@@ -226,6 +1154,320 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 // Health is the resolver for the health field.
 func (r *queryResolver) Health(ctx context.Context) (*model.Health, error) {
 	return &model.Health{Status: "ok"}, nil
+}
+
+// EscalationPolicy is the resolver for the escalationPolicy field.
+func (r *queryResolver) EscalationPolicy(ctx context.Context, id string) (*model.EscalationPolicy, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	policyID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	policy, err := queries.GetEscalationPolicyByID(ctx, db.GetEscalationPolicyByIDParams{
+		ID:             policyID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		r.logger.Error("load escalation policy failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	steps, err := queries.ListEscalationStepsByPolicyID(ctx, db.ListEscalationStepsByPolicyIDParams{
+		EscalationPolicyID: policyID,
+		OrganizationID:     sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list escalation steps failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return escalationPolicyFromDB(policy, steps), nil
+}
+
+// EscalationPolicies is the resolver for the escalationPolicies field.
+func (r *queryResolver) EscalationPolicies(ctx context.Context, serviceID string) ([]*model.EscalationPolicy, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	svcID, err := parseUUIDField(serviceID, "serviceId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             svcID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "service not found")
+		}
+		r.logger.Error("load service failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	policies, err := queries.ListEscalationPoliciesByServiceID(ctx, db.ListEscalationPoliciesByServiceIDParams{
+		ServiceID:      svcID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list escalation policies failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	result := make([]*model.EscalationPolicy, 0, len(policies))
+	for _, policy := range policies {
+		steps, err := queries.ListEscalationStepsByPolicyID(ctx, db.ListEscalationStepsByPolicyIDParams{
+			EscalationPolicyID: policy.ID,
+			OrganizationID:     sc.User.OrganizationID,
+		})
+		if err != nil {
+			r.logger.Error("list escalation steps failed", "error", err)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+		result = append(result, escalationPolicyFromDB(policy, steps))
+	}
+
+	return result, nil
+}
+
+// Schedule is the resolver for the schedule field.
+func (r *queryResolver) Schedule(ctx context.Context, id string) (*model.Schedule, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	scheduleID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	schedule, err := queries.GetScheduleByID(ctx, db.GetScheduleByIDParams{
+		ID:             scheduleID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		r.logger.Error("load schedule failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	rotations, err := queries.ListRotationsByScheduleID(ctx, db.ListRotationsByScheduleIDParams{
+		ScheduleID:     scheduleID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list rotations failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return scheduleFromDB(schedule, rotations), nil
+}
+
+// Schedules is the resolver for the schedules field.
+func (r *queryResolver) Schedules(ctx context.Context, teamID string) ([]*model.Schedule, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	teamUUID, err := parseUUIDField(teamID, "teamId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetTeamByID(ctx, db.GetTeamByIDParams{
+		ID:             teamUUID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "team not found")
+		}
+		r.logger.Error("load team failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	schedules, err := queries.ListSchedulesByTeamID(ctx, db.ListSchedulesByTeamIDParams{
+		TeamID:         teamUUID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list schedules failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	result := make([]*model.Schedule, 0, len(schedules))
+	for _, schedule := range schedules {
+		rotations, err := queries.ListRotationsByScheduleID(ctx, db.ListRotationsByScheduleIDParams{
+			ScheduleID:     schedule.ID,
+			OrganizationID: sc.User.OrganizationID,
+		})
+		if err != nil {
+			r.logger.Error("list rotations failed", "error", err)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+		result = append(result, scheduleFromDB(schedule, rotations))
+	}
+
+	return result, nil
+}
+
+// OnCallNow is the resolver for the onCallNow field.
+func (r *queryResolver) OnCallNow(ctx context.Context, scheduleID string, at *time.Time) (*model.OnCallNow, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	scheduleUUID, err := parseUUIDField(scheduleID, "scheduleId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	schedule, err := queries.GetScheduleByID(ctx, db.GetScheduleByIDParams{
+		ID:             scheduleUUID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		r.logger.Error("load schedule failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	loc, err := time.LoadLocation(schedule.Timezone)
+	if err != nil {
+		r.logger.Error("load schedule timezone failed", "error", err, "timezone", schedule.Timezone)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	evalAt := time.Now().UTC()
+	if at != nil {
+		evalAt = at.UTC()
+	}
+
+	rotations, err := queries.ListRotationsByScheduleID(ctx, db.ListRotationsByScheduleIDParams{
+		ScheduleID:     scheduleUUID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list rotations failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	activeOverrides, err := queries.ListActiveOverridesByScheduleAt(ctx, db.ListActiveOverridesByScheduleAtParams{
+		ScheduleID:     scheduleUUID,
+		OrganizationID: sc.User.OrganizationID,
+		StartsAt:       pgtype.Timestamptz{Time: evalAt, Valid: true},
+	})
+	if err != nil {
+		r.logger.Error("list active overrides failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	overrideByRotation := overridesByRotation(activeOverrides)
+
+	layers := make([]*model.OnCallLayer, 0, len(rotations))
+	for _, rotation := range rotations {
+		if override, ok := overrideByRotation[rotation.ID]; ok {
+			layers = append(layers, &model.OnCallLayer{
+				Layer:      int(rotation.Layer),
+				RotationID: rotation.ID.String(),
+				UserID:     override.UserID.String(),
+			})
+			continue
+		}
+
+		participantIDs, err := decodeParticipantIDs(rotation.Participants)
+		if err != nil {
+			r.logger.Error("decode rotation participants failed", "error", err, "rotationId", rotation.ID)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+
+		userID, err := currentOnCallUser(
+			rotation.Rrule,
+			timeFromDB(rotation.CreatedAt),
+			loc,
+			evalAt,
+			participantIDs,
+		)
+		if err != nil {
+			if errors.Is(err, errNoActiveShift) {
+				continue
+			}
+			r.logger.Error("compute on-call user failed", "error", err, "rotationId", rotation.ID)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+
+		layers = append(layers, &model.OnCallLayer{
+			Layer:      int(rotation.Layer),
+			RotationID: rotation.ID.String(),
+			UserID:     userID,
+		})
+	}
+
+	return &model.OnCallNow{
+		ScheduleID: schedule.ID.String(),
+		ComputedAt: evalAt,
+		Layers:     layers,
+	}, nil
+}
+
+// Overrides is the resolver for the overrides field.
+func (r *queryResolver) Overrides(ctx context.Context, scheduleID string) ([]*model.Override, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	scheduleUUID, err := parseUUIDField(scheduleID, "scheduleId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetScheduleByID(ctx, db.GetScheduleByIDParams{
+		ID:             scheduleUUID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "schedule not found")
+		}
+		r.logger.Error("load schedule failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	overrides, err := queries.ListActiveOverridesByScheduleID(ctx, db.ListActiveOverridesByScheduleIDParams{
+		ScheduleID:     scheduleUUID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list overrides failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	result := make([]*model.Override, 0, len(overrides))
+	for _, override := range overrides {
+		result = append(result, overrideFromDB(override))
+	}
+	return result, nil
 }
 
 // Mutation returns MutationResolver implementation.

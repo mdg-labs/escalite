@@ -23,12 +23,15 @@ const (
 	ActionEscalationPolicyCreated = "escalation_policy.created"
 	ActionEscalationPolicyUpdated = "escalation_policy.updated"
 	ActionEscalationPolicyDeleted = "escalation_policy.deleted"
+	ActionOverrideCreated         = "override.created"
+	ActionOverrideDeleted         = "override.deleted"
 	ActionAlertEscalationSnoozed   = "alert.escalation_snoozed"
 	ActionAlertReEscalated         = "alert.re_escalated"
 
 	targetTypeUser             = "user"
 	targetTypeIntegrationKey   = "integration_key"
 	targetTypeEscalationPolicy = "escalation_policy"
+	targetTypeOverride         = "override"
 	targetTypeAlert            = "alert"
 )
 
@@ -199,6 +202,32 @@ func (r *Recorder) EscalationPolicyDeleted(ctx context.Context, q db.Querier, or
 	})
 }
 
+// OverrideCreated records on-call override creation.
+func (r *Recorder) OverrideCreated(ctx context.Context, q db.Querier, orgID, actorID, overrideID uuid.UUID, metadata map[string]any) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionOverrideCreated,
+		TargetType:     pgtype.Text{String: targetTypeOverride, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: overrideID, Valid: true},
+		Metadata:       mustMarshalAnyMeta(r.logger, metadata),
+	})
+}
+
+// OverrideDeleted records on-call override soft-deletion.
+func (r *Recorder) OverrideDeleted(ctx context.Context, q db.Querier, orgID, actorID, overrideID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionOverrideDeleted,
+		TargetType:     pgtype.Text{String: targetTypeOverride, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: overrideID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
 // AlertEscalationSnoozed records a manual escalation snooze.
 func (r *Recorder) AlertEscalationSnoozed(ctx context.Context, q db.Querier, orgID, actorID, alertID uuid.UUID, durationMinutes int32, nextEscalationAt string) {
 	meta, err := json.Marshal(map[string]any{
@@ -249,6 +278,18 @@ func (r *Recorder) insert(ctx context.Context, q db.Querier, params db.CreateAud
 }
 
 func mustMarshalMeta(logger *slog.Logger, meta RequestMeta) []byte {
+	data, err := json.Marshal(meta)
+	if err != nil {
+		logger.Error("marshal audit metadata failed", "error", err)
+		return []byte("{}")
+	}
+	return data
+}
+
+func mustMarshalAnyMeta(logger *slog.Logger, meta map[string]any) []byte {
+	if meta == nil {
+		return []byte("{}")
+	}
 	data, err := json.Marshal(meta)
 	if err != nil {
 		logger.Error("marshal audit metadata failed", "error", err)

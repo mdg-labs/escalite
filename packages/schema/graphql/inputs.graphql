@@ -55,3 +55,11 @@ input UpdateRotationInput {
   rrule: String!
   participantIds: [ID!]!
 }
+
+input CreateOverrideInput {
+  scheduleId: ID!
+  rotationId: ID!
+  userId: ID!
+  startsAt: DateTime!
+  endsAt: DateTime!
+}

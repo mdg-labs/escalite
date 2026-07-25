@@ -119,3 +119,20 @@ type OnCallLayer {
   rotationId: ID!
   userId: ID!
 }
+
+"""One-off on-call swap that takes precedence over rotation for a time window."""
+type Override {
+  id: ID!
+  scheduleId: ID!
+  rotationId: ID!
+  organizationId: ID!
+  userId: ID!
+  replacedUserId: ID
+  startsAt: DateTime!
+  endsAt: DateTime!
+  createdByUserId: ID!
+  """Set when an approver confirms the override (Phase 5 approval workflow)."""
+  approvedByUserId: ID
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

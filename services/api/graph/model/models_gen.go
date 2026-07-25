@@ -33,6 +33,14 @@ type CreateEscalationPolicyInput struct {
 	Steps     []*EscalationStepInput `json:"steps"`
 }
 
+type CreateOverrideInput struct {
+	ScheduleID string    `json:"scheduleId"`
+	RotationID string    `json:"rotationId"`
+	UserID     string    `json:"userId"`
+	StartsAt   time.Time `json:"startsAt"`
+	EndsAt     time.Time `json:"endsAt"`
+}
+
 type CreateRotationInput struct {
 	ScheduleID     string   `json:"scheduleId"`
 	Name           string   `json:"name"`
@@ -111,6 +119,23 @@ type Organization struct {
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// One-off on-call swap that takes precedence over rotation for a time window.
+type Override struct {
+	ID              string    `json:"id"`
+	ScheduleID      string    `json:"scheduleId"`
+	RotationID      string    `json:"rotationId"`
+	OrganizationID  string    `json:"organizationId"`
+	UserID          string    `json:"userId"`
+	ReplacedUserID  *string   `json:"replacedUserId,omitempty"`
+	StartsAt        time.Time `json:"startsAt"`
+	EndsAt          time.Time `json:"endsAt"`
+	CreatedByUserID string    `json:"createdByUserId"`
+	// Set when an approver confirms the override (Phase 5 approval workflow).
+	ApprovedByUserID *string   `json:"approvedByUserId,omitempty"`
+	CreatedAt        time.Time `json:"createdAt"`
+	UpdatedAt        time.Time `json:"updatedAt"`
 }
 
 type Query struct {

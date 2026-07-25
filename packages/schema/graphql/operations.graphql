@@ -34,6 +34,12 @@ type Query {
   Optional at evaluates as-of that instant; shift boundaries use the schedule timezone.
   """
   onCallNow(scheduleId: ID!, at: DateTime): OnCallNow
+
+  """
+  List active overrides for a schedule (org admin only).
+  Soft-deleted overrides are excluded.
+  """
+  overrides(scheduleId: ID!): [Override!]!
 }
 
 type Mutation {
@@ -111,4 +117,14 @@ type Mutation {
   Delete a rotation (org admin only).
   """
   deleteRotation(id: ID!): Boolean!
+
+  """
+  Create an on-call override (org admin only).
+  """
+  createOverride(input: CreateOverrideInput!): Override!
+
+  """
+  Soft-delete an override (org admin only).
+  """
+  deleteOverride(id: ID!): Boolean!
 }

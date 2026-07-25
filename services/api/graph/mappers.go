@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/mdg-labs/escalite/services/api/graph/model"
@@ -183,4 +184,33 @@ func rotationFromDB(rotation db.Rotation) (*model.Rotation, error) {
 		CreatedAt:      timeFromDB(rotation.CreatedAt),
 		UpdatedAt:      timeFromDB(rotation.UpdatedAt),
 	}, nil
+}
+
+func overrideFromDB(override db.Override) *model.Override {
+	var replacedUserID *string
+	if override.ReplacedUserID.Valid {
+		value := uuid.UUID(override.ReplacedUserID.Bytes).String()
+		replacedUserID = &value
+	}
+
+	var approvedByUserID *string
+	if override.ApprovedByUserID.Valid {
+		value := uuid.UUID(override.ApprovedByUserID.Bytes).String()
+		approvedByUserID = &value
+	}
+
+	return &model.Override{
+		ID:               override.ID.String(),
+		ScheduleID:       override.ScheduleID.String(),
+		RotationID:       override.RotationID.String(),
+		OrganizationID:   override.OrganizationID.String(),
+		UserID:           override.UserID.String(),
+		ReplacedUserID:   replacedUserID,
+		StartsAt:         timeFromDB(override.StartsAt),
+		EndsAt:           timeFromDB(override.EndsAt),
+		CreatedByUserID:  override.CreatedByUserID.String(),
+		ApprovedByUserID: approvedByUserID,
+		CreatedAt:        timeFromDB(override.CreatedAt),
+		UpdatedAt:        timeFromDB(override.UpdatedAt),
+	}
 }

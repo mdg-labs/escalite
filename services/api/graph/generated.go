@@ -88,9 +88,11 @@ type ComplexityRoot struct {
 		AcknowledgeAlert       func(childComplexity int, id string) int
 		CloseAlert             func(childComplexity int, id string) int
 		CreateEscalationPolicy func(childComplexity int, input model.CreateEscalationPolicyInput) int
+		CreateOverride         func(childComplexity int, input model.CreateOverrideInput) int
 		CreateRotation         func(childComplexity int, input model.CreateRotationInput) int
 		CreateSchedule         func(childComplexity int, input model.CreateScheduleInput) int
 		DeleteEscalationPolicy func(childComplexity int, id string) int
+		DeleteOverride         func(childComplexity int, id string) int
 		DeleteRotation         func(childComplexity int, id string) int
 		DeleteSchedule         func(childComplexity int, id string) int
 		Login                  func(childComplexity int, input model.LoginInput) int
@@ -121,12 +123,28 @@ type ComplexityRoot struct {
 		UpdatedAt func(childComplexity int) int
 	}
 
+	Override struct {
+		ApprovedByUserID func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		CreatedByUserID  func(childComplexity int) int
+		EndsAt           func(childComplexity int) int
+		ID               func(childComplexity int) int
+		OrganizationID   func(childComplexity int) int
+		ReplacedUserID   func(childComplexity int) int
+		RotationID       func(childComplexity int) int
+		ScheduleID       func(childComplexity int) int
+		StartsAt         func(childComplexity int) int
+		UpdatedAt        func(childComplexity int) int
+		UserID           func(childComplexity int) int
+	}
+
 	Query struct {
 		EscalationPolicies func(childComplexity int, serviceID string) int
 		EscalationPolicy   func(childComplexity int, id string) int
 		Health             func(childComplexity int) int
 		Me                 func(childComplexity int) int
 		OnCallNow          func(childComplexity int, scheduleID string, at *time.Time) int
+		Overrides          func(childComplexity int, scheduleID string) int
 		Schedule           func(childComplexity int, id string) int
 		Schedules          func(childComplexity int, teamID string) int
 	}
@@ -206,6 +224,8 @@ type MutationResolver interface {
 	CreateRotation(ctx context.Context, input model.CreateRotationInput) (*model.Rotation, error)
 	UpdateRotation(ctx context.Context, input model.UpdateRotationInput) (*model.Rotation, error)
 	DeleteRotation(ctx context.Context, id string) (bool, error)
+	CreateOverride(ctx context.Context, input model.CreateOverrideInput) (*model.Override, error)
+	DeleteOverride(ctx context.Context, id string) (bool, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
@@ -215,6 +235,7 @@ type QueryResolver interface {
 	Schedule(ctx context.Context, id string) (*model.Schedule, error)
 	Schedules(ctx context.Context, teamID string) ([]*model.Schedule, error)
 	OnCallNow(ctx context.Context, scheduleID string, at *time.Time) (*model.OnCallNow, error)
+	Overrides(ctx context.Context, scheduleID string) ([]*model.Override, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -465,6 +486,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateEscalationPolicy(childComplexity, args["input"].(model.CreateEscalationPolicyInput)), true
+	case "Mutation.createOverride":
+		if e.ComplexityRoot.Mutation.CreateOverride == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createOverride_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateOverride(childComplexity, args["input"].(model.CreateOverrideInput)), true
 	case "Mutation.createRotation":
 		if e.ComplexityRoot.Mutation.CreateRotation == nil {
 			break
@@ -498,6 +530,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteEscalationPolicy(childComplexity, args["id"].(string)), true
+	case "Mutation.deleteOverride":
+		if e.ComplexityRoot.Mutation.DeleteOverride == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteOverride_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteOverride(childComplexity, args["id"].(string)), true
 	case "Mutation.deleteRotation":
 		if e.ComplexityRoot.Mutation.DeleteRotation == nil {
 			break
@@ -661,6 +704,79 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Organization.UpdatedAt(childComplexity), true
 
+	case "Override.approvedByUserId":
+		if e.ComplexityRoot.Override.ApprovedByUserID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Override.ApprovedByUserID(childComplexity), true
+	case "Override.createdAt":
+		if e.ComplexityRoot.Override.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Override.CreatedAt(childComplexity), true
+	case "Override.createdByUserId":
+		if e.ComplexityRoot.Override.CreatedByUserID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Override.CreatedByUserID(childComplexity), true
+	case "Override.endsAt":
+		if e.ComplexityRoot.Override.EndsAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Override.EndsAt(childComplexity), true
+	case "Override.id":
+		if e.ComplexityRoot.Override.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Override.ID(childComplexity), true
+	case "Override.organizationId":
+		if e.ComplexityRoot.Override.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Override.OrganizationID(childComplexity), true
+	case "Override.replacedUserId":
+		if e.ComplexityRoot.Override.ReplacedUserID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Override.ReplacedUserID(childComplexity), true
+	case "Override.rotationId":
+		if e.ComplexityRoot.Override.RotationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Override.RotationID(childComplexity), true
+	case "Override.scheduleId":
+		if e.ComplexityRoot.Override.ScheduleID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Override.ScheduleID(childComplexity), true
+	case "Override.startsAt":
+		if e.ComplexityRoot.Override.StartsAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Override.StartsAt(childComplexity), true
+	case "Override.updatedAt":
+		if e.ComplexityRoot.Override.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Override.UpdatedAt(childComplexity), true
+	case "Override.userId":
+		if e.ComplexityRoot.Override.UserID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Override.UserID(childComplexity), true
+
 	case "Query.escalationPolicies":
 		if e.ComplexityRoot.Query.EscalationPolicies == nil {
 			break
@@ -707,6 +823,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.OnCallNow(childComplexity, args["scheduleId"].(string), args["at"].(*time.Time)), true
+	case "Query.overrides":
+		if e.ComplexityRoot.Query.Overrides == nil {
+			break
+		}
+
+		args, err := ec.field_Query_overrides_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.Overrides(childComplexity, args["scheduleId"].(string)), true
 	case "Query.schedule":
 		if e.ComplexityRoot.Query.Schedule == nil {
 			break
@@ -961,6 +1088,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	ec := newExecutionContext(opCtx, e, make(chan graphql.DeferredResult))
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputCreateEscalationPolicyInput,
+		ec.unmarshalInputCreateOverrideInput,
 		ec.unmarshalInputCreateRotationInput,
 		ec.unmarshalInputCreateScheduleInput,
 		ec.unmarshalInputEscalationStepInput,
@@ -1126,6 +1254,14 @@ input UpdateRotationInput {
   rrule: String!
   participantIds: [ID!]!
 }
+
+input CreateOverrideInput {
+  scheduleId: ID!
+  rotationId: ID!
+  userId: ID!
+  startsAt: DateTime!
+  endsAt: DateTime!
+}
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Query {
   """
@@ -1163,6 +1299,12 @@ input UpdateRotationInput {
   Optional at evaluates as-of that instant; shift boundaries use the schedule timezone.
   """
   onCallNow(scheduleId: ID!, at: DateTime): OnCallNow
+
+  """
+  List active overrides for a schedule (org admin only).
+  Soft-deleted overrides are excluded.
+  """
+  overrides(scheduleId: ID!): [Override!]!
 }
 
 type Mutation {
@@ -1240,6 +1382,16 @@ type Mutation {
   Delete a rotation (org admin only).
   """
   deleteRotation(id: ID!): Boolean!
+
+  """
+  Create an on-call override (org admin only).
+  """
+  createOverride(input: CreateOverrideInput!): Override!
+
+  """
+  Soft-delete an override (org admin only).
+  """
+  deleteOverride(id: ID!): Boolean!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/scalars.graphql", Input: `"""
@@ -1372,6 +1524,23 @@ type OnCallLayer {
   layer: Int!
   rotationId: ID!
   userId: ID!
+}
+
+"""One-off on-call swap that takes precedence over rotation for a time window."""
+type Override {
+  id: ID!
+  scheduleId: ID!
+  rotationId: ID!
+  organizationId: ID!
+  userId: ID!
+  replacedUserId: ID
+  startsAt: DateTime!
+  endsAt: DateTime!
+  createdByUserId: ID!
+  """Set when an approver confirms the override (Phase 5 approval workflow)."""
+  approvedByUserId: ID
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 `, BuiltIn: false},
 }
@@ -1511,6 +1680,36 @@ func (ec *executionContext) childFields_Organization(ctx context.Context, field 
 		return ec.fieldContext_Organization_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Organization", field.Name)
+}
+
+func (ec *executionContext) childFields_Override(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_Override_id(ctx, field)
+	case "scheduleId":
+		return ec.fieldContext_Override_scheduleId(ctx, field)
+	case "rotationId":
+		return ec.fieldContext_Override_rotationId(ctx, field)
+	case "organizationId":
+		return ec.fieldContext_Override_organizationId(ctx, field)
+	case "userId":
+		return ec.fieldContext_Override_userId(ctx, field)
+	case "replacedUserId":
+		return ec.fieldContext_Override_replacedUserId(ctx, field)
+	case "startsAt":
+		return ec.fieldContext_Override_startsAt(ctx, field)
+	case "endsAt":
+		return ec.fieldContext_Override_endsAt(ctx, field)
+	case "createdByUserId":
+		return ec.fieldContext_Override_createdByUserId(ctx, field)
+	case "approvedByUserId":
+		return ec.fieldContext_Override_approvedByUserId(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_Override_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_Override_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Override", field.Name)
 }
 
 func (ec *executionContext) childFields_Rotation(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1745,6 +1944,20 @@ func (ec *executionContext) field_Mutation_createEscalationPolicy_args(ctx conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createOverride_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateOverrideInput, error) {
+			return ec.unmarshalNCreateOverrideInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateOverrideInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createRotation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1774,6 +1987,20 @@ func (ec *executionContext) field_Mutation_createSchedule_args(ctx context.Conte
 }
 
 func (ec *executionContext) field_Mutation_deleteEscalationPolicy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteOverride_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
@@ -1982,6 +2209,20 @@ func (ec *executionContext) field_Query_onCallNow_args(ctx context.Context, rawA
 		return nil, err
 	}
 	args["at"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_overrides_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "scheduleId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["scheduleId"] = arg0
 	return args, nil
 }
 
@@ -3496,6 +3737,94 @@ func (ec *executionContext) fieldContext_Mutation_deleteRotation(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createOverride(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createOverride(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateOverride(ctx, fc.Args["input"].(model.CreateOverrideInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Override) graphql.Marshaler {
+			return ec.marshalNOverride2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOverride(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createOverride(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Override(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createOverride_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteOverride(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteOverride(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteOverride(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteOverride(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteOverride_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _OnCallLayer_layer(ctx context.Context, field graphql.CollectedField, obj *model.OnCallLayer) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3733,6 +4062,282 @@ func (ec *executionContext) _Organization_updatedAt(ctx context.Context, field g
 }
 func (ec *executionContext) fieldContext_Organization_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Organization", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _Override_id(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Override_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Override_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Override_scheduleId(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Override_scheduleId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ScheduleID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Override_scheduleId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Override_rotationId(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Override_rotationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RotationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Override_rotationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Override_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Override_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Override_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Override_userId(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Override_userId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Override_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Override_replacedUserId(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Override_replacedUserId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ReplacedUserID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Override_replacedUserId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Override_startsAt(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Override_startsAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StartsAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Override_startsAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _Override_endsAt(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Override_endsAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EndsAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Override_endsAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _Override_createdByUserId(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Override_createdByUserId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedByUserID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Override_createdByUserId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Override_approvedByUserId(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Override_approvedByUserId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ApprovedByUserID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Override_approvedByUserId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Override_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Override_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Override_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _Override_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Override_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Override_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4013,6 +4618,50 @@ func (ec *executionContext) fieldContext_Query_onCallNow(ctx context.Context, fi
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_onCallNow_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_overrides(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_overrides(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().Overrides(ctx, fc.Args["scheduleId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.Override) graphql.Marshaler {
+			return ec.marshalNOverride2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOverrideᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_overrides(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Override(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_overrides_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6053,6 +6702,64 @@ func (ec *executionContext) unmarshalInputCreateEscalationPolicyInput(ctx contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateOverrideInput(ctx context.Context, obj any) (model.CreateOverrideInput, error) {
+	var it model.CreateOverrideInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"scheduleId", "rotationId", "userId", "startsAt", "endsAt"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "scheduleId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduleId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ScheduleID = data
+		case "rotationId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rotationId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RotationID = data
+		case "userId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserID = data
+		case "startsAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startsAt"))
+			data, err := ec.unmarshalNDateTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartsAt = data
+		case "endsAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endsAt"))
+			data, err := ec.unmarshalNDateTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EndsAt = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateRotationInput(ctx context.Context, obj any) (model.CreateRotationInput, error) {
 	var it model.CreateRotationInput
 	if obj == nil {
@@ -6895,6 +7602,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "createOverride":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createOverride(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteOverride":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteOverride(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7041,6 +7762,99 @@ func (ec *executionContext) _Organization(ctx context.Context, sel ast.Selection
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Organization_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var overrideImplementors = []string{"Override"}
+
+func (ec *executionContext) _Override(ctx context.Context, sel ast.SelectionSet, obj *model.Override) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, overrideImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Override")
+		case "id":
+			out.Values[i] = ec._Override_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "scheduleId":
+			out.Values[i] = ec._Override_scheduleId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rotationId":
+			out.Values[i] = ec._Override_rotationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "organizationId":
+			out.Values[i] = ec._Override_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userId":
+			out.Values[i] = ec._Override_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "replacedUserId":
+			out.Values[i] = ec._Override_replacedUserId(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "startsAt":
+			out.Values[i] = ec._Override_startsAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "endsAt":
+			out.Values[i] = ec._Override_endsAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdByUserId":
+			out.Values[i] = ec._Override_createdByUserId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "approvedByUserId":
+			out.Values[i] = ec._Override_approvedByUserId(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._Override_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Override_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -7228,6 +8042,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}()
 				res = ec._Query_onCallNow(ctx, field)
 				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "overrides":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_overrides(ctx, field)
+				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
 				return res
@@ -8099,6 +8935,11 @@ func (ec *executionContext) unmarshalNCreateEscalationPolicyInput2githubᚗcom�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateOverrideInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateOverrideInput(ctx context.Context, v any) (model.CreateOverrideInput, error) {
+	res, err := ec.unmarshalInputCreateOverrideInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateRotationInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateRotationInput(ctx context.Context, v any) (model.CreateRotationInput, error) {
 	res, err := ec.unmarshalInputCreateRotationInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -8328,6 +9169,36 @@ func (ec *executionContext) marshalNOrganization2ᚖgithubᚗcomᚋmdgᚑlabsᚋ
 		return graphql.Null
 	}
 	return ec._Organization(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNOverride2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOverride(ctx context.Context, sel ast.SelectionSet, v model.Override) graphql.Marshaler {
+	return ec._Override(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOverride2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOverrideᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Override) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNOverride2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOverride(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNOverride2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOverride(ctx context.Context, sel ast.SelectionSet, v *model.Override) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Override(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNRotation2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRotation(ctx context.Context, sel ast.SelectionSet, v model.Rotation) graphql.Marshaler {
@@ -8653,6 +9524,24 @@ func (ec *executionContext) marshalOEscalationPolicy2ᚖgithubᚗcomᚋmdgᚑlab
 		return graphql.Null
 	}
 	return ec._EscalationPolicy(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalID(*v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {

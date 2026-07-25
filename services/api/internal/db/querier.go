@@ -24,6 +24,7 @@ type Querier interface {
 	CreateEscalationStepTarget(ctx context.Context, arg CreateEscalationStepTargetParams) (EscalationStepTarget, error)
 	CreateNotificationAttempt(ctx context.Context, arg CreateNotificationAttemptParams) (NotificationAttempt, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
+	CreateOverride(ctx context.Context, arg CreateOverrideParams) (Override, error)
 	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetToken, error)
 	CreateRotation(ctx context.Context, arg CreateRotationParams) (Rotation, error)
 	CreateSchedule(ctx context.Context, arg CreateScheduleParams) (Schedule, error)
@@ -44,6 +45,7 @@ type Querier interface {
 	GetEscalationStepByPolicyAndOrder(ctx context.Context, arg GetEscalationStepByPolicyAndOrderParams) (EscalationStep, error)
 	GetFirstOrganization(ctx context.Context) (Organization, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
+	GetOverrideByID(ctx context.Context, arg GetOverrideByIDParams) (Override, error)
 	GetPasswordResetTokenByHash(ctx context.Context, tokenHash string) (PasswordResetToken, error)
 	GetRotationByID(ctx context.Context, arg GetRotationByIDParams) (Rotation, error)
 	GetScheduleByID(ctx context.Context, arg GetScheduleByIDParams) (Schedule, error)
@@ -55,6 +57,8 @@ type Querier interface {
 	GetUserByID(ctx context.Context, arg GetUserByIDParams) (User, error)
 	HasTeamMembership(ctx context.Context, arg HasTeamMembershipParams) (bool, error)
 	InvalidateUnusedPasswordResetTokensForUser(ctx context.Context, userID uuid.UUID) error
+	ListActiveOverridesByScheduleAt(ctx context.Context, arg ListActiveOverridesByScheduleAtParams) ([]Override, error)
+	ListActiveOverridesByScheduleID(ctx context.Context, arg ListActiveOverridesByScheduleIDParams) ([]Override, error)
 	ListAuditEventsByOrganization(ctx context.Context, organizationID uuid.UUID) ([]AuditEvent, error)
 	ListEscalationPoliciesByServiceID(ctx context.Context, arg ListEscalationPoliciesByServiceIDParams) ([]EscalationPolicy, error)
 	ListEscalationStepTargetsByStepID(ctx context.Context, arg ListEscalationStepTargetsByStepIDParams) ([]EscalationStepTarget, error)
@@ -68,6 +72,7 @@ type Querier interface {
 	RevokeAllUserSessions(ctx context.Context, arg RevokeAllUserSessionsParams) error
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
 	SessionsSchemaReady(ctx context.Context) (bool, error)
+	SoftDeleteOverride(ctx context.Context, arg SoftDeleteOverrideParams) (Override, error)
 	UpdateAlertEscalationState(ctx context.Context, arg UpdateAlertEscalationStateParams) (Alert, error)
 	UpdateEscalationPolicy(ctx context.Context, arg UpdateEscalationPolicyParams) (EscalationPolicy, error)
 	UpdateRotation(ctx context.Context, arg UpdateRotationParams) (Rotation, error)
