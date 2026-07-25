@@ -1,0 +1,19 @@
+{
+  "heartbeat": {
+    "monitorID": 42,
+    "status": 1,
+    "time": "2026-07-25T08:20:00.000Z",
+    "msg": "OK",
+    "important": true,
+    "duration": 300,
+    "ping": 45
+  },
+  "monitor": {
+    "id": 42,
+    "name": "checkout-api",
+    "url": "https://checkout.example.com/health",
+    "type": "http",
+    "interval": 60
+  },
+  "msg": "[checkout-api] [✅ Up] OK"
+}

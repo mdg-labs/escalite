@@ -10,6 +10,7 @@ import (
 	"github.com/mdg-labs/escalite/services/integrations"
 	_ "github.com/mdg-labs/escalite/services/integrations/datadog"
 	_ "github.com/mdg-labs/escalite/services/integrations/grafana"
+	_ "github.com/mdg-labs/escalite/services/integrations/uptimekuma"
 )
 
 func TestEventTypeConstants(t *testing.T) {
@@ -37,6 +38,11 @@ func TestValidateConfigUnknownPlugin(t *testing.T) {
 
 func TestValidateConfigGrafana(t *testing.T) {
 	err := integrations.ValidateConfig("grafana", json.RawMessage(`{}`))
+	require.NoError(t, err)
+}
+
+func TestValidateConfigUptimeKuma(t *testing.T) {
+	err := integrations.ValidateConfig("uptime-kuma", json.RawMessage(`{}`))
 	require.NoError(t, err)
 }
 

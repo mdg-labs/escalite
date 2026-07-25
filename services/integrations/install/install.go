@@ -8,4 +8,5 @@ import (
 	_ "github.com/mdg-labs/escalite/services/integrations/genericrest"
 	_ "github.com/mdg-labs/escalite/services/integrations/genericwebhook"
 	_ "github.com/mdg-labs/escalite/services/integrations/grafana"
+	_ "github.com/mdg-labs/escalite/services/integrations/uptimekuma"
 )
