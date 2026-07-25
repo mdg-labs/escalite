@@ -34,14 +34,26 @@ func ProcessInbound(
 }
 
 func createTriggered(ctx context.Context, queries *db.Queries, key db.IntegrationKey, event integrations.AlertCreate) (uuid.UUID, error) {
-	_, err := queries.GetOpenAlertByServiceDedupKey(ctx, db.GetOpenAlertByServiceDedupKeyParams{
-		ServiceID: key.ServiceID,
-		DedupKey:  event.DedupKey,
+	service, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             key.ServiceID,
+		OrganizationID: key.OrganizationID,
+	})
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	dedupWindowSeconds := service.DedupWindowSeconds
+
+	_, err = queries.GetOpenAlertByServiceDedupKey(ctx, db.GetOpenAlertByServiceDedupKeyParams{
+		ServiceID:          key.ServiceID,
+		DedupKey:           event.DedupKey,
+		DedupWindowSeconds: dedupWindowSeconds,
 	})
 	if err == nil {
 		updated, err := queries.IncrementOpenAlertEventCount(ctx, db.IncrementOpenAlertEventCountParams{
-			ServiceID: key.ServiceID,
-			DedupKey:  event.DedupKey,
+			ServiceID:          key.ServiceID,
+			DedupKey:           event.DedupKey,
+			DedupWindowSeconds: dedupWindowSeconds,
 		})
 		if err != nil {
 			return uuid.Nil, err
@@ -81,7 +93,7 @@ func resolveByDedupKey(
 	key db.IntegrationKey,
 	dedupKey string,
 ) error {
-	alert, err := queries.GetOpenAlertByServiceDedupKey(ctx, db.GetOpenAlertByServiceDedupKeyParams{
+	alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(ctx, db.GetOpenAlertByServiceDedupKeyForResolveParams{
 		ServiceID: key.ServiceID,
 		DedupKey:  dedupKey,
 	})

@@ -23,7 +23,7 @@ INSERT INTO services (
     $3,
     $4
 )
-RETURNING id, organization_id, team_id, name, deleted_at, created_at, updated_at
+RETURNING id, organization_id, team_id, name, dedup_window_seconds, deleted_at, created_at, updated_at
 `
 
 type CreateServiceParams struct {
@@ -46,6 +46,7 @@ func (q *Queries) CreateService(ctx context.Context, arg CreateServiceParams) (S
 		&i.OrganizationID,
 		&i.TeamID,
 		&i.Name,
+		&i.DedupWindowSeconds,
 		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -54,7 +55,7 @@ func (q *Queries) CreateService(ctx context.Context, arg CreateServiceParams) (S
 }
 
 const getServiceByID = `-- name: GetServiceByID :one
-SELECT id, organization_id, team_id, name, deleted_at, created_at, updated_at
+SELECT id, organization_id, team_id, name, dedup_window_seconds, deleted_at, created_at, updated_at
 FROM services
 WHERE id = $1
   AND organization_id = $2
@@ -75,6 +76,7 @@ func (q *Queries) GetServiceByID(ctx context.Context, arg GetServiceByIDParams) 
 		&i.OrganizationID,
 		&i.TeamID,
 		&i.Name,
+		&i.DedupWindowSeconds,
 		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -83,7 +85,7 @@ func (q *Queries) GetServiceByID(ctx context.Context, arg GetServiceByIDParams) 
 }
 
 const listServicesByOrganizationID = `-- name: ListServicesByOrganizationID :many
-SELECT id, organization_id, team_id, name, deleted_at, created_at, updated_at
+SELECT id, organization_id, team_id, name, dedup_window_seconds, deleted_at, created_at, updated_at
 FROM services
 WHERE organization_id = $1
   AND deleted_at IS NULL
@@ -104,6 +106,7 @@ func (q *Queries) ListServicesByOrganizationID(ctx context.Context, organization
 			&i.OrganizationID,
 			&i.TeamID,
 			&i.Name,
+			&i.DedupWindowSeconds,
 			&i.DeletedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -125,7 +128,7 @@ SET deleted_at = now(),
 WHERE id = $1
   AND organization_id = $2
   AND deleted_at IS NULL
-RETURNING id, organization_id, team_id, name, deleted_at, created_at, updated_at
+RETURNING id, organization_id, team_id, name, dedup_window_seconds, deleted_at, created_at, updated_at
 `
 
 type SoftDeleteServiceParams struct {
@@ -141,6 +144,7 @@ func (q *Queries) SoftDeleteService(ctx context.Context, arg SoftDeleteServicePa
 		&i.OrganizationID,
 		&i.TeamID,
 		&i.Name,
+		&i.DedupWindowSeconds,
 		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -155,7 +159,7 @@ SET name = $3,
 WHERE id = $1
   AND organization_id = $2
   AND deleted_at IS NULL
-RETURNING id, organization_id, team_id, name, deleted_at, created_at, updated_at
+RETURNING id, organization_id, team_id, name, dedup_window_seconds, deleted_at, created_at, updated_at
 `
 
 type UpdateServiceParams struct {
@@ -172,6 +176,7 @@ func (q *Queries) UpdateService(ctx context.Context, arg UpdateServiceParams) (S
 		&i.OrganizationID,
 		&i.TeamID,
 		&i.Name,
+		&i.DedupWindowSeconds,
 		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,

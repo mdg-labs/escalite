@@ -218,6 +218,164 @@ func TestProcessInboundCollapseAcknowledgedAlertDoesNotCreateNotifications(t *te
 	require.Equal(t, int32(2), alert.EventCount)
 }
 
+func TestProcessInboundOutsideDedupWindowCreatesNewAlertRow(t *testing.T) {
+	pool, cleanup := startPostgres(t)
+	defer cleanup()
+
+	fixture := seedInboundFixture(t, pool)
+	ctx := context.Background()
+	logger := slog.Default()
+
+	event := integrations.AlertCreate{
+		EventType: integrations.EventTriggered,
+		DedupKey:  "host-1-disk",
+		Summary:   "Disk usage high",
+		Priority:  "low",
+	}
+
+	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	require.NoError(t, err)
+	require.NotEqual(t, uuid.Nil, firstID)
+
+	_, err = pool.Exec(ctx, `
+		UPDATE alerts
+		SET updated_at = now() - interval '10 minutes'
+		WHERE id = $1
+	`, firstID)
+	require.NoError(t, err)
+
+	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	require.NoError(t, err)
+	require.NotEqual(t, uuid.Nil, secondID)
+	require.NotEqual(t, firstID, secondID)
+
+	var alertCount int
+	err = pool.QueryRow(ctx, `
+		SELECT COUNT(*) FROM alerts
+		WHERE service_id = $1 AND dedup_key = $2
+	`, fixture.key.ServiceID, event.DedupKey).Scan(&alertCount)
+	require.NoError(t, err)
+	require.Equal(t, 2, alertCount)
+
+	firstAlert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+		ID:             firstID,
+		OrganizationID: fixture.key.OrganizationID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, int32(1), firstAlert.EventCount)
+
+	secondAlert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+		ID:             secondID,
+		OrganizationID: fixture.key.OrganizationID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, int32(1), secondAlert.EventCount)
+}
+
+func TestProcessInboundServiceDefaultDedupWindowSeconds(t *testing.T) {
+	pool, cleanup := startPostgres(t)
+	defer cleanup()
+
+	fixture := seedInboundFixture(t, pool)
+	ctx := context.Background()
+
+	service, err := fixture.queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+		ID:             fixture.key.ServiceID,
+		OrganizationID: fixture.key.OrganizationID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, int32(300), service.DedupWindowSeconds)
+}
+
+func TestProcessInboundCustomDedupWindowCollapsesWithinWindow(t *testing.T) {
+	pool, cleanup := startPostgres(t)
+	defer cleanup()
+
+	fixture := seedInboundFixture(t, pool)
+	ctx := context.Background()
+	logger := slog.Default()
+
+	_, err := pool.Exec(ctx, `
+		UPDATE services
+		SET dedup_window_seconds = 600
+		WHERE id = $1
+	`, fixture.key.ServiceID)
+	require.NoError(t, err)
+
+	event := integrations.AlertCreate{
+		EventType: integrations.EventTriggered,
+		DedupKey:  "cpu-spike",
+		Summary:   "CPU above threshold",
+		Priority:  "high",
+	}
+
+	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	require.NoError(t, err)
+
+	_, err = pool.Exec(ctx, `
+		UPDATE alerts
+		SET updated_at = now() - interval '7 minutes'
+		WHERE id = $1
+	`, firstID)
+	require.NoError(t, err)
+
+	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	require.NoError(t, err)
+	require.Equal(t, firstID, secondID)
+
+	alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+		ID:             firstID,
+		OrganizationID: fixture.key.OrganizationID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, int32(2), alert.EventCount)
+}
+
+func TestProcessInboundCustomDedupWindowOutsideCreatesNewRow(t *testing.T) {
+	pool, cleanup := startPostgres(t)
+	defer cleanup()
+
+	fixture := seedInboundFixture(t, pool)
+	ctx := context.Background()
+	logger := slog.Default()
+
+	_, err := pool.Exec(ctx, `
+		UPDATE services
+		SET dedup_window_seconds = 120
+		WHERE id = $1
+	`, fixture.key.ServiceID)
+	require.NoError(t, err)
+
+	event := integrations.AlertCreate{
+		EventType: integrations.EventTriggered,
+		DedupKey:  "memory-leak",
+		Summary:   "Memory climbing",
+		Priority:  "high",
+	}
+
+	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	require.NoError(t, err)
+
+	_, err = pool.Exec(ctx, `
+		UPDATE alerts
+		SET updated_at = now() - interval '3 minutes'
+		WHERE id = $1
+	`, firstID)
+	require.NoError(t, err)
+
+	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	require.NoError(t, err)
+	require.NotEqual(t, firstID, secondID)
+
+	var alertCount int
+	err = pool.QueryRow(ctx, `
+		SELECT COUNT(*) FROM alerts
+		WHERE service_id = $1 AND dedup_key = $2
+	`, fixture.key.ServiceID, event.DedupKey).Scan(&alertCount)
+	require.NoError(t, err)
+	require.Equal(t, 2, alertCount)
+}
+
 func TestProcessInboundResolveSetsResolvedAtAndIntegration(t *testing.T) {
 	pool, cleanup := startPostgres(t)
 	defer cleanup()

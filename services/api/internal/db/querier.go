@@ -55,6 +55,7 @@ type Querier interface {
 	GetIntegrationKeyByID(ctx context.Context, arg GetIntegrationKeyByIDParams) (IntegrationKey, error)
 	GetMobileAuthCodeByHash(ctx context.Context, codeHash string) (MobileAuthCode, error)
 	GetOpenAlertByServiceDedupKey(ctx context.Context, arg GetOpenAlertByServiceDedupKeyParams) (Alert, error)
+	GetOpenAlertByServiceDedupKeyForResolve(ctx context.Context, arg GetOpenAlertByServiceDedupKeyForResolveParams) (Alert, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
 	GetOrganizationSlackSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSlackSetting, error)
 	GetOverrideByID(ctx context.Context, arg GetOverrideByIDParams) (Override, error)

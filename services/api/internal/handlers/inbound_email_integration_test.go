@@ -79,7 +79,7 @@ func TestInboundEmailCreatesAlertWithSourceEmail(t *testing.T) {
 	require.Equal(t, http.StatusAccepted, rec.Code, rec.Body.String())
 
 	queries := db.New(pool)
-	alert, err := queries.GetOpenAlertByServiceDedupKey(context.Background(), db.GetOpenAlertByServiceDedupKeyParams{
+	alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
 		ServiceID: service.ID,
 		DedupKey:  "<disk-alert-1@example.com>",
 	})

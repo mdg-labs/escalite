@@ -219,13 +219,14 @@ type Schedule struct {
 }
 
 type Service struct {
-	ID             uuid.UUID          `json:"id"`
-	OrganizationID uuid.UUID          `json:"organization_id"`
-	TeamID         uuid.UUID          `json:"team_id"`
-	Name           string             `json:"name"`
-	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	ID                 uuid.UUID          `json:"id"`
+	OrganizationID     uuid.UUID          `json:"organization_id"`
+	TeamID             uuid.UUID          `json:"team_id"`
+	Name               string             `json:"name"`
+	DedupWindowSeconds int32              `json:"dedup_window_seconds"`
+	DeletedAt          pgtype.Timestamptz `json:"deleted_at"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Session struct {

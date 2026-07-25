@@ -37,7 +37,7 @@ func TestInboundWebhookGenericWebhookCreatesAlert(t *testing.T) {
 	require.Equal(t, 202, rec.Code, rec.Body.String())
 
 	queries := db.New(pool)
-	alert, err := queries.GetOpenAlertByServiceDedupKey(context.Background(), db.GetOpenAlertByServiceDedupKeyParams{
+	alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
 		ServiceID: service.ID,
 		DedupKey:  "host-1-disk",
 	})

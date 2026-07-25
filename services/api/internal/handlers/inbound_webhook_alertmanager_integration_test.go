@@ -32,7 +32,7 @@ func TestInboundWebhookAlertmanagerCreatesAndResolvesAlert(t *testing.T) {
 	require.Equal(t, 202, rec.Code, rec.Body.String())
 
 	queries := db.New(pool)
-	alert, err := queries.GetOpenAlertByServiceDedupKey(context.Background(), db.GetOpenAlertByServiceDedupKeyParams{
+	alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
 		ServiceID: service.ID,
 		DedupKey:  "1a30ba71cca2921f",
 	})
@@ -44,7 +44,7 @@ func TestInboundWebhookAlertmanagerCreatesAndResolvesAlert(t *testing.T) {
 	rec = postInboundWebhook(t, handler, "prometheus-alertmanager", token, firing)
 	require.Equal(t, 202, rec.Code, rec.Body.String())
 
-	collapsed, err := queries.GetOpenAlertByServiceDedupKey(context.Background(), db.GetOpenAlertByServiceDedupKeyParams{
+	collapsed, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
 		ServiceID: service.ID,
 		DedupKey:  "1a30ba71cca2921f",
 	})

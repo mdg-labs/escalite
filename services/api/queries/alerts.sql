@@ -63,8 +63,17 @@ LIMIT $3;
 -- name: GetOpenAlertByServiceDedupKey :one
 SELECT *
 FROM alerts
-WHERE service_id = $1
-  AND dedup_key = $2
+WHERE service_id = sqlc.arg(service_id)
+  AND dedup_key = sqlc.arg(dedup_key)
+  AND status IN ('triggered', 'acknowledged')
+  AND updated_at >= now() - (sqlc.arg(dedup_window_seconds)::integer * interval '1 second')
+LIMIT 1;
+
+-- name: GetOpenAlertByServiceDedupKeyForResolve :one
+SELECT *
+FROM alerts
+WHERE service_id = sqlc.arg(service_id)
+  AND dedup_key = sqlc.arg(dedup_key)
   AND status IN ('triggered', 'acknowledged')
 LIMIT 1;
 
@@ -72,9 +81,10 @@ LIMIT 1;
 UPDATE alerts
 SET event_count = event_count + 1,
     updated_at = now()
-WHERE service_id = $1
-  AND dedup_key = $2
+WHERE service_id = sqlc.arg(service_id)
+  AND dedup_key = sqlc.arg(dedup_key)
   AND status IN ('triggered', 'acknowledged')
+  AND updated_at >= now() - (sqlc.arg(dedup_window_seconds)::integer * interval '1 second')
 RETURNING *;
 
 -- name: UpdateAlertEscalationState :one

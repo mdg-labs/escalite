@@ -42,6 +42,7 @@ CREATE TABLE "services" (
   "organization_id" uuid NOT NULL,
   "team_id" uuid NOT NULL,
   "name" text NOT NULL,
+  "dedup_window_seconds" integer NOT NULL DEFAULT 300,
   "deleted_at" timestamptz NULL,
   "created_at" timestamptz NOT NULL DEFAULT now(),
   "updated_at" timestamptz NOT NULL DEFAULT now(),

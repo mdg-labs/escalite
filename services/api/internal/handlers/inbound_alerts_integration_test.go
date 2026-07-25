@@ -77,7 +77,7 @@ func TestInboundAlertsValidPayloadCreatesAlert(t *testing.T) {
 	require.NoError(t, err)
 
 	queries := db.New(pool)
-	alert, err := queries.GetOpenAlertByServiceDedupKey(context.Background(), db.GetOpenAlertByServiceDedupKeyParams{
+	alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
 		ServiceID: service.ID,
 		DedupKey:  "host-1-disk",
 	})
@@ -126,7 +126,7 @@ func TestInboundAlertsDuplicateDedupKeyCollapsesAlert(t *testing.T) {
 	require.Equal(t, firstResp.ID, secondResp.ID)
 
 	queries := db.New(pool)
-	alert, err := queries.GetOpenAlertByServiceDedupKey(context.Background(), db.GetOpenAlertByServiceDedupKeyParams{
+	alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
 		ServiceID: service.ID,
 		DedupKey:  "host-1-disk",
 	})

@@ -481,6 +481,11 @@ table "services" {
     null = false
     type = text
   }
+  column "dedup_window_seconds" {
+    null    = false
+    type    = integer
+    default = 300
+  }
   column "deleted_at" {
     null = true
     type = timestamptz

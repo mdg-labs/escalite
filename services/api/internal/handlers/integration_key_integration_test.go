@@ -73,7 +73,7 @@ func TestGraphQLCreateIntegrationKeyBeszelPreset(t *testing.T) {
 	rec := postInboundWebhook(t, handler, "generic-webhook", createResp.Data.CreateIntegrationKey.Token, payload)
 	require.Equal(t, 202, rec.Code, rec.Body.String())
 
-	alert, err := queries.GetOpenAlertByServiceDedupKey(context.Background(), db.GetOpenAlertByServiceDedupKeyParams{
+	alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
 		ServiceID: service.ID,
 		DedupKey:  "Disk usage high",
 	})
