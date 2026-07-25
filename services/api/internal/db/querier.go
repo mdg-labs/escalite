@@ -23,6 +23,9 @@ type Querier interface {
 	CreateEscalationStep(ctx context.Context, arg CreateEscalationStepParams) (EscalationStep, error)
 	CreateEscalationStepTarget(ctx context.Context, arg CreateEscalationStepTargetParams) (EscalationStepTarget, error)
 	CreateHeartbeatMonitor(ctx context.Context, arg CreateHeartbeatMonitorParams) (HeartbeatMonitor, error)
+	CreateIncident(ctx context.Context, arg CreateIncidentParams) (Incident, error)
+	CreateIncidentRoleAssignment(ctx context.Context, arg CreateIncidentRoleAssignmentParams) (IncidentRoleAssignment, error)
+	CreateIncidentRoleDefinition(ctx context.Context, arg CreateIncidentRoleDefinitionParams) (IncidentRoleDefinition, error)
 	CreateIntegrationKey(ctx context.Context, arg CreateIntegrationKeyParams) (IntegrationKey, error)
 	CreateMaintenanceWindow(ctx context.Context, arg CreateMaintenanceWindowParams) (MaintenanceWindow, error)
 	CreateMobileAuthCode(ctx context.Context, arg CreateMobileAuthCodeParams) (MobileAuthCode, error)
@@ -37,11 +40,14 @@ type Querier interface {
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateTeam(ctx context.Context, arg CreateTeamParams) (Team, error)
 	CreateTeamMembership(ctx context.Context, arg CreateTeamMembershipParams) (TeamMembership, error)
+	CreateTimelineEvent(ctx context.Context, arg CreateTimelineEventParams) (TimelineEvent, error)
 	CreateTriggeredAlert(ctx context.Context, arg CreateTriggeredAlertParams) (Alert, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteEscalationPolicy(ctx context.Context, arg DeleteEscalationPolicyParams) error
 	DeleteEscalationStepsByPolicyID(ctx context.Context, arg DeleteEscalationStepsByPolicyIDParams) error
 	DeleteHeartbeatMonitor(ctx context.Context, arg DeleteHeartbeatMonitorParams) error
+	DeleteIncidentRoleAssignment(ctx context.Context, arg DeleteIncidentRoleAssignmentParams) error
+	DeleteIncidentRoleDefinition(ctx context.Context, arg DeleteIncidentRoleDefinitionParams) error
 	DeleteMaintenanceWindow(ctx context.Context, arg DeleteMaintenanceWindowParams) error
 	DeleteRotation(ctx context.Context, arg DeleteRotationParams) error
 	DeleteSchedule(ctx context.Context, arg DeleteScheduleParams) error
@@ -54,6 +60,9 @@ type Querier interface {
 	GetEscalationStepByPolicyAndOrder(ctx context.Context, arg GetEscalationStepByPolicyAndOrderParams) (EscalationStep, error)
 	GetFirstOrganization(ctx context.Context) (Organization, error)
 	GetHeartbeatMonitorByID(ctx context.Context, arg GetHeartbeatMonitorByIDParams) (HeartbeatMonitor, error)
+	GetIncidentByID(ctx context.Context, arg GetIncidentByIDParams) (Incident, error)
+	GetIncidentRoleAssignmentByID(ctx context.Context, arg GetIncidentRoleAssignmentByIDParams) (IncidentRoleAssignment, error)
+	GetIncidentRoleDefinitionByID(ctx context.Context, arg GetIncidentRoleDefinitionByIDParams) (IncidentRoleDefinition, error)
 	GetIntegrationKeyByID(ctx context.Context, arg GetIntegrationKeyByIDParams) (IntegrationKey, error)
 	GetMaintenanceWindowByID(ctx context.Context, arg GetMaintenanceWindowByIDParams) (MaintenanceWindow, error)
 	GetMobileAuthCodeByHash(ctx context.Context, codeHash string) (MobileAuthCode, error)
@@ -69,6 +78,7 @@ type Querier interface {
 	GetServiceByID(ctx context.Context, arg GetServiceByIDParams) (Service, error)
 	GetSessionByID(ctx context.Context, arg GetSessionByIDParams) (Session, error)
 	GetTeamByID(ctx context.Context, arg GetTeamByIDParams) (Team, error)
+	GetTimelineEventByID(ctx context.Context, arg GetTimelineEventByIDParams) (TimelineEvent, error)
 	GetUserByEmail(ctx context.Context, arg GetUserByEmailParams) (User, error)
 	GetUserByEmailForAuth(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, arg GetUserByIDParams) (User, error)
@@ -80,6 +90,7 @@ type Querier interface {
 	ListActiveMaintenanceWindowsByServiceID(ctx context.Context, arg ListActiveMaintenanceWindowsByServiceIDParams) ([]MaintenanceWindow, error)
 	ListActiveOverridesByScheduleAt(ctx context.Context, arg ListActiveOverridesByScheduleAtParams) ([]Override, error)
 	ListActiveOverridesByScheduleID(ctx context.Context, arg ListActiveOverridesByScheduleIDParams) ([]Override, error)
+	ListAlertsByIncidentID(ctx context.Context, arg ListAlertsByIncidentIDParams) ([]Alert, error)
 	ListAlertsForOrgAdmin(ctx context.Context, arg ListAlertsForOrgAdminParams) ([]Alert, error)
 	ListAlertsForTeamMember(ctx context.Context, arg ListAlertsForTeamMemberParams) ([]Alert, error)
 	ListAuditEventsByOrganization(ctx context.Context, organizationID uuid.UUID) ([]AuditEvent, error)
@@ -87,6 +98,10 @@ type Querier interface {
 	ListEscalationStepTargetsByStepID(ctx context.Context, arg ListEscalationStepTargetsByStepIDParams) ([]EscalationStepTarget, error)
 	ListEscalationStepsByPolicyID(ctx context.Context, arg ListEscalationStepsByPolicyIDParams) ([]EscalationStep, error)
 	ListHeartbeatMonitorsByServiceID(ctx context.Context, arg ListHeartbeatMonitorsByServiceIDParams) ([]HeartbeatMonitor, error)
+	ListIncidentRoleAssignmentsByIncidentID(ctx context.Context, arg ListIncidentRoleAssignmentsByIncidentIDParams) ([]IncidentRoleAssignment, error)
+	ListIncidentRoleDefinitions(ctx context.Context, organizationID uuid.UUID) ([]IncidentRoleDefinition, error)
+	ListIncidentsForOrgAdmin(ctx context.Context, arg ListIncidentsForOrgAdminParams) ([]Incident, error)
+	ListIncidentsForTeamMember(ctx context.Context, arg ListIncidentsForTeamMemberParams) ([]Incident, error)
 	ListIntegrationKeysByServiceID(ctx context.Context, arg ListIntegrationKeysByServiceIDParams) ([]IntegrationKey, error)
 	ListMaintenanceWindowsByServiceID(ctx context.Context, arg ListMaintenanceWindowsByServiceIDParams) ([]MaintenanceWindow, error)
 	ListMobileDevicesForUser(ctx context.Context, arg ListMobileDevicesForUserParams) ([]MobileDevice, error)
@@ -95,6 +110,7 @@ type Querier interface {
 	ListSchedulesByTeamID(ctx context.Context, arg ListSchedulesByTeamIDParams) ([]Schedule, error)
 	ListServicesByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]Service, error)
 	ListTeamsByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]Team, error)
+	ListTimelineEventsByIncidentID(ctx context.Context, arg ListTimelineEventsByIncidentIDParams) ([]TimelineEvent, error)
 	ListUserNotificationRules(ctx context.Context, arg ListUserNotificationRulesParams) ([]UserNotificationRule, error)
 	MarkMobileAuthCodeUsed(ctx context.Context, arg MarkMobileAuthCodeUsedParams) error
 	MarkPasswordResetTokenUsed(ctx context.Context, id uuid.UUID) error
@@ -115,6 +131,8 @@ type Querier interface {
 	UpdateAlertEscalationState(ctx context.Context, arg UpdateAlertEscalationStateParams) (Alert, error)
 	UpdateEscalationPolicy(ctx context.Context, arg UpdateEscalationPolicyParams) (EscalationPolicy, error)
 	UpdateHeartbeatMonitor(ctx context.Context, arg UpdateHeartbeatMonitorParams) (HeartbeatMonitor, error)
+	UpdateIncidentRoleDefinition(ctx context.Context, arg UpdateIncidentRoleDefinitionParams) (IncidentRoleDefinition, error)
+	UpdateIncidentStatus(ctx context.Context, arg UpdateIncidentStatusParams) (Incident, error)
 	UpdateMaintenanceWindow(ctx context.Context, arg UpdateMaintenanceWindowParams) (MaintenanceWindow, error)
 	UpdateRotation(ctx context.Context, arg UpdateRotationParams) (Rotation, error)
 	UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Schedule, error)

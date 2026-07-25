@@ -7,15 +7,192 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/mdg-labs/escalite/services/api/graph/model"
+	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/gqlerr"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 )
+
+// Incident is the resolver for the incident field.
+func (r *alertResolver) Incident(ctx context.Context, obj *model.Alert) (*model.Incident, error) {
+	if obj == nil || obj.IncidentID == nil {
+		return nil, nil
+	}
+
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	incidentID, err := parseUUIDField(*obj.IncidentID, "incidentId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	incident, err := r.loadIncidentWithTeamAccess(ctx, queries, sc, incidentID)
+	if err != nil {
+		return nil, err
+	}
+
+	return incidentFromDB(incident), nil
+}
+
+// CreatedBy is the resolver for the createdBy field.
+func (r *incidentResolver) CreatedBy(ctx context.Context, obj *model.Incident) (*model.User, error) {
+	if obj == nil {
+		return nil, nil
+	}
+
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	incidentID, err := parseUUIDField(obj.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	incident, err := r.loadIncidentWithTeamAccess(ctx, queries, sc, incidentID)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := queries.GetUserByID(ctx, db.GetUserByIDParams{
+		ID:             incident.CreatedByUserID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("load incident creator failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return userFromDB(user), nil
+}
+
+// Alerts is the resolver for the alerts field.
+func (r *incidentResolver) Alerts(ctx context.Context, obj *model.Incident) ([]*model.Alert, error) {
+	if obj == nil {
+		return nil, nil
+	}
+
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	incidentID, err := parseUUIDField(obj.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := r.loadIncidentWithTeamAccess(ctx, queries, sc, incidentID); err != nil {
+		return nil, err
+	}
+
+	rows, err := queries.ListAlertsByIncidentID(ctx, db.ListAlertsByIncidentIDParams{
+		IncidentID:     pgtype.UUID{Bytes: incidentID, Valid: true},
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list incident alerts failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return alertsFromDB(rows), nil
+}
+
+// TimelineEvents is the resolver for the timelineEvents field.
+func (r *incidentResolver) TimelineEvents(ctx context.Context, obj *model.Incident) ([]*model.TimelineEvent, error) {
+	if obj == nil {
+		return nil, nil
+	}
+
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	incidentID, err := parseUUIDField(obj.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := r.loadIncidentWithTeamAccess(ctx, queries, sc, incidentID); err != nil {
+		return nil, err
+	}
+
+	events, err := queries.ListTimelineEventsByIncidentID(ctx, db.ListTimelineEventsByIncidentIDParams{
+		IncidentID:     incidentID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list timeline events failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return timelineEventsFromDB(events), nil
+}
+
+// RoleAssignments is the resolver for the roleAssignments field.
+func (r *incidentResolver) RoleAssignments(ctx context.Context, obj *model.Incident) ([]*model.IncidentRoleAssignment, error) {
+	if obj == nil {
+		return nil, nil
+	}
+
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	incidentID, err := parseUUIDField(obj.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := r.loadIncidentWithTeamAccess(ctx, queries, sc, incidentID); err != nil {
+		return nil, err
+	}
+
+	assignments, err := queries.ListIncidentRoleAssignmentsByIncidentID(ctx, db.ListIncidentRoleAssignmentsByIncidentIDParams{
+		IncidentID:     incidentID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list incident role assignments failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return incidentRoleAssignmentsFromDB(assignments), nil
+}
+
+// Role is the resolver for the role field.
+func (r *incidentRoleAssignmentResolver) Role(ctx context.Context, obj *model.IncidentRoleAssignment) (*model.IncidentRoleDefinition, error) {
+	return r.loadIncidentRoleAssignmentRole(ctx, obj)
+}
+
+// User is the resolver for the user field.
+func (r *incidentRoleAssignmentResolver) User(ctx context.Context, obj *model.IncidentRoleAssignment) (*model.User, error) {
+	return r.loadIncidentRoleAssignmentUser(ctx, obj)
+}
+
+// AssignedBy is the resolver for the assignedBy field.
+func (r *incidentRoleAssignmentResolver) AssignedBy(ctx context.Context, obj *model.IncidentRoleAssignment) (*model.User, error) {
+	return r.loadIncidentRoleAssignmentAssignedBy(ctx, obj)
+}
 
 // ActiveMaintenanceWindows is the resolver for the activeMaintenanceWindows field on Service.
 func (r *serviceResolver) ActiveMaintenanceWindows(ctx context.Context, obj *model.Service) ([]*model.MaintenanceWindow, error) {
@@ -47,7 +224,175 @@ func (r *serviceResolver) ActiveMaintenanceWindows(ctx context.Context, obj *mod
 	return maintenanceWindowsFromDB(windows), nil
 }
 
+// Actor is the resolver for the actor field.
+func (r *timelineEventResolver) Actor(ctx context.Context, obj *model.TimelineEvent) (*model.User, error) {
+	if obj == nil {
+		return nil, nil
+	}
+
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	eventID, err := parseUUIDField(obj.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	incidentID, err := parseUUIDField(obj.IncidentID, "incidentId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := r.loadIncidentWithTeamAccess(ctx, queries, sc, incidentID); err != nil {
+		return nil, err
+	}
+
+	event, err := queries.GetTimelineEventByID(ctx, db.GetTimelineEventByIDParams{
+		ID:             eventID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		r.logger.Error("load timeline event failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	if !event.ActorID.Valid {
+		return nil, nil
+	}
+
+	user, err := queries.GetUserByID(ctx, db.GetUserByIDParams{
+		ID:             uuid.UUID(event.ActorID.Bytes),
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		r.logger.Error("load timeline actor failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return userFromDB(user), nil
+}
+
+// Alert returns AlertResolver implementation.
+func (r *Resolver) Alert() AlertResolver { return &alertResolver{r} }
+
+// Incident returns IncidentResolver implementation.
+func (r *Resolver) Incident() IncidentResolver { return &incidentResolver{r} }
+
+// IncidentRoleAssignment returns IncidentRoleAssignmentResolver implementation.
+func (r *Resolver) IncidentRoleAssignment() IncidentRoleAssignmentResolver {
+	return &incidentRoleAssignmentResolver{r}
+}
+
 // Service returns ServiceResolver implementation.
 func (r *Resolver) Service() ServiceResolver { return &serviceResolver{r} }
 
-type serviceResolver struct{ *Resolver }
+// TimelineEvent returns TimelineEventResolver implementation.
+func (r *Resolver) TimelineEvent() TimelineEventResolver { return &timelineEventResolver{r} }
+
+type (
+	alertResolver                  struct{ *Resolver }
+	incidentResolver               struct{ *Resolver }
+	incidentRoleAssignmentResolver struct{ *Resolver }
+	serviceResolver                struct{ *Resolver }
+	timelineEventResolver          struct{ *Resolver }
+)
+
+func (r *incidentRoleAssignmentResolver) loadIncidentRoleAssignment(
+	ctx context.Context,
+	obj *model.IncidentRoleAssignment,
+) (db.IncidentRoleAssignment, auth.SessionContext, *db.Queries, error) {
+	if obj == nil {
+		return db.IncidentRoleAssignment{}, auth.SessionContext{}, nil, nil
+	}
+
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return db.IncidentRoleAssignment{}, auth.SessionContext{}, nil, err
+	}
+
+	assignmentID, err := parseUUIDField(obj.ID, "id")
+	if err != nil {
+		return db.IncidentRoleAssignment{}, auth.SessionContext{}, nil, err
+	}
+
+	queries := db.New(r.pool)
+	assignment, err := queries.GetIncidentRoleAssignmentByID(ctx, db.GetIncidentRoleAssignmentByIDParams{
+		ID:             assignmentID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return db.IncidentRoleAssignment{}, auth.SessionContext{}, nil, gqlerr.New(handlers.CodeNotFound, "role assignment not found")
+		}
+		r.logger.Error("load incident role assignment failed", "error", err)
+		return db.IncidentRoleAssignment{}, auth.SessionContext{}, nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if _, err := r.loadIncidentWithTeamAccess(ctx, queries, sc, assignment.IncidentID); err != nil {
+		return db.IncidentRoleAssignment{}, auth.SessionContext{}, nil, err
+	}
+
+	return assignment, sc, queries, nil
+}
+
+func (r *incidentRoleAssignmentResolver) loadIncidentRoleAssignmentRole(ctx context.Context, obj *model.IncidentRoleAssignment) (*model.IncidentRoleDefinition, error) {
+	assignment, sc, queries, err := r.loadIncidentRoleAssignment(ctx, obj)
+	if err != nil || queries == nil {
+		return nil, err
+	}
+
+	def, err := queries.GetIncidentRoleDefinitionByID(ctx, db.GetIncidentRoleDefinitionByIDParams{
+		ID:             assignment.RoleDefinitionID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("load incident role definition failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return incidentRoleDefinitionFromDB(def), nil
+}
+
+func (r *incidentRoleAssignmentResolver) loadIncidentRoleAssignmentUser(ctx context.Context, obj *model.IncidentRoleAssignment) (*model.User, error) {
+	assignment, sc, queries, err := r.loadIncidentRoleAssignment(ctx, obj)
+	if err != nil || queries == nil {
+		return nil, err
+	}
+
+	user, err := queries.GetUserByID(ctx, db.GetUserByIDParams{
+		ID:             assignment.UserID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("load incident role user failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return userFromDB(user), nil
+}
+
+func (r *incidentRoleAssignmentResolver) loadIncidentRoleAssignmentAssignedBy(ctx context.Context, obj *model.IncidentRoleAssignment) (*model.User, error) {
+	assignment, sc, queries, err := r.loadIncidentRoleAssignment(ctx, obj)
+	if err != nil || queries == nil {
+		return nil, err
+	}
+
+	user, err := queries.GetUserByID(ctx, db.GetUserByIDParams{
+		ID:             assignment.AssignedByUserID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("load incident role assigner failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return userFromDB(user), nil
+}

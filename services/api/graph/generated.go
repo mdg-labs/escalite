@@ -29,10 +29,14 @@ func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]
 
 type ResolverRoot interface {
+	Alert() AlertResolver
+	Incident() IncidentResolver
+	IncidentRoleAssignment() IncidentRoleAssignmentResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	Service() ServiceResolver
 	Subscription() SubscriptionResolver
+	TimelineEvent() TimelineEventResolver
 }
 
 type DirectiveRoot struct {
@@ -48,6 +52,8 @@ type ComplexityRoot struct {
 		Description    func(childComplexity int) int
 		EventCount     func(childComplexity int) int
 		ID             func(childComplexity int) int
+		Incident       func(childComplexity int) int
+		IncidentID     func(childComplexity int) int
 		OrganizationID func(childComplexity int) int
 		Priority       func(childComplexity int) int
 		ServiceID      func(childComplexity int) int
@@ -97,6 +103,39 @@ type ComplexityRoot struct {
 		UpdatedAt       func(childComplexity int) int
 	}
 
+	Incident struct {
+		Alerts          func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
+		CreatedBy       func(childComplexity int) int
+		ID              func(childComplexity int) int
+		OrganizationID  func(childComplexity int) int
+		ResolvedAt      func(childComplexity int) int
+		RoleAssignments func(childComplexity int) int
+		Status          func(childComplexity int) int
+		TeamID          func(childComplexity int) int
+		TimelineEvents  func(childComplexity int) int
+		Title           func(childComplexity int) int
+		UpdatedAt       func(childComplexity int) int
+	}
+
+	IncidentRoleAssignment struct {
+		AssignedBy func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
+		ID         func(childComplexity int) int
+		IncidentID func(childComplexity int) int
+		Role       func(childComplexity int) int
+		User       func(childComplexity int) int
+	}
+
+	IncidentRoleDefinition struct {
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Name           func(childComplexity int) int
+		OrganizationID func(childComplexity int) int
+		SortOrder      func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
+	}
+
 	IntegrationKey struct {
 		Config         func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
@@ -139,41 +178,49 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AcknowledgeAlert        func(childComplexity int, id string) int
-		CloseAlert              func(childComplexity int, id string) int
-		CreateEscalationPolicy  func(childComplexity int, input model.CreateEscalationPolicyInput) int
-		CreateHeartbeatMonitor  func(childComplexity int, input model.CreateHeartbeatMonitorInput) int
-		CreateIntegrationKey    func(childComplexity int, input model.CreateIntegrationKeyInput) int
-		CreateMaintenanceWindow func(childComplexity int, input model.CreateMaintenanceWindowInput) int
-		CreateOverride          func(childComplexity int, input model.CreateOverrideInput) int
-		CreateRotation          func(childComplexity int, input model.CreateRotationInput) int
-		CreateSchedule          func(childComplexity int, input model.CreateScheduleInput) int
-		CreateService           func(childComplexity int, input model.CreateServiceInput) int
-		DeleteEscalationPolicy  func(childComplexity int, id string) int
-		DeleteHeartbeatMonitor  func(childComplexity int, id string) int
-		DeleteMaintenanceWindow func(childComplexity int, id string) int
-		DeleteNotificationRule  func(childComplexity int, priority model.AlertPriority) int
-		DeleteOverride          func(childComplexity int, id string) int
-		DeleteRotation          func(childComplexity int, id string) int
-		DeleteSchedule          func(childComplexity int, id string) int
-		DeleteService           func(childComplexity int, id string) int
-		Login                   func(childComplexity int, input model.LoginInput) int
-		ReEscalateAlert         func(childComplexity int, id string) int
-		RegisterMobileDevice    func(childComplexity int, input model.RegisterMobileDeviceInput) int
-		RevokeIntegrationKey    func(childComplexity int, id string) int
-		RevokeMobileDevice      func(childComplexity int, id string) int
-		RotateIntegrationKey    func(childComplexity int, id string) int
-		SaveNotificationRule    func(childComplexity int, input model.SaveNotificationRuleInput) int
-		SaveSlackSettings       func(childComplexity int, input model.SaveSlackSettingsInput) int
-		SaveUserContactMethod   func(childComplexity int, input model.SaveUserContactMethodInput) int
-		Setup                   func(childComplexity int, input model.SetupInput) int
-		SnoozeAlert             func(childComplexity int, id string, durationMinutes int) int
-		UpdateEscalationPolicy  func(childComplexity int, input model.UpdateEscalationPolicyInput) int
-		UpdateHeartbeatMonitor  func(childComplexity int, input model.UpdateHeartbeatMonitorInput) int
-		UpdateMaintenanceWindow func(childComplexity int, input model.UpdateMaintenanceWindowInput) int
-		UpdateRotation          func(childComplexity int, input model.UpdateRotationInput) int
-		UpdateSchedule          func(childComplexity int, input model.UpdateScheduleInput) int
-		UpdateService           func(childComplexity int, input model.UpdateServiceInput) int
+		AcknowledgeAlert             func(childComplexity int, id string) int
+		AddIncidentTimelineNote      func(childComplexity int, input model.AddIncidentTimelineNoteInput) int
+		AssignIncidentRole           func(childComplexity int, input model.AssignIncidentRoleInput) int
+		CloseAlert                   func(childComplexity int, id string) int
+		CreateEscalationPolicy       func(childComplexity int, input model.CreateEscalationPolicyInput) int
+		CreateHeartbeatMonitor       func(childComplexity int, input model.CreateHeartbeatMonitorInput) int
+		CreateIncident               func(childComplexity int, input model.CreateIncidentInput) int
+		CreateIncidentRoleDefinition func(childComplexity int, input model.CreateIncidentRoleDefinitionInput) int
+		CreateIntegrationKey         func(childComplexity int, input model.CreateIntegrationKeyInput) int
+		CreateMaintenanceWindow      func(childComplexity int, input model.CreateMaintenanceWindowInput) int
+		CreateOverride               func(childComplexity int, input model.CreateOverrideInput) int
+		CreateRotation               func(childComplexity int, input model.CreateRotationInput) int
+		CreateSchedule               func(childComplexity int, input model.CreateScheduleInput) int
+		CreateService                func(childComplexity int, input model.CreateServiceInput) int
+		DeleteEscalationPolicy       func(childComplexity int, id string) int
+		DeleteHeartbeatMonitor       func(childComplexity int, id string) int
+		DeleteIncidentRoleDefinition func(childComplexity int, id string) int
+		DeleteMaintenanceWindow      func(childComplexity int, id string) int
+		DeleteNotificationRule       func(childComplexity int, priority model.AlertPriority) int
+		DeleteOverride               func(childComplexity int, id string) int
+		DeleteRotation               func(childComplexity int, id string) int
+		DeleteSchedule               func(childComplexity int, id string) int
+		DeleteService                func(childComplexity int, id string) int
+		Login                        func(childComplexity int, input model.LoginInput) int
+		ReEscalateAlert              func(childComplexity int, id string) int
+		RegisterMobileDevice         func(childComplexity int, input model.RegisterMobileDeviceInput) int
+		RevokeIntegrationKey         func(childComplexity int, id string) int
+		RevokeMobileDevice           func(childComplexity int, id string) int
+		RotateIntegrationKey         func(childComplexity int, id string) int
+		SaveNotificationRule         func(childComplexity int, input model.SaveNotificationRuleInput) int
+		SaveSlackSettings            func(childComplexity int, input model.SaveSlackSettingsInput) int
+		SaveUserContactMethod        func(childComplexity int, input model.SaveUserContactMethodInput) int
+		Setup                        func(childComplexity int, input model.SetupInput) int
+		SnoozeAlert                  func(childComplexity int, id string, durationMinutes int) int
+		UnassignIncidentRole         func(childComplexity int, id string) int
+		UpdateEscalationPolicy       func(childComplexity int, input model.UpdateEscalationPolicyInput) int
+		UpdateHeartbeatMonitor       func(childComplexity int, input model.UpdateHeartbeatMonitorInput) int
+		UpdateIncidentRoleDefinition func(childComplexity int, input model.UpdateIncidentRoleDefinitionInput) int
+		UpdateIncidentStatus         func(childComplexity int, input model.UpdateIncidentStatusInput) int
+		UpdateMaintenanceWindow      func(childComplexity int, input model.UpdateMaintenanceWindowInput) int
+		UpdateRotation               func(childComplexity int, input model.UpdateRotationInput) int
+		UpdateSchedule               func(childComplexity int, input model.UpdateScheduleInput) int
+		UpdateService                func(childComplexity int, input model.UpdateServiceInput) int
 	}
 
 	NotificationChannelDefinition struct {
@@ -226,28 +273,31 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Alert                func(childComplexity int, id string) int
-		Alerts               func(childComplexity int, status *model.AlertStatus, limit *int) int
-		EscalationPolicies   func(childComplexity int, serviceID string) int
-		EscalationPolicy     func(childComplexity int, id string) int
-		Health               func(childComplexity int) int
-		HeartbeatMonitor     func(childComplexity int, id string) int
-		HeartbeatMonitors    func(childComplexity int, serviceID string) int
-		IntegrationKeys      func(childComplexity int, serviceID string) int
-		MaintenanceWindow    func(childComplexity int, id string) int
-		MaintenanceWindows   func(childComplexity int, serviceID string) int
-		Me                   func(childComplexity int) int
-		MobileDevices        func(childComplexity int) int
-		NotificationChannels func(childComplexity int) int
-		NotificationRules    func(childComplexity int) int
-		OnCallNow            func(childComplexity int, scheduleID string, at *time.Time) int
-		Overrides            func(childComplexity int, scheduleID string) int
-		Schedule             func(childComplexity int, id string) int
-		Schedules            func(childComplexity int, teamID string) int
-		Service              func(childComplexity int, id string) int
-		Services             func(childComplexity int) int
-		SlackSettings        func(childComplexity int) int
-		Teams                func(childComplexity int) int
+		Alert                   func(childComplexity int, id string) int
+		Alerts                  func(childComplexity int, status *model.AlertStatus, limit *int) int
+		EscalationPolicies      func(childComplexity int, serviceID string) int
+		EscalationPolicy        func(childComplexity int, id string) int
+		Health                  func(childComplexity int) int
+		HeartbeatMonitor        func(childComplexity int, id string) int
+		HeartbeatMonitors       func(childComplexity int, serviceID string) int
+		Incident                func(childComplexity int, id string) int
+		IncidentRoleDefinitions func(childComplexity int) int
+		Incidents               func(childComplexity int, status *model.IncidentStatus, teamID *string, limit *int) int
+		IntegrationKeys         func(childComplexity int, serviceID string) int
+		MaintenanceWindow       func(childComplexity int, id string) int
+		MaintenanceWindows      func(childComplexity int, serviceID string) int
+		Me                      func(childComplexity int) int
+		MobileDevices           func(childComplexity int) int
+		NotificationChannels    func(childComplexity int) int
+		NotificationRules       func(childComplexity int) int
+		OnCallNow               func(childComplexity int, scheduleID string, at *time.Time) int
+		Overrides               func(childComplexity int, scheduleID string) int
+		Schedule                func(childComplexity int, id string) int
+		Schedules               func(childComplexity int, teamID string) int
+		Service                 func(childComplexity int, id string) int
+		Services                func(childComplexity int) int
+		SlackSettings           func(childComplexity int) int
+		Teams                   func(childComplexity int) int
 	}
 
 	Rotation struct {
@@ -306,6 +356,17 @@ type ComplexityRoot struct {
 		UpdatedAt      func(childComplexity int) int
 	}
 
+	TimelineEvent struct {
+		Actor          func(childComplexity int) int
+		Body           func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		EventType      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		IncidentID     func(childComplexity int) int
+		Metadata       func(childComplexity int) int
+		OrganizationID func(childComplexity int) int
+	}
+
 	User struct {
 		CreatedAt      func(childComplexity int) int
 		Email          func(childComplexity int) int
@@ -338,6 +399,21 @@ type ComplexityRoot struct {
 
 // region    ************************** generated!.gotpl **************************
 
+type AlertResolver interface {
+	Incident(ctx context.Context, obj *model.Alert) (*model.Incident, error)
+}
+type IncidentResolver interface {
+	CreatedBy(ctx context.Context, obj *model.Incident) (*model.User, error)
+
+	Alerts(ctx context.Context, obj *model.Incident) ([]*model.Alert, error)
+	TimelineEvents(ctx context.Context, obj *model.Incident) ([]*model.TimelineEvent, error)
+	RoleAssignments(ctx context.Context, obj *model.Incident) ([]*model.IncidentRoleAssignment, error)
+}
+type IncidentRoleAssignmentResolver interface {
+	Role(ctx context.Context, obj *model.IncidentRoleAssignment) (*model.IncidentRoleDefinition, error)
+	User(ctx context.Context, obj *model.IncidentRoleAssignment) (*model.User, error)
+	AssignedBy(ctx context.Context, obj *model.IncidentRoleAssignment) (*model.User, error)
+}
 type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (*model.LoginPayload, error)
 	Setup(ctx context.Context, input model.SetupInput) (*model.SetupPayload, error)
@@ -374,6 +450,14 @@ type MutationResolver interface {
 	CreateService(ctx context.Context, input model.CreateServiceInput) (*model.Service, error)
 	UpdateService(ctx context.Context, input model.UpdateServiceInput) (*model.Service, error)
 	DeleteService(ctx context.Context, id string) (bool, error)
+	CreateIncident(ctx context.Context, input model.CreateIncidentInput) (*model.Incident, error)
+	UpdateIncidentStatus(ctx context.Context, input model.UpdateIncidentStatusInput) (*model.Incident, error)
+	AddIncidentTimelineNote(ctx context.Context, input model.AddIncidentTimelineNoteInput) (*model.TimelineEvent, error)
+	CreateIncidentRoleDefinition(ctx context.Context, input model.CreateIncidentRoleDefinitionInput) (*model.IncidentRoleDefinition, error)
+	UpdateIncidentRoleDefinition(ctx context.Context, input model.UpdateIncidentRoleDefinitionInput) (*model.IncidentRoleDefinition, error)
+	DeleteIncidentRoleDefinition(ctx context.Context, id string) (bool, error)
+	AssignIncidentRole(ctx context.Context, input model.AssignIncidentRoleInput) (*model.IncidentRoleAssignment, error)
+	UnassignIncidentRole(ctx context.Context, id string) (bool, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
@@ -398,6 +482,9 @@ type QueryResolver interface {
 	Teams(ctx context.Context) ([]*model.Team, error)
 	Services(ctx context.Context) ([]*model.Service, error)
 	Service(ctx context.Context, id string) (*model.Service, error)
+	Incident(ctx context.Context, id string) (*model.Incident, error)
+	Incidents(ctx context.Context, status *model.IncidentStatus, teamID *string, limit *int) ([]*model.Incident, error)
+	IncidentRoleDefinitions(ctx context.Context) ([]*model.IncidentRoleDefinition, error)
 }
 type ServiceResolver interface {
 	ActiveMaintenanceWindows(ctx context.Context, obj *model.Service) ([]*model.MaintenanceWindow, error)
@@ -405,6 +492,9 @@ type ServiceResolver interface {
 type SubscriptionResolver interface {
 	AlertUpdated(ctx context.Context, orgID string) (<-chan *model.Alert, error)
 	OnCallUpdated(ctx context.Context, orgID string) (<-chan *model.OnCallUpdatedEvent, error)
+}
+type TimelineEventResolver interface {
+	Actor(ctx context.Context, obj *model.TimelineEvent) (*model.User, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -473,6 +563,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Alert.ID(childComplexity), true
+	case "Alert.incident":
+		if e.ComplexityRoot.Alert.Incident == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Alert.Incident(childComplexity), true
+	case "Alert.incidentId":
+		if e.ComplexityRoot.Alert.IncidentID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Alert.IncidentID(childComplexity), true
 	case "Alert.organizationId":
 		if e.ComplexityRoot.Alert.OrganizationID == nil {
 			break
@@ -688,6 +790,153 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.HeartbeatMonitor.UpdatedAt(childComplexity), true
 
+	case "Incident.alerts":
+		if e.ComplexityRoot.Incident.Alerts == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.Alerts(childComplexity), true
+	case "Incident.createdAt":
+		if e.ComplexityRoot.Incident.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.CreatedAt(childComplexity), true
+	case "Incident.createdBy":
+		if e.ComplexityRoot.Incident.CreatedBy == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.CreatedBy(childComplexity), true
+	case "Incident.id":
+		if e.ComplexityRoot.Incident.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.ID(childComplexity), true
+	case "Incident.organizationId":
+		if e.ComplexityRoot.Incident.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.OrganizationID(childComplexity), true
+	case "Incident.resolvedAt":
+		if e.ComplexityRoot.Incident.ResolvedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.ResolvedAt(childComplexity), true
+	case "Incident.roleAssignments":
+		if e.ComplexityRoot.Incident.RoleAssignments == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.RoleAssignments(childComplexity), true
+	case "Incident.status":
+		if e.ComplexityRoot.Incident.Status == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.Status(childComplexity), true
+	case "Incident.teamId":
+		if e.ComplexityRoot.Incident.TeamID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.TeamID(childComplexity), true
+	case "Incident.timelineEvents":
+		if e.ComplexityRoot.Incident.TimelineEvents == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.TimelineEvents(childComplexity), true
+	case "Incident.title":
+		if e.ComplexityRoot.Incident.Title == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.Title(childComplexity), true
+	case "Incident.updatedAt":
+		if e.ComplexityRoot.Incident.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.UpdatedAt(childComplexity), true
+
+	case "IncidentRoleAssignment.assignedBy":
+		if e.ComplexityRoot.IncidentRoleAssignment.AssignedBy == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IncidentRoleAssignment.AssignedBy(childComplexity), true
+	case "IncidentRoleAssignment.createdAt":
+		if e.ComplexityRoot.IncidentRoleAssignment.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IncidentRoleAssignment.CreatedAt(childComplexity), true
+	case "IncidentRoleAssignment.id":
+		if e.ComplexityRoot.IncidentRoleAssignment.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IncidentRoleAssignment.ID(childComplexity), true
+	case "IncidentRoleAssignment.incidentId":
+		if e.ComplexityRoot.IncidentRoleAssignment.IncidentID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IncidentRoleAssignment.IncidentID(childComplexity), true
+	case "IncidentRoleAssignment.role":
+		if e.ComplexityRoot.IncidentRoleAssignment.Role == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IncidentRoleAssignment.Role(childComplexity), true
+	case "IncidentRoleAssignment.user":
+		if e.ComplexityRoot.IncidentRoleAssignment.User == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IncidentRoleAssignment.User(childComplexity), true
+
+	case "IncidentRoleDefinition.createdAt":
+		if e.ComplexityRoot.IncidentRoleDefinition.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IncidentRoleDefinition.CreatedAt(childComplexity), true
+	case "IncidentRoleDefinition.id":
+		if e.ComplexityRoot.IncidentRoleDefinition.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IncidentRoleDefinition.ID(childComplexity), true
+	case "IncidentRoleDefinition.name":
+		if e.ComplexityRoot.IncidentRoleDefinition.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IncidentRoleDefinition.Name(childComplexity), true
+	case "IncidentRoleDefinition.organizationId":
+		if e.ComplexityRoot.IncidentRoleDefinition.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IncidentRoleDefinition.OrganizationID(childComplexity), true
+	case "IncidentRoleDefinition.sortOrder":
+		if e.ComplexityRoot.IncidentRoleDefinition.SortOrder == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IncidentRoleDefinition.SortOrder(childComplexity), true
+	case "IncidentRoleDefinition.updatedAt":
+		if e.ComplexityRoot.IncidentRoleDefinition.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IncidentRoleDefinition.UpdatedAt(childComplexity), true
+
 	case "IntegrationKey.config":
 		if e.ComplexityRoot.IntegrationKey.Config == nil {
 			break
@@ -877,6 +1126,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.AcknowledgeAlert(childComplexity, args["id"].(string)), true
+	case "Mutation.addIncidentTimelineNote":
+		if e.ComplexityRoot.Mutation.AddIncidentTimelineNote == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addIncidentTimelineNote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.AddIncidentTimelineNote(childComplexity, args["input"].(model.AddIncidentTimelineNoteInput)), true
+	case "Mutation.assignIncidentRole":
+		if e.ComplexityRoot.Mutation.AssignIncidentRole == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_assignIncidentRole_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.AssignIncidentRole(childComplexity, args["input"].(model.AssignIncidentRoleInput)), true
 	case "Mutation.closeAlert":
 		if e.ComplexityRoot.Mutation.CloseAlert == nil {
 			break
@@ -910,6 +1181,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateHeartbeatMonitor(childComplexity, args["input"].(model.CreateHeartbeatMonitorInput)), true
+	case "Mutation.createIncident":
+		if e.ComplexityRoot.Mutation.CreateIncident == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createIncident_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateIncident(childComplexity, args["input"].(model.CreateIncidentInput)), true
+	case "Mutation.createIncidentRoleDefinition":
+		if e.ComplexityRoot.Mutation.CreateIncidentRoleDefinition == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createIncidentRoleDefinition_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateIncidentRoleDefinition(childComplexity, args["input"].(model.CreateIncidentRoleDefinitionInput)), true
 	case "Mutation.createIntegrationKey":
 		if e.ComplexityRoot.Mutation.CreateIntegrationKey == nil {
 			break
@@ -998,6 +1291,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteHeartbeatMonitor(childComplexity, args["id"].(string)), true
+	case "Mutation.deleteIncidentRoleDefinition":
+		if e.ComplexityRoot.Mutation.DeleteIncidentRoleDefinition == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteIncidentRoleDefinition_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteIncidentRoleDefinition(childComplexity, args["id"].(string)), true
 	case "Mutation.deleteMaintenanceWindow":
 		if e.ComplexityRoot.Mutation.DeleteMaintenanceWindow == nil {
 			break
@@ -1185,6 +1489,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SnoozeAlert(childComplexity, args["id"].(string), args["durationMinutes"].(int)), true
+	case "Mutation.unassignIncidentRole":
+		if e.ComplexityRoot.Mutation.UnassignIncidentRole == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unassignIncidentRole_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UnassignIncidentRole(childComplexity, args["id"].(string)), true
 	case "Mutation.updateEscalationPolicy":
 		if e.ComplexityRoot.Mutation.UpdateEscalationPolicy == nil {
 			break
@@ -1207,6 +1522,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateHeartbeatMonitor(childComplexity, args["input"].(model.UpdateHeartbeatMonitorInput)), true
+	case "Mutation.updateIncidentRoleDefinition":
+		if e.ComplexityRoot.Mutation.UpdateIncidentRoleDefinition == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateIncidentRoleDefinition_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateIncidentRoleDefinition(childComplexity, args["input"].(model.UpdateIncidentRoleDefinitionInput)), true
+	case "Mutation.updateIncidentStatus":
+		if e.ComplexityRoot.Mutation.UpdateIncidentStatus == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateIncidentStatus_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateIncidentStatus(childComplexity, args["input"].(model.UpdateIncidentStatusInput)), true
 	case "Mutation.updateMaintenanceWindow":
 		if e.ComplexityRoot.Mutation.UpdateMaintenanceWindow == nil {
 			break
@@ -1499,6 +1836,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.HeartbeatMonitors(childComplexity, args["serviceId"].(string)), true
+	case "Query.incident":
+		if e.ComplexityRoot.Query.Incident == nil {
+			break
+		}
+
+		args, err := ec.field_Query_incident_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.Incident(childComplexity, args["id"].(string)), true
+	case "Query.incidentRoleDefinitions":
+		if e.ComplexityRoot.Query.IncidentRoleDefinitions == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.IncidentRoleDefinitions(childComplexity), true
+	case "Query.incidents":
+		if e.ComplexityRoot.Query.Incidents == nil {
+			break
+		}
+
+		args, err := ec.field_Query_incidents_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.Incidents(childComplexity, args["status"].(*model.IncidentStatus), args["teamId"].(*string), args["limit"].(*int)), true
 	case "Query.integrationKeys":
 		if e.ComplexityRoot.Query.IntegrationKeys == nil {
 			break
@@ -1858,6 +2223,55 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Team.UpdatedAt(childComplexity), true
 
+	case "TimelineEvent.actor":
+		if e.ComplexityRoot.TimelineEvent.Actor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TimelineEvent.Actor(childComplexity), true
+	case "TimelineEvent.body":
+		if e.ComplexityRoot.TimelineEvent.Body == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TimelineEvent.Body(childComplexity), true
+	case "TimelineEvent.createdAt":
+		if e.ComplexityRoot.TimelineEvent.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TimelineEvent.CreatedAt(childComplexity), true
+	case "TimelineEvent.eventType":
+		if e.ComplexityRoot.TimelineEvent.EventType == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TimelineEvent.EventType(childComplexity), true
+	case "TimelineEvent.id":
+		if e.ComplexityRoot.TimelineEvent.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TimelineEvent.ID(childComplexity), true
+	case "TimelineEvent.incidentId":
+		if e.ComplexityRoot.TimelineEvent.IncidentID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TimelineEvent.IncidentID(childComplexity), true
+	case "TimelineEvent.metadata":
+		if e.ComplexityRoot.TimelineEvent.Metadata == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TimelineEvent.Metadata(childComplexity), true
+	case "TimelineEvent.organizationId":
+		if e.ComplexityRoot.TimelineEvent.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TimelineEvent.OrganizationID(childComplexity), true
+
 	case "User.createdAt":
 		if e.ComplexityRoot.User.CreatedAt == nil {
 			break
@@ -1977,8 +2391,12 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := newExecutionContext(opCtx, e, make(chan graphql.DeferredResult))
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputAddIncidentTimelineNoteInput,
+		ec.unmarshalInputAssignIncidentRoleInput,
 		ec.unmarshalInputCreateEscalationPolicyInput,
 		ec.unmarshalInputCreateHeartbeatMonitorInput,
+		ec.unmarshalInputCreateIncidentInput,
+		ec.unmarshalInputCreateIncidentRoleDefinitionInput,
 		ec.unmarshalInputCreateIntegrationKeyInput,
 		ec.unmarshalInputCreateMaintenanceWindowInput,
 		ec.unmarshalInputCreateOverrideInput,
@@ -1996,6 +2414,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputSetupInput,
 		ec.unmarshalInputUpdateEscalationPolicyInput,
 		ec.unmarshalInputUpdateHeartbeatMonitorInput,
+		ec.unmarshalInputUpdateIncidentRoleDefinitionInput,
+		ec.unmarshalInputUpdateIncidentStatusInput,
 		ec.unmarshalInputUpdateMaintenanceWindowInput,
 		ec.unmarshalInputUpdateRotationInput,
 		ec.unmarshalInputUpdateScheduleInput,
@@ -2124,6 +2544,27 @@ enum HeartbeatMonitorStatus {
   HEALTHY
   OVERDUE
   TRIGGERED
+}
+
+"""
+Incident lifecycle status (doc 02).
+"""
+enum IncidentStatus {
+  INVESTIGATING
+  IDENTIFIED
+  MONITORING
+  RESOLVED
+}
+
+"""
+Append-only incident timeline event type.
+"""
+enum TimelineEventType {
+  DECLARED
+  STATUS_CHANGED
+  NOTE
+  ROLE_ASSIGNED
+  ROLE_UNASSIGNED
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/inputs.graphql", Input: `input LoginInput {
@@ -2272,6 +2713,40 @@ input UpdateMaintenanceWindowInput {
   suppressNotifications: Boolean!
   suppressIngestion: Boolean!
 }
+
+input CreateIncidentInput {
+  teamId: ID!
+  title: String!
+}
+
+input UpdateIncidentStatusInput {
+  id: ID!
+  status: IncidentStatus!
+  """Optional note appended with the status change."""
+  body: String
+}
+
+input AddIncidentTimelineNoteInput {
+  incidentId: ID!
+  body: String!
+}
+
+input CreateIncidentRoleDefinitionInput {
+  name: String!
+  sortOrder: Int = 0
+}
+
+input UpdateIncidentRoleDefinitionInput {
+  id: ID!
+  name: String!
+  sortOrder: Int!
+}
+
+input AssignIncidentRoleInput {
+  incidentId: ID!
+  roleDefinitionId: ID!
+  userId: ID!
+}
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Subscription {
   """
@@ -2397,6 +2872,21 @@ type Query {
   Fetch a single service by ID (org admin only).
   """
   service(id: ID!): Service
+
+  """
+  Fetch a single incident by ID (team access required).
+  """
+  incident(id: ID!): Incident
+
+  """
+  List incidents visible to the current user, optionally filtered.
+  """
+  incidents(status: IncidentStatus, teamId: ID, limit: Int = 100): [Incident!]!
+
+  """
+  List configurable incident role definitions (org admin only).
+  """
+  incidentRoleDefinitions: [IncidentRoleDefinition!]!
 }
 
 type Mutation {
@@ -2574,6 +3064,46 @@ type Mutation {
   Soft-delete a service (org admin only).
   """
   deleteService(id: ID!): Boolean!
+
+  """
+  Create an incident for a team (team access required).
+  """
+  createIncident(input: CreateIncidentInput!): Incident!
+
+  """
+  Update incident status; appends a status_changed timeline event.
+  """
+  updateIncidentStatus(input: UpdateIncidentStatusInput!): Incident!
+
+  """
+  Append a note timeline event to an incident.
+  """
+  addIncidentTimelineNote(input: AddIncidentTimelineNoteInput!): TimelineEvent!
+
+  """
+  Create a configurable incident role definition (org admin only).
+  """
+  createIncidentRoleDefinition(input: CreateIncidentRoleDefinitionInput!): IncidentRoleDefinition!
+
+  """
+  Update a configurable incident role definition (org admin only).
+  """
+  updateIncidentRoleDefinition(input: UpdateIncidentRoleDefinitionInput!): IncidentRoleDefinition!
+
+  """
+  Delete a configurable incident role definition (org admin only).
+  """
+  deleteIncidentRoleDefinition(id: ID!): Boolean!
+
+  """
+  Assign a user to a role on an incident (team access required).
+  """
+  assignIncidentRole(input: AssignIncidentRoleInput!): IncidentRoleAssignment!
+
+  """
+  Remove a role assignment from an incident (team access required).
+  """
+  unassignIncidentRole(id: ID!): Boolean!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/scalars.graphql", Input: `"""
@@ -2710,6 +3240,8 @@ type Alert {
   acknowledgedAt: DateTime
   acknowledgedBy: User
   closedAt: DateTime
+  incidentId: ID
+  incident: Incident
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -2842,6 +3374,54 @@ type IntegrationKey {
   createdAt: DateTime!
   updatedAt: DateTime!
 }
+
+"""First-class incident aggregate grouping related alerts."""
+type Incident {
+  id: ID!
+  organizationId: ID!
+  teamId: ID!
+  title: String!
+  status: IncidentStatus!
+  createdBy: User!
+  resolvedAt: DateTime
+  alerts: [Alert!]!
+  timelineEvents: [TimelineEvent!]!
+  roleAssignments: [IncidentRoleAssignment!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Append-only incident timeline entry with actor and body."""
+type TimelineEvent {
+  id: ID!
+  incidentId: ID!
+  organizationId: ID!
+  actor: User
+  eventType: TimelineEventType!
+  body: String!
+  metadata: JSON!
+  createdAt: DateTime!
+}
+
+"""Configurable incident role definition for an organization."""
+type IncidentRoleDefinition {
+  id: ID!
+  organizationId: ID!
+  name: String!
+  sortOrder: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""User assigned to a configurable role on an incident."""
+type IncidentRoleAssignment {
+  id: ID!
+  incidentId: ID!
+  role: IncidentRoleDefinition!
+  user: User!
+  assignedBy: User!
+  createdAt: DateTime!
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -2876,6 +3456,10 @@ func (ec *executionContext) childFields_Alert(ctx context.Context, field graphql
 		return ec.fieldContext_Alert_acknowledgedBy(ctx, field)
 	case "closedAt":
 		return ec.fieldContext_Alert_closedAt(ctx, field)
+	case "incidentId":
+		return ec.fieldContext_Alert_incidentId(ctx, field)
+	case "incident":
+		return ec.fieldContext_Alert_incident(ctx, field)
 	case "createdAt":
 		return ec.fieldContext_Alert_createdAt(ctx, field)
 	case "updatedAt":
@@ -2964,6 +3548,72 @@ func (ec *executionContext) childFields_HeartbeatMonitor(ctx context.Context, fi
 		return ec.fieldContext_HeartbeatMonitor_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type HeartbeatMonitor", field.Name)
+}
+
+func (ec *executionContext) childFields_Incident(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_Incident_id(ctx, field)
+	case "organizationId":
+		return ec.fieldContext_Incident_organizationId(ctx, field)
+	case "teamId":
+		return ec.fieldContext_Incident_teamId(ctx, field)
+	case "title":
+		return ec.fieldContext_Incident_title(ctx, field)
+	case "status":
+		return ec.fieldContext_Incident_status(ctx, field)
+	case "createdBy":
+		return ec.fieldContext_Incident_createdBy(ctx, field)
+	case "resolvedAt":
+		return ec.fieldContext_Incident_resolvedAt(ctx, field)
+	case "alerts":
+		return ec.fieldContext_Incident_alerts(ctx, field)
+	case "timelineEvents":
+		return ec.fieldContext_Incident_timelineEvents(ctx, field)
+	case "roleAssignments":
+		return ec.fieldContext_Incident_roleAssignments(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_Incident_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_Incident_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Incident", field.Name)
+}
+
+func (ec *executionContext) childFields_IncidentRoleAssignment(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_IncidentRoleAssignment_id(ctx, field)
+	case "incidentId":
+		return ec.fieldContext_IncidentRoleAssignment_incidentId(ctx, field)
+	case "role":
+		return ec.fieldContext_IncidentRoleAssignment_role(ctx, field)
+	case "user":
+		return ec.fieldContext_IncidentRoleAssignment_user(ctx, field)
+	case "assignedBy":
+		return ec.fieldContext_IncidentRoleAssignment_assignedBy(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_IncidentRoleAssignment_createdAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type IncidentRoleAssignment", field.Name)
+}
+
+func (ec *executionContext) childFields_IncidentRoleDefinition(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_IncidentRoleDefinition_id(ctx, field)
+	case "organizationId":
+		return ec.fieldContext_IncidentRoleDefinition_organizationId(ctx, field)
+	case "name":
+		return ec.fieldContext_IncidentRoleDefinition_name(ctx, field)
+	case "sortOrder":
+		return ec.fieldContext_IncidentRoleDefinition_sortOrder(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_IncidentRoleDefinition_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_IncidentRoleDefinition_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type IncidentRoleDefinition", field.Name)
 }
 
 func (ec *executionContext) childFields_IntegrationKey(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -3248,6 +3898,28 @@ func (ec *executionContext) childFields_Team(ctx context.Context, field graphql.
 	return nil, fmt.Errorf("no field named %q was found under type Team", field.Name)
 }
 
+func (ec *executionContext) childFields_TimelineEvent(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_TimelineEvent_id(ctx, field)
+	case "incidentId":
+		return ec.fieldContext_TimelineEvent_incidentId(ctx, field)
+	case "organizationId":
+		return ec.fieldContext_TimelineEvent_organizationId(ctx, field)
+	case "actor":
+		return ec.fieldContext_TimelineEvent_actor(ctx, field)
+	case "eventType":
+		return ec.fieldContext_TimelineEvent_eventType(ctx, field)
+	case "body":
+		return ec.fieldContext_TimelineEvent_body(ctx, field)
+	case "metadata":
+		return ec.fieldContext_TimelineEvent_metadata(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_TimelineEvent_createdAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type TimelineEvent", field.Name)
+}
+
 func (ec *executionContext) childFields_User(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "id":
@@ -3432,6 +4104,34 @@ func (ec *executionContext) field_Mutation_acknowledgeAlert_args(ctx context.Con
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_addIncidentTimelineNote_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.AddIncidentTimelineNoteInput, error) {
+			return ec.unmarshalNAddIncidentTimelineNoteInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAddIncidentTimelineNoteInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_assignIncidentRole_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.AssignIncidentRoleInput, error) {
+			return ec.unmarshalNAssignIncidentRoleInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAssignIncidentRoleInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_closeAlert_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3466,6 +4166,34 @@ func (ec *executionContext) field_Mutation_createHeartbeatMonitor_args(ctx conte
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.CreateHeartbeatMonitorInput, error) {
 			return ec.unmarshalNCreateHeartbeatMonitorInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateHeartbeatMonitorInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createIncidentRoleDefinition_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateIncidentRoleDefinitionInput, error) {
+			return ec.unmarshalNCreateIncidentRoleDefinitionInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateIncidentRoleDefinitionInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createIncident_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateIncidentInput, error) {
+			return ec.unmarshalNCreateIncidentInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateIncidentInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -3573,6 +4301,20 @@ func (ec *executionContext) field_Mutation_deleteEscalationPolicy_args(ctx conte
 }
 
 func (ec *executionContext) field_Mutation_deleteHeartbeatMonitor_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteIncidentRoleDefinition_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
@@ -3832,6 +4574,20 @@ func (ec *executionContext) field_Mutation_snoozeAlert_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_unassignIncidentRole_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updateEscalationPolicy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3852,6 +4608,34 @@ func (ec *executionContext) field_Mutation_updateHeartbeatMonitor_args(ctx conte
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.UpdateHeartbeatMonitorInput, error) {
 			return ec.unmarshalNUpdateHeartbeatMonitorInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateHeartbeatMonitorInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateIncidentRoleDefinition_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateIncidentRoleDefinitionInput, error) {
+			return ec.unmarshalNUpdateIncidentRoleDefinitionInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateIncidentRoleDefinitionInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateIncidentStatus_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateIncidentStatusInput, error) {
+			return ec.unmarshalNUpdateIncidentStatusInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateIncidentStatusInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -4019,6 +4803,50 @@ func (ec *executionContext) field_Query_heartbeatMonitors_args(ctx context.Conte
 		return nil, err
 	}
 	args["serviceId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_incident_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_incidents_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "status",
+		func(ctx context.Context, v any) (*model.IncidentStatus, error) {
+			return ec.unmarshalOIncidentStatus2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentStatus(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["status"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "teamId",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOID2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["teamId"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
 	return args, nil
 }
 
@@ -4513,6 +5341,61 @@ func (ec *executionContext) _Alert_closedAt(ctx context.Context, field graphql.C
 }
 func (ec *executionContext) fieldContext_Alert_closedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Alert", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _Alert_incidentId(ctx context.Context, field graphql.CollectedField, obj *model.Alert) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Alert_incidentId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IncidentID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Alert_incidentId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Alert", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Alert_incident(ctx context.Context, field graphql.CollectedField, obj *model.Alert) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Alert_incident(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Alert().Incident(ctx, obj)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Incident) graphql.Marshaler {
+			return ec.marshalOIncident2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncident(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Alert_incident(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Alert",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Incident(ctx, field)
+		},
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _Alert_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Alert) (ret graphql.Marshaler) {
@@ -5235,6 +6118,621 @@ func (ec *executionContext) _HeartbeatMonitor_updatedAt(ctx context.Context, fie
 }
 func (ec *executionContext) fieldContext_HeartbeatMonitor_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("HeartbeatMonitor", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _Incident_id(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Incident", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Incident_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Incident", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Incident_teamId(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_teamId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TeamID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_teamId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Incident", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Incident_title(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_title(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Incident", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Incident_status(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_status(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.IncidentStatus) graphql.Marshaler {
+			return ec.marshalNIncidentStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentStatus(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Incident", field, false, false, errors.New("field of type IncidentStatus does not have child fields"))
+}
+
+func (ec *executionContext) _Incident_createdBy(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_createdBy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Incident().CreatedBy(ctx, obj)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.User) graphql.Marshaler {
+			return ec.marshalNUser2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUser(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_createdBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Incident",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_User(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Incident_resolvedAt(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_resolvedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ResolvedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalODateTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_resolvedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Incident", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _Incident_alerts(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_alerts(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Incident().Alerts(ctx, obj)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.Alert) graphql.Marshaler {
+			return ec.marshalNAlert2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_alerts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Incident",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Alert(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Incident_timelineEvents(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_timelineEvents(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Incident().TimelineEvents(ctx, obj)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.TimelineEvent) graphql.Marshaler {
+			return ec.marshalNTimelineEvent2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTimelineEventᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_timelineEvents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Incident",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_TimelineEvent(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Incident_roleAssignments(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_roleAssignments(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Incident().RoleAssignments(ctx, obj)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.IncidentRoleAssignment) graphql.Marshaler {
+			return ec.marshalNIncidentRoleAssignment2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleAssignmentᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_roleAssignments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Incident",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_IncidentRoleAssignment(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Incident_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Incident", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _Incident_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Incident", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _IncidentRoleAssignment_id(ctx context.Context, field graphql.CollectedField, obj *model.IncidentRoleAssignment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IncidentRoleAssignment_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IncidentRoleAssignment_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IncidentRoleAssignment", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _IncidentRoleAssignment_incidentId(ctx context.Context, field graphql.CollectedField, obj *model.IncidentRoleAssignment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IncidentRoleAssignment_incidentId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IncidentID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IncidentRoleAssignment_incidentId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IncidentRoleAssignment", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _IncidentRoleAssignment_role(ctx context.Context, field graphql.CollectedField, obj *model.IncidentRoleAssignment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IncidentRoleAssignment_role(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.IncidentRoleAssignment().Role(ctx, obj)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.IncidentRoleDefinition) graphql.Marshaler {
+			return ec.marshalNIncidentRoleDefinition2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleDefinition(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IncidentRoleAssignment_role(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "IncidentRoleAssignment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_IncidentRoleDefinition(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _IncidentRoleAssignment_user(ctx context.Context, field graphql.CollectedField, obj *model.IncidentRoleAssignment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IncidentRoleAssignment_user(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.IncidentRoleAssignment().User(ctx, obj)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.User) graphql.Marshaler {
+			return ec.marshalNUser2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUser(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IncidentRoleAssignment_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "IncidentRoleAssignment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_User(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _IncidentRoleAssignment_assignedBy(ctx context.Context, field graphql.CollectedField, obj *model.IncidentRoleAssignment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IncidentRoleAssignment_assignedBy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.IncidentRoleAssignment().AssignedBy(ctx, obj)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.User) graphql.Marshaler {
+			return ec.marshalNUser2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUser(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IncidentRoleAssignment_assignedBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "IncidentRoleAssignment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_User(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _IncidentRoleAssignment_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.IncidentRoleAssignment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IncidentRoleAssignment_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IncidentRoleAssignment_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IncidentRoleAssignment", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _IncidentRoleDefinition_id(ctx context.Context, field graphql.CollectedField, obj *model.IncidentRoleDefinition) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IncidentRoleDefinition_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IncidentRoleDefinition_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IncidentRoleDefinition", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _IncidentRoleDefinition_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.IncidentRoleDefinition) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IncidentRoleDefinition_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IncidentRoleDefinition_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IncidentRoleDefinition", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _IncidentRoleDefinition_name(ctx context.Context, field graphql.CollectedField, obj *model.IncidentRoleDefinition) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IncidentRoleDefinition_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IncidentRoleDefinition_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IncidentRoleDefinition", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _IncidentRoleDefinition_sortOrder(ctx context.Context, field graphql.CollectedField, obj *model.IncidentRoleDefinition) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IncidentRoleDefinition_sortOrder(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.SortOrder, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IncidentRoleDefinition_sortOrder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IncidentRoleDefinition", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _IncidentRoleDefinition_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.IncidentRoleDefinition) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IncidentRoleDefinition_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IncidentRoleDefinition_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IncidentRoleDefinition", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _IncidentRoleDefinition_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.IncidentRoleDefinition) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IncidentRoleDefinition_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IncidentRoleDefinition_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IncidentRoleDefinition", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
 func (ec *executionContext) _IntegrationKey_id(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationKey) (ret graphql.Marshaler) {
@@ -7453,6 +8951,358 @@ func (ec *executionContext) fieldContext_Mutation_deleteService(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createIncident(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createIncident(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateIncident(ctx, fc.Args["input"].(model.CreateIncidentInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Incident) graphql.Marshaler {
+			return ec.marshalNIncident2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncident(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createIncident(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Incident(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createIncident_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateIncidentStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateIncidentStatus(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateIncidentStatus(ctx, fc.Args["input"].(model.UpdateIncidentStatusInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Incident) graphql.Marshaler {
+			return ec.marshalNIncident2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncident(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateIncidentStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Incident(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateIncidentStatus_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_addIncidentTimelineNote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_addIncidentTimelineNote(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().AddIncidentTimelineNote(ctx, fc.Args["input"].(model.AddIncidentTimelineNoteInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.TimelineEvent) graphql.Marshaler {
+			return ec.marshalNTimelineEvent2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTimelineEvent(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_addIncidentTimelineNote(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_TimelineEvent(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_addIncidentTimelineNote_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createIncidentRoleDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createIncidentRoleDefinition(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateIncidentRoleDefinition(ctx, fc.Args["input"].(model.CreateIncidentRoleDefinitionInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.IncidentRoleDefinition) graphql.Marshaler {
+			return ec.marshalNIncidentRoleDefinition2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleDefinition(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createIncidentRoleDefinition(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_IncidentRoleDefinition(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createIncidentRoleDefinition_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateIncidentRoleDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateIncidentRoleDefinition(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateIncidentRoleDefinition(ctx, fc.Args["input"].(model.UpdateIncidentRoleDefinitionInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.IncidentRoleDefinition) graphql.Marshaler {
+			return ec.marshalNIncidentRoleDefinition2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleDefinition(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateIncidentRoleDefinition(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_IncidentRoleDefinition(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateIncidentRoleDefinition_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteIncidentRoleDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteIncidentRoleDefinition(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteIncidentRoleDefinition(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteIncidentRoleDefinition(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteIncidentRoleDefinition_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_assignIncidentRole(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_assignIncidentRole(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().AssignIncidentRole(ctx, fc.Args["input"].(model.AssignIncidentRoleInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.IncidentRoleAssignment) graphql.Marshaler {
+			return ec.marshalNIncidentRoleAssignment2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleAssignment(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_assignIncidentRole(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_IncidentRoleAssignment(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_assignIncidentRole_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_unassignIncidentRole(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_unassignIncidentRole(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UnassignIncidentRole(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_unassignIncidentRole(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_unassignIncidentRole_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NotificationChannelDefinition_name(ctx context.Context, field graphql.CollectedField, obj *model.NotificationChannelDefinition) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -8978,6 +10828,126 @@ func (ec *executionContext) fieldContext_Query_service(ctx context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_incident(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_incident(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().Incident(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Incident) graphql.Marshaler {
+			return ec.marshalOIncident2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncident(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_incident(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Incident(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_incident_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_incidents(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_incidents(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().Incidents(ctx, fc.Args["status"].(*model.IncidentStatus), fc.Args["teamId"].(*string), fc.Args["limit"].(*int))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.Incident) graphql.Marshaler {
+			return ec.marshalNIncident2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_incidents(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Incident(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_incidents_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_incidentRoleDefinitions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_incidentRoleDefinitions(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().IncidentRoleDefinitions(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.IncidentRoleDefinition) graphql.Marshaler {
+			return ec.marshalNIncidentRoleDefinition2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleDefinitionᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_incidentRoleDefinitions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_IncidentRoleDefinition(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -9935,6 +11905,199 @@ func (ec *executionContext) _Team_updatedAt(ctx context.Context, field graphql.C
 }
 func (ec *executionContext) fieldContext_Team_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Team", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _TimelineEvent_id(ctx context.Context, field graphql.CollectedField, obj *model.TimelineEvent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TimelineEvent_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TimelineEvent_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TimelineEvent", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _TimelineEvent_incidentId(ctx context.Context, field graphql.CollectedField, obj *model.TimelineEvent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TimelineEvent_incidentId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IncidentID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TimelineEvent_incidentId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TimelineEvent", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _TimelineEvent_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.TimelineEvent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TimelineEvent_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TimelineEvent_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TimelineEvent", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _TimelineEvent_actor(ctx context.Context, field graphql.CollectedField, obj *model.TimelineEvent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TimelineEvent_actor(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.TimelineEvent().Actor(ctx, obj)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.User) graphql.Marshaler {
+			return ec.marshalOUser2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUser(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_TimelineEvent_actor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TimelineEvent",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_User(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TimelineEvent_eventType(ctx context.Context, field graphql.CollectedField, obj *model.TimelineEvent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TimelineEvent_eventType(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EventType, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.TimelineEventType) graphql.Marshaler {
+			return ec.marshalNTimelineEventType2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTimelineEventType(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TimelineEvent_eventType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TimelineEvent", field, false, false, errors.New("field of type TimelineEventType does not have child fields"))
+}
+
+func (ec *executionContext) _TimelineEvent_body(ctx context.Context, field graphql.CollectedField, obj *model.TimelineEvent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TimelineEvent_body(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Body, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TimelineEvent_body(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TimelineEvent", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _TimelineEvent_metadata(ctx context.Context, field graphql.CollectedField, obj *model.TimelineEvent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TimelineEvent_metadata(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Metadata, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v map[string]any) graphql.Marshaler {
+			return ec.marshalNJSON2map(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TimelineEvent_metadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TimelineEvent", field, false, false, errors.New("field of type JSON does not have child fields"))
+}
+
+func (ec *executionContext) _TimelineEvent_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.TimelineEvent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TimelineEvent_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TimelineEvent_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TimelineEvent", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
@@ -11419,6 +13582,87 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputAddIncidentTimelineNoteInput(ctx context.Context, obj any) (model.AddIncidentTimelineNoteInput, error) {
+	var it model.AddIncidentTimelineNoteInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"incidentId", "body"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "incidentId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("incidentId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IncidentID = data
+		case "body":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("body"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Body = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputAssignIncidentRoleInput(ctx context.Context, obj any) (model.AssignIncidentRoleInput, error) {
+	var it model.AssignIncidentRoleInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"incidentId", "roleDefinitionId", "userId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "incidentId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("incidentId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IncidentID = data
+		case "roleDefinitionId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roleDefinitionId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RoleDefinitionID = data
+		case "userId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserID = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateEscalationPolicyInput(ctx context.Context, obj any) (model.CreateEscalationPolicyInput, error) {
 	var it model.CreateEscalationPolicyInput
 	if obj == nil {
@@ -11509,6 +13753,84 @@ func (ec *executionContext) unmarshalInputCreateHeartbeatMonitorInput(ctx contex
 				return it, err
 			}
 			it.GraceSeconds = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateIncidentInput(ctx context.Context, obj any) (model.CreateIncidentInput, error) {
+	var it model.CreateIncidentInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"teamId", "title"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "teamId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("teamId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TeamID = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateIncidentRoleDefinitionInput(ctx context.Context, obj any) (model.CreateIncidentRoleDefinitionInput, error) {
+	var it model.CreateIncidentRoleDefinitionInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["sortOrder"]; !present {
+		asMap["sortOrder"] = 0
+	}
+
+	fieldsInOrder := [...]string{"name", "sortOrder"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "sortOrder":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortOrder"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SortOrder = data
 		}
 	}
 	return it, nil
@@ -12301,6 +14623,94 @@ func (ec *executionContext) unmarshalInputUpdateHeartbeatMonitorInput(ctx contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateIncidentRoleDefinitionInput(ctx context.Context, obj any) (model.UpdateIncidentRoleDefinitionInput, error) {
+	var it model.UpdateIncidentRoleDefinitionInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "sortOrder"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "sortOrder":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortOrder"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SortOrder = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateIncidentStatusInput(ctx context.Context, obj any) (model.UpdateIncidentStatusInput, error) {
+	var it model.UpdateIncidentStatusInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "status", "body"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "status":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalNIncidentStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		case "body":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("body"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Body = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUpdateMaintenanceWindowInput(ctx context.Context, obj any) (model.UpdateMaintenanceWindowInput, error) {
 	var it model.UpdateMaintenanceWindowInput
 	if obj == nil {
@@ -12528,72 +14938,115 @@ func (ec *executionContext) _Alert(ctx context.Context, sel ast.SelectionSet, ob
 		case "id":
 			out.Values[i] = ec._Alert_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "organizationId":
 			out.Values[i] = ec._Alert_organizationId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "serviceId":
 			out.Values[i] = ec._Alert_serviceId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "status":
 			out.Values[i] = ec._Alert_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "dedupKey":
 			out.Values[i] = ec._Alert_dedupKey(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "summary":
 			out.Values[i] = ec._Alert_summary(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._Alert_description(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "priority":
 			out.Values[i] = ec._Alert_priority(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "eventCount":
 			out.Values[i] = ec._Alert_eventCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "acknowledgedAt":
 			out.Values[i] = ec._Alert_acknowledgedAt(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "acknowledgedBy":
 			out.Values[i] = ec._Alert_acknowledgedBy(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "closedAt":
 			out.Values[i] = ec._Alert_closedAt(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "incidentId":
+			out.Values[i] = ec._Alert_incidentId(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "incident":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Alert_incident(ctx, field, obj)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "createdAt":
 			out.Values[i] = ec._Alert_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Alert_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -12869,6 +15322,456 @@ func (ec *executionContext) _HeartbeatMonitor(ctx context.Context, sel ast.Selec
 			}
 		case "updatedAt":
 			out.Values[i] = ec._HeartbeatMonitor_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var incidentImplementors = []string{"Incident"}
+
+func (ec *executionContext) _Incident(ctx context.Context, sel ast.SelectionSet, obj *model.Incident) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, incidentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Incident")
+		case "id":
+			out.Values[i] = ec._Incident_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "organizationId":
+			out.Values[i] = ec._Incident_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "teamId":
+			out.Values[i] = ec._Incident_teamId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "title":
+			out.Values[i] = ec._Incident_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "status":
+			out.Values[i] = ec._Incident_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "createdBy":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Incident_createdBy(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "resolvedAt":
+			out.Values[i] = ec._Incident_resolvedAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "alerts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Incident_alerts(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "timelineEvents":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Incident_timelineEvents(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "roleAssignments":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Incident_roleAssignments(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "createdAt":
+			out.Values[i] = ec._Incident_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Incident_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var incidentRoleAssignmentImplementors = []string{"IncidentRoleAssignment"}
+
+func (ec *executionContext) _IncidentRoleAssignment(ctx context.Context, sel ast.SelectionSet, obj *model.IncidentRoleAssignment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, incidentRoleAssignmentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("IncidentRoleAssignment")
+		case "id":
+			out.Values[i] = ec._IncidentRoleAssignment_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "incidentId":
+			out.Values[i] = ec._IncidentRoleAssignment_incidentId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "role":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._IncidentRoleAssignment_role(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "user":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._IncidentRoleAssignment_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "assignedBy":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._IncidentRoleAssignment_assignedBy(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "createdAt":
+			out.Values[i] = ec._IncidentRoleAssignment_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var incidentRoleDefinitionImplementors = []string{"IncidentRoleDefinition"}
+
+func (ec *executionContext) _IncidentRoleDefinition(ctx context.Context, sel ast.SelectionSet, obj *model.IncidentRoleDefinition) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, incidentRoleDefinitionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("IncidentRoleDefinition")
+		case "id":
+			out.Values[i] = ec._IncidentRoleDefinition_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "organizationId":
+			out.Values[i] = ec._IncidentRoleDefinition_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._IncidentRoleDefinition_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sortOrder":
+			out.Values[i] = ec._IncidentRoleDefinition_sortOrder(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._IncidentRoleDefinition_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._IncidentRoleDefinition_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -13431,6 +16334,62 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteService":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteService(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createIncident":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createIncident(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateIncidentStatus":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateIncidentStatus(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "addIncidentTimelineNote":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_addIncidentTimelineNote(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createIncidentRoleDefinition":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createIncidentRoleDefinition(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateIncidentRoleDefinition":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateIncidentRoleDefinition(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteIncidentRoleDefinition":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteIncidentRoleDefinition(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "assignIncidentRole":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_assignIncidentRole(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "unassignIncidentRole":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_unassignIncidentRole(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -14331,6 +17290,72 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "incident":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_incident(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "incidents":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_incidents(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "incidentRoleDefinitions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_incidentRoleDefinitions(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -14762,6 +17787,112 @@ func (ec *executionContext) _Team(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Team_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var timelineEventImplementors = []string{"TimelineEvent"}
+
+func (ec *executionContext) _TimelineEvent(ctx context.Context, sel ast.SelectionSet, obj *model.TimelineEvent) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, timelineEventImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TimelineEvent")
+		case "id":
+			out.Values[i] = ec._TimelineEvent_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "incidentId":
+			out.Values[i] = ec._TimelineEvent_incidentId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "organizationId":
+			out.Values[i] = ec._TimelineEvent_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "actor":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TimelineEvent_actor(ctx, field, obj)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "eventType":
+			out.Values[i] = ec._TimelineEvent_eventType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "body":
+			out.Values[i] = ec._TimelineEvent_body(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "metadata":
+			out.Values[i] = ec._TimelineEvent_metadata(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "createdAt":
+			out.Values[i] = ec._TimelineEvent_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -15365,6 +18496,11 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) unmarshalNAddIncidentTimelineNoteInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAddIncidentTimelineNoteInput(ctx context.Context, v any) (model.AddIncidentTimelineNoteInput, error) {
+	res, err := ec.unmarshalInputAddIncidentTimelineNoteInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNAlert2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlert(ctx context.Context, sel ast.SelectionSet, v model.Alert) graphql.Marshaler {
 	return ec._Alert(ctx, sel, &v)
 }
@@ -15415,6 +18551,11 @@ func (ec *executionContext) marshalNAlertStatus2githubᚗcomᚋmdgᚑlabsᚋesca
 	return v
 }
 
+func (ec *executionContext) unmarshalNAssignIncidentRoleInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAssignIncidentRoleInput(ctx context.Context, v any) (model.AssignIncidentRoleInput, error) {
+	res, err := ec.unmarshalInputAssignIncidentRoleInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -15438,6 +18579,16 @@ func (ec *executionContext) unmarshalNCreateEscalationPolicyInput2githubᚗcom�
 
 func (ec *executionContext) unmarshalNCreateHeartbeatMonitorInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateHeartbeatMonitorInput(ctx context.Context, v any) (model.CreateHeartbeatMonitorInput, error) {
 	res, err := ec.unmarshalInputCreateHeartbeatMonitorInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateIncidentInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateIncidentInput(ctx context.Context, v any) (model.CreateIncidentInput, error) {
+	res, err := ec.unmarshalInputCreateIncidentInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateIncidentRoleDefinitionInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateIncidentRoleDefinitionInput(ctx context.Context, v any) (model.CreateIncidentRoleDefinitionInput, error) {
+	res, err := ec.unmarshalInputCreateIncidentRoleDefinitionInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -15678,6 +18829,106 @@ func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalNIncident2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncident(ctx context.Context, sel ast.SelectionSet, v model.Incident) graphql.Marshaler {
+	return ec._Incident(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNIncident2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Incident) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNIncident2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncident(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNIncident2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncident(ctx context.Context, sel ast.SelectionSet, v *model.Incident) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Incident(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNIncidentRoleAssignment2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleAssignment(ctx context.Context, sel ast.SelectionSet, v model.IncidentRoleAssignment) graphql.Marshaler {
+	return ec._IncidentRoleAssignment(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNIncidentRoleAssignment2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleAssignmentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.IncidentRoleAssignment) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNIncidentRoleAssignment2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleAssignment(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNIncidentRoleAssignment2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleAssignment(ctx context.Context, sel ast.SelectionSet, v *model.IncidentRoleAssignment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._IncidentRoleAssignment(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNIncidentRoleDefinition2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleDefinition(ctx context.Context, sel ast.SelectionSet, v model.IncidentRoleDefinition) graphql.Marshaler {
+	return ec._IncidentRoleDefinition(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNIncidentRoleDefinition2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleDefinitionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.IncidentRoleDefinition) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNIncidentRoleDefinition2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleDefinition(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNIncidentRoleDefinition2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentRoleDefinition(ctx context.Context, sel ast.SelectionSet, v *model.IncidentRoleDefinition) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._IncidentRoleDefinition(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNIncidentStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentStatus(ctx context.Context, v any) (model.IncidentStatus, error) {
+	var res model.IncidentStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNIncidentStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentStatus(ctx context.Context, sel ast.SelectionSet, v model.IncidentStatus) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {
@@ -16163,6 +19414,46 @@ func (ec *executionContext) marshalNTeam2ᚖgithubᚗcomᚋmdgᚑlabsᚋescalite
 	return ec._Team(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNTimelineEvent2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTimelineEvent(ctx context.Context, sel ast.SelectionSet, v model.TimelineEvent) graphql.Marshaler {
+	return ec._TimelineEvent(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTimelineEvent2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTimelineEventᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TimelineEvent) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNTimelineEvent2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTimelineEvent(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTimelineEvent2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTimelineEvent(ctx context.Context, sel ast.SelectionSet, v *model.TimelineEvent) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TimelineEvent(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTimelineEventType2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTimelineEventType(ctx context.Context, v any) (model.TimelineEventType, error) {
+	var res model.TimelineEventType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTimelineEventType2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTimelineEventType(ctx context.Context, sel ast.SelectionSet, v model.TimelineEventType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNUpdateEscalationPolicyInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateEscalationPolicyInput(ctx context.Context, v any) (model.UpdateEscalationPolicyInput, error) {
 	res, err := ec.unmarshalInputUpdateEscalationPolicyInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -16170,6 +19461,16 @@ func (ec *executionContext) unmarshalNUpdateEscalationPolicyInput2githubᚗcom�
 
 func (ec *executionContext) unmarshalNUpdateHeartbeatMonitorInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateHeartbeatMonitorInput(ctx context.Context, v any) (model.UpdateHeartbeatMonitorInput, error) {
 	res, err := ec.unmarshalInputUpdateHeartbeatMonitorInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateIncidentRoleDefinitionInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateIncidentRoleDefinitionInput(ctx context.Context, v any) (model.UpdateIncidentRoleDefinitionInput, error) {
+	res, err := ec.unmarshalInputUpdateIncidentRoleDefinitionInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateIncidentStatusInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateIncidentStatusInput(ctx context.Context, v any) (model.UpdateIncidentStatusInput, error) {
+	res, err := ec.unmarshalInputUpdateIncidentStatusInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -16191,6 +19492,10 @@ func (ec *executionContext) unmarshalNUpdateScheduleInput2githubᚗcomᚋmdgᚑl
 func (ec *executionContext) unmarshalNUpdateServiceInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateServiceInput(ctx context.Context, v any) (model.UpdateServiceInput, error) {
 	res, err := ec.unmarshalInputUpdateServiceInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUser2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
+	return ec._User(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
@@ -16498,6 +19803,29 @@ func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.Se
 	_ = ctx
 	res := graphql.MarshalID(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOIncident2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncident(ctx context.Context, sel ast.SelectionSet, v *model.Incident) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Incident(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOIncidentStatus2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentStatus(ctx context.Context, v any) (*model.IncidentStatus, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.IncidentStatus)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOIncidentStatus2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentStatus(ctx context.Context, sel ast.SelectionSet, v *model.IncidentStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {

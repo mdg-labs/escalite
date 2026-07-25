@@ -115,6 +115,8 @@ type Alert {
   acknowledgedAt: DateTime
   acknowledgedBy: User
   closedAt: DateTime
+  incidentId: ID
+  incident: Incident
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -246,4 +248,52 @@ type IntegrationKey {
   revokedAt: DateTime
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+"""First-class incident aggregate grouping related alerts."""
+type Incident {
+  id: ID!
+  organizationId: ID!
+  teamId: ID!
+  title: String!
+  status: IncidentStatus!
+  createdBy: User!
+  resolvedAt: DateTime
+  alerts: [Alert!]!
+  timelineEvents: [TimelineEvent!]!
+  roleAssignments: [IncidentRoleAssignment!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Append-only incident timeline entry with actor and body."""
+type TimelineEvent {
+  id: ID!
+  incidentId: ID!
+  organizationId: ID!
+  actor: User
+  eventType: TimelineEventType!
+  body: String!
+  metadata: JSON!
+  createdAt: DateTime!
+}
+
+"""Configurable incident role definition for an organization."""
+type IncidentRoleDefinition {
+  id: ID!
+  organizationId: ID!
+  name: String!
+  sortOrder: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""User assigned to a configurable role on an incident."""
+type IncidentRoleAssignment {
+  id: ID!
+  incidentId: ID!
+  role: IncidentRoleDefinition!
+  user: User!
+  assignedBy: User!
+  createdAt: DateTime!
 }

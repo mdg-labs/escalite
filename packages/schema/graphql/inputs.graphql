@@ -144,3 +144,37 @@ input UpdateMaintenanceWindowInput {
   suppressNotifications: Boolean!
   suppressIngestion: Boolean!
 }
+
+input CreateIncidentInput {
+  teamId: ID!
+  title: String!
+}
+
+input UpdateIncidentStatusInput {
+  id: ID!
+  status: IncidentStatus!
+  """Optional note appended with the status change."""
+  body: String
+}
+
+input AddIncidentTimelineNoteInput {
+  incidentId: ID!
+  body: String!
+}
+
+input CreateIncidentRoleDefinitionInput {
+  name: String!
+  sortOrder: Int = 0
+}
+
+input UpdateIncidentRoleDefinitionInput {
+  id: ID!
+  name: String!
+  sortOrder: Int!
+}
+
+input AssignIncidentRoleInput {
+  incidentId: ID!
+  roleDefinitionId: ID!
+  userId: ID!
+}

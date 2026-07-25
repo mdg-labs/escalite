@@ -32,3 +32,29 @@ models:
     fields:
       activeMaintenanceWindows:
         resolver: true
+  Incident:
+    fields:
+      createdBy:
+        resolver: true
+      alerts:
+        resolver: true
+      timelineEvents:
+        resolver: true
+      roleAssignments:
+        resolver: true
+  Alert:
+    fields:
+      incident:
+        resolver: true
+  TimelineEvent:
+    fields:
+      actor:
+        resolver: true
+  IncidentRoleAssignment:
+    fields:
+      role:
+        resolver: true
+      user:
+        resolver: true
+      assignedBy:
+        resolver: true

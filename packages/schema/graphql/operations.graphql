@@ -122,6 +122,21 @@ type Query {
   Fetch a single service by ID (org admin only).
   """
   service(id: ID!): Service
+
+  """
+  Fetch a single incident by ID (team access required).
+  """
+  incident(id: ID!): Incident
+
+  """
+  List incidents visible to the current user, optionally filtered.
+  """
+  incidents(status: IncidentStatus, teamId: ID, limit: Int = 100): [Incident!]!
+
+  """
+  List configurable incident role definitions (org admin only).
+  """
+  incidentRoleDefinitions: [IncidentRoleDefinition!]!
 }
 
 type Mutation {
@@ -299,4 +314,44 @@ type Mutation {
   Soft-delete a service (org admin only).
   """
   deleteService(id: ID!): Boolean!
+
+  """
+  Create an incident for a team (team access required).
+  """
+  createIncident(input: CreateIncidentInput!): Incident!
+
+  """
+  Update incident status; appends a status_changed timeline event.
+  """
+  updateIncidentStatus(input: UpdateIncidentStatusInput!): Incident!
+
+  """
+  Append a note timeline event to an incident.
+  """
+  addIncidentTimelineNote(input: AddIncidentTimelineNoteInput!): TimelineEvent!
+
+  """
+  Create a configurable incident role definition (org admin only).
+  """
+  createIncidentRoleDefinition(input: CreateIncidentRoleDefinitionInput!): IncidentRoleDefinition!
+
+  """
+  Update a configurable incident role definition (org admin only).
+  """
+  updateIncidentRoleDefinition(input: UpdateIncidentRoleDefinitionInput!): IncidentRoleDefinition!
+
+  """
+  Delete a configurable incident role definition (org admin only).
+  """
+  deleteIncidentRoleDefinition(id: ID!): Boolean!
+
+  """
+  Assign a user to a role on an incident (team access required).
+  """
+  assignIncidentRole(input: AssignIncidentRoleInput!): IncidentRoleAssignment!
+
+  """
+  Remove a role assignment from an incident (team access required).
+  """
+  unassignIncidentRole(id: ID!): Boolean!
 }

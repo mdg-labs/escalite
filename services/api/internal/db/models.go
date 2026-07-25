@@ -26,6 +26,7 @@ type Alert struct {
 	ClosedAt             pgtype.Timestamptz `json:"closed_at"`
 	ResolvedAt           pgtype.Timestamptz `json:"resolved_at"`
 	ResolvedIntegration  pgtype.Text        `json:"resolved_integration"`
+	IncidentID           pgtype.UUID        `json:"incident_id"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
 }
@@ -87,6 +88,37 @@ type HeartbeatMonitor struct {
 	LastPingAt      pgtype.Timestamptz `json:"last_ping_at"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Incident struct {
+	ID              uuid.UUID          `json:"id"`
+	OrganizationID  uuid.UUID          `json:"organization_id"`
+	TeamID          uuid.UUID          `json:"team_id"`
+	Title           string             `json:"title"`
+	Status          string             `json:"status"`
+	CreatedByUserID uuid.UUID          `json:"created_by_user_id"`
+	ResolvedAt      pgtype.Timestamptz `json:"resolved_at"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
+type IncidentRoleAssignment struct {
+	ID               uuid.UUID          `json:"id"`
+	IncidentID       uuid.UUID          `json:"incident_id"`
+	OrganizationID   uuid.UUID          `json:"organization_id"`
+	RoleDefinitionID uuid.UUID          `json:"role_definition_id"`
+	UserID           uuid.UUID          `json:"user_id"`
+	AssignedByUserID uuid.UUID          `json:"assigned_by_user_id"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type IncidentRoleDefinition struct {
+	ID             uuid.UUID          `json:"id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	Name           string             `json:"name"`
+	SortOrder      int32              `json:"sort_order"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
 type IntegrationKey struct {
@@ -268,6 +300,17 @@ type TeamMembership struct {
 	OrganizationID uuid.UUID          `json:"organization_id"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type TimelineEvent struct {
+	ID             uuid.UUID          `json:"id"`
+	IncidentID     uuid.UUID          `json:"incident_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	ActorID        pgtype.UUID        `json:"actor_id"`
+	EventType      string             `json:"event_type"`
+	Body           string             `json:"body"`
+	Metadata       []byte             `json:"metadata"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
 type User struct {

@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+type AddIncidentTimelineNoteInput struct {
+	IncidentID string `json:"incidentId"`
+	Body       string `json:"body"`
+}
+
 type Alert struct {
 	ID             string        `json:"id"`
 	OrganizationID string        `json:"organizationId"`
@@ -23,8 +28,16 @@ type Alert struct {
 	AcknowledgedAt *time.Time    `json:"acknowledgedAt,omitempty"`
 	AcknowledgedBy *User         `json:"acknowledgedBy,omitempty"`
 	ClosedAt       *time.Time    `json:"closedAt,omitempty"`
+	IncidentID     *string       `json:"incidentId,omitempty"`
+	Incident       *Incident     `json:"incident,omitempty"`
 	CreatedAt      time.Time     `json:"createdAt"`
 	UpdatedAt      time.Time     `json:"updatedAt"`
+}
+
+type AssignIncidentRoleInput struct {
+	IncidentID       string `json:"incidentId"`
+	RoleDefinitionID string `json:"roleDefinitionId"`
+	UserID           string `json:"userId"`
 }
 
 type CreateEscalationPolicyInput struct {
@@ -38,6 +51,16 @@ type CreateHeartbeatMonitorInput struct {
 	Name            string `json:"name"`
 	IntervalSeconds int    `json:"intervalSeconds"`
 	GraceSeconds    int    `json:"graceSeconds"`
+}
+
+type CreateIncidentInput struct {
+	TeamID string `json:"teamId"`
+	Title  string `json:"title"`
+}
+
+type CreateIncidentRoleDefinitionInput struct {
+	Name      string `json:"name"`
+	SortOrder *int   `json:"sortOrder,omitempty"`
 }
 
 type CreateIntegrationKeyInput struct {
@@ -140,6 +163,42 @@ type HeartbeatMonitor struct {
 	LastPingAt *time.Time `json:"lastPingAt,omitempty"`
 	CreatedAt  time.Time  `json:"createdAt"`
 	UpdatedAt  time.Time  `json:"updatedAt"`
+}
+
+// First-class incident aggregate grouping related alerts.
+type Incident struct {
+	ID              string                    `json:"id"`
+	OrganizationID  string                    `json:"organizationId"`
+	TeamID          string                    `json:"teamId"`
+	Title           string                    `json:"title"`
+	Status          IncidentStatus            `json:"status"`
+	CreatedBy       *User                     `json:"createdBy"`
+	ResolvedAt      *time.Time                `json:"resolvedAt,omitempty"`
+	Alerts          []*Alert                  `json:"alerts"`
+	TimelineEvents  []*TimelineEvent          `json:"timelineEvents"`
+	RoleAssignments []*IncidentRoleAssignment `json:"roleAssignments"`
+	CreatedAt       time.Time                 `json:"createdAt"`
+	UpdatedAt       time.Time                 `json:"updatedAt"`
+}
+
+// User assigned to a configurable role on an incident.
+type IncidentRoleAssignment struct {
+	ID         string                  `json:"id"`
+	IncidentID string                  `json:"incidentId"`
+	Role       *IncidentRoleDefinition `json:"role"`
+	User       *User                   `json:"user"`
+	AssignedBy *User                   `json:"assignedBy"`
+	CreatedAt  time.Time               `json:"createdAt"`
+}
+
+// Configurable incident role definition for an organization.
+type IncidentRoleDefinition struct {
+	ID             string    `json:"id"`
+	OrganizationID string    `json:"organizationId"`
+	Name           string    `json:"name"`
+	SortOrder      int       `json:"sortOrder"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
 // Inbound integration key for a service.
@@ -342,6 +401,18 @@ type Team struct {
 	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
+// Append-only incident timeline entry with actor and body.
+type TimelineEvent struct {
+	ID             string            `json:"id"`
+	IncidentID     string            `json:"incidentId"`
+	OrganizationID string            `json:"organizationId"`
+	Actor          *User             `json:"actor,omitempty"`
+	EventType      TimelineEventType `json:"eventType"`
+	Body           string            `json:"body"`
+	Metadata       map[string]any    `json:"metadata"`
+	CreatedAt      time.Time         `json:"createdAt"`
+}
+
 type UpdateEscalationPolicyInput struct {
 	ID    string                 `json:"id"`
 	Name  string                 `json:"name"`
@@ -353,6 +424,19 @@ type UpdateHeartbeatMonitorInput struct {
 	Name            string `json:"name"`
 	IntervalSeconds int    `json:"intervalSeconds"`
 	GraceSeconds    int    `json:"graceSeconds"`
+}
+
+type UpdateIncidentRoleDefinitionInput struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	SortOrder int    `json:"sortOrder"`
+}
+
+type UpdateIncidentStatusInput struct {
+	ID     string         `json:"id"`
+	Status IncidentStatus `json:"status"`
+	// Optional note appended with the status change.
+	Body *string `json:"body,omitempty"`
 }
 
 type UpdateMaintenanceWindowInput struct {
@@ -579,6 +663,128 @@ func (e *HeartbeatMonitorStatus) UnmarshalJSON(b []byte) error {
 }
 
 func (e HeartbeatMonitorStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+// Incident lifecycle status (doc 02).
+type IncidentStatus string
+
+const (
+	IncidentStatusInvestigating IncidentStatus = "INVESTIGATING"
+	IncidentStatusIdentified    IncidentStatus = "IDENTIFIED"
+	IncidentStatusMonitoring    IncidentStatus = "MONITORING"
+	IncidentStatusResolved      IncidentStatus = "RESOLVED"
+)
+
+var AllIncidentStatus = []IncidentStatus{
+	IncidentStatusInvestigating,
+	IncidentStatusIdentified,
+	IncidentStatusMonitoring,
+	IncidentStatusResolved,
+}
+
+func (e IncidentStatus) IsValid() bool {
+	switch e {
+	case IncidentStatusInvestigating, IncidentStatusIdentified, IncidentStatusMonitoring, IncidentStatusResolved:
+		return true
+	}
+	return false
+}
+
+func (e IncidentStatus) String() string {
+	return string(e)
+}
+
+func (e *IncidentStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = IncidentStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid IncidentStatus", str)
+	}
+	return nil
+}
+
+func (e IncidentStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *IncidentStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e IncidentStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+// Append-only incident timeline event type.
+type TimelineEventType string
+
+const (
+	TimelineEventTypeDeclared       TimelineEventType = "DECLARED"
+	TimelineEventTypeStatusChanged  TimelineEventType = "STATUS_CHANGED"
+	TimelineEventTypeNote           TimelineEventType = "NOTE"
+	TimelineEventTypeRoleAssigned   TimelineEventType = "ROLE_ASSIGNED"
+	TimelineEventTypeRoleUnassigned TimelineEventType = "ROLE_UNASSIGNED"
+)
+
+var AllTimelineEventType = []TimelineEventType{
+	TimelineEventTypeDeclared,
+	TimelineEventTypeStatusChanged,
+	TimelineEventTypeNote,
+	TimelineEventTypeRoleAssigned,
+	TimelineEventTypeRoleUnassigned,
+}
+
+func (e TimelineEventType) IsValid() bool {
+	switch e {
+	case TimelineEventTypeDeclared, TimelineEventTypeStatusChanged, TimelineEventTypeNote, TimelineEventTypeRoleAssigned, TimelineEventTypeRoleUnassigned:
+		return true
+	}
+	return false
+}
+
+func (e TimelineEventType) String() string {
+	return string(e)
+}
+
+func (e *TimelineEventType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TimelineEventType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TimelineEventType", str)
+	}
+	return nil
+}
+
+func (e TimelineEventType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *TimelineEventType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e TimelineEventType) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

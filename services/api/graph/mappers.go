@@ -108,6 +108,12 @@ func alertFromDB(alert db.Alert, acknowledgedBy *db.User) *model.Alert {
 		ackBy = userFromDB(*acknowledgedBy)
 	}
 
+	var incidentID *string
+	if alert.IncidentID.Valid {
+		value := uuid.UUID(alert.IncidentID.Bytes).String()
+		incidentID = &value
+	}
+
 	return &model.Alert{
 		ID:             alert.ID.String(),
 		OrganizationID: alert.OrganizationID.String(),
@@ -121,6 +127,7 @@ func alertFromDB(alert db.Alert, acknowledgedBy *db.User) *model.Alert {
 		AcknowledgedAt: acknowledgedAt,
 		AcknowledgedBy: ackBy,
 		ClosedAt:       closedAt,
+		IncidentID:     incidentID,
 		CreatedAt:      timeFromDB(alert.CreatedAt),
 		UpdatedAt:      timeFromDB(alert.UpdatedAt),
 	}

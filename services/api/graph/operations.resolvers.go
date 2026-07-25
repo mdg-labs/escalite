@@ -1917,6 +1917,369 @@ func (r *mutationResolver) DeleteService(ctx context.Context, id string) (bool, 
 	return true, nil
 }
 
+// CreateIncident is the resolver for the createIncident field.
+func (r *mutationResolver) CreateIncident(ctx context.Context, input model.CreateIncidentInput) (*model.Incident, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	title, err := validateIncidentTitle(input.Title)
+	if err != nil {
+		return nil, err
+	}
+
+	teamID, err := parseUUIDField(input.TeamID, "teamId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := authz.CheckTeamAccess(ctx, queries, sc.User, teamID); err != nil {
+		if errors.Is(err, authz.ErrNotFound) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "team not found")
+		}
+		if errors.Is(err, authz.ErrForbidden) {
+			return nil, gqlerr.New(handlers.CodeForbidden, "access denied")
+		}
+		r.logger.Error("check team access failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	incidentID := uuid.Must(uuid.NewV7())
+	incident, err := queries.CreateIncident(ctx, db.CreateIncidentParams{
+		ID:              incidentID,
+		OrganizationID:  sc.User.OrganizationID,
+		TeamID:          teamID,
+		Title:           title,
+		CreatedByUserID: sc.User.ID,
+	})
+	if err != nil {
+		r.logger.Error("create incident failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if _, err := r.insertTimelineEvent(ctx, queries, sc.User.OrganizationID, incidentID, sc.User.ID, "declared", title, nil); err != nil {
+		return nil, err
+	}
+
+	r.audit.IncidentCreated(ctx, queries, sc.User.OrganizationID, sc.User.ID, incidentID)
+	result := incidentFromDB(incident)
+	result.CreatedBy = userFromDB(sc.User)
+	return result, nil
+}
+
+// UpdateIncidentStatus is the resolver for the updateIncidentStatus field.
+func (r *mutationResolver) UpdateIncidentStatus(ctx context.Context, input model.UpdateIncidentStatusInput) (*model.Incident, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	incidentID, err := parseUUIDField(input.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	current, err := r.loadIncidentWithTeamAccess(ctx, queries, sc, incidentID)
+	if err != nil {
+		return nil, err
+	}
+
+	newStatus := incidentStatusToDB(input.Status)
+	incident, err := queries.UpdateIncidentStatus(ctx, db.UpdateIncidentStatusParams{
+		ID:             incidentID,
+		OrganizationID: sc.User.OrganizationID,
+		Status:         newStatus,
+	})
+	if err != nil {
+		r.logger.Error("update incident status failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	body := strings.TrimSpace(ptrString(input.Body))
+	if body == "" {
+		body = "Status changed from " + current.Status + " to " + newStatus
+	}
+	if _, err := r.insertTimelineEvent(ctx, queries, sc.User.OrganizationID, incidentID, sc.User.ID, "status_changed", body, map[string]any{
+		"from_status": current.Status,
+		"to_status":   newStatus,
+	}); err != nil {
+		return nil, err
+	}
+
+	r.audit.IncidentStatusUpdated(ctx, queries, sc.User.OrganizationID, sc.User.ID, incidentID, newStatus)
+	return incidentFromDB(incident), nil
+}
+
+// AddIncidentTimelineNote is the resolver for the addIncidentTimelineNote field.
+func (r *mutationResolver) AddIncidentTimelineNote(ctx context.Context, input model.AddIncidentTimelineNoteInput) (*model.TimelineEvent, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := validateTimelineBody(input.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	incidentID, err := parseUUIDField(input.IncidentID, "incidentId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := r.loadIncidentWithTeamAccess(ctx, queries, sc, incidentID); err != nil {
+		return nil, err
+	}
+
+	event, err := r.insertTimelineEvent(ctx, queries, sc.User.OrganizationID, incidentID, sc.User.ID, "note", body, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	result := timelineEventFromDB(event)
+	result.Actor = userFromDB(sc.User)
+	return result, nil
+}
+
+// CreateIncidentRoleDefinition is the resolver for the createIncidentRoleDefinition field.
+func (r *mutationResolver) CreateIncidentRoleDefinition(ctx context.Context, input model.CreateIncidentRoleDefinitionInput) (*model.IncidentRoleDefinition, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name, err := validateRoleDefinitionName(input.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	sortOrder := int32(0)
+	if input.SortOrder != nil {
+		sortOrder = int32(*input.SortOrder)
+	}
+
+	queries := db.New(r.pool)
+	roleDefID := uuid.Must(uuid.NewV7())
+	def, err := queries.CreateIncidentRoleDefinition(ctx, db.CreateIncidentRoleDefinitionParams{
+		ID:             roleDefID,
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+		SortOrder:      sortOrder,
+	})
+	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, gqlerr.New(handlers.CodeValidation, "role definition name already exists")
+		}
+		r.logger.Error("create incident role definition failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.IncidentRoleDefinitionCreated(ctx, queries, sc.User.OrganizationID, sc.User.ID, roleDefID)
+	return incidentRoleDefinitionFromDB(def), nil
+}
+
+// UpdateIncidentRoleDefinition is the resolver for the updateIncidentRoleDefinition field.
+func (r *mutationResolver) UpdateIncidentRoleDefinition(ctx context.Context, input model.UpdateIncidentRoleDefinitionInput) (*model.IncidentRoleDefinition, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name, err := validateRoleDefinitionName(input.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	roleDefID, err := parseUUIDField(input.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	def, err := queries.UpdateIncidentRoleDefinition(ctx, db.UpdateIncidentRoleDefinitionParams{
+		ID:             roleDefID,
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+		SortOrder:      int32(input.SortOrder),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "role definition not found")
+		}
+		if isUniqueViolation(err) {
+			return nil, gqlerr.New(handlers.CodeValidation, "role definition name already exists")
+		}
+		r.logger.Error("update incident role definition failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.IncidentRoleDefinitionUpdated(ctx, queries, sc.User.OrganizationID, sc.User.ID, roleDefID)
+	return incidentRoleDefinitionFromDB(def), nil
+}
+
+// DeleteIncidentRoleDefinition is the resolver for the deleteIncidentRoleDefinition field.
+func (r *mutationResolver) DeleteIncidentRoleDefinition(ctx context.Context, id string) (bool, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	roleDefID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return false, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetIncidentRoleDefinitionByID(ctx, db.GetIncidentRoleDefinitionByIDParams{
+		ID:             roleDefID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, gqlerr.New(handlers.CodeNotFound, "role definition not found")
+		}
+		r.logger.Error("load incident role definition failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if err := queries.DeleteIncidentRoleDefinition(ctx, db.DeleteIncidentRoleDefinitionParams{
+		ID:             roleDefID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		r.logger.Error("delete incident role definition failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.IncidentRoleDefinitionDeleted(ctx, queries, sc.User.OrganizationID, sc.User.ID, roleDefID)
+	return true, nil
+}
+
+// AssignIncidentRole is the resolver for the assignIncidentRole field.
+func (r *mutationResolver) AssignIncidentRole(ctx context.Context, input model.AssignIncidentRoleInput) (*model.IncidentRoleAssignment, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	incidentID, err := parseUUIDField(input.IncidentID, "incidentId")
+	if err != nil {
+		return nil, err
+	}
+	roleDefID, err := parseUUIDField(input.RoleDefinitionID, "roleDefinitionId")
+	if err != nil {
+		return nil, err
+	}
+	userID, err := parseUUIDField(input.UserID, "userId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	incident, err := r.loadIncidentWithTeamAccess(ctx, queries, sc, incidentID)
+	if err != nil {
+		return nil, err
+	}
+	_ = incident
+
+	if _, err := queries.GetIncidentRoleDefinitionByID(ctx, db.GetIncidentRoleDefinitionByIDParams{
+		ID:             roleDefID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "role definition not found")
+		}
+		r.logger.Error("load incident role definition failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if _, err := queries.GetUserByID(ctx, db.GetUserByIDParams{
+		ID:             userID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "user not found")
+		}
+		r.logger.Error("load user failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	assignmentID := uuid.Must(uuid.NewV7())
+	assignment, err := queries.CreateIncidentRoleAssignment(ctx, db.CreateIncidentRoleAssignmentParams{
+		ID:               assignmentID,
+		IncidentID:       incidentID,
+		OrganizationID:   sc.User.OrganizationID,
+		RoleDefinitionID: roleDefID,
+		UserID:           userID,
+		AssignedByUserID: sc.User.ID,
+	})
+	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, gqlerr.New(handlers.CodeValidation, "role already assigned on this incident")
+		}
+		r.logger.Error("assign incident role failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if _, err := r.insertTimelineEvent(ctx, queries, sc.User.OrganizationID, incidentID, sc.User.ID, "role_assigned", "Role assigned", map[string]any{
+		"role_definition_id": roleDefID.String(),
+		"user_id":            userID.String(),
+	}); err != nil {
+		return nil, err
+	}
+
+	return incidentRoleAssignmentFromDB(assignment), nil
+}
+
+// UnassignIncidentRole is the resolver for the unassignIncidentRole field.
+func (r *mutationResolver) UnassignIncidentRole(ctx context.Context, id string) (bool, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	assignmentID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return false, err
+	}
+
+	queries := db.New(r.pool)
+	assignment, err := queries.GetIncidentRoleAssignmentByID(ctx, db.GetIncidentRoleAssignmentByIDParams{
+		ID:             assignmentID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, gqlerr.New(handlers.CodeNotFound, "role assignment not found")
+		}
+		r.logger.Error("load incident role assignment failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if _, err := r.loadIncidentWithTeamAccess(ctx, queries, sc, assignment.IncidentID); err != nil {
+		return false, err
+	}
+
+	if err := queries.DeleteIncidentRoleAssignment(ctx, db.DeleteIncidentRoleAssignmentParams{
+		ID:             assignmentID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		r.logger.Error("unassign incident role failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if _, err := r.insertTimelineEvent(ctx, queries, sc.User.OrganizationID, assignment.IncidentID, sc.User.ID, "role_unassigned", "Role unassigned", map[string]any{
+		"role_definition_id": assignment.RoleDefinitionID.String(),
+		"user_id":            assignment.UserID.String(),
+	}); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	sc, ok := auth.SessionFromContext(ctx)
@@ -2574,6 +2937,33 @@ func (r *queryResolver) Service(ctx context.Context, id string) (*model.Service,
 	}
 
 	return serviceFromDB(service), nil
+}
+
+// Incident is the resolver for the incident field.
+func (r *queryResolver) Incident(ctx context.Context, id string) (*model.Incident, error) {
+	return r.resolveIncident(ctx, id)
+}
+
+// Incidents is the resolver for the incidents field.
+func (r *queryResolver) Incidents(ctx context.Context, status *model.IncidentStatus, teamID *string, limit *int) ([]*model.Incident, error) {
+	return r.resolveIncidents(ctx, status, teamID, limit)
+}
+
+// IncidentRoleDefinitions is the resolver for the incidentRoleDefinitions field.
+func (r *queryResolver) IncidentRoleDefinitions(ctx context.Context) ([]*model.IncidentRoleDefinition, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	defs, err := queries.ListIncidentRoleDefinitions(ctx, sc.User.OrganizationID)
+	if err != nil {
+		r.logger.Error("list incident role definitions failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return incidentRoleDefinitionsFromDB(defs), nil
 }
 
 // AlertUpdated is the resolver for the alertUpdated field.

@@ -31,3 +31,24 @@ enum HeartbeatMonitorStatus {
   OVERDUE
   TRIGGERED
 }
+
+"""
+Incident lifecycle status (doc 02).
+"""
+enum IncidentStatus {
+  INVESTIGATING
+  IDENTIFIED
+  MONITORING
+  RESOLVED
+}
+
+"""
+Append-only incident timeline event type.
+"""
+enum TimelineEventType {
+  DECLARED
+  STATUS_CHANGED
+  NOTE
+  ROLE_ASSIGNED
+  ROLE_UNASSIGNED
+}

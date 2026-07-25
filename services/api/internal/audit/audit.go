@@ -29,6 +29,11 @@ const (
 	ActionMaintenanceWindowCreated = "maintenance_window.created"
 	ActionMaintenanceWindowUpdated = "maintenance_window.updated"
 	ActionMaintenanceWindowDeleted = "maintenance_window.deleted"
+	ActionIncidentCreated          = "incident.created"
+	ActionIncidentStatusUpdated    = "incident.status_updated"
+	ActionIncidentRoleDefCreated   = "incident_role_definition.created"
+	ActionIncidentRoleDefUpdated   = "incident_role_definition.updated"
+	ActionIncidentRoleDefDeleted   = "incident_role_definition.deleted"
 	ActionOverrideCreated         = "override.created"
 	ActionOverrideDeleted         = "override.deleted"
 	ActionAlertEscalationSnoozed   = "alert.escalation_snoozed"
@@ -42,6 +47,8 @@ const (
 	targetTypeEscalationPolicy = "escalation_policy"
 	targetTypeHeartbeatMonitor = "heartbeat_monitor"
 	targetTypeMaintenanceWindow = "maintenance_window"
+	targetTypeIncident          = "incident"
+	targetTypeIncidentRoleDef   = "incident_role_definition"
 	targetTypeOverride         = "override"
 	targetTypeAlert            = "alert"
 	targetTypeService          = "service"
@@ -396,6 +403,71 @@ func (r *Recorder) ServiceDeleted(ctx context.Context, q db.Querier, orgID, acto
 		Action:         ActionServiceDeleted,
 		TargetType:     pgtype.Text{String: targetTypeService, Valid: true},
 		TargetID:       pgtype.UUID{Bytes: serviceID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// IncidentCreated records incident creation.
+func (r *Recorder) IncidentCreated(ctx context.Context, q db.Querier, orgID, actorID, incidentID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionIncidentCreated,
+		TargetType:     pgtype.Text{String: targetTypeIncident, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: incidentID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// IncidentStatusUpdated records incident status changes.
+func (r *Recorder) IncidentStatusUpdated(ctx context.Context, q db.Querier, orgID, actorID, incidentID uuid.UUID, status string) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionIncidentStatusUpdated,
+		TargetType:     pgtype.Text{String: targetTypeIncident, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: incidentID, Valid: true},
+		Metadata:       mustMarshalAnyMeta(r.logger, map[string]any{"status": status}),
+	})
+}
+
+// IncidentRoleDefinitionCreated records role definition creation.
+func (r *Recorder) IncidentRoleDefinitionCreated(ctx context.Context, q db.Querier, orgID, actorID, roleDefID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionIncidentRoleDefCreated,
+		TargetType:     pgtype.Text{String: targetTypeIncidentRoleDef, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: roleDefID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// IncidentRoleDefinitionUpdated records role definition updates.
+func (r *Recorder) IncidentRoleDefinitionUpdated(ctx context.Context, q db.Querier, orgID, actorID, roleDefID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionIncidentRoleDefUpdated,
+		TargetType:     pgtype.Text{String: targetTypeIncidentRoleDef, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: roleDefID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// IncidentRoleDefinitionDeleted records role definition deletion.
+func (r *Recorder) IncidentRoleDefinitionDeleted(ctx context.Context, q db.Querier, orgID, actorID, roleDefID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionIncidentRoleDefDeleted,
+		TargetType:     pgtype.Text{String: targetTypeIncidentRoleDef, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: roleDefID, Valid: true},
 		Metadata:       []byte("{}"),
 	})
 }

@@ -5,6 +5,7 @@
 // Escalation policies, alerts, notification_attempts (#42).
 // Sessions, audit_events, mobile_auth_codes, refresh_tokens, mobile_devices (#43, #105, #106).
 // Password reset tokens (#51).
+// Incidents, timeline_events, incident roles (#116).
 
 schema "public" {
 }
@@ -1003,6 +1004,291 @@ table "escalation_step_targets" {
   }
 }
 
+table "incidents" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "team_id" {
+    null = false
+    type = uuid
+  }
+  column "title" {
+    null = false
+    type = text
+  }
+  column "status" {
+    null    = false
+    type    = text
+    default = "investigating"
+  }
+  column "created_by_user_id" {
+    null = false
+    type = uuid
+  }
+  column "resolved_at" {
+    null = true
+    type = timestamptz
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "incidents_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "incidents_team_id_organization_id_fkey" {
+    columns     = [column.team_id, column.organization_id]
+    ref_columns = [table.teams.column.id, table.teams.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "incidents_created_by_user_id_organization_id_fkey" {
+    columns     = [column.created_by_user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = RESTRICT
+  }
+
+  unique "incidents_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "incidents_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  index "incidents_team_id_idx" {
+    columns = [column.team_id]
+  }
+
+  index "incidents_status_idx" {
+    columns = [column.status]
+  }
+
+  check "incidents_status_check" {
+    expr = "(status = ANY (ARRAY['investigating'::text, 'identified'::text, 'monitoring'::text, 'resolved'::text]))"
+  }
+}
+
+table "incident_role_definitions" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "name" {
+    null = false
+    type = text
+  }
+  column "sort_order" {
+    null    = false
+    type    = integer
+    default = 0
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "incident_role_definitions_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  unique "incident_role_definitions_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  unique "incident_role_definitions_organization_id_name_key" {
+    columns = [column.organization_id, column.name]
+  }
+
+  index "incident_role_definitions_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+}
+
+table "timeline_events" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "incident_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "actor_id" {
+    null = true
+    type = uuid
+  }
+  column "event_type" {
+    null = false
+    type = text
+  }
+  column "body" {
+    null = false
+    type = text
+  }
+  column "metadata" {
+    null    = false
+    type    = jsonb
+    default = sql("'{}'::jsonb")
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "timeline_events_incident_id_organization_id_fkey" {
+    columns     = [column.incident_id, column.organization_id]
+    ref_columns = [table.incidents.column.id, table.incidents.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "timeline_events_actor_id_organization_id_fkey" {
+    columns     = [column.actor_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = SET_NULL
+  }
+
+  unique "timeline_events_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "timeline_events_incident_id_idx" {
+    columns = [column.incident_id]
+  }
+
+  index "timeline_events_incident_id_created_at_idx" {
+    columns = [column.incident_id, column.created_at]
+  }
+
+  check "timeline_events_event_type_check" {
+    expr = "(event_type = ANY (ARRAY['declared'::text, 'status_changed'::text, 'note'::text, 'role_assigned'::text, 'role_unassigned'::text]))"
+  }
+}
+
+table "incident_role_assignments" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "incident_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "role_definition_id" {
+    null = false
+    type = uuid
+  }
+  column "user_id" {
+    null = false
+    type = uuid
+  }
+  column "assigned_by_user_id" {
+    null = false
+    type = uuid
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "incident_role_assignments_incident_id_organization_id_fkey" {
+    columns     = [column.incident_id, column.organization_id]
+    ref_columns = [table.incidents.column.id, table.incidents.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "incident_role_assignments_role_definition_id_organization_id_fkey" {
+    columns     = [column.role_definition_id, column.organization_id]
+    ref_columns = [table.incident_role_definitions.column.id, table.incident_role_definitions.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "incident_role_assignments_user_id_organization_id_fkey" {
+    columns     = [column.user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "incident_role_assignments_assigned_by_user_id_organization_id_fkey" {
+    columns     = [column.assigned_by_user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = RESTRICT
+  }
+
+  unique "incident_role_assignments_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  unique "incident_role_assignments_incident_id_role_definition_id_key" {
+    columns = [column.incident_id, column.role_definition_id]
+  }
+
+  index "incident_role_assignments_incident_id_idx" {
+    columns = [column.incident_id]
+  }
+}
+
 table "alerts" {
   schema = schema.public
 
@@ -1073,6 +1359,10 @@ table "alerts" {
     null = true
     type = text
   }
+  column "incident_id" {
+    null = true
+    type = uuid
+  }
   column "created_at" {
     null    = false
     type    = timestamptz
@@ -1112,6 +1402,12 @@ table "alerts" {
     on_delete   = SET_NULL
   }
 
+  foreign_key "alerts_incident_id_organization_id_fkey" {
+    columns     = [column.incident_id, column.organization_id]
+    ref_columns = [table.incidents.column.id, table.incidents.column.organization_id]
+    on_delete   = SET_NULL
+  }
+
   unique "alerts_id_organization_id_key" {
     columns = [column.id, column.organization_id]
   }
@@ -1130,6 +1426,10 @@ table "alerts" {
 
   index "alerts_status_idx" {
     columns = [column.status]
+  }
+
+  index "alerts_incident_id_idx" {
+    columns = [column.incident_id]
   }
 
   check "alerts_status_check" {
