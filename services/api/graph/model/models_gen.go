@@ -92,6 +92,20 @@ type LoginPayload struct {
 type Mutation struct {
 }
 
+// On-call user for a single rotation layer.
+type OnCallLayer struct {
+	Layer      int    `json:"layer"`
+	RotationID string `json:"rotationId"`
+	UserID     string `json:"userId"`
+}
+
+// Current on-call assignment for a schedule's rotation layers.
+type OnCallNow struct {
+	ScheduleID string         `json:"scheduleId"`
+	ComputedAt time.Time      `json:"computedAt"`
+	Layers     []*OnCallLayer `json:"layers"`
+}
+
 type Organization struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`

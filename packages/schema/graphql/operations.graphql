@@ -28,6 +28,12 @@ type Query {
   List schedules for a team (org admin only).
   """
   schedules(teamId: ID!): [Schedule!]!
+
+  """
+  Return current on-call users per rotation layer (org admin only).
+  Optional at evaluates as-of that instant; shift boundaries use the schedule timezone.
+  """
+  onCallNow(scheduleId: ID!, at: DateTime): OnCallNow
 }
 
 type Mutation {

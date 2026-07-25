@@ -102,6 +102,18 @@ type ComplexityRoot struct {
 		UpdateSchedule         func(childComplexity int, input model.UpdateScheduleInput) int
 	}
 
+	OnCallLayer struct {
+		Layer      func(childComplexity int) int
+		RotationID func(childComplexity int) int
+		UserID     func(childComplexity int) int
+	}
+
+	OnCallNow struct {
+		ComputedAt func(childComplexity int) int
+		Layers     func(childComplexity int) int
+		ScheduleID func(childComplexity int) int
+	}
+
 	Organization struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
@@ -114,6 +126,7 @@ type ComplexityRoot struct {
 		EscalationPolicy   func(childComplexity int, id string) int
 		Health             func(childComplexity int) int
 		Me                 func(childComplexity int) int
+		OnCallNow          func(childComplexity int, scheduleID string, at *time.Time) int
 		Schedule           func(childComplexity int, id string) int
 		Schedules          func(childComplexity int, teamID string) int
 	}
@@ -201,6 +214,7 @@ type QueryResolver interface {
 	EscalationPolicies(ctx context.Context, serviceID string) ([]*model.EscalationPolicy, error)
 	Schedule(ctx context.Context, id string) (*model.Schedule, error)
 	Schedules(ctx context.Context, teamID string) ([]*model.Schedule, error)
+	OnCallNow(ctx context.Context, scheduleID string, at *time.Time) (*model.OnCallNow, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -584,6 +598,44 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.UpdateSchedule(childComplexity, args["input"].(model.UpdateScheduleInput)), true
 
+	case "OnCallLayer.layer":
+		if e.ComplexityRoot.OnCallLayer.Layer == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OnCallLayer.Layer(childComplexity), true
+	case "OnCallLayer.rotationId":
+		if e.ComplexityRoot.OnCallLayer.RotationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OnCallLayer.RotationID(childComplexity), true
+	case "OnCallLayer.userId":
+		if e.ComplexityRoot.OnCallLayer.UserID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OnCallLayer.UserID(childComplexity), true
+
+	case "OnCallNow.computedAt":
+		if e.ComplexityRoot.OnCallNow.ComputedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OnCallNow.ComputedAt(childComplexity), true
+	case "OnCallNow.layers":
+		if e.ComplexityRoot.OnCallNow.Layers == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OnCallNow.Layers(childComplexity), true
+	case "OnCallNow.scheduleId":
+		if e.ComplexityRoot.OnCallNow.ScheduleID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OnCallNow.ScheduleID(childComplexity), true
+
 	case "Organization.createdAt":
 		if e.ComplexityRoot.Organization.CreatedAt == nil {
 			break
@@ -644,6 +696,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Me(childComplexity), true
+	case "Query.onCallNow":
+		if e.ComplexityRoot.Query.OnCallNow == nil {
+			break
+		}
+
+		args, err := ec.field_Query_onCallNow_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.OnCallNow(childComplexity, args["scheduleId"].(string), args["at"].(*time.Time)), true
 	case "Query.schedule":
 		if e.ComplexityRoot.Query.Schedule == nil {
 			break
@@ -1094,6 +1157,12 @@ input UpdateRotationInput {
   List schedules for a team (org admin only).
   """
   schedules(teamId: ID!): [Schedule!]!
+
+  """
+  Return current on-call users per rotation layer (org admin only).
+  Optional at evaluates as-of that instant; shift boundaries use the schedule timezone.
+  """
+  onCallNow(scheduleId: ID!, at: DateTime): OnCallNow
 }
 
 type Mutation {
@@ -1290,6 +1359,20 @@ type Rotation {
   createdAt: DateTime!
   updatedAt: DateTime!
 }
+
+"""Current on-call assignment for a schedule's rotation layers."""
+type OnCallNow {
+  scheduleId: ID!
+  computedAt: DateTime!
+  layers: [OnCallLayer!]!
+}
+
+"""On-call user for a single rotation layer."""
+type OnCallLayer {
+  layer: Int!
+  rotationId: ID!
+  userId: ID!
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -1390,6 +1473,30 @@ func (ec *executionContext) childFields_LoginPayload(ctx context.Context, field 
 		return ec.fieldContext_LoginPayload_user(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type LoginPayload", field.Name)
+}
+
+func (ec *executionContext) childFields_OnCallLayer(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "layer":
+		return ec.fieldContext_OnCallLayer_layer(ctx, field)
+	case "rotationId":
+		return ec.fieldContext_OnCallLayer_rotationId(ctx, field)
+	case "userId":
+		return ec.fieldContext_OnCallLayer_userId(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type OnCallLayer", field.Name)
+}
+
+func (ec *executionContext) childFields_OnCallNow(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "scheduleId":
+		return ec.fieldContext_OnCallNow_scheduleId(ctx, field)
+	case "computedAt":
+		return ec.fieldContext_OnCallNow_computedAt(ctx, field)
+	case "layers":
+		return ec.fieldContext_OnCallNow_layers(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type OnCallNow", field.Name)
 }
 
 func (ec *executionContext) childFields_Organization(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1853,6 +1960,28 @@ func (ec *executionContext) field_Query_escalationPolicy_args(ctx context.Contex
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_onCallNow_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "scheduleId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["scheduleId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "at",
+		func(ctx context.Context, v any) (*time.Time, error) {
+			return ec.unmarshalODateTime2ᚖtimeᚐTime(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["at"] = arg1
 	return args, nil
 }
 
@@ -3367,6 +3496,153 @@ func (ec *executionContext) fieldContext_Mutation_deleteRotation(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _OnCallLayer_layer(ctx context.Context, field graphql.CollectedField, obj *model.OnCallLayer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_OnCallLayer_layer(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Layer, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_OnCallLayer_layer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("OnCallLayer", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _OnCallLayer_rotationId(ctx context.Context, field graphql.CollectedField, obj *model.OnCallLayer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_OnCallLayer_rotationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RotationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_OnCallLayer_rotationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("OnCallLayer", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _OnCallLayer_userId(ctx context.Context, field graphql.CollectedField, obj *model.OnCallLayer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_OnCallLayer_userId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_OnCallLayer_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("OnCallLayer", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _OnCallNow_scheduleId(ctx context.Context, field graphql.CollectedField, obj *model.OnCallNow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_OnCallNow_scheduleId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ScheduleID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_OnCallNow_scheduleId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("OnCallNow", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _OnCallNow_computedAt(ctx context.Context, field graphql.CollectedField, obj *model.OnCallNow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_OnCallNow_computedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ComputedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_OnCallNow_computedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("OnCallNow", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _OnCallNow_layers(ctx context.Context, field graphql.CollectedField, obj *model.OnCallNow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_OnCallNow_layers(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Layers, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.OnCallLayer) graphql.Marshaler {
+			return ec.marshalNOnCallLayer2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOnCallLayerᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_OnCallNow_layers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OnCallNow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_OnCallLayer(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Organization_id(ctx context.Context, field graphql.CollectedField, obj *model.Organization) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3693,6 +3969,50 @@ func (ec *executionContext) fieldContext_Query_schedules(ctx context.Context, fi
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_schedules_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_onCallNow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_onCallNow(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().OnCallNow(ctx, fc.Args["scheduleId"].(string), fc.Args["at"].(*time.Time))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.OnCallNow) graphql.Marshaler {
+			return ec.marshalOOnCallNow2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOnCallNow(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_onCallNow(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_OnCallNow(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_onCallNow_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6596,6 +6916,102 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
+var onCallLayerImplementors = []string{"OnCallLayer"}
+
+func (ec *executionContext) _OnCallLayer(ctx context.Context, sel ast.SelectionSet, obj *model.OnCallLayer) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, onCallLayerImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OnCallLayer")
+		case "layer":
+			out.Values[i] = ec._OnCallLayer_layer(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rotationId":
+			out.Values[i] = ec._OnCallLayer_rotationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userId":
+			out.Values[i] = ec._OnCallLayer_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var onCallNowImplementors = []string{"OnCallNow"}
+
+func (ec *executionContext) _OnCallNow(ctx context.Context, sel ast.SelectionSet, obj *model.OnCallNow) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, onCallNowImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OnCallNow")
+		case "scheduleId":
+			out.Values[i] = ec._OnCallNow_scheduleId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "computedAt":
+			out.Values[i] = ec._OnCallNow_computedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "layers":
+			out.Values[i] = ec._OnCallNow_layers(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var organizationImplementors = []string{"Organization"}
 
 func (ec *executionContext) _Organization(ctx context.Context, sel ast.SelectionSet, obj *model.Organization) graphql.Marshaler {
@@ -6790,6 +7206,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}()
 				res = ec._Query_schedules(ctx, field)
 				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "onCallNow":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_onCallNow(ctx, field)
+				if res == graphql.RequiredNull {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
 				return res
@@ -7856,6 +8294,32 @@ func (ec *executionContext) marshalNLoginPayload2ᚖgithubᚗcomᚋmdgᚑlabsᚋ
 	return ec._LoginPayload(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNOnCallLayer2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOnCallLayerᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.OnCallLayer) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNOnCallLayer2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOnCallLayer(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNOnCallLayer2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOnCallLayer(ctx context.Context, sel ast.SelectionSet, v *model.OnCallLayer) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._OnCallLayer(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNOrganization2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganization(ctx context.Context, sel ast.SelectionSet, v *model.Organization) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -8207,6 +8671,13 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOOnCallNow2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOnCallNow(ctx context.Context, sel ast.SelectionSet, v *model.OnCallNow) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._OnCallNow(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOSchedule2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSchedule(ctx context.Context, sel ast.SelectionSet, v *model.Schedule) graphql.Marshaler {

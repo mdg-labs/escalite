@@ -105,3 +105,17 @@ type Rotation {
   createdAt: DateTime!
   updatedAt: DateTime!
 }
+
+"""Current on-call assignment for a schedule's rotation layers."""
+type OnCallNow {
+  scheduleId: ID!
+  computedAt: DateTime!
+  layers: [OnCallLayer!]!
+}
+
+"""On-call user for a single rotation layer."""
+type OnCallLayer {
+  layer: Int!
+  rotationId: ID!
+  userId: ID!
+}
