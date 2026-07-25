@@ -11,9 +11,14 @@
     "./theme/dark-mode": "./src/theme/dark-mode.ts",
     "./primitives/button": "./primitives/button.tsx",
     "./primitives/dialog": "./primitives/dialog.tsx",
+    "./primitives/drawer": "./primitives/drawer.tsx",
     "./primitives/alert-dialog": "./primitives/alert-dialog.tsx",
     "./primitives/alert": "./primitives/alert.tsx",
+    "./primitives/avatar": "./primitives/avatar.tsx",
     "./primitives/badge": "./primitives/badge.tsx",
+    "./primitives/calendar": "./primitives/calendar.tsx",
+    "./primitives/combobox": "./primitives/combobox.tsx",
+    "./primitives/popover": "./primitives/popover.tsx",
     "./primitives/table": "./primitives/table.tsx",
     "./primitives/input": "./primitives/input.tsx",
     "./primitives/toast": "./primitives/toast.tsx",
@@ -24,7 +29,8 @@
     "./primitives/group": "./primitives/group.tsx",
     "./primitives/scroll-area": "./primitives/scroll-area.tsx",
     "./primitives/tabs": "./primitives/tabs.tsx",
-    "./domain/EscalationPolicyEditor": "./domain/EscalationPolicyEditor/index.ts"
+    "./domain/EscalationPolicyEditor": "./domain/EscalationPolicyEditor/index.ts",
+    "./domain/ScheduleCalendar": "./domain/ScheduleCalendar/index.ts"
   },
   "scripts": {
     "build": "node -e \"console.log('@escalite/ui build noop')\"",
@@ -39,7 +45,9 @@
     "@dnd-kit/utilities": "^3.2.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
     "lucide-react": "^0.555.0",
+    "react-day-picker": "^10.0.1",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

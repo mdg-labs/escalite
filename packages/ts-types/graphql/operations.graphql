@@ -54,13 +54,6 @@ mutation CreateIntegrationKey($input: CreateIntegrationKeyInput!) {
   }
 }
 
-subscription OnCallUpdated($orgId: ID!) {
-  onCallUpdated(orgId: $orgId) {
-    scheduleId
-    organizationId
-  }
-}
-
 query IntegrationKeys($serviceId: ID!) {
   integrationKeys(serviceId: $serviceId) {
     id
@@ -149,6 +142,13 @@ mutation UpdateEscalationPolicy($input: UpdateEscalationPolicyInput!) {
   }
 }
 
+subscription OnCallUpdated($orgId: ID!) {
+  onCallUpdated(orgId: $orgId) {
+    scheduleId
+    organizationId
+  }
+}
+
 fragment AlertFields on Alert {
   id
   organizationId
@@ -197,4 +197,66 @@ subscription AlertUpdated($orgId: ID!) {
   alertUpdated(orgId: $orgId) {
     ...AlertFields
   }
+}
+
+fragment ScheduleFields on Schedule {
+  id
+  organizationId
+  teamId
+  name
+  timezone
+  rotations {
+    id
+    name
+    layer
+    rrule
+    participantIds
+  }
+}
+
+query Schedule($id: ID!) {
+  schedule(id: $id) {
+    ...ScheduleFields
+  }
+}
+
+query OnCallNow($scheduleId: ID!, $at: DateTime) {
+  onCallNow(scheduleId: $scheduleId, at: $at) {
+    scheduleId
+    computedAt
+    layers {
+      layer
+      rotationId
+      userId
+    }
+  }
+}
+
+query Overrides($scheduleId: ID!) {
+  overrides(scheduleId: $scheduleId) {
+    id
+    scheduleId
+    rotationId
+    userId
+    replacedUserId
+    startsAt
+    endsAt
+    createdByUserId
+    createdAt
+  }
+}
+
+mutation CreateOverride($input: CreateOverrideInput!) {
+  createOverride(input: $input) {
+    id
+    scheduleId
+    rotationId
+    userId
+    startsAt
+    endsAt
+  }
+}
+
+mutation DeleteOverride($id: ID!) {
+  deleteOverride(id: $id)
 }

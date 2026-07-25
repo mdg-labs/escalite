@@ -7,6 +7,7 @@ import { DashboardPage } from './routes/dashboard'
 import { EscalationPolicyPage } from './routes/escalation-policy'
 import { IntegrationsPage } from './routes/integrations'
 import { LoginPage } from './routes/login'
+import { SchedulePage } from './routes/schedule'
 import { SetupPage } from './routes/setup'
 
 function AuthLoading(): ReactElement {
@@ -77,6 +78,14 @@ export function App(): ReactElement {
         element={
           <ProtectedRoute>
             <IntegrationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/schedules/:scheduleId"
+        element={
+          <ProtectedRoute>
+            <SchedulePage />
           </ProtectedRoute>
         }
       />
