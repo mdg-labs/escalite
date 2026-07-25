@@ -153,6 +153,28 @@ func (q *Queries) CloseAlert(ctx context.Context, arg CloseAlertParams) (Alert, 
 	return i, err
 }
 
+const countRecentOpenAlertsByService = `-- name: CountRecentOpenAlertsByService :one
+SELECT count(*)::integer AS count
+FROM alerts
+WHERE service_id = $1
+  AND organization_id = $2
+  AND status IN ('triggered', 'acknowledged')
+  AND created_at >= now() - ($3::integer * interval '1 second')
+`
+
+type CountRecentOpenAlertsByServiceParams struct {
+	ServiceID      uuid.UUID `json:"service_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	WindowSeconds  int32     `json:"window_seconds"`
+}
+
+func (q *Queries) CountRecentOpenAlertsByService(ctx context.Context, arg CountRecentOpenAlertsByServiceParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countRecentOpenAlertsByService, arg.ServiceID, arg.OrganizationID, arg.WindowSeconds)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createTriggeredAlert = `-- name: CreateTriggeredAlert :one
 INSERT INTO alerts (
     id,
@@ -488,6 +510,63 @@ func (q *Queries) ListAlertsForTeamMember(ctx context.Context, arg ListAlertsFor
 		arg.Limit,
 		arg.StatusFilter,
 	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Alert{}
+	for rows.Next() {
+		var i Alert
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.ServiceID,
+			&i.IntegrationKeyID,
+			&i.Status,
+			&i.DedupKey,
+			&i.Summary,
+			&i.Description,
+			&i.Priority,
+			&i.EventCount,
+			&i.EscalationState,
+			&i.AcknowledgedAt,
+			&i.AcknowledgedByUserID,
+			&i.ClosedAt,
+			&i.ResolvedAt,
+			&i.ResolvedIntegration,
+			&i.IncidentID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRecentUnassignedAlertsByService = `-- name: ListRecentUnassignedAlertsByService :many
+SELECT id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, resolved_at, resolved_integration, incident_id, created_at, updated_at
+FROM alerts
+WHERE service_id = $1
+  AND organization_id = $2
+  AND status IN ('triggered', 'acknowledged')
+  AND incident_id IS NULL
+  AND created_at >= now() - ($3::integer * interval '1 second')
+ORDER BY created_at ASC
+`
+
+type ListRecentUnassignedAlertsByServiceParams struct {
+	ServiceID      uuid.UUID `json:"service_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	WindowSeconds  int32     `json:"window_seconds"`
+}
+
+func (q *Queries) ListRecentUnassignedAlertsByService(ctx context.Context, arg ListRecentUnassignedAlertsByServiceParams) ([]Alert, error) {
+	rows, err := q.db.Query(ctx, listRecentUnassignedAlertsByService, arg.ServiceID, arg.OrganizationID, arg.WindowSeconds)
 	if err != nil {
 		return nil, err
 	}

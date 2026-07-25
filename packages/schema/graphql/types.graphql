@@ -31,6 +31,17 @@ type Service {
   updatedAt: DateTime!
   """Maintenance windows currently suppressing this service."""
   activeMaintenanceWindows: [MaintenanceWindow!]!
+  """Auto-promote rule: declare an incident when alert volume exceeds threshold."""
+  autoPromoteRule: ServiceAutoPromoteRule!
+}
+
+"""Configurable auto-promote rule for a service."""
+type ServiceAutoPromoteRule {
+  enabled: Boolean!
+  alertThreshold: Int!
+  windowSeconds: Int!
+  """Alert priorities whose escalation is suppressed while grouped under an incident."""
+  suppressEscalationPriorities: [AlertPriority!]!
 }
 
 type MaintenanceWindow {

@@ -12,7 +12,7 @@ import (
 )
 
 const getServiceByID = `-- name: GetServiceByID :one
-SELECT id, organization_id, team_id, name, created_at, updated_at
+SELECT id, organization_id, team_id, name, dedup_window_seconds, auto_promote_enabled, auto_promote_alert_threshold, auto_promote_window_seconds, auto_promote_suppress_escalation_priorities, deleted_at, created_at, updated_at
 FROM services
 WHERE id = $1
   AND organization_id = $2
@@ -32,6 +32,12 @@ func (q *Queries) GetServiceByID(ctx context.Context, arg GetServiceByIDParams) 
 		&i.OrganizationID,
 		&i.TeamID,
 		&i.Name,
+		&i.DedupWindowSeconds,
+		&i.AutoPromoteEnabled,
+		&i.AutoPromoteAlertThreshold,
+		&i.AutoPromoteWindowSeconds,
+		&i.AutoPromoteSuppressEscalationPriorities,
+		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

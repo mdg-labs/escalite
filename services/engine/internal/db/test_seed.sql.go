@@ -201,7 +201,7 @@ func (q *Queries) CreateEscalationStepTarget(ctx context.Context, arg CreateEsca
 const createService = `-- name: CreateService :one
 INSERT INTO services (id, organization_id, team_id, name)
 VALUES ($1, $2, $3, $4)
-RETURNING id, organization_id, team_id, name, created_at, updated_at
+RETURNING id, organization_id, team_id, name, dedup_window_seconds, auto_promote_enabled, auto_promote_alert_threshold, auto_promote_window_seconds, auto_promote_suppress_escalation_priorities, deleted_at, created_at, updated_at
 `
 
 type CreateServiceParams struct {
@@ -224,6 +224,12 @@ func (q *Queries) CreateService(ctx context.Context, arg CreateServiceParams) (S
 		&i.OrganizationID,
 		&i.TeamID,
 		&i.Name,
+		&i.DedupWindowSeconds,
+		&i.AutoPromoteEnabled,
+		&i.AutoPromoteAlertThreshold,
+		&i.AutoPromoteWindowSeconds,
+		&i.AutoPromoteSuppressEscalationPriorities,
+		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -279,7 +285,7 @@ INSERT INTO alerts (
     $8,
     $9
 )
-RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
+RETURNING id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, resolved_at, resolved_integration, incident_id, created_at, updated_at
 `
 
 type CreateTriggeredAlertParams struct {
@@ -322,6 +328,9 @@ func (q *Queries) CreateTriggeredAlert(ctx context.Context, arg CreateTriggeredA
 		&i.AcknowledgedAt,
 		&i.AcknowledgedByUserID,
 		&i.ClosedAt,
+		&i.ResolvedAt,
+		&i.ResolvedIntegration,
+		&i.IncidentID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

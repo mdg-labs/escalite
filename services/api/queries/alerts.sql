@@ -152,3 +152,21 @@ WHERE id = $1
   AND incident_id IS NULL
   AND status IN ('triggered', 'acknowledged')
 RETURNING *;
+
+-- name: CountRecentOpenAlertsByService :one
+SELECT count(*)::integer AS count
+FROM alerts
+WHERE service_id = sqlc.arg(service_id)
+  AND organization_id = sqlc.arg(organization_id)
+  AND status IN ('triggered', 'acknowledged')
+  AND created_at >= now() - (sqlc.arg(window_seconds)::integer * interval '1 second');
+
+-- name: ListRecentUnassignedAlertsByService :many
+SELECT *
+FROM alerts
+WHERE service_id = sqlc.arg(service_id)
+  AND organization_id = sqlc.arg(organization_id)
+  AND status IN ('triggered', 'acknowledged')
+  AND incident_id IS NULL
+  AND created_at >= now() - (sqlc.arg(window_seconds)::integer * interval '1 second')
+ORDER BY created_at ASC;

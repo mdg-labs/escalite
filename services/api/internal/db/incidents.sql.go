@@ -325,6 +325,75 @@ func (q *Queries) GetIncidentRoleDefinitionByID(ctx context.Context, arg GetInci
 	return i, err
 }
 
+const getOpenIncidentForTeam = `-- name: GetOpenIncidentForTeam :one
+SELECT id, organization_id, team_id, title, status, created_by_user_id, resolved_at, created_at, updated_at
+FROM incidents
+WHERE organization_id = $1
+  AND team_id = $2
+  AND status <> 'resolved'
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+type GetOpenIncidentForTeamParams struct {
+	OrganizationID uuid.UUID `json:"organization_id"`
+	TeamID         uuid.UUID `json:"team_id"`
+}
+
+func (q *Queries) GetOpenIncidentForTeam(ctx context.Context, arg GetOpenIncidentForTeamParams) (Incident, error) {
+	row := q.db.QueryRow(ctx, getOpenIncidentForTeam, arg.OrganizationID, arg.TeamID)
+	var i Incident
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.TeamID,
+		&i.Title,
+		&i.Status,
+		&i.CreatedByUserID,
+		&i.ResolvedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getOpenIncidentForTeamWithServiceAlerts = `-- name: GetOpenIncidentForTeamWithServiceAlerts :one
+SELECT DISTINCT i.id, i.organization_id, i.team_id, i.title, i.status, i.created_by_user_id, i.resolved_at, i.created_at, i.updated_at
+FROM incidents i
+INNER JOIN alerts a
+  ON a.incident_id = i.id
+ AND a.organization_id = i.organization_id
+WHERE i.organization_id = $1
+  AND i.team_id = $2
+  AND i.status <> 'resolved'
+  AND a.service_id = $3
+ORDER BY i.created_at DESC
+LIMIT 1
+`
+
+type GetOpenIncidentForTeamWithServiceAlertsParams struct {
+	OrganizationID uuid.UUID `json:"organization_id"`
+	TeamID         uuid.UUID `json:"team_id"`
+	ServiceID      uuid.UUID `json:"service_id"`
+}
+
+func (q *Queries) GetOpenIncidentForTeamWithServiceAlerts(ctx context.Context, arg GetOpenIncidentForTeamWithServiceAlertsParams) (Incident, error) {
+	row := q.db.QueryRow(ctx, getOpenIncidentForTeamWithServiceAlerts, arg.OrganizationID, arg.TeamID, arg.ServiceID)
+	var i Incident
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.TeamID,
+		&i.Title,
+		&i.Status,
+		&i.CreatedByUserID,
+		&i.ResolvedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getTimelineEventByID = `-- name: GetTimelineEventByID :one
 SELECT id, incident_id, organization_id, actor_id, event_type, body, metadata, created_at
 FROM timeline_events

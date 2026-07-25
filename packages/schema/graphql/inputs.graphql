@@ -124,7 +124,11 @@ input CreateServiceInput {
 
 input UpdateServiceInput {
   id: ID!
-  name: String!
+  name: String
+  autoPromoteEnabled: Boolean
+  autoPromoteAlertThreshold: Int
+  autoPromoteWindowSeconds: Int
+  autoPromoteSuppressEscalationPriorities: [AlertPriority!]
 }
 
 input CreateMaintenanceWindowInput {

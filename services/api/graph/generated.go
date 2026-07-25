@@ -326,12 +326,20 @@ type ComplexityRoot struct {
 
 	Service struct {
 		ActiveMaintenanceWindows func(childComplexity int) int
+		AutoPromoteRule          func(childComplexity int) int
 		CreatedAt                func(childComplexity int) int
 		ID                       func(childComplexity int) int
 		Name                     func(childComplexity int) int
 		OrganizationID           func(childComplexity int) int
 		TeamID                   func(childComplexity int) int
 		UpdatedAt                func(childComplexity int) int
+	}
+
+	ServiceAutoPromoteRule struct {
+		AlertThreshold               func(childComplexity int) int
+		Enabled                      func(childComplexity int) int
+		SuppressEscalationPriorities func(childComplexity int) int
+		WindowSeconds                func(childComplexity int) int
 	}
 
 	SetupPayload struct {
@@ -2119,6 +2127,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Service.ActiveMaintenanceWindows(childComplexity), true
+	case "Service.autoPromoteRule":
+		if e.ComplexityRoot.Service.AutoPromoteRule == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Service.AutoPromoteRule(childComplexity), true
 	case "Service.createdAt":
 		if e.ComplexityRoot.Service.CreatedAt == nil {
 			break
@@ -2155,6 +2169,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Service.UpdatedAt(childComplexity), true
+
+	case "ServiceAutoPromoteRule.alertThreshold":
+		if e.ComplexityRoot.ServiceAutoPromoteRule.AlertThreshold == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceAutoPromoteRule.AlertThreshold(childComplexity), true
+	case "ServiceAutoPromoteRule.enabled":
+		if e.ComplexityRoot.ServiceAutoPromoteRule.Enabled == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceAutoPromoteRule.Enabled(childComplexity), true
+	case "ServiceAutoPromoteRule.suppressEscalationPriorities":
+		if e.ComplexityRoot.ServiceAutoPromoteRule.SuppressEscalationPriorities == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceAutoPromoteRule.SuppressEscalationPriorities(childComplexity), true
+	case "ServiceAutoPromoteRule.windowSeconds":
+		if e.ComplexityRoot.ServiceAutoPromoteRule.WindowSeconds == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ServiceAutoPromoteRule.WindowSeconds(childComplexity), true
 
 	case "SetupPayload.organization":
 		if e.ComplexityRoot.SetupPayload.Organization == nil {
@@ -2707,7 +2746,11 @@ input CreateServiceInput {
 
 input UpdateServiceInput {
   id: ID!
-  name: String!
+  name: String
+  autoPromoteEnabled: Boolean
+  autoPromoteAlertThreshold: Int
+  autoPromoteWindowSeconds: Int
+  autoPromoteSuppressEscalationPriorities: [AlertPriority!]
 }
 
 input CreateMaintenanceWindowInput {
@@ -3183,6 +3226,17 @@ type Service {
   updatedAt: DateTime!
   """Maintenance windows currently suppressing this service."""
   activeMaintenanceWindows: [MaintenanceWindow!]!
+  """Auto-promote rule: declare an incident when alert volume exceeds threshold."""
+  autoPromoteRule: ServiceAutoPromoteRule!
+}
+
+"""Configurable auto-promote rule for a service."""
+type ServiceAutoPromoteRule {
+  enabled: Boolean!
+  alertThreshold: Int!
+  windowSeconds: Int!
+  """Alert priorities whose escalation is suppressed while grouped under an incident."""
+  suppressEscalationPriorities: [AlertPriority!]!
 }
 
 type MaintenanceWindow {
@@ -3885,8 +3939,24 @@ func (ec *executionContext) childFields_Service(ctx context.Context, field graph
 		return ec.fieldContext_Service_updatedAt(ctx, field)
 	case "activeMaintenanceWindows":
 		return ec.fieldContext_Service_activeMaintenanceWindows(ctx, field)
+	case "autoPromoteRule":
+		return ec.fieldContext_Service_autoPromoteRule(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Service", field.Name)
+}
+
+func (ec *executionContext) childFields_ServiceAutoPromoteRule(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "enabled":
+		return ec.fieldContext_ServiceAutoPromoteRule_enabled(ctx, field)
+	case "alertThreshold":
+		return ec.fieldContext_ServiceAutoPromoteRule_alertThreshold(ctx, field)
+	case "windowSeconds":
+		return ec.fieldContext_ServiceAutoPromoteRule_windowSeconds(ctx, field)
+	case "suppressEscalationPriorities":
+		return ec.fieldContext_ServiceAutoPromoteRule_suppressEscalationPriorities(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type ServiceAutoPromoteRule", field.Name)
 }
 
 func (ec *executionContext) childFields_SetupPayload(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -11679,6 +11749,130 @@ func (ec *executionContext) fieldContext_Service_activeMaintenanceWindows(_ cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Service_autoPromoteRule(ctx context.Context, field graphql.CollectedField, obj *model.Service) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Service_autoPromoteRule(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AutoPromoteRule, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.ServiceAutoPromoteRule) graphql.Marshaler {
+			return ec.marshalNServiceAutoPromoteRule2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐServiceAutoPromoteRule(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Service_autoPromoteRule(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Service",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ServiceAutoPromoteRule(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceAutoPromoteRule_enabled(ctx context.Context, field graphql.CollectedField, obj *model.ServiceAutoPromoteRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceAutoPromoteRule_enabled(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Enabled, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceAutoPromoteRule_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceAutoPromoteRule", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceAutoPromoteRule_alertThreshold(ctx context.Context, field graphql.CollectedField, obj *model.ServiceAutoPromoteRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceAutoPromoteRule_alertThreshold(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AlertThreshold, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceAutoPromoteRule_alertThreshold(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceAutoPromoteRule", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceAutoPromoteRule_windowSeconds(ctx context.Context, field graphql.CollectedField, obj *model.ServiceAutoPromoteRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceAutoPromoteRule_windowSeconds(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.WindowSeconds, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceAutoPromoteRule_windowSeconds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceAutoPromoteRule", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _ServiceAutoPromoteRule_suppressEscalationPriorities(ctx context.Context, field graphql.CollectedField, obj *model.ServiceAutoPromoteRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ServiceAutoPromoteRule_suppressEscalationPriorities(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.SuppressEscalationPriorities, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []model.AlertPriority) graphql.Marshaler {
+			return ec.marshalNAlertPriority2ᚕgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriorityᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ServiceAutoPromoteRule_suppressEscalationPriorities(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ServiceAutoPromoteRule", field, false, false, errors.New("field of type AlertPriority does not have child fields"))
+}
+
 func (ec *executionContext) _SetupPayload_organization(ctx context.Context, field graphql.CollectedField, obj *model.SetupPayload) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -15018,7 +15212,7 @@ func (ec *executionContext) unmarshalInputUpdateServiceInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "name"}
+	fieldsInOrder := [...]string{"id", "name", "autoPromoteEnabled", "autoPromoteAlertThreshold", "autoPromoteWindowSeconds", "autoPromoteSuppressEscalationPriorities"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -15034,11 +15228,39 @@ func (ec *executionContext) unmarshalInputUpdateServiceInput(ctx context.Context
 			it.ID = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Name = data
+		case "autoPromoteEnabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoPromoteEnabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoPromoteEnabled = data
+		case "autoPromoteAlertThreshold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoPromoteAlertThreshold"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoPromoteAlertThreshold = data
+		case "autoPromoteWindowSeconds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoPromoteWindowSeconds"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoPromoteWindowSeconds = data
+		case "autoPromoteSuppressEscalationPriorities":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoPromoteSuppressEscalationPriorities"))
+			data, err := ec.unmarshalOAlertPriority2ᚕgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriorityᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoPromoteSuppressEscalationPriorities = data
 		}
 	}
 	return it, nil
@@ -17758,6 +17980,64 @@ func (ec *executionContext) _Service(ctx context.Context, sel ast.SelectionSet, 
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "autoPromoteRule":
+			out.Values[i] = ec._Service_autoPromoteRule(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var serviceAutoPromoteRuleImplementors = []string{"ServiceAutoPromoteRule"}
+
+func (ec *executionContext) _ServiceAutoPromoteRule(ctx context.Context, sel ast.SelectionSet, obj *model.ServiceAutoPromoteRule) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, serviceAutoPromoteRuleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ServiceAutoPromoteRule")
+		case "enabled":
+			out.Values[i] = ec._ServiceAutoPromoteRule_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "alertThreshold":
+			out.Values[i] = ec._ServiceAutoPromoteRule_alertThreshold(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "windowSeconds":
+			out.Values[i] = ec._ServiceAutoPromoteRule_windowSeconds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "suppressEscalationPriorities":
+			out.Values[i] = ec._ServiceAutoPromoteRule_suppressEscalationPriorities(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -18677,6 +18957,36 @@ func (ec *executionContext) marshalNAlertPriority2githubᚗcomᚋmdgᚑlabsᚋes
 	return v
 }
 
+func (ec *executionContext) unmarshalNAlertPriority2ᚕgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriorityᚄ(ctx context.Context, v any) ([]model.AlertPriority, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]model.AlertPriority, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNAlertPriority2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriority(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNAlertPriority2ᚕgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriorityᚄ(ctx context.Context, sel ast.SelectionSet, v []model.AlertPriority) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNAlertPriority2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriority(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNAlertStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertStatus(ctx context.Context, v any) (model.AlertStatus, error) {
 	var res model.AlertStatus
 	err := res.UnmarshalGQL(v)
@@ -19480,6 +19790,16 @@ func (ec *executionContext) marshalNService2ᚖgithubᚗcomᚋmdgᚑlabsᚋescal
 	return ec._Service(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNServiceAutoPromoteRule2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐServiceAutoPromoteRule(ctx context.Context, sel ast.SelectionSet, v *model.ServiceAutoPromoteRule) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ServiceAutoPromoteRule(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNSetupInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSetupInput(ctx context.Context, v any) (model.SetupInput, error) {
 	res, err := ec.unmarshalInputSetupInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -19848,6 +20168,42 @@ func (ec *executionContext) marshalOAlert2ᚖgithubᚗcomᚋmdgᚑlabsᚋescalit
 		return graphql.Null
 	}
 	return ec._Alert(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOAlertPriority2ᚕgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriorityᚄ(ctx context.Context, v any) ([]model.AlertPriority, error) {
+	if v == nil {
+		return nil, nil
+	}
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]model.AlertPriority, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNAlertPriority2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriority(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOAlertPriority2ᚕgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriorityᚄ(ctx context.Context, sel ast.SelectionSet, v []model.AlertPriority) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNAlertPriority2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriority(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOAlertStatus2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertStatus(ctx context.Context, v any) (*model.AlertStatus, error) {

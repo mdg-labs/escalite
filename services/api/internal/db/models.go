@@ -264,14 +264,18 @@ type Schedule struct {
 }
 
 type Service struct {
-	ID                 uuid.UUID          `json:"id"`
-	OrganizationID     uuid.UUID          `json:"organization_id"`
-	TeamID             uuid.UUID          `json:"team_id"`
-	Name               string             `json:"name"`
-	DedupWindowSeconds int32              `json:"dedup_window_seconds"`
-	DeletedAt          pgtype.Timestamptz `json:"deleted_at"`
-	CreatedAt          pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	ID                                      uuid.UUID          `json:"id"`
+	OrganizationID                          uuid.UUID          `json:"organization_id"`
+	TeamID                                  uuid.UUID          `json:"team_id"`
+	Name                                    string             `json:"name"`
+	DedupWindowSeconds                      int32              `json:"dedup_window_seconds"`
+	AutoPromoteEnabled                      bool               `json:"auto_promote_enabled"`
+	AutoPromoteAlertThreshold               int32              `json:"auto_promote_alert_threshold"`
+	AutoPromoteWindowSeconds                int32              `json:"auto_promote_window_seconds"`
+	AutoPromoteSuppressEscalationPriorities []string           `json:"auto_promote_suppress_escalation_priorities"`
+	DeletedAt                               pgtype.Timestamptz `json:"deleted_at"`
+	CreatedAt                               pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                               pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Session struct {

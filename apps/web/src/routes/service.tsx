@@ -2,6 +2,7 @@ import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
+  AlertPriority,
   useDeleteServiceMutation,
   useEscalationPoliciesQuery,
   useSchedulesQuery,
@@ -61,6 +62,11 @@ export function ServicePage(): ReactElement {
   const [, deleteService] = useDeleteServiceMutation()
 
   const [name, setName] = useState('')
+  const [autoPromoteEnabled, setAutoPromoteEnabled] = useState(false)
+  const [autoPromoteAlertThreshold, setAutoPromoteAlertThreshold] = useState('3')
+  const [autoPromoteWindowSeconds, setAutoPromoteWindowSeconds] = useState('300')
+  const [suppressHighPriority, setSuppressHighPriority] = useState(true)
+  const [suppressLowPriority, setSuppressLowPriority] = useState(true)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [savedMessage, setSavedMessage] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -70,7 +76,18 @@ export function ServicePage(): ReactElement {
     if (service?.name) {
       setName(service.name)
     }
-  }, [service?.name])
+    if (service?.autoPromoteRule) {
+      setAutoPromoteEnabled(service.autoPromoteRule.enabled)
+      setAutoPromoteAlertThreshold(String(service.autoPromoteRule.alertThreshold))
+      setAutoPromoteWindowSeconds(String(service.autoPromoteRule.windowSeconds))
+      setSuppressHighPriority(
+        service.autoPromoteRule.suppressEscalationPriorities.includes(AlertPriority.High),
+      )
+      setSuppressLowPriority(
+        service.autoPromoteRule.suppressEscalationPriorities.includes(AlertPriority.Low),
+      )
+    }
+  }, [service?.autoPromoteRule, service?.name])
 
   const teamName = useMemo(() => {
     if (!service) {
@@ -94,10 +111,43 @@ export function ServicePage(): ReactElement {
       return
     }
 
+    const threshold = Number.parseInt(autoPromoteAlertThreshold, 10)
+    if (!Number.isFinite(threshold) || threshold < 1) {
+      setSaveError(t('services.autoPromote.error.threshold'))
+      return
+    }
+
+    const windowSeconds = Number.parseInt(autoPromoteWindowSeconds, 10)
+    if (!Number.isFinite(windowSeconds) || windowSeconds < 1) {
+      setSaveError(t('services.autoPromote.error.window'))
+      return
+    }
+
+    const suppressEscalationPriorities: AlertPriority[] = []
+    if (suppressHighPriority) {
+      suppressEscalationPriorities.push(AlertPriority.High)
+    }
+    if (suppressLowPriority) {
+      suppressEscalationPriorities.push(AlertPriority.Low)
+    }
+    if (suppressEscalationPriorities.length === 0) {
+      setSaveError(t('services.autoPromote.error.priorities'))
+      return
+    }
+
     setSaveError(null)
     setSavedMessage(null)
     setSaving(true)
-    const result = await updateService({ input: { id: serviceId, name: trimmed } })
+    const result = await updateService({
+      input: {
+        id: serviceId,
+        name: trimmed,
+        autoPromoteEnabled,
+        autoPromoteAlertThreshold: threshold,
+        autoPromoteWindowSeconds: windowSeconds,
+        autoPromoteSuppressEscalationPriorities: suppressEscalationPriorities,
+      },
+    })
     setSaving(false)
 
     if (result.error) {
@@ -261,7 +311,84 @@ export function ServicePage(): ReactElement {
               </TabsPanel>
 
               <TabsPanel className="mt-6" value="escalation">
-                <div className="space-y-4">
+                <div className="space-y-8">
+                  <div className="max-w-lg space-y-4 rounded-lg border border-border p-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground">
+                        {t('services.autoPromote.title')}
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        {t('services.autoPromote.description')}
+                      </p>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-foreground">
+                      <input
+                        checked={autoPromoteEnabled}
+                        onChange={(event) => setAutoPromoteEnabled(event.target.checked)}
+                        type="checkbox"
+                      />
+                      {t('services.autoPromote.enabled')}
+                    </label>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <label
+                          className="text-sm font-medium text-foreground"
+                          htmlFor="auto-promote-threshold"
+                        >
+                          {t('services.autoPromote.alertThreshold')}
+                        </label>
+                        <Input
+                          disabled={!autoPromoteEnabled}
+                          id="auto-promote-threshold"
+                          inputMode="numeric"
+                          min={1}
+                          onChange={(event) => setAutoPromoteAlertThreshold(event.target.value)}
+                          type="number"
+                          value={autoPromoteAlertThreshold}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label
+                          className="text-sm font-medium text-foreground"
+                          htmlFor="auto-promote-window"
+                        >
+                          {t('services.autoPromote.windowSeconds')}
+                        </label>
+                        <Input
+                          disabled={!autoPromoteEnabled}
+                          id="auto-promote-window"
+                          inputMode="numeric"
+                          min={1}
+                          onChange={(event) => setAutoPromoteWindowSeconds(event.target.value)}
+                          type="number"
+                          value={autoPromoteWindowSeconds}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 text-sm text-foreground">
+                        <input
+                          checked={suppressHighPriority}
+                          onChange={(event) => setSuppressHighPriority(event.target.checked)}
+                          type="checkbox"
+                        />
+                        {t('services.autoPromote.suppressHigh')}
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-foreground">
+                        <input
+                          checked={suppressLowPriority}
+                          onChange={(event) => setSuppressLowPriority(event.target.checked)}
+                          type="checkbox"
+                        />
+                        {t('services.autoPromote.suppressLow')}
+                      </label>
+                    </div>
+                    <Button disabled={saving} onClick={() => void handleSave()} type="button">
+                      {saving ? t('services.action.saving') : t('services.action.save')}
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h2 className="text-lg font-semibold text-foreground">
@@ -298,6 +425,7 @@ export function ServicePage(): ReactElement {
                       ))}
                     </ul>
                   )}
+                </div>
                 </div>
               </TabsPanel>
 

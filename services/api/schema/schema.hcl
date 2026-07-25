@@ -487,6 +487,26 @@ table "services" {
     type    = integer
     default = 300
   }
+  column "auto_promote_enabled" {
+    null    = false
+    type    = boolean
+    default = false
+  }
+  column "auto_promote_alert_threshold" {
+    null    = false
+    type    = integer
+    default = 3
+  }
+  column "auto_promote_window_seconds" {
+    null    = false
+    type    = integer
+    default = 300
+  }
+  column "auto_promote_suppress_escalation_priorities" {
+    null    = false
+    type    = sql("text[]")
+    default = sql("ARRAY['high'::text, 'low'::text]")
+  }
   column "deleted_at" {
     null = true
     type = timestamptz

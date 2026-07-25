@@ -84,7 +84,7 @@ func (q *Queries) CreateHeartbeatMonitor(ctx context.Context, arg CreateHeartbea
 }
 
 const getAlertByServiceDedupKey = `-- name: GetAlertByServiceDedupKey :one
-SELECT id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, created_at, updated_at
+SELECT id, organization_id, service_id, integration_key_id, status, dedup_key, summary, description, priority, event_count, escalation_state, acknowledged_at, acknowledged_by_user_id, closed_at, resolved_at, resolved_integration, incident_id, created_at, updated_at
 FROM alerts
 WHERE service_id = $1
   AND organization_id = $2
@@ -118,6 +118,9 @@ func (q *Queries) GetAlertByServiceDedupKey(ctx context.Context, arg GetAlertByS
 		&i.AcknowledgedAt,
 		&i.AcknowledgedByUserID,
 		&i.ClosedAt,
+		&i.ResolvedAt,
+		&i.ResolvedIntegration,
+		&i.IncidentID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

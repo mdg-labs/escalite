@@ -379,6 +379,17 @@ type Service struct {
 	UpdatedAt      time.Time `json:"updatedAt"`
 	// Maintenance windows currently suppressing this service.
 	ActiveMaintenanceWindows []*MaintenanceWindow `json:"activeMaintenanceWindows"`
+	// Auto-promote rule: declare an incident when alert volume exceeds threshold.
+	AutoPromoteRule *ServiceAutoPromoteRule `json:"autoPromoteRule"`
+}
+
+// Configurable auto-promote rule for a service.
+type ServiceAutoPromoteRule struct {
+	Enabled        bool `json:"enabled"`
+	AlertThreshold int  `json:"alertThreshold"`
+	WindowSeconds  int  `json:"windowSeconds"`
+	// Alert priorities whose escalation is suppressed while grouped under an incident.
+	SuppressEscalationPriorities []AlertPriority `json:"suppressEscalationPriorities"`
 }
 
 type SetupInput struct {
@@ -471,8 +482,12 @@ type UpdateScheduleInput struct {
 }
 
 type UpdateServiceInput struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID                                      string          `json:"id"`
+	Name                                    *string         `json:"name,omitempty"`
+	AutoPromoteEnabled                      *bool           `json:"autoPromoteEnabled,omitempty"`
+	AutoPromoteAlertThreshold               *int            `json:"autoPromoteAlertThreshold,omitempty"`
+	AutoPromoteWindowSeconds                *int            `json:"autoPromoteWindowSeconds,omitempty"`
+	AutoPromoteSuppressEscalationPriorities []AlertPriority `json:"autoPromoteSuppressEscalationPriorities,omitempty"`
 }
 
 type User struct {

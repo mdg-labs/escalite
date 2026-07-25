@@ -1861,22 +1861,20 @@ func (r *mutationResolver) UpdateService(ctx context.Context, input model.Update
 		return nil, err
 	}
 
-	name := strings.TrimSpace(input.Name)
-	if name == "" {
-		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
-	}
-
 	serviceID, err := parseUUIDField(input.ID, "id")
 	if err != nil {
 		return nil, err
 	}
 
+	params, err := buildUpdateServiceParams(input)
+	if err != nil {
+		return nil, err
+	}
+	params.ID = serviceID
+	params.OrganizationID = sc.User.OrganizationID
+
 	queries := db.New(r.pool)
-	service, err := queries.UpdateService(ctx, db.UpdateServiceParams{
-		ID:             serviceID,
-		OrganizationID: sc.User.OrganizationID,
-		Name:           name,
-	})
+	service, err := queries.UpdateService(ctx, params)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, gqlerr.New(handlers.CodeNotFound, "service not found")

@@ -281,6 +281,12 @@ fragment ServiceFields on Service {
   name
   createdAt
   updatedAt
+  autoPromoteRule {
+    enabled
+    alertThreshold
+    windowSeconds
+    suppressEscalationPriorities
+  }
   activeMaintenanceWindows {
     id
     description

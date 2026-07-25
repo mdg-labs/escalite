@@ -70,6 +70,30 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const getFirstAdminUserByOrganization = `-- name: GetFirstAdminUserByOrganization :one
+SELECT id, organization_id, email, password_hash, role, created_at, updated_at
+FROM users
+WHERE organization_id = $1
+  AND role = 'admin'
+ORDER BY created_at ASC
+LIMIT 1
+`
+
+func (q *Queries) GetFirstAdminUserByOrganization(ctx context.Context, organizationID uuid.UUID) (User, error) {
+	row := q.db.QueryRow(ctx, getFirstAdminUserByOrganization, organizationID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, organization_id, email, password_hash, role, created_at, updated_at
 FROM users

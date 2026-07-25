@@ -22,6 +22,14 @@ FROM users
 WHERE email = $1
 LIMIT 1;
 
+-- name: GetFirstAdminUserByOrganization :one
+SELECT *
+FROM users
+WHERE organization_id = $1
+  AND role = 'admin'
+ORDER BY created_at ASC
+LIMIT 1;
+
 -- name: UpdateUserPasswordHash :exec
 UPDATE users
 SET password_hash = $2,

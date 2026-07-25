@@ -230,12 +230,13 @@ func heartbeatMonitorFromDB(monitor db.HeartbeatMonitor, token *string) *model.H
 
 func serviceFromDB(service db.Service) *model.Service {
 	return &model.Service{
-		ID:             service.ID.String(),
-		OrganizationID: service.OrganizationID.String(),
-		TeamID:         service.TeamID.String(),
-		Name:           service.Name,
-		CreatedAt:      timeFromDB(service.CreatedAt),
-		UpdatedAt:      timeFromDB(service.UpdatedAt),
+		ID:               service.ID.String(),
+		OrganizationID:   service.OrganizationID.String(),
+		TeamID:           service.TeamID.String(),
+		Name:             service.Name,
+		CreatedAt:        timeFromDB(service.CreatedAt),
+		UpdatedAt:        timeFromDB(service.UpdatedAt),
+		AutoPromoteRule:  serviceAutoPromoteRuleFromDB(service),
 	}
 }
 

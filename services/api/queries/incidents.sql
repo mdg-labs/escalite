@@ -110,6 +110,28 @@ WHERE incident_id = $1
   AND organization_id = $2
 ORDER BY created_at ASC;
 
+-- name: GetOpenIncidentForTeamWithServiceAlerts :one
+SELECT DISTINCT i.*
+FROM incidents i
+INNER JOIN alerts a
+  ON a.incident_id = i.id
+ AND a.organization_id = i.organization_id
+WHERE i.organization_id = $1
+  AND i.team_id = $2
+  AND i.status <> 'resolved'
+  AND a.service_id = $3
+ORDER BY i.created_at DESC
+LIMIT 1;
+
+-- name: GetOpenIncidentForTeam :one
+SELECT *
+FROM incidents
+WHERE organization_id = $1
+  AND team_id = $2
+  AND status <> 'resolved'
+ORDER BY created_at DESC
+LIMIT 1;
+
 -- name: CreateIncidentRoleDefinition :one
 INSERT INTO incident_role_definitions (
     id,

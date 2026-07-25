@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createService = `-- name: CreateService :one
@@ -23,7 +24,7 @@ INSERT INTO services (
     $3,
     $4
 )
-RETURNING id, organization_id, team_id, name, dedup_window_seconds, deleted_at, created_at, updated_at
+RETURNING id, organization_id, team_id, name, dedup_window_seconds, auto_promote_enabled, auto_promote_alert_threshold, auto_promote_window_seconds, auto_promote_suppress_escalation_priorities, deleted_at, created_at, updated_at
 `
 
 type CreateServiceParams struct {
@@ -47,6 +48,10 @@ func (q *Queries) CreateService(ctx context.Context, arg CreateServiceParams) (S
 		&i.TeamID,
 		&i.Name,
 		&i.DedupWindowSeconds,
+		&i.AutoPromoteEnabled,
+		&i.AutoPromoteAlertThreshold,
+		&i.AutoPromoteWindowSeconds,
+		&i.AutoPromoteSuppressEscalationPriorities,
 		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -55,7 +60,7 @@ func (q *Queries) CreateService(ctx context.Context, arg CreateServiceParams) (S
 }
 
 const getServiceByID = `-- name: GetServiceByID :one
-SELECT id, organization_id, team_id, name, dedup_window_seconds, deleted_at, created_at, updated_at
+SELECT id, organization_id, team_id, name, dedup_window_seconds, auto_promote_enabled, auto_promote_alert_threshold, auto_promote_window_seconds, auto_promote_suppress_escalation_priorities, deleted_at, created_at, updated_at
 FROM services
 WHERE id = $1
   AND organization_id = $2
@@ -77,6 +82,10 @@ func (q *Queries) GetServiceByID(ctx context.Context, arg GetServiceByIDParams) 
 		&i.TeamID,
 		&i.Name,
 		&i.DedupWindowSeconds,
+		&i.AutoPromoteEnabled,
+		&i.AutoPromoteAlertThreshold,
+		&i.AutoPromoteWindowSeconds,
+		&i.AutoPromoteSuppressEscalationPriorities,
 		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -85,7 +94,7 @@ func (q *Queries) GetServiceByID(ctx context.Context, arg GetServiceByIDParams) 
 }
 
 const listServicesByOrganizationID = `-- name: ListServicesByOrganizationID :many
-SELECT id, organization_id, team_id, name, dedup_window_seconds, deleted_at, created_at, updated_at
+SELECT id, organization_id, team_id, name, dedup_window_seconds, auto_promote_enabled, auto_promote_alert_threshold, auto_promote_window_seconds, auto_promote_suppress_escalation_priorities, deleted_at, created_at, updated_at
 FROM services
 WHERE organization_id = $1
   AND deleted_at IS NULL
@@ -107,6 +116,10 @@ func (q *Queries) ListServicesByOrganizationID(ctx context.Context, organization
 			&i.TeamID,
 			&i.Name,
 			&i.DedupWindowSeconds,
+			&i.AutoPromoteEnabled,
+			&i.AutoPromoteAlertThreshold,
+			&i.AutoPromoteWindowSeconds,
+			&i.AutoPromoteSuppressEscalationPriorities,
 			&i.DeletedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -128,7 +141,7 @@ SET deleted_at = now(),
 WHERE id = $1
   AND organization_id = $2
   AND deleted_at IS NULL
-RETURNING id, organization_id, team_id, name, dedup_window_seconds, deleted_at, created_at, updated_at
+RETURNING id, organization_id, team_id, name, dedup_window_seconds, auto_promote_enabled, auto_promote_alert_threshold, auto_promote_window_seconds, auto_promote_suppress_escalation_priorities, deleted_at, created_at, updated_at
 `
 
 type SoftDeleteServiceParams struct {
@@ -145,6 +158,10 @@ func (q *Queries) SoftDeleteService(ctx context.Context, arg SoftDeleteServicePa
 		&i.TeamID,
 		&i.Name,
 		&i.DedupWindowSeconds,
+		&i.AutoPromoteEnabled,
+		&i.AutoPromoteAlertThreshold,
+		&i.AutoPromoteWindowSeconds,
+		&i.AutoPromoteSuppressEscalationPriorities,
 		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -154,22 +171,38 @@ func (q *Queries) SoftDeleteService(ctx context.Context, arg SoftDeleteServicePa
 
 const updateService = `-- name: UpdateService :one
 UPDATE services
-SET name = $3,
+SET name = COALESCE($3::text, name),
+    auto_promote_enabled = COALESCE($4::boolean, auto_promote_enabled),
+    auto_promote_alert_threshold = COALESCE($5::integer, auto_promote_alert_threshold),
+    auto_promote_window_seconds = COALESCE($6::integer, auto_promote_window_seconds),
+    auto_promote_suppress_escalation_priorities = COALESCE($7::text[], auto_promote_suppress_escalation_priorities),
     updated_at = now()
 WHERE id = $1
   AND organization_id = $2
   AND deleted_at IS NULL
-RETURNING id, organization_id, team_id, name, dedup_window_seconds, deleted_at, created_at, updated_at
+RETURNING id, organization_id, team_id, name, dedup_window_seconds, auto_promote_enabled, auto_promote_alert_threshold, auto_promote_window_seconds, auto_promote_suppress_escalation_priorities, deleted_at, created_at, updated_at
 `
 
 type UpdateServiceParams struct {
-	ID             uuid.UUID `json:"id"`
-	OrganizationID uuid.UUID `json:"organization_id"`
-	Name           string    `json:"name"`
+	ID                                      uuid.UUID   `json:"id"`
+	OrganizationID                          uuid.UUID   `json:"organization_id"`
+	Name                                    pgtype.Text `json:"name"`
+	AutoPromoteEnabled                      pgtype.Bool `json:"auto_promote_enabled"`
+	AutoPromoteAlertThreshold               pgtype.Int4 `json:"auto_promote_alert_threshold"`
+	AutoPromoteWindowSeconds                pgtype.Int4 `json:"auto_promote_window_seconds"`
+	AutoPromoteSuppressEscalationPriorities []string    `json:"auto_promote_suppress_escalation_priorities"`
 }
 
 func (q *Queries) UpdateService(ctx context.Context, arg UpdateServiceParams) (Service, error) {
-	row := q.db.QueryRow(ctx, updateService, arg.ID, arg.OrganizationID, arg.Name)
+	row := q.db.QueryRow(ctx, updateService,
+		arg.ID,
+		arg.OrganizationID,
+		arg.Name,
+		arg.AutoPromoteEnabled,
+		arg.AutoPromoteAlertThreshold,
+		arg.AutoPromoteWindowSeconds,
+		arg.AutoPromoteSuppressEscalationPriorities,
+	)
 	var i Service
 	err := row.Scan(
 		&i.ID,
@@ -177,6 +210,10 @@ func (q *Queries) UpdateService(ctx context.Context, arg UpdateServiceParams) (S
 		&i.TeamID,
 		&i.Name,
 		&i.DedupWindowSeconds,
+		&i.AutoPromoteEnabled,
+		&i.AutoPromoteAlertThreshold,
+		&i.AutoPromoteWindowSeconds,
+		&i.AutoPromoteSuppressEscalationPriorities,
 		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,

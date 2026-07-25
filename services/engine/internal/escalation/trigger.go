@@ -17,6 +17,7 @@ import (
 	"github.com/riverqueue/river/rivertype"
 
 	"github.com/mdg-labs/escalite/services/engine/internal/db"
+	"github.com/mdg-labs/escalite/services/engine/internal/incident"
 	"github.com/mdg-labs/escalite/services/engine/internal/jobs"
 	"github.com/mdg-labs/escalite/services/engine/internal/notificationrules"
 	"github.com/mdg-labs/escalite/services/engine/oncall"
@@ -50,6 +51,14 @@ func ScheduleStep1Notifications(
 	}
 	if alert.Status != statusTriggered {
 		return fmt.Errorf("alert %s is not triggered", alertID)
+	}
+
+	suppressed, err := incident.EscalationSuppressed(ctx, q, alert)
+	if err != nil {
+		return fmt.Errorf("check incident escalation suppression: %w", err)
+	}
+	if suppressed {
+		return nil
 	}
 
 	policies, err := q.ListEscalationPoliciesByServiceID(ctx, db.ListEscalationPoliciesByServiceIDParams{
@@ -133,11 +142,19 @@ func scheduleStepNotifications(
 		return fmt.Errorf("step %d has no targets", stepOrder)
 	}
 
-	suppressed, err := notificationsSuppressed(ctx, q, alert.ServiceID, alert.OrganizationID, time.Now().UTC())
+	incidentSuppressed, err := incident.EscalationSuppressed(ctx, q, alert)
+	if err != nil {
+		return fmt.Errorf("check incident escalation suppression: %w", err)
+	}
+	if incidentSuppressed {
+		return nil
+	}
+
+	maintenanceSuppressed, err := notificationsSuppressed(ctx, q, alert.ServiceID, alert.OrganizationID, time.Now().UTC())
 	if err != nil {
 		return fmt.Errorf("check maintenance suppression: %w", err)
 	}
-	if suppressed {
+	if maintenanceSuppressed {
 		return nil
 	}
 
@@ -561,6 +578,18 @@ func CreateTriggeredAlert(
 	})
 	if err != nil {
 		return db.Alert{}, fmt.Errorf("create alert: %w", err)
+	}
+
+	if err := incident.MaybeAutoPromote(ctx, q, alert); err != nil {
+		return db.Alert{}, fmt.Errorf("auto-promote alert: %w", err)
+	}
+
+	alert, err = q.GetAlertByID(ctx, db.GetAlertByIDParams{
+		ID:             alert.ID,
+		OrganizationID: alert.OrganizationID,
+	})
+	if err != nil {
+		return db.Alert{}, fmt.Errorf("reload alert after auto-promote: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
