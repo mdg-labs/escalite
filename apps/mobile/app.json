@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Escalite",
+    "slug": "escalite",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "escalite",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "dev.mdglabs.escalite"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0a0b"
+      },
+      "package": "dev.mdglabs.escalite"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true,
+      "tsconfigPaths": true
+    }
+  }
+}
