@@ -9,7 +9,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "dev.mdglabs.escalite"
+      "bundleIdentifier": "dev.mdglabs.escalite",
+      "entitlements": {
+        "com.apple.developer.usernotifications.critical-alerts": true
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +24,15 @@
       "bundler": "metro",
       "output": "static"
     },
-    "plugins": ["expo-router", "expo-notifications"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "enableBackgroundRemoteNotifications": true
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true,
       "tsconfigPaths": true

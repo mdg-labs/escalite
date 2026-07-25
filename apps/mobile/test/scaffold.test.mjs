@@ -12,6 +12,21 @@ test('app.json configures escalite deep link scheme', () => {
   assert.equal(appJson.expo.userInterfaceStyle, 'dark')
 })
 
+test('app.json declares iOS Critical Alerts entitlement pending Apple approval', () => {
+  const appJson = JSON.parse(readFileSync(join(root, 'app.json'), 'utf8'))
+  assert.equal(appJson.expo.ios.bundleIdentifier, 'dev.mdglabs.escalite')
+  assert.equal(
+    appJson.expo.ios.entitlements['com.apple.developer.usernotifications.critical-alerts'],
+    true,
+  )
+
+  const notificationsPlugin = appJson.expo.plugins.find(
+    (plugin) => Array.isArray(plugin) && plugin[0] === 'expo-notifications',
+  )
+  assert.ok(notificationsPlugin)
+  assert.equal(notificationsPlugin[1].enableBackgroundRemoteNotifications, true)
+})
+
 test('eas.json stub defines build profiles', () => {
   const easJson = JSON.parse(readFileSync(join(root, 'eas.json'), 'utf8'))
   assert.ok(easJson.build)
