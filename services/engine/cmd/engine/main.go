@@ -16,6 +16,7 @@ import (
 	"github.com/mdg-labs/escalite/services/engine/internal/log"
 	"github.com/mdg-labs/escalite/services/engine/internal/queue"
 	"github.com/mdg-labs/escalite/services/engine/internal/server"
+	"github.com/mdg-labs/escalite/services/engine/internal/smsprovider"
 )
 
 const serviceName = "engine"
@@ -39,6 +40,13 @@ func run() int {
 	logger.Info("starting service", "listen_addr", cfg.ListenAddr)
 
 	channelsinstall.ConfigureEmail(newMailSender(cfg, logger))
+
+	smsCfg, err := smsprovider.LoadConfig()
+	if err != nil {
+		logger.Error("sms/voice configuration error", "error", err)
+		return 1
+	}
+	channelsinstall.ConfigureSMS(logger, smsCfg)
 
 	ctx := context.Background()
 	queueClient, err := queue.New(ctx, queue.Options{

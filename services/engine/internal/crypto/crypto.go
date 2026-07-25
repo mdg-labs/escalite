@@ -3,8 +3,10 @@ package crypto
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
 	"errors"
 	"fmt"
+	"io"
 )
 
 const (
@@ -48,6 +50,21 @@ func NewBox(key []byte) (*Box, error) {
 // KeyID returns the key identifier used for newly encrypted secrets.
 func (b *Box) KeyID() string {
 	return b.keyID
+}
+
+// Encrypt seals plaintext with AES-256-GCM. Ciphertext includes the random nonce prefix.
+func (b *Box) Encrypt(plaintext []byte) (Encrypted, error) {
+	nonce := make([]byte, nonceSize)
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return Encrypted{}, fmt.Errorf("generate nonce: %w", err)
+	}
+
+	ciphertext := b.aead.Seal(nonce, nonce, plaintext, nil)
+
+	return Encrypted{
+		KeyID:      b.keyID,
+		Ciphertext: ciphertext,
+	}, nil
 }
 
 // Decrypt opens ciphertext encrypted by this box.
