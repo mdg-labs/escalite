@@ -2,6 +2,7 @@ package alerts_test
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"testing"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
+	"github.com/mdg-labs/escalite/services/api/internal/queue"
 	"github.com/mdg-labs/escalite/services/integrations"
 )
 
@@ -114,6 +116,77 @@ func seedInboundFixture(t *testing.T, pool *pgxpool.Pool) inboundFixture {
 	}
 }
 
+func newInboundJobs(t *testing.T, pool *pgxpool.Pool) *queue.Producer {
+	t.Helper()
+	jobs, err := queue.NewProducer(context.Background(), pool, slog.Default())
+	require.NoError(t, err)
+	return jobs
+}
+
+func seedEscalationPolicyWithUsers(
+	t *testing.T,
+	pool *pgxpool.Pool,
+	fixture inboundFixture,
+	oncallID uuid.UUID,
+) uuid.UUID {
+	t.Helper()
+
+	ctx := context.Background()
+	queries := fixture.queries
+
+	policyID := uuid.Must(uuid.NewV7())
+	stepID := uuid.Must(uuid.NewV7())
+
+	_, err := queries.CreateEscalationPolicy(ctx, db.CreateEscalationPolicyParams{
+		ID:             policyID,
+		OrganizationID: fixture.key.OrganizationID,
+		ServiceID:      fixture.key.ServiceID,
+		Name:           "Default",
+	})
+	require.NoError(t, err)
+
+	_, err = queries.CreateEscalationStep(ctx, db.CreateEscalationStepParams{
+		ID:                 stepID,
+		EscalationPolicyID: policyID,
+		OrganizationID:     fixture.key.OrganizationID,
+		StepOrder:          1,
+		DelayMinutes:       0,
+		RepeatLastStep:     false,
+		MaxRepeats:         pgtype.Int4{},
+	})
+	require.NoError(t, err)
+
+	adminChannels, err := json.Marshal([]string{"email"})
+	require.NoError(t, err)
+	_, err = queries.CreateEscalationStepTarget(ctx, db.CreateEscalationStepTargetParams{
+		ID:               uuid.Must(uuid.NewV7()),
+		EscalationStepID: stepID,
+		OrganizationID:   fixture.key.OrganizationID,
+		TargetType:       "user",
+		UserID:           pgtype.UUID{Bytes: fixture.userID, Valid: true},
+		ScheduleID:       pgtype.UUID{},
+		WebhookUrl:       pgtype.Text{},
+		Channels:         adminChannels,
+	})
+	require.NoError(t, err)
+
+	oncallChannels, err := json.Marshal([]string{"email"})
+	require.NoError(t, err)
+	_, err = queries.CreateEscalationStepTarget(ctx, db.CreateEscalationStepTargetParams{
+		ID:               uuid.Must(uuid.NewV7()),
+		EscalationStepID: stepID,
+		OrganizationID:   fixture.key.OrganizationID,
+		TargetType:       "user",
+		UserID:           pgtype.UUID{Bytes: oncallID, Valid: true},
+		ScheduleID:       pgtype.UUID{},
+		WebhookUrl:       pgtype.Text{},
+		Channels:         oncallChannels,
+	})
+	require.NoError(t, err)
+
+	return stepID
+}
+
 func TestProcessInboundCollapseIncrementsEventCount(t *testing.T) {
 	pool, cleanup := startPostgres(t)
 	defer cleanup()
@@ -130,11 +203,11 @@ func TestProcessInboundCollapseIncrementsEventCount(t *testing.T) {
 		Priority:    "low",
 	}
 
-	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, firstID)
 
-	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
 	require.NoError(t, err)
 	require.Equal(t, firstID, secondID)
 
@@ -160,8 +233,21 @@ func TestProcessInboundCollapseAcknowledgedAlertDoesNotCreateNotifications(t *te
 	defer cleanup()
 
 	fixture := seedInboundFixture(t, pool)
+	jobs := newInboundJobs(t, pool)
+	oncallID := uuid.Must(uuid.NewV7())
+	_, err := fixture.queries.CreateUser(context.Background(), db.CreateUserParams{
+		ID:             oncallID,
+		OrganizationID: fixture.key.OrganizationID,
+		Email:          "oncall@example.com",
+		PasswordHash:   pgtype.Text{String: "argon2id:test", Valid: true},
+		Role:           "member",
+	})
+	require.NoError(t, err)
+	seedEscalationPolicyWithUsers(t, pool, fixture, oncallID)
+
 	ctx := context.Background()
 	logger := slog.Default()
+	deps := &alerts.InboundDeps{Pool: pool, Jobs: jobs}
 
 	event := integrations.AlertCreate{
 		EventType: integrations.EventTriggered,
@@ -170,7 +256,7 @@ func TestProcessInboundCollapseAcknowledgedAlertDoesNotCreateNotifications(t *te
 		Priority:  "high",
 	}
 
-	alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
 	require.NoError(t, err)
 
 	_, err = fixture.queries.AcknowledgeAlert(ctx, db.AcknowledgeAlertParams{
@@ -190,15 +276,24 @@ func TestProcessInboundCollapseAcknowledgedAlertDoesNotCreateNotifications(t *te
 		Recipient:      []byte(`{"type":"user","user_id":"` + fixture.userID.String() + `"}`),
 	})
 	require.NoError(t, err)
+	_, err = fixture.queries.CreateNotificationAttempt(ctx, db.CreateNotificationAttemptParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: fixture.key.OrganizationID,
+		AlertID:        alertID,
+		Channel:        "email",
+		Status:         "sent",
+		Recipient:      []byte(`{"type":"user","user_id":"` + oncallID.String() + `"}`),
+	})
+	require.NoError(t, err)
 
 	beforeCount, err := fixture.queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
 		AlertID:        alertID,
 		OrganizationID: fixture.key.OrganizationID,
 	})
 	require.NoError(t, err)
-	require.Equal(t, int64(1), beforeCount)
+	require.Equal(t, int64(2), beforeCount)
 
-	collapsedID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	collapsedID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, deps)
 	require.NoError(t, err)
 	require.Equal(t, alertID, collapsedID)
 
@@ -207,7 +302,30 @@ func TestProcessInboundCollapseAcknowledgedAlertDoesNotCreateNotifications(t *te
 		OrganizationID: fixture.key.OrganizationID,
 	})
 	require.NoError(t, err)
-	require.Equal(t, beforeCount, afterCount)
+	require.Equal(t, beforeCount+1, afterCount)
+
+	attempts, err := fixture.queries.ListNotificationAttemptsByAlertID(ctx, db.ListNotificationAttemptsByAlertIDParams{
+		AlertID:        alertID,
+		OrganizationID: fixture.key.OrganizationID,
+	})
+	require.NoError(t, err)
+
+	adminAttempts := 0
+	oncallAttempts := 0
+	for _, attempt := range attempts {
+		var recipient struct {
+			UserID string `json:"user_id"`
+		}
+		require.NoError(t, json.Unmarshal(attempt.Recipient, &recipient))
+		switch recipient.UserID {
+		case fixture.userID.String():
+			adminAttempts++
+		case oncallID.String():
+			oncallAttempts++
+		}
+	}
+	require.Equal(t, 1, adminAttempts)
+	require.Equal(t, 2, oncallAttempts)
 
 	alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
 		ID:             alertID,
@@ -233,7 +351,7 @@ func TestProcessInboundOutsideDedupWindowCreatesNewAlertRow(t *testing.T) {
 		Priority:  "low",
 	}
 
-	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, firstID)
 
@@ -244,7 +362,7 @@ func TestProcessInboundOutsideDedupWindowCreatesNewAlertRow(t *testing.T) {
 	`, firstID)
 	require.NoError(t, err)
 
-	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, secondID)
 	require.NotEqual(t, firstID, secondID)
@@ -309,7 +427,7 @@ func TestProcessInboundCustomDedupWindowCollapsesWithinWindow(t *testing.T) {
 		Priority:  "high",
 	}
 
-	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
 	require.NoError(t, err)
 
 	_, err = pool.Exec(ctx, `
@@ -319,7 +437,7 @@ func TestProcessInboundCustomDedupWindowCollapsesWithinWindow(t *testing.T) {
 	`, firstID)
 	require.NoError(t, err)
 
-	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
 	require.NoError(t, err)
 	require.Equal(t, firstID, secondID)
 
@@ -353,7 +471,7 @@ func TestProcessInboundCustomDedupWindowOutsideCreatesNewRow(t *testing.T) {
 		Priority:  "high",
 	}
 
-	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
 	require.NoError(t, err)
 
 	_, err = pool.Exec(ctx, `
@@ -363,7 +481,7 @@ func TestProcessInboundCustomDedupWindowOutsideCreatesNewRow(t *testing.T) {
 	`, firstID)
 	require.NoError(t, err)
 
-	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
 	require.NoError(t, err)
 	require.NotEqual(t, firstID, secondID)
 
@@ -390,7 +508,7 @@ func TestProcessInboundResolveSetsResolvedAtAndIntegration(t *testing.T) {
 		Summary:   "Disk usage high",
 		Priority:  "low",
 	}
-	alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, triggered)
+	alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, triggered, nil)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, alertID)
 
@@ -398,7 +516,7 @@ func TestProcessInboundResolveSetsResolvedAtAndIntegration(t *testing.T) {
 		EventType: integrations.EventResolved,
 		DedupKey:  "host-1-disk",
 	}
-	_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved)
+	_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved, nil)
 	require.NoError(t, err)
 
 	alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
@@ -425,7 +543,7 @@ func TestProcessInboundResolveUnknownDedupKeyNoOp(t *testing.T) {
 		EventType: integrations.EventResolved,
 		DedupKey:  "missing-key",
 	}
-	_, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved)
+	_, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved, nil)
 	require.NoError(t, err)
 
 	var alertCount int
@@ -451,17 +569,17 @@ func TestProcessInboundResolveIdempotentWhenAlreadyClosed(t *testing.T) {
 		Summary:   "CPU above threshold",
 		Priority:  "high",
 	}
-	alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event)
+	alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
 	require.NoError(t, err)
 
 	resolved := integrations.AlertCreate{
 		EventType: integrations.EventResolved,
 		DedupKey:  "cpu-high",
 	}
-	_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved)
+	_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved, nil)
 	require.NoError(t, err)
 
-	_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved)
+	_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved, nil)
 	require.NoError(t, err)
 
 	alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{

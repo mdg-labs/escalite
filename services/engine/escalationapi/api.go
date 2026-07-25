@@ -74,6 +74,25 @@ func CreateTriggeredAlert(
 	return err
 }
 
+// RenotifyCollapsedAlert schedules repeat notifications for a dedup-collapsed alert,
+// skipping users who already acknowledged.
+func RenotifyCollapsedAlert(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	jobs JobProducer,
+	alertID, organizationID uuid.UUID,
+) error {
+	queries := db.New(pool)
+	alert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+		ID:             alertID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		return err
+	}
+	return escalation.RenotifyCollapsedAlert(ctx, queries, jobs, alert)
+}
+
 // AcknowledgeAlert marks an alert acknowledged and cancels pending escalation.
 func AcknowledgeAlert(
 	ctx context.Context,

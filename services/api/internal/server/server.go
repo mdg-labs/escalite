@@ -125,8 +125,8 @@ func New(deps Dependencies) http.Handler {
 		if deps.InboundWebhook != nil {
 			webhookCfg.KeyLimiter = deps.InboundWebhook.KeyLimiter
 		}
-		inboundWebhook := handlers.NewInboundWebhookHandler(deps.Pool, deps.Logger, webhookCfg)
-		inboundAlerts := handlers.NewInboundAlertsHandler(deps.Pool, deps.Logger)
+		inboundWebhook := handlers.NewInboundWebhookHandler(deps.Pool, deps.Jobs, deps.Logger, webhookCfg)
+		inboundAlerts := handlers.NewInboundAlertsHandler(deps.Pool, deps.Jobs, deps.Logger)
 
 		emailCfg := handlers.InboundEmailConfig{}
 		if deps.InboundEmail != nil {
@@ -136,7 +136,7 @@ func New(deps Dependencies) http.Handler {
 				RequireAuthenticated: deps.InboundEmail.RequireAuthenticated,
 			}
 		}
-		inboundEmail := handlers.NewInboundEmailHandler(deps.Pool, deps.Logger, emailCfg)
+		inboundEmail := handlers.NewInboundEmailHandler(deps.Pool, deps.Jobs, deps.Logger, emailCfg)
 
 		mobileAuth := handlers.NewMobileAuthHandler(deps.Pool, deps.Logger)
 

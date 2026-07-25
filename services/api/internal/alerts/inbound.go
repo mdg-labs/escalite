@@ -8,11 +8,19 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/escalation"
+	"github.com/mdg-labs/escalite/services/engine/escalationapi"
 	"github.com/mdg-labs/escalite/services/integrations"
 )
+
+// InboundDeps provides optional runtime services for inbound alert processing.
+type InboundDeps struct {
+	Pool *pgxpool.Pool
+	Jobs escalationapi.JobProducer
+}
 
 // ProcessInbound applies a normalized inbound alert event for an integration key.
 // For triggered events it returns the created alert ID; resolved events return a zero UUID.
@@ -22,10 +30,11 @@ func ProcessInbound(
 	logger *slog.Logger,
 	key db.IntegrationKey,
 	event integrations.AlertCreate,
+	deps *InboundDeps,
 ) (uuid.UUID, error) {
 	switch event.EventType {
 	case integrations.EventTriggered:
-		return createTriggered(ctx, queries, key, event)
+		return createTriggered(ctx, queries, key, event, deps)
 	case integrations.EventResolved:
 		return uuid.Nil, resolveByDedupKey(ctx, queries, logger, key, event.DedupKey)
 	default:
@@ -33,7 +42,13 @@ func ProcessInbound(
 	}
 }
 
-func createTriggered(ctx context.Context, queries *db.Queries, key db.IntegrationKey, event integrations.AlertCreate) (uuid.UUID, error) {
+func createTriggered(
+	ctx context.Context,
+	queries *db.Queries,
+	key db.IntegrationKey,
+	event integrations.AlertCreate,
+	deps *InboundDeps,
+) (uuid.UUID, error) {
 	service, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
 		ID:             key.ServiceID,
 		OrganizationID: key.OrganizationID,
@@ -56,6 +71,9 @@ func createTriggered(ctx context.Context, queries *db.Queries, key db.Integratio
 			DedupWindowSeconds: dedupWindowSeconds,
 		})
 		if err != nil {
+			return uuid.Nil, err
+		}
+		if err := renotifyCollapsedAlert(ctx, deps, updated); err != nil {
 			return uuid.Nil, err
 		}
 		return updated.ID, nil
@@ -84,6 +102,13 @@ func createTriggered(ctx context.Context, queries *db.Queries, key db.Integratio
 		return uuid.Nil, err
 	}
 	return alert.ID, nil
+}
+
+func renotifyCollapsedAlert(ctx context.Context, deps *InboundDeps, alert db.Alert) error {
+	if deps == nil || deps.Pool == nil || deps.Jobs == nil {
+		return nil
+	}
+	return escalationapi.RenotifyCollapsedAlert(ctx, deps.Pool, deps.Jobs, alert.ID, alert.OrganizationID)
 }
 
 func resolveByDedupKey(

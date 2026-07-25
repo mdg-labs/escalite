@@ -72,7 +72,7 @@ func handleLastStepRepeat(
 	}
 
 	state.RepeatCount++
-	if err := scheduleStepNotifications(ctx, q, inserter, alert, state, int(lastStep.StepOrder)); err != nil {
+	if err := scheduleStepNotifications(ctx, q, inserter, alert, state, int(lastStep.StepOrder), nil); err != nil {
 		return err
 	}
 

@@ -15,6 +15,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/alerts"
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
+	"github.com/mdg-labs/escalite/services/engine/escalationapi"
 	"github.com/mdg-labs/escalite/services/integrations"
 )
 
@@ -36,14 +37,16 @@ type InboundEmailConfig struct {
 // InboundEmailHandler handles POST /api/v1/inbound/email from a trusted SMTP relay.
 type InboundEmailHandler struct {
 	pool   *pgxpool.Pool
+	jobs   escalationapi.JobProducer
 	logger *slog.Logger
 	cfg    InboundEmailConfig
 }
 
 // NewInboundEmailHandler returns a handler for inbound email relay requests.
-func NewInboundEmailHandler(pool *pgxpool.Pool, logger *slog.Logger, cfg InboundEmailConfig) *InboundEmailHandler {
+func NewInboundEmailHandler(pool *pgxpool.Pool, jobs escalationapi.JobProducer, logger *slog.Logger, cfg InboundEmailConfig) *InboundEmailHandler {
 	return &InboundEmailHandler{
 		pool:   pool,
+		jobs:   jobs,
 		logger: logger,
 		cfg:    cfg,
 	}
@@ -154,7 +157,10 @@ func (h *InboundEmailHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	for _, alertEvent := range parsedAlerts {
-		if _, err := alerts.ProcessInbound(ctx, queries, h.logger, key, alertEvent); err != nil {
+		if _, err := alerts.ProcessInbound(ctx, queries, h.logger, key, alertEvent, &alerts.InboundDeps{
+			Pool: h.pool,
+			Jobs: h.jobs,
+		}); err != nil {
 			h.logger.Error("process inbound email alert failed",
 				"integration_key_id", key.ID,
 				"service_id", key.ServiceID,

@@ -20,6 +20,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
+	"github.com/mdg-labs/escalite/services/api/internal/queue"
 	"github.com/mdg-labs/escalite/services/api/internal/ratelimit"
 	"github.com/mdg-labs/escalite/services/api/internal/server"
 	_ "github.com/mdg-labs/escalite/services/integrations/testplugin"
@@ -206,7 +207,10 @@ func TestInboundWebhookLogsTokenPrefixOnly(t *testing.T) {
 	_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
 	prefix := auth.TokenPrefix(token)
 
-	webhookHandler := handlers.NewInboundWebhookHandler(pool, logger, handlers.InboundWebhookConfig{})
+	jobs, err := queue.NewProducer(context.Background(), pool, logger)
+	require.NoError(t, err)
+
+	webhookHandler := handlers.NewInboundWebhookHandler(pool, jobs, logger, handlers.InboundWebhookConfig{})
 	req := httptest.NewRequest(http.MethodPost, "/webhook/test-plugin/"+token, bytes.NewReader([]byte(`{}`)))
 	req.Header.Set("Content-Type", "application/json")
 	routeCtx := chi.NewRouteContext()

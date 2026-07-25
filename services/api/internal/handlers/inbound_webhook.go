@@ -14,10 +14,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/alerts"
+	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/ratelimit"
+	"github.com/mdg-labs/escalite/services/engine/escalationapi"
 	"github.com/mdg-labs/escalite/services/integrations"
 )
 
@@ -36,17 +37,19 @@ type InboundWebhookConfig struct {
 // InboundWebhookHandler handles POST /webhook/{plugin}/{token}.
 type InboundWebhookHandler struct {
 	pool   *pgxpool.Pool
+	jobs   escalationapi.JobProducer
 	logger *slog.Logger
 	cfg    InboundWebhookConfig
 }
 
 // NewInboundWebhookHandler returns a handler for inbound webhook requests.
-func NewInboundWebhookHandler(pool *pgxpool.Pool, logger *slog.Logger, cfg InboundWebhookConfig) *InboundWebhookHandler {
+func NewInboundWebhookHandler(pool *pgxpool.Pool, jobs escalationapi.JobProducer, logger *slog.Logger, cfg InboundWebhookConfig) *InboundWebhookHandler {
 	if cfg.KeyLimiter == nil {
 		cfg.KeyLimiter = ratelimit.NewMemoryLimiter(defaultWebhookRateLimit, defaultWebhookRateWindow)
 	}
 	return &InboundWebhookHandler{
 		pool:   pool,
+		jobs:   jobs,
 		logger: logger,
 		cfg:    cfg,
 	}
@@ -141,7 +144,10 @@ func (h *InboundWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 
 	for _, alertEvent := range parsedAlerts {
-		if _, err := alerts.ProcessInbound(ctx, queries, h.logger, key, alertEvent); err != nil {
+		if _, err := alerts.ProcessInbound(ctx, queries, h.logger, key, alertEvent, &alerts.InboundDeps{
+			Pool: h.pool,
+			Jobs: h.jobs,
+		}); err != nil {
 			h.logger.Error("process inbound alert failed",
 				"integration_key_id", key.ID,
 				"service_id", key.ServiceID,

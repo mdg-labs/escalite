@@ -72,7 +72,7 @@ func ScheduleStep1Notifications(
 		return fmt.Errorf("load step 1: %w", err)
 	}
 
-	if err := scheduleStepNotifications(ctx, q, inserter, alert, State{}, 1); err != nil {
+	if err := scheduleStepNotifications(ctx, q, inserter, alert, State{}, 1, nil); err != nil {
 		return err
 	}
 
@@ -100,6 +100,7 @@ func scheduleStepNotifications(
 	alert db.Alert,
 	priorState State,
 	stepOrder int,
+	skipUserIDs map[uuid.UUID]struct{},
 ) error {
 	policies, err := q.ListEscalationPoliciesByServiceID(ctx, db.ListEscalationPoliciesByServiceIDParams{
 		ServiceID:      alert.ServiceID,
@@ -164,6 +165,9 @@ func scheduleStepNotifications(
 			userID, err := uuid.Parse(strings.TrimSpace(item.recipient.UserID))
 			if err != nil {
 				return fmt.Errorf("invalid user id for notification rules: %w", err)
+			}
+			if _, skip := skipUserIDs[userID]; skip {
+				continue
 			}
 
 			channelSchedules, err := notificationrules.ResolveChannelSchedule(

@@ -14,6 +14,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/alerts"
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
+	"github.com/mdg-labs/escalite/services/engine/escalationapi"
 	"github.com/mdg-labs/escalite/services/integrations"
 )
 
@@ -22,13 +23,15 @@ const genericRESTPluginName = "generic-rest-api"
 // InboundAlertsHandler handles POST /api/v1/alerts.
 type InboundAlertsHandler struct {
 	pool   *pgxpool.Pool
+	jobs   escalationapi.JobProducer
 	logger *slog.Logger
 }
 
 // NewInboundAlertsHandler returns a handler for authenticated alert creation.
-func NewInboundAlertsHandler(pool *pgxpool.Pool, logger *slog.Logger) *InboundAlertsHandler {
+func NewInboundAlertsHandler(pool *pgxpool.Pool, jobs escalationapi.JobProducer, logger *slog.Logger) *InboundAlertsHandler {
 	return &InboundAlertsHandler{
 		pool:   pool,
+		jobs:   jobs,
 		logger: logger,
 	}
 }
@@ -101,7 +104,10 @@ func (h *InboundAlertsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	alertID, err := alerts.ProcessInbound(ctx, queries, h.logger, key, alertEvent)
+	alertID, err := alerts.ProcessInbound(ctx, queries, h.logger, key, alertEvent, &alerts.InboundDeps{
+		Pool: h.pool,
+		Jobs: h.jobs,
+	})
 	if err != nil {
 		h.logger.Error("process inbound alert failed",
 			"integration_key_id", key.ID,

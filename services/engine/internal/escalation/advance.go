@@ -74,7 +74,7 @@ func AdvanceEscalationStep(
 	}
 
 	nextStepOrder := state.CurrentStep + 1
-	if err := scheduleStepNotifications(ctx, q, inserter, alert, state, nextStepOrder); err != nil {
+	if err := scheduleStepNotifications(ctx, q, inserter, alert, state, nextStepOrder, nil); err != nil {
 		return err
 	}
 
