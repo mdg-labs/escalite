@@ -484,8 +484,8 @@ ROADMAP = {
                         ),
                         task(
                             "p0-packages-ui-primitives",
-                            "packages/ui primitives (shadcn base + tokens + dark mode)",
-                            "Stand up packages/ui with shadcn-derived Button, Dialog, Input, Toast; Tailwind tokens; dark mode default.",
+                            "packages/ui primitives (COSS UI base + tokens + dark mode)",
+                            "Stand up packages/ui with COSS-derived (@coss/*) Button, Dialog, Input, Toast; packages/tokens semantic values; Tailwind tokens; dark mode default.",
                             [
                                 "Dark mode toggles via class on html element",
                                 "Severity colors documented as colorblind-safe in tokens",
@@ -1205,10 +1205,11 @@ def phase_2_epics() -> list[dict]:
                 task(
                     "p2-mobile-expo-scaffold",
                     "Expo app scaffold in apps/mobile",
-                    "Create Expo managed app with Expo Router, urql client from packages/ts-types, shared tokens theme.",
+                    "Create Expo managed app with Expo Router, urql client from packages/ts-types, TamaguiProvider wired to packages/tokens theme.",
                     [
                         "apps/mobile builds with eas.json stub for future builds",
                         "Deep link scheme escalite:// configured",
+                        "TamaguiProvider configured with dark theme default from packages/tokens",
                     ],
                     depends_on=["p0-graphql-codegen-ts"],
                     estimated_size="M",

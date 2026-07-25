@@ -232,7 +232,7 @@ SDL, gqlgen, codegen to ts-types, packages/ui primitives, Vite web shell per doc
     - pnpm codegen produces packages/ts-types without manual edits
     - turbo build depends on codegen output
 
-- **`p0-packages-ui-primitives`** — packages/ui primitives (shadcn base + tokens + dark mode)
+- **`p0-packages-ui-primitives`** — packages/ui primitives (COSS UI base + tokens + dark mode)
   - Size: M | Depends on: `p0-packages-config-shared`
   - Acceptance criteria:
     - Dark mode toggles via class on html element
@@ -583,6 +583,7 @@ Minimal native app: push, ack, escalate per doc 03.
   - Acceptance criteria:
     - apps/mobile builds with eas.json stub for future builds
     - Deep link scheme escalite:// configured
+    - TamaguiProvider configured with dark theme default from packages/tokens
 
 - **`p2-mobile-auth-deep-link`** — Mobile auth via web login + deep link token exchange
   - Size: M | Depends on: `p2-mobile-expo-scaffold`, `p0-auth-login-sessions`

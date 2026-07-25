@@ -24,9 +24,9 @@ Every `NN-*.md` file contains:
 | [00-vision-and-scope.md](./00-vision-and-scope.md) | Vision & Scope | Product vision, gap analysis, pillars, non-goals, target users, MVP success criteria |
 | [01-architecture-and-monorepo.md](./01-architecture-and-monorepo.md) | Architecture & Monorepo | Stack, monorepo layout, build-vs-fork, deployment targets, realtime |
 | [02-core-domain-and-features.md](./02-core-domain-and-features.md) | Core Domain & Features | Domain model, escalation, scheduling, integrations, notifications |
-| [03-mobile-app-spec.md](./03-mobile-app-spec.md) | Mobile App (Minimal) | Native app scope, Expo, push/Critical Alerts, auth |
+| [03-mobile-app-spec.md](./03-mobile-app-spec.md) | Mobile App (Minimal) | Native app scope, Expo + Tamagui, push/Critical Alerts, auth |
 | [04-licensing-and-editions.md](./04-licensing-and-editions.md) | Licensing & Editions | AGPL CE, Cloud split, two-repo model, tenant isolation |
-| [05-ui-design-system.md](./05-ui-design-system.md) | UI / Design System | shadcn/Radix/Tailwind, Tremor, component structure |
+| [05-ui-design-system.md](./05-ui-design-system.md) | UI / Design System | COSS UI, packages/tokens, Tremor, component/particle guide |
 | [06-roadmap-mvp-phasing.md](./06-roadmap-mvp-phasing.md) | Roadmap / MVP Phasing | Phases 0–6; MVP = Phases 0–5 CE + Docker Compose only |
 | [07-security-and-auth.md](./07-security-and-auth.md) | Security, AuthN/AuthZ & Hardening | Sessions, RBAC, webhook security, secrets, audit, CI hygiene |
 | [08-implementation-decisions-and-conventions.md](./08-implementation-decisions-and-conventions.md) | Implementation Decisions (agent-binding) | Pinned tools, conventions, Definition of Done, Phase 0 bootstrap order |

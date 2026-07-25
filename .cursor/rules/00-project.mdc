@@ -10,8 +10,8 @@ Open-core, self-hostable on-call, alerting, and incident-response platform (AGPL
 ## Tech stack
 
 - **API** (`services/api`): Go — chi, gqlgen, pgx, sqlc, Atlas, river
-- **Web** (`apps/web`): React, Vite, urql, shadcn/Tailwind
-- **Mobile** (`apps/mobile`): Expo (later phases)
+- **Web** (`apps/web`): React, Vite, urql, COSS UI/Tailwind
+- **Mobile** (`apps/mobile`): Expo + Tamagui (later phases)
 - **Monorepo**: pnpm workspaces + Turborepo + `go.work`
 - **Data**: PostgreSQL; `docker compose up` for local/MVP deploy
 - **CI**: GitHub Actions
