@@ -63,6 +63,7 @@ type testServerOptions struct {
 	PasswordReset  *server.PasswordResetOptions
 	HeartbeatPing  *server.HeartbeatPingOptions
 	InboundWebhook *server.InboundWebhookOptions
+	InboundEmail   *server.InboundEmailOptions
 	Secrets        *crypto.Box
 }
 
@@ -110,6 +111,7 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 		PasswordReset: opts.PasswordReset,
 		HeartbeatPing: opts.HeartbeatPing,
 		InboundWebhook: opts.InboundWebhook,
+		InboundEmail:   opts.InboundEmail,
 	})
 
 	return handler, pool, func() {

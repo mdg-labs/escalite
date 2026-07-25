@@ -20,6 +20,13 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/ratelimit"
 )
 
+// InboundEmailOptions overrides inbound email wiring (primarily for tests).
+type InboundEmailOptions struct {
+	RelaySecret          string
+	Domain               string
+	RequireAuthenticated bool
+}
+
 // Dependencies holds runtime services wired into the HTTP router.
 type Dependencies struct {
 	Logger        *slog.Logger
@@ -33,6 +40,7 @@ type Dependencies struct {
 	PasswordReset *PasswordResetOptions
 	HeartbeatPing   *HeartbeatPingOptions
 	InboundWebhook  *InboundWebhookOptions
+	InboundEmail    *InboundEmailOptions
 	GraphQL         graphql.Options
 }
 
@@ -118,6 +126,16 @@ func New(deps Dependencies) http.Handler {
 		inboundWebhook := handlers.NewInboundWebhookHandler(deps.Pool, deps.Logger, webhookCfg)
 		inboundAlerts := handlers.NewInboundAlertsHandler(deps.Pool, deps.Logger)
 
+		emailCfg := handlers.InboundEmailConfig{}
+		if deps.InboundEmail != nil {
+			emailCfg = handlers.InboundEmailConfig{
+				RelaySecret:          deps.InboundEmail.RelaySecret,
+				Domain:               deps.InboundEmail.Domain,
+				RequireAuthenticated: deps.InboundEmail.RequireAuthenticated,
+			}
+		}
+		inboundEmail := handlers.NewInboundEmailHandler(deps.Pool, deps.Logger, emailCfg)
+
 		r.Post("/api/v1/setup", setup.ServeHTTP)
 		r.Post("/api/v1/login", login.ServeHTTP)
 		r.Post("/api/v1/password-reset/request", passwordReset.Request)
@@ -130,6 +148,9 @@ func New(deps Dependencies) http.Handler {
 
 		r.Post("/webhook/{plugin}/{token}", inboundWebhook.ServeHTTP)
 		r.Post("/api/v1/alerts", inboundAlerts.ServeHTTP)
+		if emailCfg.Enabled() {
+			r.Post("/api/v1/inbound/email", inboundEmail.ServeHTTP)
+		}
 
 		if deps.OIDC != nil {
 			r.Get("/api/v1/auth/oidc/login", deps.OIDC.Login)

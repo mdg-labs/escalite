@@ -148,3 +148,45 @@ func TestLoadSMTPParsesConfig(t *testing.T) {
 	assert.Equal(t, "secret", cfg.SMTP.Password)
 	assert.Equal(t, "noreply@example.com", cfg.SMTP.From)
 }
+
+func TestLoadInboundEmailOptional(t *testing.T) {
+	setRequiredEnv(t)
+
+	cfg, err := Load(Options{
+		ServiceName:       "api",
+		DefaultListenAddr: ":8080",
+		RequireDatabase:   true,
+	})
+	require.NoError(t, err)
+	assert.Empty(t, cfg.InboundEmail.RelaySecret)
+}
+
+func TestLoadInboundEmailRequiresDomainWhenSecretSet(t *testing.T) {
+	setRequiredEnv(t)
+	t.Setenv("ESCALITE_INBOUND_EMAIL_RELAY_SECRET", "relay-secret")
+
+	_, err := Load(Options{
+		ServiceName:       "api",
+		DefaultListenAddr: ":8080",
+		RequireDatabase:   true,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "ESCALITE_INBOUND_EMAIL_DOMAIN")
+}
+
+func TestLoadInboundEmailParsesConfig(t *testing.T) {
+	setRequiredEnv(t)
+	t.Setenv("ESCALITE_INBOUND_EMAIL_RELAY_SECRET", "relay-secret")
+	t.Setenv("ESCALITE_INBOUND_EMAIL_DOMAIN", "inbound.example.com")
+	t.Setenv("ESCALITE_INBOUND_EMAIL_REQUIRE_AUTHENTICATED", "false")
+
+	cfg, err := Load(Options{
+		ServiceName:       "api",
+		DefaultListenAddr: ":8080",
+		RequireDatabase:   true,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "relay-secret", cfg.InboundEmail.RelaySecret)
+	assert.Equal(t, "inbound.example.com", cfg.InboundEmail.Domain)
+	assert.False(t, cfg.InboundEmail.RequireAuthenticated)
+}

@@ -60,6 +60,13 @@ type GraphQLConfig struct {
 	MaxComplexity int
 }
 
+// InboundEmailConfig controls inbound email relay authentication.
+type InboundEmailConfig struct {
+	RelaySecret          string
+	Domain               string
+	RequireAuthenticated bool
+}
+
 // Config holds parsed ESCALITE_* environment configuration.
 type Config struct {
 	ListenAddr     string
@@ -71,6 +78,7 @@ type Config struct {
 	Environment    string
 	OIDC           *OIDCConfig
 	SMTP           *SMTPConfig
+	InboundEmail   InboundEmailConfig
 	PasswordReset  PasswordResetRateLimitConfig
 	HeartbeatPing  HeartbeatPingRateLimitConfig
 	GraphQL        GraphQLConfig
@@ -109,6 +117,12 @@ func Load(opts Options) (Config, error) {
 		return Config{}, err
 	}
 	cfg.SMTP = smtpCfg
+
+	inboundEmailCfg, err := loadInboundEmail()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.InboundEmail = inboundEmailCfg
 
 	cfg.PublicURL = strings.TrimSpace(os.Getenv("ESCALITE_PUBLIC_URL"))
 	cfg.AppOrigin = strings.TrimSuffix(strings.TrimSpace(os.Getenv("ESCALITE_APP_ORIGIN")), "/")
@@ -196,6 +210,31 @@ func loadSMTP() (*SMTPConfig, error) {
 		Username: strings.TrimSpace(os.Getenv("ESCALITE_SMTP_USERNAME")),
 		Password: os.Getenv("ESCALITE_SMTP_PASSWORD"),
 		From:     from,
+	}, nil
+}
+
+func loadInboundEmail() (InboundEmailConfig, error) {
+	secret := strings.TrimSpace(os.Getenv("ESCALITE_INBOUND_EMAIL_RELAY_SECRET"))
+	domain := strings.TrimSpace(os.Getenv("ESCALITE_INBOUND_EMAIL_DOMAIN"))
+	if secret == "" {
+		return InboundEmailConfig{}, nil
+	}
+	if domain == "" {
+		return InboundEmailConfig{}, fmt.Errorf(
+			"ESCALITE_INBOUND_EMAIL_DOMAIN is required when ESCALITE_INBOUND_EMAIL_RELAY_SECRET is set",
+		)
+	}
+
+	requireAuthenticated := true
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("ESCALITE_INBOUND_EMAIL_REQUIRE_AUTHENTICATED"))) {
+	case "0", "false", "no", "off":
+		requireAuthenticated = false
+	}
+
+	return InboundEmailConfig{
+		RelaySecret:          secret,
+		Domain:               domain,
+		RequireAuthenticated: requireAuthenticated,
 	}, nil
 }
 

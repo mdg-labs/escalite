@@ -111,6 +111,11 @@ func run() int {
 				cfg.HeartbeatPing.Window,
 			),
 		},
+		InboundEmail: &server.InboundEmailOptions{
+			RelaySecret:          cfg.InboundEmail.RelaySecret,
+			Domain:               cfg.InboundEmail.Domain,
+			RequireAuthenticated: cfg.InboundEmail.RequireAuthenticated,
+		},
 		GraphQL: graphql.Options{
 			Production:    cfg.IsProduction(),
 			MaxDepth:      cfg.GraphQL.MaxDepth,
