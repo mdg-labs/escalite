@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications'
 import { router } from 'expo-router'
 import { Platform } from 'react-native'
 
+import { ensureAlertNotificationCategories } from '@/push/categories'
 import { parseAlertTriggeredPushData } from '@/push/payload'
 
 Notifications.setNotificationHandler({
@@ -24,6 +25,8 @@ Notifications.setNotificationHandler({
 })
 
 export async function ensureAndroidNotificationChannel(): Promise<void> {
+  await ensureAlertNotificationCategories()
+
   if (Platform.OS !== 'android') {
     return
   }

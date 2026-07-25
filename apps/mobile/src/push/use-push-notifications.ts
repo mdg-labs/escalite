@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications'
 import { useEffect, useRef } from 'react'
 
+import { handleNotificationActionResponse } from '@/push/action-handler'
 import {
   ensureAndroidNotificationChannel,
   navigateToAlertDetailFromNotification,
@@ -13,14 +14,22 @@ export function usePushNotifications(): void {
     void ensureAndroidNotificationChannel()
 
     const handleResponse = (response: Notifications.NotificationResponse) => {
-      const notificationId = response.notification.request.identifier
-      if (handledNotificationIds.current.has(notificationId)) {
+      const responseKey = `${response.notification.request.identifier}:${response.actionIdentifier}`
+      if (handledNotificationIds.current.has(responseKey)) {
         return
       }
 
-      if (navigateToAlertDetailFromNotification(response)) {
-        handledNotificationIds.current.add(notificationId)
-      }
+      void handleNotificationActionResponse(response).then((result) => {
+        if (result === 'ignored') {
+          return
+        }
+
+        handledNotificationIds.current.add(responseKey)
+
+        if (result === 'navigate' && navigateToAlertDetailFromNotification(response)) {
+          return
+        }
+      })
     }
 
     void Notifications.getLastNotificationResponseAsync().then((response) => {

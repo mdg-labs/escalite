@@ -4,6 +4,7 @@ import { Card, H3, ListItem, Paragraph, ScrollView, Separator, Spinner, Text, YS
 
 import { fetchAlert, type MobileAlert } from '@/api/alerts'
 import { useAuth } from '@/auth/context'
+import { AlertActionBar } from '@/components/alert-action-bar'
 import { severityColors } from '@escalite/tokens'
 
 function priorityColor(priority: string): string {
@@ -48,16 +49,27 @@ function AlertMetadata({ alert }: { alert: MobileAlert }) {
       />
       <Separator />
       <ListItem title="Status" subTitle={alert.status} backgroundColor="transparent" />
+      {alert.acknowledgedAt ? (
+        <>
+          <Separator />
+          <ListItem
+            title="Acknowledged at"
+            subTitle={formatTimestamp(alert.acknowledgedAt)}
+            backgroundColor="transparent"
+          />
+        </>
+      ) : null}
     </YStack>
   )
 }
 
 export default function AlertDetailScreen() {
-  const { alertId } = useLocalSearchParams<{ alertId: string }>()
+  const { alertId, escalate } = useLocalSearchParams<{ alertId: string; escalate?: string }>()
   const { status } = useAuth()
   const [alert, setAlert] = useState<MobileAlert | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [escalateOpen, setEscalateOpen] = useState(escalate === '1')
 
   useEffect(() => {
     if (!alertId || status !== 'authenticated') {
@@ -95,6 +107,10 @@ export default function AlertDetailScreen() {
       cancelled = true
     }
   }, [alertId, status])
+
+  useEffect(() => {
+    setEscalateOpen(escalate === '1')
+  }, [escalate])
 
   if (status === 'loading' || loading) {
     return (
@@ -136,6 +152,13 @@ export default function AlertDetailScreen() {
         <Card backgroundColor="$backgroundHover" borderColor="$borderColor" borderWidth={1} padding="$4">
           <AlertMetadata alert={alert} />
         </Card>
+
+        <AlertActionBar
+          alert={alert}
+          escalateOpen={escalateOpen}
+          onAlertUpdated={setAlert}
+          onEscalateOpenChange={setEscalateOpen}
+        />
       </YStack>
     </ScrollView>
   )

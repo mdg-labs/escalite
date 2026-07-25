@@ -38,9 +38,12 @@ test('notification tap navigates to alert detail route', () => {
   const layoutSource = readFileSync(join(root, 'app/_layout.tsx'), 'utf8')
   const hookSource = readFileSync(join(root, 'src/push/use-push-notifications.ts'), 'utf8')
   const detailSource = readFileSync(join(root, 'app/alerts/[alertId].tsx'), 'utf8')
+  const notificationsSource = readFileSync(join(root, 'src/push/notifications.ts'), 'utf8')
 
   assert.match(layoutSource, /PushNotificationBootstrap/)
   assert.match(hookSource, /addNotificationResponseReceivedListener/)
   assert.match(hookSource, /getLastNotificationResponseAsync/)
+  assert.match(hookSource, /handleNotificationActionResponse/)
   assert.match(detailSource, /fetchAlert/)
+  assert.match(notificationsSource, /ensureAlertNotificationCategories/)
 })
