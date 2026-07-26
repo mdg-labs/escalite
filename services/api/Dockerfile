@@ -6,12 +6,10 @@ WORKDIR /src
 ENV CGO_ENABLED=0
 
 FROM base AS dev
-RUN curl -sSf https://atlasgo.sh | sh
 WORKDIR /src/services/api
 CMD ["go", "run", "./cmd/api"]
 
 FROM base AS builder
-RUN curl -sSf https://atlasgo.sh | sh
 ENV GOWORK=off
 COPY services/api/go.mod services/api/go.sum ./services/api/
 RUN cd services/api && go mod download
@@ -23,7 +21,6 @@ FROM busybox:1.36.1-musl@sha256:3c6ae8008e2c2eedd141725c30b20d9c36b026eb796688f8
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:f5b485ea962d9bd1186b2f6b3a061191539b905b82ec395de78cbfae51f20e35 AS prod
 COPY --from=busybox /bin/wget /wget
 COPY --from=builder /out/api /app/api
-COPY --from=builder /usr/local/bin/atlas /app/atlas
 EXPOSE 8080
 HEALTHCHECK --interval=5s --timeout=3s --retries=12 --start-period=30s \
   CMD ["/wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]

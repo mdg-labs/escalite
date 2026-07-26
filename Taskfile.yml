@@ -27,12 +27,12 @@ tasks:
       - pnpm lint
 
   migrate:
-    desc: Apply database migrations (Atlas; no full stack required)
+    desc: Apply database migrations (goose; no full stack required)
     dir: services/api
     env:
       ESCALITE_DATABASE_URL: "{{.DATABASE_URL}}"
     cmds:
-      - atlas migrate apply --env local
+      - go run github.com/pressly/goose/v3/cmd/goose -dir migrations postgres "{{.DATABASE_URL}}" up
     preconditions:
       - sh: test -n "{{.DATABASE_URL}}"
         msg: "Set DATABASE_URL or ESCALITE_DATABASE_URL before running migrations"
