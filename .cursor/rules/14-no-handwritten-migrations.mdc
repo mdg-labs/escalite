@@ -1,40 +1,65 @@
 ---
-description: Enforce Atlas declarative schema — zero hand-written DDL migrations
+description: HARD STOP — agents must never hand-edit migration SQL; use Taskfile workflow only
 alwaysApply: true
 ---
 
-# Zero hand-written DDL migrations
+# Migrations are generated — never hand-written
 
-Escalite uses **Atlas** with a canonical declarative schema. See doc 08 (`#database-schema-workflow`) and `docs/adr/0001-atlas-declarative-schema.md`.
+**If you are about to create, edit, or paste SQL into `services/api/migrations/` — STOP.**
 
-## Canonical source of truth
+## Source of truth
 
-| What | Path |
-| ---- | ---- |
-| Declarative schema | `services/api/schema/` (Atlas HCL) |
-| Generated migrations | `services/api/migrations/` (from `atlas migrate diff` only) |
-| sqlc queries | `services/api/queries/` |
+| What | Path | Who edits |
+| ---- | ---- | --------- |
+| Tables (canonical) | `services/api/schema/sql/schema.sql` | Agents |
+| NOTIFY triggers (canonical) | `services/api/schema/sql/realtime_notify.sql` | Agents |
+| Generated migrations | `services/api/migrations/*.sql` | **`task schema:diff` only** |
 
-## Required workflow for schema changes
+Generation uses [pg-schema-diff](https://github.com/stripe/pg-schema-diff) (`v1.0.7`); runtime apply uses [goose](https://github.com/pressly/goose). See [ADR 0002](../../docs/adr/0002-sql-schema-pg-schema-diff-goose.md).
 
-1. Edit `services/api/schema/` (tables, columns, indexes, constraints).
-2. Run `atlas migrate diff --env local` (or `task schema:diff` when defined).
-3. Commit **both** schema and generated migration files in the same commit/PR.
+## Workflow — schema/sql → schema:diff → commit
 
-## Forbidden
+```bash
+# 1. Edit services/api/schema/sql/schema.sql and/or realtime_notify.sql
 
-- Hand-writing `CREATE TABLE`, `ALTER TABLE`, `DROP`, indexes, or constraints in `services/api/migrations/`
-- Creating migration files manually (no `touch`, no copy-paste DDL into new `.sql` files)
-- Using `goose create` or other migration scaffolders for DDL
-- Committing schema changes without the matching generated migration
-- Editing generated migration DDL to "fix" drift — fix the canonical schema and re-run `atlas migrate diff`
+# 2. Generate migration (from repo root)
+task schema:diff -- add_my_column
 
-## Allowed
+# 3. Verify
+task migrate   # needs DATABASE_URL or ESCALITE_DATABASE_URL
 
-- Hand-written **DML only** (INSERT/UPDATE backfills) in a migration file when paired with an ADR note in the PR — never DDL
-- Editing `atlas.hcl` and Taskfile migration tasks
-- sqlc query files in `services/api/queries/` (not schema DDL)
+# 4. Commit: schema/sql/*.sql + migrations/<new>.sql
+```
 
-## Verifier / orchestrator gate
+`task schema:diff` needs a running Postgres server with existing migrations applied (default: compose dev DB on `127.0.0.1:5432`).
 
-Schema-related task **FAIL** if committed migration files contain DDL that was not produced by `atlas migrate diff` in the same change set, or if canonical schema and migrations are out of sync.
+| Mode | Command |
+| ---- | ------- |
+| No local Postgres | `SCHEMA_DIFF_EPHEMERAL_PG=1 task schema:diff -- <name>` |
+| Baseline squash (rare) | `SCHEMA_DIFF_FROM_EMPTY=1 task schema:diff -- bootstrap` |
+| Faster local runs | `SCHEMA_DIFF_SKIP_VALIDATION=1 task schema:diff -- <name>` |
+
+**Rename review:** pg-schema-diff may emit `DROP COLUMN` + `ADD COLUMN` for renames. Replace with `ALTER TABLE … RENAME` before committing (see ADR 0002).
+
+## Absolute prohibitions
+
+| Forbidden | Do instead |
+| --------- | ---------- |
+| Edit `migrations/*.sql` with Write/StrReplace/touch | Workflow above |
+| Paste DDL into `migrations/` | Edit `schema.sql` or `realtime_notify.sql` |
+| Migration without matching source change | Same commit: canonical SQL + generated migration |
+| Hand-edit goose version table | Let `task migrate` manage it |
+
+## Allowed exceptions
+
+- DML-only backfills in a migration (ADR note required)
+- Editing `Taskfile.yml`, `tools/schema-diff/`, `services/api/scripts/schema-*.sh`
+- `services/api/queries/*.sql` (sqlc, not schema DDL)
+- Manual `RENAME` substitution in a generated migration after review (document in PR)
+
+## Verifier FAIL if
+
+- Agent edited `migrations/*.sql` directly (except approved rename substitution)
+- Migration not from `task schema:diff` after canonical SQL change
+
+See `docs/adr/0002-sql-schema-pg-schema-diff-goose.md`.

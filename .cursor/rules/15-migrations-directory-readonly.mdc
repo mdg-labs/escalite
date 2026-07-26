@@ -1,0 +1,14 @@
+---
+description: Migration SQL files are generated artifacts — see rule 14
+globs: services/api/migrations/**
+alwaysApply: true
+---
+
+# `services/api/migrations/` is read-only
+
+Do not edit. Full workflow: `.cursor/rules/14-no-handwritten-migrations.mdc`
+
+```bash
+task schema:diff -- <name>   # pg-schema-diff → goose migration
+task migrate                 # goose apply at dev/startup
+```

@@ -72,7 +72,7 @@ ESCALITE_APP_ORIGIN=https://escalite.example.com
 Trigger a deploy from Coolify. On first boot:
 
 - Postgres starts and becomes healthy.
-- API runs Atlas migrations automatically, then serves `/healthz`.
+- API runs goose migrations automatically, then serves `/healthz`.
 - Engine and web start after API is healthy.
 
 Monitor logs in Coolify until all four services report healthy.

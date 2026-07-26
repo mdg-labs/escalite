@@ -17,7 +17,7 @@
 7. PLAN FILE GUARD (when plan file in WRITE SCOPE)
 8. WORKTREE ISOLATION (Lane P only)
 
-**Verifier prompts:** PHASICAL SYNC — VERIFIER + SCOPED CI GATE (+ PLAN FILE GUARD when applicable).
+**Verifier prompts:** PHASICAL SYNC — VERIFIER + **VERIFIER READ-ONLY GUARD** + SCOPED CI GATE (+ PLAN FILE GUARD when applicable). Never include `task schema:diff`, Docker, or migration-generation smoke in verifier prompts.
 
 **Enforcement:** Missing PHASICAL SYNC or COMMIT CONTRACT → orchestrator must not dispatch. Sub-agent skipping either → verifier **FAIL** + orchestrator recovery.
 
@@ -119,12 +119,12 @@ Staging:
   - NEVER stage .agents/project/agent-memory/**
 
 Examples:
-  feat(api)[#42]: add Atlas migration bootstrap
+  feat(api)[#42]: add goose migration bootstrap
   fix(web)[#42]: correct urql cache key for services
 
 Pre-commit:
   - Run SCOPED CI GATE (below) — failure → blocked, no commit
-  - DB changes → atlas migrate diff + atlas migrate apply only (see DB MIGRATIONS)
+  - DB changes → task schema:diff + task migrate only (see DB MIGRATIONS)
 
 Handoff order (with PHASICAL SYNC):
   in-progress → implement → session ended → in-review → THEN commit
@@ -196,6 +196,33 @@ Report per leaf task: taskId, githubIssueNumber, verification PASS|FAIL,
   comment posted ✓, final status (done | in-progress), parent epic status if applicable.
 ```
 
+## VERIFIER READ-ONLY GUARD
+
+```text
+VERIFIER READ-ONLY GUARD (mandatory in every verifier prompt):
+
+Verifiers audit committed work. They do NOT reproduce execution smoke tests that mutate the repo or host.
+
+FORBIDDEN during verification:
+- `task schema:diff` / `go run ./tools/schema-diff` — ALWAYS writes new files under services/api/migrations/
+- `SCHEMA_DIFF_EPHEMERAL_PG=1` or any ad-hoc `docker run postgres` — leaves orphaned containers if trap/cleanup is skipped
+- `docker compose up`, testcontainers, or starting Postgres for manual smoke
+- Creating, editing, or deleting files under services/api/migrations/
+- Any command that writes to the working tree (except Phasical MCP + local session memory)
+
+ALLOWED Layer 2 checks (read-only / unit tests only):
+- `go test ./...` on packages that do NOT write migrations (e.g. tools/schema-diff unit tests with mocks)
+- `git log`, `git diff`, `git show` on committed SHAs
+- Static review of committed files vs AC
+
+If AC requires runtime smoke (schema:diff output, docker compose, migration apply):
+- Verify via committed artifacts + unit tests + execution agent's commit message evidence
+- FAIL with fix hint for execution to demonstrate in their handoff — do NOT run smoke yourself
+- Orchestrator must never instruct verifier to "smoke test schema:diff"
+
+Post-verification cleanup: if verifier accidentally created artifacts anyway → delete before reporting PASS.
+```
+
 ## SESSION TIME TRACKING
 
 ```text
@@ -219,15 +246,27 @@ SCOPED CI GATE (mandatory before commit and in verifier Layer 2):
 
 ```text
 DB MIGRATIONS (mandatory in every execution prompt):
-- Canonical schema: services/api/schema/ (Atlas HCL) — edit this, never hand-write DDL in migrations/
-- Generate: atlas migrate diff --env local (or task schema:diff) after schema edits
-- Apply: atlas migrate apply --env local (or task migrate)
-- Never hand-write CREATE/ALTER/DROP in services/api/migrations/
-- Never create migration files manually — only via atlas migrate diff
-- DML-only backfills: allowed only with ADR note in PR — never DDL
-- sqlc reads canonical schema + services/api/queries/
-- CI must pass atlas migrate lint / drift gate
-- See .cursor/rules/14-no-handwritten-migrations.mdc and docs/adr/0001-atlas-declarative-schema.md
+- Canonical schema: services/api/schema/sql/schema.sql + realtime_notify.sql
+- NEVER edit services/api/migrations/*.sql by hand — pg-schema-diff generates them via task schema:diff
+- Runtime apply: goose (task migrate)
+
+Workflow:
+  1. Edit services/api/schema/sql/schema.sql and/or realtime_notify.sql
+  2. task schema:diff -- <migration_name>
+     (pg-schema-diff plan; needs Postgres with migrations applied — see SCHEMA_DIFF_EPHEMERAL_PG)
+  3. task migrate to verify (needs DATABASE_URL or ESCALITE_DATABASE_URL)
+  4. Commit schema/sql/*.sql + new migration
+
+Variants:
+  - No local Postgres: SCHEMA_DIFF_EPHEMERAL_PG=1 task schema:diff -- <name>
+  - Baseline squash (rare): SCHEMA_DIFF_FROM_EMPTY=1 task schema:diff -- bootstrap
+  - Rename review: replace DROP+ADD with ALTER RENAME when pg-schema-diff mis-detects (ADR 0002)
+
+Forbidden:
+  - Hand-write CREATE/ALTER/DROP in services/api/migrations/
+  - touch/Write/StrReplace on migrations/*.sql (except approved RENAME substitution)
+
+See .cursor/rules/14-no-handwritten-migrations.mdc and docs/adr/0002-sql-schema-pg-schema-diff-goose.md
 ```
 
 ## PLAN FILE GUARD

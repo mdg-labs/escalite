@@ -34,6 +34,8 @@ Install these tools before developing locally:
 | [pnpm](https://pnpm.io/) | 9.x | Monorepo package manager (`corepack enable` recommended) |
 | [Go](https://go.dev/) | ≥ 1.22 | API, engine, and integrations services |
 | [Task](https://taskfile.dev/) | 3.x | Root task runner (`go install github.com/go-task/task/v3/cmd/task@latest`) |
+| [pg-schema-diff](https://github.com/stripe/pg-schema-diff) | v1.0.7 | Migration generation (`go install github.com/stripe/pg-schema-diff/cmd/pg-schema-diff@v1.0.7`) |
+| [goose](https://github.com/pressly/goose) | v3 | Migration apply at dev/startup (via `task migrate`) |
 
 Docker is required for the full local stack via `deploy/docker-compose/` (see [Deployment](#deployment)).
 
@@ -80,7 +82,8 @@ task dev       # Start JS dev workflows (Turborepo)
 task build     # Build JS workspaces and Go services
 task test      # Run JS and Go tests
 task lint       # Lint JS workspaces
-task migrate   # Apply Postgres migrations (requires DATABASE_URL)
+task migrate   # Apply Postgres migrations with goose (requires DATABASE_URL)
+task schema:diff -- <name>  # Generate migration from schema/sql (pg-schema-diff)
 task compose:dev        # Docker Compose dev profile
 task compose:prod:build # Build prod-profile images locally
 task compose:prod       # Run prod-profile stack

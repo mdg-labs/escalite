@@ -1,8 +1,10 @@
 # ADR 0001: Atlas declarative schema for database migrations
 
-**Status:** Accepted  
+**Status:** Superseded by [ADR 0002 — SQL schema with pg-schema-diff and goose](./0002-sql-schema-pg-schema-diff-goose.md)  
 **Date:** 2026-07-24  
 **Supersedes:** goose + hand-written SQL migrations (doc 08 prior revision)
+
+> **Historical record.** Escalite adopted Atlas in Phase 0, then dropped it in epic [#141](https://github.com/mdg-labs/escalite/issues/141) because Atlas free tier cannot diff Postgres functions and triggers. Follow [ADR 0002](./0002-sql-schema-pg-schema-diff-goose.md) and `.cursor/rules/14-no-handwritten-migrations.mdc` for the current workflow.
 
 ## Context
 
@@ -30,16 +32,28 @@ Adopt **Atlas** (`ariga/atlas`) for schema management:
 
 ### Positive
 
-- Schema drift caught in CI before merge
-- Single source of truth for sqlc and migrations
+- Schema drift caught in CI before merge (tables)
+- Single source of truth for sqlc and migrations (tables)
 - Keeps `pgx` + `sqlc` (no ORM); explicit queries remain reviewable
 - Works identically for self-hosted CE and per-tenant Cloud instances (doc 04 isolation model)
 
 ### Negative / trade-offs
 
 - Team must learn Atlas workflow (`atlas.hcl`, `migrate diff`, `migrate lint`)
-- Existing goose bootstrap (#38) must be pivoted before EL-2 schema subtasks continue
+- **Atlas Pro paywall for triggers/functions** — free CLI handles tables only; NOTIFY triggers use `schema/sql/realtime_notify.sql` + `task schema:diff:notify` stamp script (see `.cursor/rules/14-no-handwritten-migrations.mdc`)
 - Generated migrations are still SQL files — reviewers must read diffs, not edit DDL inline
+- Existing goose bootstrap (#38) was pivoted before EL-2 schema subtasks continued
+
+### Atlas vs alternatives (2026)
+
+| Need | Atlas (current) | Alternative |
+| ---- | ----------------- | ----------- |
+| Tables + indexes + FKs, free | ✅ `--env diff` | pgmold, supaschema, goose |
+| Triggers/functions, free | ❌ Pro only | pgmold, supaschema, stamped SQL (our workaround) |
+| No vendor login | ✅ for tables | pgmold, supaschema |
+| HCL declarative | ✅ | dpg, Atlas |
+
+Re-evaluate Atlas if Pro cost or trigger workflow becomes unacceptable; canonical SQL in `schema/sql/` migrates cleanly to pgmold or supaschema.
 
 ### Follow-up
 
@@ -49,5 +63,6 @@ Adopt **Atlas** (`ariga/atlas`) for schema management:
 
 ## References
 
+- [ADR 0002](./0002-sql-schema-pg-schema-diff-goose.md) — current decision
 - Doc 08 — Implementation Decisions & Conventions (`#database-schema-workflow`)
 - `.cursor/rules/14-no-handwritten-migrations.mdc`
