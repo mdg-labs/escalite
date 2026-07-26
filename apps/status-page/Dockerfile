@@ -31,12 +31,14 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine@sha256:65e3e85dbaed8ba248841d9d58a8
 USER root
 RUN apk add --no-cache gettext
 COPY --from=busybox /bin/wget /usr/local/bin/wget
-COPY deploy/docker-compose/nginx/status-page.conf.template /etc/nginx/templates/default.conf.template
+COPY deploy/docker-compose/nginx/status-page.conf.template /etc/escalite/nginx/default.conf.template
 COPY deploy/docker-compose/nginx/runtime-config.js.template /etc/nginx/runtime-config.js.template
 COPY deploy/docker-compose/scripts/generate-runtime-config.sh /docker-entrypoint.d/generate-runtime-config.sh
 COPY deploy/docker-compose/scripts/docker-entrypoint-nginx.sh /docker-entrypoint-nginx.sh
 RUN chmod +x /docker-entrypoint.d/generate-runtime-config.sh /docker-entrypoint-nginx.sh \
-  && chown -R nginx:nginx /etc/nginx/conf.d /usr/share/nginx/html
+  && mkdir -p /etc/escalite/nginx \
+  && rm -f /etc/nginx/templates/default.conf.template \
+  && chown -R nginx:nginx /etc/nginx/conf.d /etc/escalite/nginx /usr/share/nginx/html
 COPY --from=builder /app/apps/status-page/dist /usr/share/nginx/html
 USER nginx
 EXPOSE 5174

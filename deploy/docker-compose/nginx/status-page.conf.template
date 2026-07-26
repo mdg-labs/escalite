@@ -8,8 +8,12 @@ server {
     # Status pages are embeddable; main app uses frame-ancestors 'none' (doc 07).
     add_header Content-Security-Policy "frame-ancestors *" always;
 
+    # Defer upstream DNS to request time (Coolify internal hostnames).
+    resolver 127.0.0.11 valid=10s ipv6=off;
+
     location /api/ {
-        proxy_pass ${ESCALITE_API_UPSTREAM};
+        set $escalite_api_upstream "${ESCALITE_API_UPSTREAM}";
+        proxy_pass $escalite_api_upstream;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
