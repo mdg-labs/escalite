@@ -40,7 +40,7 @@ tasks:
   schema:diff:
     desc: Generate goose migration from schema/sql (uses existing Postgres; no new container by default)
     vars:
-      MIGRATION_NAME: '{{index .CLI_ARGS 0}}'
+      MIGRATION_NAME: '{{.CLI_ARGS}}'
       SCHEMA_DIFF_FROM_EMPTY: '{{.SCHEMA_DIFF_FROM_EMPTY | default "0"}}'
       DATABASE_URL: '{{.DATABASE_URL | default .ESCALITE_DATABASE_URL | default "postgres://escalite:escalite@127.0.0.1:5432/escalite?sslmode=disable"}}'
     env:
@@ -61,7 +61,7 @@ tasks:
             docker rm -f "${SCHEMA_DIFF_CONTAINER}" >/dev/null 2>&1 || true
           fi
         }
-        trap cleanup EXIT INT TERM
+        trap cleanup EXIT
 
         if [ "${SCHEMA_DIFF_EPHEMERAL_PG:-0}" = "1" ]; then
           SCHEMA_DIFF_CONTAINER="escalite-schema-diff-$$"

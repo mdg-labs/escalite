@@ -1198,32 +1198,6 @@ Statement 139
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
-CREATE TABLE "public"."organization_analytics_settings" (
-	"organization_id" uuid NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"exclude_maintenance_window_alerts" boolean DEFAULT false NOT NULL
-);
-
-/*
-Statement 140
-*/
-SET SESSION statement_timeout = 3000;
-SET SESSION lock_timeout = 3000;
-CREATE UNIQUE INDEX organization_analytics_settings_pkey ON public.organization_analytics_settings USING btree (organization_id);
-
-/*
-Statement 141
-*/
-SET SESSION statement_timeout = 3000;
-SET SESSION lock_timeout = 3000;
-ALTER TABLE "public"."organization_analytics_settings" ADD CONSTRAINT "organization_analytics_settings_pkey" PRIMARY KEY USING INDEX "organization_analytics_settings_pkey";
-
-/*
-Statement 142
-*/
-SET SESSION statement_timeout = 3000;
-SET SESSION lock_timeout = 3000;
 CREATE TABLE "public"."organization_saml_settings" (
 	"organization_id" uuid NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -1239,21 +1213,21 @@ CREATE TABLE "public"."organization_saml_settings" (
 );
 
 /*
-Statement 143
+Statement 140
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX organization_saml_settings_pkey ON public.organization_saml_settings USING btree (organization_id);
 
 /*
-Statement 144
+Statement 141
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."organization_saml_settings" ADD CONSTRAINT "organization_saml_settings_pkey" PRIMARY KEY USING INDEX "organization_saml_settings_pkey";
 
 /*
-Statement 145
+Statement 142
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -1266,35 +1240,35 @@ CREATE TABLE "public"."organization_scim_settings" (
 );
 
 /*
-Statement 146
+Statement 143
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX organization_scim_settings_pkey ON public.organization_scim_settings USING btree (organization_id);
 
 /*
-Statement 147
+Statement 144
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."organization_scim_settings" ADD CONSTRAINT "organization_scim_settings_pkey" PRIMARY KEY USING INDEX "organization_scim_settings_pkey";
 
 /*
-Statement 148
+Statement 145
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX organization_scim_settings_token_hash_key ON public.organization_scim_settings USING btree (token_hash);
 
 /*
-Statement 149
+Statement 146
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."organization_scim_settings" ADD CONSTRAINT "organization_scim_settings_token_hash_key" UNIQUE USING INDEX "organization_scim_settings_token_hash_key";
 
 /*
-Statement 150
+Statement 147
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -1312,21 +1286,21 @@ CREATE TABLE "public"."organization_slack_settings" (
 );
 
 /*
-Statement 151
+Statement 148
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX organization_slack_settings_pkey ON public.organization_slack_settings USING btree (organization_id);
 
 /*
-Statement 152
+Statement 149
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."organization_slack_settings" ADD CONSTRAINT "organization_slack_settings_pkey" PRIMARY KEY USING INDEX "organization_slack_settings_pkey";
 
 /*
-Statement 153
+Statement 150
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -1338,231 +1312,217 @@ CREATE TABLE "public"."organizations" (
 );
 
 /*
-Statement 154
+Statement 151
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id);
 
 /*
-Statement 155
+Statement 152
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."organizations" ADD CONSTRAINT "organizations_pkey" PRIMARY KEY USING INDEX "organizations_pkey";
 
 /*
-Statement 156
+Statement 153
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."alerts" ADD CONSTRAINT "alerts_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 157
+Statement 154
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."alerts" VALIDATE CONSTRAINT "alerts_organization_id_fkey";
 
 /*
-Statement 158
+Statement 155
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."audit_events" ADD CONSTRAINT "audit_events_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 159
+Statement 156
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."audit_events" VALIDATE CONSTRAINT "audit_events_organization_id_fkey";
 
 /*
-Statement 160
+Statement 157
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."escalation_policies" ADD CONSTRAINT "escalation_policies_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 161
+Statement 158
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."escalation_policies" VALIDATE CONSTRAINT "escalation_policies_organization_id_fkey";
 
 /*
-Statement 162
+Statement 159
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."escalation_step_targets" ADD CONSTRAINT "escalation_step_targets_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 163
+Statement 160
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."escalation_step_targets" VALIDATE CONSTRAINT "escalation_step_targets_organization_id_fkey";
 
 /*
-Statement 164
+Statement 161
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."heartbeat_monitors" ADD CONSTRAINT "heartbeat_monitors_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 165
+Statement 162
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."heartbeat_monitors" VALIDATE CONSTRAINT "heartbeat_monitors_organization_id_fkey";
 
 /*
-Statement 166
+Statement 163
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."incident_role_definitions" ADD CONSTRAINT "incident_role_definitions_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 167
+Statement 164
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."incident_role_definitions" VALIDATE CONSTRAINT "incident_role_definitions_organization_id_fkey";
 
 /*
-Statement 168
+Statement 165
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."incidents" ADD CONSTRAINT "incidents_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 169
+Statement 166
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."incidents" VALIDATE CONSTRAINT "incidents_organization_id_fkey";
 
 /*
-Statement 170
+Statement 167
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."maintenance_windows" ADD CONSTRAINT "maintenance_windows_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 171
+Statement 168
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."maintenance_windows" VALIDATE CONSTRAINT "maintenance_windows_organization_id_fkey";
 
 /*
-Statement 172
+Statement 169
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."mobile_auth_codes" ADD CONSTRAINT "mobile_auth_codes_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 173
+Statement 170
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."mobile_auth_codes" VALIDATE CONSTRAINT "mobile_auth_codes_organization_id_fkey";
 
 /*
-Statement 174
+Statement 171
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."mobile_devices" ADD CONSTRAINT "mobile_devices_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 175
+Statement 172
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."mobile_devices" VALIDATE CONSTRAINT "mobile_devices_organization_id_fkey";
 
 /*
-Statement 176
+Statement 173
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."notification_attempts" ADD CONSTRAINT "notification_attempts_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 177
+Statement 174
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."notification_attempts" VALIDATE CONSTRAINT "notification_attempts_organization_id_fkey";
 
 /*
-Statement 178
-*/
-SET SESSION statement_timeout = 3000;
-SET SESSION lock_timeout = 3000;
-ALTER TABLE "public"."organization_analytics_settings" ADD CONSTRAINT "organization_analytics_settings_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
-
-/*
-Statement 179
-*/
-SET SESSION statement_timeout = 3000;
-SET SESSION lock_timeout = 3000;
-ALTER TABLE "public"."organization_analytics_settings" VALIDATE CONSTRAINT "organization_analytics_settings_organization_id_fkey";
-
-/*
-Statement 180
+Statement 175
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."organization_saml_settings" ADD CONSTRAINT "organization_saml_settings_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 181
+Statement 176
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."organization_saml_settings" VALIDATE CONSTRAINT "organization_saml_settings_organization_id_fkey";
 
 /*
-Statement 182
+Statement 177
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."organization_scim_settings" ADD CONSTRAINT "organization_scim_settings_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 183
+Statement 178
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."organization_scim_settings" VALIDATE CONSTRAINT "organization_scim_settings_organization_id_fkey";
 
 /*
-Statement 184
+Statement 179
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."organization_slack_settings" ADD CONSTRAINT "organization_slack_settings_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 185
+Statement 180
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."organization_slack_settings" VALIDATE CONSTRAINT "organization_slack_settings_organization_id_fkey";
 
 /*
-Statement 186
+Statement 181
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -1583,77 +1543,77 @@ CREATE TABLE "public"."overrides" (
 );
 
 /*
-Statement 187
+Statement 182
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" ADD CONSTRAINT "overrides_window_check" CHECK((ends_at > starts_at));
 
 /*
-Statement 188
+Statement 183
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX overrides_id_organization_id_key ON public.overrides USING btree (id, organization_id);
 
 /*
-Statement 189
+Statement 184
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" ADD CONSTRAINT "overrides_id_organization_id_key" UNIQUE USING INDEX "overrides_id_organization_id_key";
 
 /*
-Statement 190
+Statement 185
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX overrides_pkey ON public.overrides USING btree (id);
 
 /*
-Statement 191
+Statement 186
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" ADD CONSTRAINT "overrides_pkey" PRIMARY KEY USING INDEX "overrides_pkey";
 
 /*
-Statement 192
+Statement 187
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX overrides_active_idx ON public.overrides USING btree (schedule_id, starts_at, ends_at) WHERE (deleted_at IS NULL);
 
 /*
-Statement 193
+Statement 188
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX overrides_rotation_id_idx ON public.overrides USING btree (rotation_id);
 
 /*
-Statement 194
+Statement 189
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX overrides_schedule_id_idx ON public.overrides USING btree (schedule_id);
 
 /*
-Statement 195
+Statement 190
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX overrides_schedule_id_starts_at_ends_at_idx ON public.overrides USING btree (schedule_id, starts_at, ends_at);
 
 /*
-Statement 196
+Statement 191
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE TRIGGER overrides_notify_change AFTER INSERT OR DELETE OR UPDATE ON public.overrides FOR EACH ROW EXECUTE FUNCTION notify_schedule_row_change();
 
 /*
-Statement 197
+Statement 192
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -1669,77 +1629,77 @@ CREATE TABLE "public"."password_reset_tokens" (
 );
 
 /*
-Statement 198
+Statement 193
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 199
+Statement 194
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."password_reset_tokens" VALIDATE CONSTRAINT "password_reset_tokens_organization_id_fkey";
 
 /*
-Statement 200
+Statement 195
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX password_reset_tokens_id_organization_id_key ON public.password_reset_tokens USING btree (id, organization_id);
 
 /*
-Statement 201
+Statement 196
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_id_organization_id_key" UNIQUE USING INDEX "password_reset_tokens_id_organization_id_key";
 
 /*
-Statement 202
+Statement 197
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX password_reset_tokens_pkey ON public.password_reset_tokens USING btree (id);
 
 /*
-Statement 203
+Statement 198
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_pkey" PRIMARY KEY USING INDEX "password_reset_tokens_pkey";
 
 /*
-Statement 204
+Statement 199
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX password_reset_tokens_token_hash_key ON public.password_reset_tokens USING btree (token_hash);
 
 /*
-Statement 205
+Statement 200
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_token_hash_key" UNIQUE USING INDEX "password_reset_tokens_token_hash_key";
 
 /*
-Statement 206
+Statement 201
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX password_reset_tokens_expires_at_idx ON public.password_reset_tokens USING btree (expires_at);
 
 /*
-Statement 207
+Statement 202
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX password_reset_tokens_user_id_idx ON public.password_reset_tokens USING btree (user_id);
 
 /*
-Statement 208
+Statement 203
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -1756,91 +1716,91 @@ CREATE TABLE "public"."refresh_tokens" (
 );
 
 /*
-Statement 209
+Statement 204
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."refresh_tokens" ADD CONSTRAINT "refresh_tokens_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 210
+Statement 205
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."refresh_tokens" VALIDATE CONSTRAINT "refresh_tokens_organization_id_fkey";
 
 /*
-Statement 211
+Statement 206
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX refresh_tokens_id_organization_id_key ON public.refresh_tokens USING btree (id, organization_id);
 
 /*
-Statement 212
+Statement 207
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."refresh_tokens" ADD CONSTRAINT "refresh_tokens_id_organization_id_key" UNIQUE USING INDEX "refresh_tokens_id_organization_id_key";
 
 /*
-Statement 213
+Statement 208
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX refresh_tokens_pkey ON public.refresh_tokens USING btree (id);
 
 /*
-Statement 214
+Statement 209
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."refresh_tokens" ADD CONSTRAINT "refresh_tokens_pkey" PRIMARY KEY USING INDEX "refresh_tokens_pkey";
 
 /*
-Statement 215
+Statement 210
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX refresh_tokens_token_hash_key ON public.refresh_tokens USING btree (token_hash);
 
 /*
-Statement 216
+Statement 211
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."refresh_tokens" ADD CONSTRAINT "refresh_tokens_token_hash_key" UNIQUE USING INDEX "refresh_tokens_token_hash_key";
 
 /*
-Statement 217
+Statement 212
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX refresh_tokens_organization_id_idx ON public.refresh_tokens USING btree (organization_id);
 
 /*
-Statement 218
+Statement 213
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX refresh_tokens_user_id_idx ON public.refresh_tokens USING btree (user_id);
 
 /*
-Statement 219
+Statement 214
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."mobile_devices" ADD CONSTRAINT "mobile_devices_refresh_token_id_organization_id_fkey" FOREIGN KEY (refresh_token_id, organization_id) REFERENCES refresh_tokens(id, organization_id) ON DELETE SET NULL NOT VALID;
 
 /*
-Statement 220
+Statement 215
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."mobile_devices" VALIDATE CONSTRAINT "mobile_devices_refresh_token_id_organization_id_fkey";
 
 /*
-Statement 221
+Statement 216
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -1857,84 +1817,84 @@ CREATE TABLE "public"."rotations" (
 );
 
 /*
-Statement 222
+Statement 217
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX rotations_id_organization_id_key ON public.rotations USING btree (id, organization_id);
 
 /*
-Statement 223
+Statement 218
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."rotations" ADD CONSTRAINT "rotations_id_organization_id_key" UNIQUE USING INDEX "rotations_id_organization_id_key";
 
 /*
-Statement 224
+Statement 219
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX rotations_pkey ON public.rotations USING btree (id);
 
 /*
-Statement 225
+Statement 220
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."rotations" ADD CONSTRAINT "rotations_pkey" PRIMARY KEY USING INDEX "rotations_pkey";
 
 /*
-Statement 226
+Statement 221
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX rotations_schedule_id_layer_key ON public.rotations USING btree (schedule_id, layer);
 
 /*
-Statement 227
+Statement 222
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."rotations" ADD CONSTRAINT "rotations_schedule_id_layer_key" UNIQUE USING INDEX "rotations_schedule_id_layer_key";
 
 /*
-Statement 228
+Statement 223
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX rotations_organization_id_idx ON public.rotations USING btree (organization_id);
 
 /*
-Statement 229
+Statement 224
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX rotations_schedule_id_idx ON public.rotations USING btree (schedule_id);
 
 /*
-Statement 230
+Statement 225
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" ADD CONSTRAINT "overrides_rotation_id_organization_id_fkey" FOREIGN KEY (rotation_id, organization_id) REFERENCES rotations(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 231
+Statement 226
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" VALIDATE CONSTRAINT "overrides_rotation_id_organization_id_fkey";
 
 /*
-Statement 232
+Statement 227
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE TRIGGER rotations_notify_change AFTER INSERT OR DELETE OR UPDATE ON public.rotations FOR EACH ROW EXECUTE FUNCTION notify_schedule_row_change();
 
 /*
-Statement 233
+Statement 228
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -1949,119 +1909,119 @@ CREATE TABLE "public"."schedules" (
 );
 
 /*
-Statement 234
+Statement 229
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."schedules" ADD CONSTRAINT "schedules_timezone_check" CHECK((timezone(timezone, '2000-01-01 00:00:00+00'::timestamp with time zone) IS NOT NULL));
 
 /*
-Statement 235
+Statement 230
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."schedules" ADD CONSTRAINT "schedules_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 236
+Statement 231
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."schedules" VALIDATE CONSTRAINT "schedules_organization_id_fkey";
 
 /*
-Statement 237
+Statement 232
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX schedules_id_organization_id_key ON public.schedules USING btree (id, organization_id);
 
 /*
-Statement 238
+Statement 233
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."schedules" ADD CONSTRAINT "schedules_id_organization_id_key" UNIQUE USING INDEX "schedules_id_organization_id_key";
 
 /*
-Statement 239
+Statement 234
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX schedules_pkey ON public.schedules USING btree (id);
 
 /*
-Statement 240
+Statement 235
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."schedules" ADD CONSTRAINT "schedules_pkey" PRIMARY KEY USING INDEX "schedules_pkey";
 
 /*
-Statement 241
+Statement 236
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX schedules_organization_id_idx ON public.schedules USING btree (organization_id);
 
 /*
-Statement 242
+Statement 237
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX schedules_team_id_idx ON public.schedules USING btree (team_id);
 
 /*
-Statement 243
+Statement 238
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."escalation_step_targets" ADD CONSTRAINT "escalation_step_targets_schedule_id_organization_id_fkey" FOREIGN KEY (schedule_id, organization_id) REFERENCES schedules(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 244
+Statement 239
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."escalation_step_targets" VALIDATE CONSTRAINT "escalation_step_targets_schedule_id_organization_id_fkey";
 
 /*
-Statement 245
+Statement 240
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" ADD CONSTRAINT "overrides_schedule_id_organization_id_fkey" FOREIGN KEY (schedule_id, organization_id) REFERENCES schedules(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 246
+Statement 241
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" VALIDATE CONSTRAINT "overrides_schedule_id_organization_id_fkey";
 
 /*
-Statement 247
+Statement 242
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."rotations" ADD CONSTRAINT "rotations_schedule_id_organization_id_fkey" FOREIGN KEY (schedule_id, organization_id) REFERENCES schedules(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 248
+Statement 243
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."rotations" VALIDATE CONSTRAINT "rotations_schedule_id_organization_id_fkey";
 
 /*
-Statement 249
+Statement 244
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE TRIGGER schedules_notify_change AFTER INSERT OR DELETE OR UPDATE ON public.schedules FOR EACH ROW EXECUTE FUNCTION notify_schedule_row_change();
 
 /*
-Statement 250
+Statement 245
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -2073,28 +2033,28 @@ CREATE TABLE "public"."scim_group_members" (
 );
 
 /*
-Statement 251
+Statement 246
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX scim_group_members_pkey ON public.scim_group_members USING btree (scim_group_id, user_id);
 
 /*
-Statement 252
+Statement 247
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."scim_group_members" ADD CONSTRAINT "scim_group_members_pkey" PRIMARY KEY USING INDEX "scim_group_members_pkey";
 
 /*
-Statement 253
+Statement 248
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX scim_group_members_user_id_idx ON public.scim_group_members USING btree (user_id);
 
 /*
-Statement 254
+Statement 249
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -2109,70 +2069,70 @@ CREATE TABLE "public"."scim_groups" (
 );
 
 /*
-Statement 255
+Statement 250
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."scim_groups" ADD CONSTRAINT "scim_groups_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 256
+Statement 251
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."scim_groups" VALIDATE CONSTRAINT "scim_groups_organization_id_fkey";
 
 /*
-Statement 257
+Statement 252
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX scim_groups_organization_id_external_id_key ON public.scim_groups USING btree (organization_id, external_id);
 
 /*
-Statement 258
+Statement 253
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."scim_groups" ADD CONSTRAINT "scim_groups_organization_id_external_id_key" UNIQUE USING INDEX "scim_groups_organization_id_external_id_key";
 
 /*
-Statement 259
+Statement 254
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX scim_groups_pkey ON public.scim_groups USING btree (id);
 
 /*
-Statement 260
+Statement 255
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."scim_groups" ADD CONSTRAINT "scim_groups_pkey" PRIMARY KEY USING INDEX "scim_groups_pkey";
 
 /*
-Statement 261
+Statement 256
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX scim_groups_team_id_idx ON public.scim_groups USING btree (team_id);
 
 /*
-Statement 262
+Statement 257
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."scim_group_members" ADD CONSTRAINT "scim_group_members_scim_group_id_fkey" FOREIGN KEY (scim_group_id) REFERENCES scim_groups(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 263
+Statement 258
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."scim_group_members" VALIDATE CONSTRAINT "scim_group_members_scim_group_id_fkey";
 
 /*
-Statement 264
+Statement 259
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -2192,140 +2152,140 @@ CREATE TABLE "public"."services" (
 );
 
 /*
-Statement 265
+Statement 260
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."services" ADD CONSTRAINT "services_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 266
+Statement 261
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."services" VALIDATE CONSTRAINT "services_organization_id_fkey";
 
 /*
-Statement 267
+Statement 262
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX services_id_organization_id_key ON public.services USING btree (id, organization_id);
 
 /*
-Statement 268
+Statement 263
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."services" ADD CONSTRAINT "services_id_organization_id_key" UNIQUE USING INDEX "services_id_organization_id_key";
 
 /*
-Statement 269
+Statement 264
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX services_pkey ON public.services USING btree (id);
 
 /*
-Statement 270
+Statement 265
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."services" ADD CONSTRAINT "services_pkey" PRIMARY KEY USING INDEX "services_pkey";
 
 /*
-Statement 271
+Statement 266
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX services_active_organization_id_idx ON public.services USING btree (organization_id) WHERE (deleted_at IS NULL);
 
 /*
-Statement 272
+Statement 267
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX services_organization_id_idx ON public.services USING btree (organization_id);
 
 /*
-Statement 273
+Statement 268
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX services_team_id_idx ON public.services USING btree (team_id);
 
 /*
-Statement 274
+Statement 269
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."alerts" ADD CONSTRAINT "alerts_service_id_organization_id_fkey" FOREIGN KEY (service_id, organization_id) REFERENCES services(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 275
+Statement 270
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."alerts" VALIDATE CONSTRAINT "alerts_service_id_organization_id_fkey";
 
 /*
-Statement 276
+Statement 271
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."escalation_policies" ADD CONSTRAINT "escalation_policies_service_id_organization_id_fkey" FOREIGN KEY (service_id, organization_id) REFERENCES services(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 277
+Statement 272
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."escalation_policies" VALIDATE CONSTRAINT "escalation_policies_service_id_organization_id_fkey";
 
 /*
-Statement 278
+Statement 273
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."heartbeat_monitors" ADD CONSTRAINT "heartbeat_monitors_service_id_organization_id_fkey" FOREIGN KEY (service_id, organization_id) REFERENCES services(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 279
+Statement 274
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."heartbeat_monitors" VALIDATE CONSTRAINT "heartbeat_monitors_service_id_organization_id_fkey";
 
 /*
-Statement 280
+Statement 275
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."integration_keys" ADD CONSTRAINT "integration_keys_service_id_organization_id_fkey" FOREIGN KEY (service_id, organization_id) REFERENCES services(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 281
+Statement 276
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."integration_keys" VALIDATE CONSTRAINT "integration_keys_service_id_organization_id_fkey";
 
 /*
-Statement 282
+Statement 277
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."maintenance_windows" ADD CONSTRAINT "maintenance_windows_service_id_organization_id_fkey" FOREIGN KEY (service_id, organization_id) REFERENCES services(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 283
+Statement 278
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."maintenance_windows" VALIDATE CONSTRAINT "maintenance_windows_service_id_organization_id_fkey";
 
 /*
-Statement 284
+Statement 279
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -2341,70 +2301,70 @@ CREATE TABLE "public"."sessions" (
 );
 
 /*
-Statement 285
+Statement 280
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."sessions" ADD CONSTRAINT "sessions_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 286
+Statement 281
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."sessions" VALIDATE CONSTRAINT "sessions_organization_id_fkey";
 
 /*
-Statement 287
+Statement 282
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX sessions_id_organization_id_key ON public.sessions USING btree (id, organization_id);
 
 /*
-Statement 288
+Statement 283
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."sessions" ADD CONSTRAINT "sessions_id_organization_id_key" UNIQUE USING INDEX "sessions_id_organization_id_key";
 
 /*
-Statement 289
+Statement 284
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX sessions_pkey ON public.sessions USING btree (id);
 
 /*
-Statement 290
+Statement 285
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."sessions" ADD CONSTRAINT "sessions_pkey" PRIMARY KEY USING INDEX "sessions_pkey";
 
 /*
-Statement 291
+Statement 286
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX sessions_expires_at_idx ON public.sessions USING btree (expires_at);
 
 /*
-Statement 292
+Statement 287
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX sessions_organization_id_idx ON public.sessions USING btree (organization_id);
 
 /*
-Statement 293
+Statement 288
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX sessions_user_id_idx ON public.sessions USING btree (user_id);
 
 /*
-Statement 294
+Statement 289
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -2422,70 +2382,70 @@ CREATE TABLE "public"."status_page_components" (
 );
 
 /*
-Statement 295
+Statement 290
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_components" ADD CONSTRAINT "status_page_components_status_check" CHECK((status = ANY (ARRAY['operational'::text, 'degraded'::text, 'partial_outage'::text, 'major_outage'::text])));
 
 /*
-Statement 296
+Statement 291
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_components" ADD CONSTRAINT "status_page_components_service_id_organization_id_fkey" FOREIGN KEY (service_id, organization_id) REFERENCES services(id, organization_id) ON DELETE SET NULL NOT VALID;
 
 /*
-Statement 297
+Statement 292
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_components" VALIDATE CONSTRAINT "status_page_components_service_id_organization_id_fkey";
 
 /*
-Statement 298
+Statement 293
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_page_components_id_organization_id_key ON public.status_page_components USING btree (id, organization_id);
 
 /*
-Statement 299
+Statement 294
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_components" ADD CONSTRAINT "status_page_components_id_organization_id_key" UNIQUE USING INDEX "status_page_components_id_organization_id_key";
 
 /*
-Statement 300
+Statement 295
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_page_components_pkey ON public.status_page_components USING btree (id);
 
 /*
-Statement 301
+Statement 296
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_components" ADD CONSTRAINT "status_page_components_pkey" PRIMARY KEY USING INDEX "status_page_components_pkey";
 
 /*
-Statement 302
+Statement 297
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX status_page_components_organization_id_idx ON public.status_page_components USING btree (organization_id);
 
 /*
-Statement 303
+Statement 298
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX status_page_components_status_page_id_idx ON public.status_page_components USING btree (status_page_id);
 
 /*
-Statement 304
+Statement 299
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -2497,42 +2457,42 @@ CREATE TABLE "public"."status_page_incident_components" (
 );
 
 /*
-Statement 305
+Statement 300
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incident_components" ADD CONSTRAINT "status_page_incident_components_status_page_component_id_organi" FOREIGN KEY (status_page_component_id, organization_id) REFERENCES status_page_components(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 306
+Statement 301
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incident_components" VALIDATE CONSTRAINT "status_page_incident_components_status_page_component_id_organi";
 
 /*
-Statement 307
+Statement 302
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_page_incident_components_pkey ON public.status_page_incident_components USING btree (status_page_incident_id, status_page_component_id);
 
 /*
-Statement 308
+Statement 303
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incident_components" ADD CONSTRAINT "status_page_incident_components_pkey" PRIMARY KEY USING INDEX "status_page_incident_components_pkey";
 
 /*
-Statement 309
+Statement 304
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX status_page_incident_components_component_id_idx ON public.status_page_incident_components USING btree (status_page_component_id);
 
 /*
-Statement 310
+Statement 305
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -2546,49 +2506,49 @@ CREATE TABLE "public"."status_page_incident_updates" (
 );
 
 /*
-Statement 311
+Statement 306
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incident_updates" ADD CONSTRAINT "status_page_incident_updates_status_check" CHECK((status = ANY (ARRAY['investigating'::text, 'identified'::text, 'monitoring'::text, 'resolved'::text])));
 
 /*
-Statement 312
+Statement 307
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_page_incident_updates_id_organization_id_key ON public.status_page_incident_updates USING btree (id, organization_id);
 
 /*
-Statement 313
+Statement 308
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incident_updates" ADD CONSTRAINT "status_page_incident_updates_id_organization_id_key" UNIQUE USING INDEX "status_page_incident_updates_id_organization_id_key";
 
 /*
-Statement 314
+Statement 309
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_page_incident_updates_pkey ON public.status_page_incident_updates USING btree (id);
 
 /*
-Statement 315
+Statement 310
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incident_updates" ADD CONSTRAINT "status_page_incident_updates_pkey" PRIMARY KEY USING INDEX "status_page_incident_updates_pkey";
 
 /*
-Statement 316
+Statement 311
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX status_page_incident_updates_status_page_incident_id_idx ON public.status_page_incident_updates USING btree (status_page_incident_id);
 
 /*
-Statement 317
+Statement 312
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -2605,98 +2565,98 @@ CREATE TABLE "public"."status_page_incidents" (
 );
 
 /*
-Statement 318
+Statement 313
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incidents" ADD CONSTRAINT "status_page_incidents_status_check" CHECK((status = ANY (ARRAY['investigating'::text, 'identified'::text, 'monitoring'::text, 'resolved'::text])));
 
 /*
-Statement 319
+Statement 314
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incidents" ADD CONSTRAINT "status_page_incidents_incident_id_organization_id_fkey" FOREIGN KEY (incident_id, organization_id) REFERENCES incidents(id, organization_id) ON DELETE SET NULL NOT VALID;
 
 /*
-Statement 320
+Statement 315
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incidents" VALIDATE CONSTRAINT "status_page_incidents_incident_id_organization_id_fkey";
 
 /*
-Statement 321
+Statement 316
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_page_incidents_id_organization_id_key ON public.status_page_incidents USING btree (id, organization_id);
 
 /*
-Statement 322
+Statement 317
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incidents" ADD CONSTRAINT "status_page_incidents_id_organization_id_key" UNIQUE USING INDEX "status_page_incidents_id_organization_id_key";
 
 /*
-Statement 323
+Statement 318
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_page_incidents_pkey ON public.status_page_incidents USING btree (id);
 
 /*
-Statement 324
+Statement 319
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incidents" ADD CONSTRAINT "status_page_incidents_pkey" PRIMARY KEY USING INDEX "status_page_incidents_pkey";
 
 /*
-Statement 325
+Statement 320
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX status_page_incidents_incident_id_idx ON public.status_page_incidents USING btree (incident_id);
 
 /*
-Statement 326
+Statement 321
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX status_page_incidents_status_page_id_idx ON public.status_page_incidents USING btree (status_page_id);
 
 /*
-Statement 327
+Statement 322
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incident_components" ADD CONSTRAINT "status_page_incident_components_status_page_incident_id_organiz" FOREIGN KEY (status_page_incident_id, organization_id) REFERENCES status_page_incidents(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 328
+Statement 323
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incident_components" VALIDATE CONSTRAINT "status_page_incident_components_status_page_incident_id_organiz";
 
 /*
-Statement 329
+Statement 324
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incident_updates" ADD CONSTRAINT "status_page_incident_updates_status_page_incident_id_organizati" FOREIGN KEY (status_page_incident_id, organization_id) REFERENCES status_page_incidents(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 330
+Statement 325
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incident_updates" VALIDATE CONSTRAINT "status_page_incident_updates_status_page_incident_id_organizati";
 
 /*
-Statement 331
+Statement 326
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -2710,56 +2670,56 @@ CREATE TABLE "public"."status_page_subscriptions" (
 );
 
 /*
-Statement 332
+Statement 327
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_page_subscriptions_id_organization_id_key ON public.status_page_subscriptions USING btree (id, organization_id);
 
 /*
-Statement 333
+Statement 328
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_subscriptions" ADD CONSTRAINT "status_page_subscriptions_id_organization_id_key" UNIQUE USING INDEX "status_page_subscriptions_id_organization_id_key";
 
 /*
-Statement 334
+Statement 329
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_page_subscriptions_pkey ON public.status_page_subscriptions USING btree (id);
 
 /*
-Statement 335
+Statement 330
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_subscriptions" ADD CONSTRAINT "status_page_subscriptions_pkey" PRIMARY KEY USING INDEX "status_page_subscriptions_pkey";
 
 /*
-Statement 336
+Statement 331
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_page_subscriptions_status_page_id_email_key ON public.status_page_subscriptions USING btree (status_page_id, email);
 
 /*
-Statement 337
+Statement 332
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_subscriptions" ADD CONSTRAINT "status_page_subscriptions_status_page_id_email_key" UNIQUE USING INDEX "status_page_subscriptions_status_page_id_email_key";
 
 /*
-Statement 338
+Statement 333
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX status_page_subscriptions_status_page_id_idx ON public.status_page_subscriptions USING btree (status_page_id);
 
 /*
-Statement 339
+Statement 334
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -2775,126 +2735,126 @@ CREATE TABLE "public"."status_pages" (
 );
 
 /*
-Statement 340
+Statement 335
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_pages" ADD CONSTRAINT "status_pages_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 341
+Statement 336
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_pages" VALIDATE CONSTRAINT "status_pages_organization_id_fkey";
 
 /*
-Statement 342
+Statement 337
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_pages_id_organization_id_key ON public.status_pages USING btree (id, organization_id);
 
 /*
-Statement 343
+Statement 338
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_pages" ADD CONSTRAINT "status_pages_id_organization_id_key" UNIQUE USING INDEX "status_pages_id_organization_id_key";
 
 /*
-Statement 344
+Statement 339
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_pages_organization_id_key ON public.status_pages USING btree (organization_id);
 
 /*
-Statement 345
+Statement 340
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_pages" ADD CONSTRAINT "status_pages_organization_id_key" UNIQUE USING INDEX "status_pages_organization_id_key";
 
 /*
-Statement 346
+Statement 341
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_pages_pkey ON public.status_pages USING btree (id);
 
 /*
-Statement 347
+Statement 342
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_pages" ADD CONSTRAINT "status_pages_pkey" PRIMARY KEY USING INDEX "status_pages_pkey";
 
 /*
-Statement 348
+Statement 343
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX status_pages_slug_key ON public.status_pages USING btree (slug);
 
 /*
-Statement 349
+Statement 344
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_pages" ADD CONSTRAINT "status_pages_slug_key" UNIQUE USING INDEX "status_pages_slug_key";
 
 /*
-Statement 350
+Statement 345
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX status_pages_organization_id_idx ON public.status_pages USING btree (organization_id);
 
 /*
-Statement 351
+Statement 346
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_components" ADD CONSTRAINT "status_page_components_status_page_id_organization_id_fkey" FOREIGN KEY (status_page_id, organization_id) REFERENCES status_pages(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 352
+Statement 347
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_components" VALIDATE CONSTRAINT "status_page_components_status_page_id_organization_id_fkey";
 
 /*
-Statement 353
+Statement 348
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incidents" ADD CONSTRAINT "status_page_incidents_status_page_id_organization_id_fkey" FOREIGN KEY (status_page_id, organization_id) REFERENCES status_pages(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 354
+Statement 349
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_incidents" VALIDATE CONSTRAINT "status_page_incidents_status_page_id_organization_id_fkey";
 
 /*
-Statement 355
+Statement 350
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_subscriptions" ADD CONSTRAINT "status_page_subscriptions_status_page_id_organization_id_fkey" FOREIGN KEY (status_page_id, organization_id) REFERENCES status_pages(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 356
+Statement 351
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."status_page_subscriptions" VALIDATE CONSTRAINT "status_page_subscriptions_status_page_id_organization_id_fkey";
 
 /*
-Statement 357
+Statement 352
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -2908,49 +2868,49 @@ CREATE TABLE "public"."team_memberships" (
 );
 
 /*
-Statement 358
+Statement 353
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX team_memberships_pkey ON public.team_memberships USING btree (id);
 
 /*
-Statement 359
+Statement 354
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."team_memberships" ADD CONSTRAINT "team_memberships_pkey" PRIMARY KEY USING INDEX "team_memberships_pkey";
 
 /*
-Statement 360
+Statement 355
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX team_memberships_team_id_user_id_key ON public.team_memberships USING btree (team_id, user_id);
 
 /*
-Statement 361
+Statement 356
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."team_memberships" ADD CONSTRAINT "team_memberships_team_id_user_id_key" UNIQUE USING INDEX "team_memberships_team_id_user_id_key";
 
 /*
-Statement 362
+Statement 357
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX team_memberships_team_id_idx ON public.team_memberships USING btree (team_id);
 
 /*
-Statement 363
+Statement 358
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX team_memberships_user_id_idx ON public.team_memberships USING btree (user_id);
 
 /*
-Statement 364
+Statement 359
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -2963,126 +2923,126 @@ CREATE TABLE "public"."teams" (
 );
 
 /*
-Statement 365
+Statement 360
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."teams" ADD CONSTRAINT "teams_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 366
+Statement 361
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."teams" VALIDATE CONSTRAINT "teams_organization_id_fkey";
 
 /*
-Statement 367
+Statement 362
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX teams_id_organization_id_key ON public.teams USING btree (id, organization_id);
 
 /*
-Statement 368
+Statement 363
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."teams" ADD CONSTRAINT "teams_id_organization_id_key" UNIQUE USING INDEX "teams_id_organization_id_key";
 
 /*
-Statement 369
+Statement 364
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX teams_pkey ON public.teams USING btree (id);
 
 /*
-Statement 370
+Statement 365
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."teams" ADD CONSTRAINT "teams_pkey" PRIMARY KEY USING INDEX "teams_pkey";
 
 /*
-Statement 371
+Statement 366
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX teams_organization_id_idx ON public.teams USING btree (organization_id);
 
 /*
-Statement 372
+Statement 367
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."incidents" ADD CONSTRAINT "incidents_team_id_organization_id_fkey" FOREIGN KEY (team_id, organization_id) REFERENCES teams(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 373
+Statement 368
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."incidents" VALIDATE CONSTRAINT "incidents_team_id_organization_id_fkey";
 
 /*
-Statement 374
+Statement 369
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."schedules" ADD CONSTRAINT "schedules_team_id_organization_id_fkey" FOREIGN KEY (team_id, organization_id) REFERENCES teams(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 375
+Statement 370
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."schedules" VALIDATE CONSTRAINT "schedules_team_id_organization_id_fkey";
 
 /*
-Statement 376
+Statement 371
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."scim_groups" ADD CONSTRAINT "scim_groups_team_id_organization_id_fkey" FOREIGN KEY (team_id, organization_id) REFERENCES teams(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 377
+Statement 372
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."scim_groups" VALIDATE CONSTRAINT "scim_groups_team_id_organization_id_fkey";
 
 /*
-Statement 378
+Statement 373
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."services" ADD CONSTRAINT "services_team_id_organization_id_fkey" FOREIGN KEY (team_id, organization_id) REFERENCES teams(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 379
+Statement 374
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."services" VALIDATE CONSTRAINT "services_team_id_organization_id_fkey";
 
 /*
-Statement 380
+Statement 375
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."team_memberships" ADD CONSTRAINT "team_memberships_team_id_organization_id_fkey" FOREIGN KEY (team_id, organization_id) REFERENCES teams(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 381
+Statement 376
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."team_memberships" VALIDATE CONSTRAINT "team_memberships_team_id_organization_id_fkey";
 
 /*
-Statement 382
+Statement 377
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -3098,70 +3058,70 @@ CREATE TABLE "public"."timeline_events" (
 );
 
 /*
-Statement 383
+Statement 378
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."timeline_events" ADD CONSTRAINT "timeline_events_event_type_check" CHECK((event_type = ANY (ARRAY['declared'::text, 'status_changed'::text, 'note'::text, 'role_assigned'::text, 'role_unassigned'::text])));
 
 /*
-Statement 384
+Statement 379
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."timeline_events" ADD CONSTRAINT "timeline_events_incident_id_organization_id_fkey" FOREIGN KEY (incident_id, organization_id) REFERENCES incidents(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 385
+Statement 380
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."timeline_events" VALIDATE CONSTRAINT "timeline_events_incident_id_organization_id_fkey";
 
 /*
-Statement 386
+Statement 381
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX timeline_events_id_organization_id_key ON public.timeline_events USING btree (id, organization_id);
 
 /*
-Statement 387
+Statement 382
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."timeline_events" ADD CONSTRAINT "timeline_events_id_organization_id_key" UNIQUE USING INDEX "timeline_events_id_organization_id_key";
 
 /*
-Statement 388
+Statement 383
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX timeline_events_pkey ON public.timeline_events USING btree (id);
 
 /*
-Statement 389
+Statement 384
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."timeline_events" ADD CONSTRAINT "timeline_events_pkey" PRIMARY KEY USING INDEX "timeline_events_pkey";
 
 /*
-Statement 390
+Statement 385
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX timeline_events_incident_id_created_at_idx ON public.timeline_events USING btree (incident_id, created_at);
 
 /*
-Statement 391
+Statement 386
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX timeline_events_incident_id_idx ON public.timeline_events USING btree (incident_id);
 
 /*
-Statement 392
+Statement 387
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -3176,63 +3136,63 @@ CREATE TABLE "public"."user_contact_methods" (
 );
 
 /*
-Statement 393
+Statement 388
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_contact_methods" ADD CONSTRAINT "user_contact_methods_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 394
+Statement 389
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_contact_methods" VALIDATE CONSTRAINT "user_contact_methods_organization_id_fkey";
 
 /*
-Statement 395
+Statement 390
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX user_contact_methods_organization_id_user_id_channel_key ON public.user_contact_methods USING btree (organization_id, user_id, channel);
 
 /*
-Statement 396
+Statement 391
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_contact_methods" ADD CONSTRAINT "user_contact_methods_organization_id_user_id_channel_key" UNIQUE USING INDEX "user_contact_methods_organization_id_user_id_channel_key";
 
 /*
-Statement 397
+Statement 392
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX user_contact_methods_pkey ON public.user_contact_methods USING btree (id);
 
 /*
-Statement 398
+Statement 393
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_contact_methods" ADD CONSTRAINT "user_contact_methods_pkey" PRIMARY KEY USING INDEX "user_contact_methods_pkey";
 
 /*
-Statement 399
+Statement 394
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX user_contact_methods_organization_id_idx ON public.user_contact_methods USING btree (organization_id);
 
 /*
-Statement 400
+Statement 395
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX user_contact_methods_user_id_idx ON public.user_contact_methods USING btree (user_id);
 
 /*
-Statement 401
+Statement 396
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -3247,84 +3207,84 @@ CREATE TABLE "public"."user_notification_rules" (
 );
 
 /*
-Statement 402
+Statement 397
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_notification_rules" ADD CONSTRAINT "user_notification_rules_priority_check" CHECK((priority = ANY (ARRAY['low'::text, 'high'::text])));
 
 /*
-Statement 403
+Statement 398
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_notification_rules" ADD CONSTRAINT "user_notification_rules_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 404
+Statement 399
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_notification_rules" VALIDATE CONSTRAINT "user_notification_rules_organization_id_fkey";
 
 /*
-Statement 405
+Statement 400
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX user_notification_rules_id_organization_id_key ON public.user_notification_rules USING btree (id, organization_id);
 
 /*
-Statement 406
+Statement 401
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_notification_rules" ADD CONSTRAINT "user_notification_rules_id_organization_id_key" UNIQUE USING INDEX "user_notification_rules_id_organization_id_key";
 
 /*
-Statement 407
+Statement 402
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX user_notification_rules_organization_id_user_id_priority_key ON public.user_notification_rules USING btree (organization_id, user_id, priority);
 
 /*
-Statement 408
+Statement 403
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_notification_rules" ADD CONSTRAINT "user_notification_rules_organization_id_user_id_priority_key" UNIQUE USING INDEX "user_notification_rules_organization_id_user_id_priority_key";
 
 /*
-Statement 409
+Statement 404
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX user_notification_rules_pkey ON public.user_notification_rules USING btree (id);
 
 /*
-Statement 410
+Statement 405
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_notification_rules" ADD CONSTRAINT "user_notification_rules_pkey" PRIMARY KEY USING INDEX "user_notification_rules_pkey";
 
 /*
-Statement 411
+Statement 406
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX user_notification_rules_organization_id_idx ON public.user_notification_rules USING btree (organization_id);
 
 /*
-Statement 412
+Statement 407
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX user_notification_rules_user_id_idx ON public.user_notification_rules USING btree (user_id);
 
 /*
-Statement 413
+Statement 408
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
@@ -3341,371 +3301,371 @@ CREATE TABLE "public"."users" (
 );
 
 /*
-Statement 414
+Statement 409
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."users" ADD CONSTRAINT "users_role_check" CHECK((role = ANY (ARRAY['admin'::text, 'member'::text])));
 
 /*
-Statement 415
+Statement 410
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."users" ADD CONSTRAINT "users_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 416
+Statement 411
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."users" VALIDATE CONSTRAINT "users_organization_id_fkey";
 
 /*
-Statement 417
+Statement 412
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX users_id_organization_id_key ON public.users USING btree (id, organization_id);
 
 /*
-Statement 418
+Statement 413
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."users" ADD CONSTRAINT "users_id_organization_id_key" UNIQUE USING INDEX "users_id_organization_id_key";
 
 /*
-Statement 419
+Statement 414
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX users_organization_id_email_key ON public.users USING btree (organization_id, email);
 
 /*
-Statement 420
+Statement 415
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."users" ADD CONSTRAINT "users_organization_id_email_key" UNIQUE USING INDEX "users_organization_id_email_key";
 
 /*
-Statement 421
+Statement 416
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX users_organization_id_scim_external_id_key ON public.users USING btree (organization_id, scim_external_id);
 
 /*
-Statement 422
+Statement 417
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."users" ADD CONSTRAINT "users_organization_id_scim_external_id_key" UNIQUE USING INDEX "users_organization_id_scim_external_id_key";
 
 /*
-Statement 423
+Statement 418
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id);
 
 /*
-Statement 424
+Statement 419
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."users" ADD CONSTRAINT "users_pkey" PRIMARY KEY USING INDEX "users_pkey";
 
 /*
-Statement 425
+Statement 420
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX users_deprovisioned_at_idx ON public.users USING btree (deprovisioned_at);
 
 /*
-Statement 426
+Statement 421
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 CREATE INDEX users_organization_id_idx ON public.users USING btree (organization_id);
 
 /*
-Statement 427
+Statement 422
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."alerts" ADD CONSTRAINT "alerts_acknowledged_by_user_id_organization_id_fkey" FOREIGN KEY (acknowledged_by_user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE SET NULL NOT VALID;
 
 /*
-Statement 428
+Statement 423
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."alerts" VALIDATE CONSTRAINT "alerts_acknowledged_by_user_id_organization_id_fkey";
 
 /*
-Statement 429
+Statement 424
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."audit_events" ADD CONSTRAINT "audit_events_actor_id_organization_id_fkey" FOREIGN KEY (actor_id, organization_id) REFERENCES users(id, organization_id) ON DELETE SET NULL NOT VALID;
 
 /*
-Statement 430
+Statement 425
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."audit_events" VALIDATE CONSTRAINT "audit_events_actor_id_organization_id_fkey";
 
 /*
-Statement 431
+Statement 426
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."escalation_step_targets" ADD CONSTRAINT "escalation_step_targets_user_id_organization_id_fkey" FOREIGN KEY (user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 432
+Statement 427
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."escalation_step_targets" VALIDATE CONSTRAINT "escalation_step_targets_user_id_organization_id_fkey";
 
 /*
-Statement 433
+Statement 428
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."incident_role_assignments" ADD CONSTRAINT "incident_role_assignments_assigned_by_user_id_organization_id_f" FOREIGN KEY (assigned_by_user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE RESTRICT NOT VALID;
 
 /*
-Statement 434
+Statement 429
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."incident_role_assignments" VALIDATE CONSTRAINT "incident_role_assignments_assigned_by_user_id_organization_id_f";
 
 /*
-Statement 435
+Statement 430
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."incident_role_assignments" ADD CONSTRAINT "incident_role_assignments_user_id_organization_id_fkey" FOREIGN KEY (user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 436
+Statement 431
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."incident_role_assignments" VALIDATE CONSTRAINT "incident_role_assignments_user_id_organization_id_fkey";
 
 /*
-Statement 437
+Statement 432
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."incidents" ADD CONSTRAINT "incidents_created_by_user_id_organization_id_fkey" FOREIGN KEY (created_by_user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE RESTRICT NOT VALID;
 
 /*
-Statement 438
+Statement 433
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."incidents" VALIDATE CONSTRAINT "incidents_created_by_user_id_organization_id_fkey";
 
 /*
-Statement 439
+Statement 434
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."mobile_auth_codes" ADD CONSTRAINT "mobile_auth_codes_user_id_organization_id_fkey" FOREIGN KEY (user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 440
+Statement 435
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."mobile_auth_codes" VALIDATE CONSTRAINT "mobile_auth_codes_user_id_organization_id_fkey";
 
 /*
-Statement 441
+Statement 436
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."mobile_devices" ADD CONSTRAINT "mobile_devices_user_id_organization_id_fkey" FOREIGN KEY (user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 442
+Statement 437
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."mobile_devices" VALIDATE CONSTRAINT "mobile_devices_user_id_organization_id_fkey";
 
 /*
-Statement 443
+Statement 438
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" ADD CONSTRAINT "overrides_approved_by_user_id_organization_id_fkey" FOREIGN KEY (approved_by_user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE SET NULL NOT VALID;
 
 /*
-Statement 444
+Statement 439
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" VALIDATE CONSTRAINT "overrides_approved_by_user_id_organization_id_fkey";
 
 /*
-Statement 445
+Statement 440
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" ADD CONSTRAINT "overrides_created_by_user_id_organization_id_fkey" FOREIGN KEY (created_by_user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE RESTRICT NOT VALID;
 
 /*
-Statement 446
+Statement 441
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" VALIDATE CONSTRAINT "overrides_created_by_user_id_organization_id_fkey";
 
 /*
-Statement 447
+Statement 442
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" ADD CONSTRAINT "overrides_replaced_user_id_organization_id_fkey" FOREIGN KEY (replaced_user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE SET NULL NOT VALID;
 
 /*
-Statement 448
+Statement 443
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" VALIDATE CONSTRAINT "overrides_replaced_user_id_organization_id_fkey";
 
 /*
-Statement 449
+Statement 444
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" ADD CONSTRAINT "overrides_user_id_organization_id_fkey" FOREIGN KEY (user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 450
+Statement 445
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."overrides" VALIDATE CONSTRAINT "overrides_user_id_organization_id_fkey";
 
 /*
-Statement 451
+Statement 446
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_user_id_organization_id_fkey" FOREIGN KEY (user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 452
+Statement 447
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."password_reset_tokens" VALIDATE CONSTRAINT "password_reset_tokens_user_id_organization_id_fkey";
 
 /*
-Statement 453
+Statement 448
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."refresh_tokens" ADD CONSTRAINT "refresh_tokens_user_id_organization_id_fkey" FOREIGN KEY (user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 454
+Statement 449
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."refresh_tokens" VALIDATE CONSTRAINT "refresh_tokens_user_id_organization_id_fkey";
 
 /*
-Statement 455
+Statement 450
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."scim_group_members" ADD CONSTRAINT "scim_group_members_user_id_organization_id_fkey" FOREIGN KEY (user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 456
+Statement 451
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."scim_group_members" VALIDATE CONSTRAINT "scim_group_members_user_id_organization_id_fkey";
 
 /*
-Statement 457
+Statement 452
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."sessions" ADD CONSTRAINT "sessions_user_id_organization_id_fkey" FOREIGN KEY (user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 458
+Statement 453
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."sessions" VALIDATE CONSTRAINT "sessions_user_id_organization_id_fkey";
 
 /*
-Statement 459
+Statement 454
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."team_memberships" ADD CONSTRAINT "team_memberships_user_id_organization_id_fkey" FOREIGN KEY (user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 460
+Statement 455
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."team_memberships" VALIDATE CONSTRAINT "team_memberships_user_id_organization_id_fkey";
 
 /*
-Statement 461
+Statement 456
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."timeline_events" ADD CONSTRAINT "timeline_events_actor_id_organization_id_fkey" FOREIGN KEY (actor_id, organization_id) REFERENCES users(id, organization_id) ON DELETE SET NULL NOT VALID;
 
 /*
-Statement 462
+Statement 457
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."timeline_events" VALIDATE CONSTRAINT "timeline_events_actor_id_organization_id_fkey";
 
 /*
-Statement 463
+Statement 458
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_contact_methods" ADD CONSTRAINT "user_contact_methods_user_id_organization_id_fkey" FOREIGN KEY (user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 464
+Statement 459
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_contact_methods" VALIDATE CONSTRAINT "user_contact_methods_user_id_organization_id_fkey";
 
 /*
-Statement 465
+Statement 460
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
 ALTER TABLE "public"."user_notification_rules" ADD CONSTRAINT "user_notification_rules_user_id_organization_id_fkey" FOREIGN KEY (user_id, organization_id) REFERENCES users(id, organization_id) ON DELETE CASCADE NOT VALID;
 
 /*
-Statement 466
+Statement 461
 */
 SET SESSION statement_timeout = 3000;
 SET SESSION lock_timeout = 3000;
