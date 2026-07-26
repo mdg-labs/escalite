@@ -60,21 +60,6 @@ func incidentStatusFromDB(status string) model.IncidentStatus {
 	}
 }
 
-func timelineEventTypeToDB(eventType model.TimelineEventType) string {
-	switch eventType {
-	case model.TimelineEventTypeDeclared:
-		return "declared"
-	case model.TimelineEventTypeStatusChanged:
-		return "status_changed"
-	case model.TimelineEventTypeRoleAssigned:
-		return "role_assigned"
-	case model.TimelineEventTypeRoleUnassigned:
-		return "role_unassigned"
-	default:
-		return "note"
-	}
-}
-
 func timelineEventTypeFromDB(eventType string) model.TimelineEventType {
 	switch strings.ToLower(strings.TrimSpace(eventType)) {
 	case "declared":

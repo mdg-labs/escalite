@@ -45,10 +45,3 @@ func validateNotificationChannelConfig(channelName string, config map[string]any
 
 	return nil
 }
-
-func configMapToRaw(config map[string]any) ([]byte, error) {
-	if config == nil {
-		return []byte("{}"), nil
-	}
-	return json.Marshal(config)
-}
