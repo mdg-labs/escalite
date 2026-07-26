@@ -95,8 +95,21 @@ DROP TABLE "public"."goose_db_version";`
 	if strings.Contains(out, "goose_db_version") {
 		t.Fatalf("goose_db_version DDL leaked into migration: %q", out)
 	}
-	if strings.Count(out, "-- +goose StatementBegin") != 3 {
-		t.Fatalf("expected 3 goose statements, got:\n%s", out)
+	if strings.Count(out, "-- +goose StatementBegin") != 1 {
+		t.Fatalf("expected 1 goose statement after filtering noise, got:\n%s", out)
+	}
+}
+
+func TestPlanHasNoDriftWhenFilteredPlanEmpty(t *testing.T) {
+	plan := `/*
+Statement 0
+*/
+SET SESSION statement_timeout = 1200000;
+SET SESSION lock_timeout = 3000;
+DROP TABLE "public"."goose_db_version";`
+
+	if got := strings.TrimSpace(filterIgnoredPlanStatements(plan)); got != "" {
+		t.Fatalf("expected no drift, got %q", got)
 	}
 }
 

@@ -26,19 +26,23 @@ import (
 const pgSchemaDiffVersion = "v1.0.7"
 
 func main() {
-	name := flag.String("name", "", "migration name (snake_case, required)")
+	name := flag.String("name", "", "migration name (snake_case, required unless --check-drift)")
 	serverDSN := flag.String("dsn", "", "Postgres server URL (default: DATABASE_URL, ESCALITE_DATABASE_URL, or compose localhost)")
 	fromEmpty := flag.Bool("from-empty", false, "diff from an empty database; use for rare baseline squashes")
 	skipValidation := flag.Bool("skip-validation", false, "skip pg-schema-diff plan validation (faster local runs)")
+	checkDrift := flag.Bool("check-drift", false, "verify applied migrations match schema-dir; exit 1 on drift")
 	schemaDir := flag.String("schema-dir", "", "directory containing schema.sql and realtime_notify.sql")
 	migrationsDir := flag.String("migrations-dir", "", "directory to write the generated goose migration")
 	pgSchemaDiffBin := flag.String("pg-schema-diff", "", "path to pg-schema-diff binary (default: PATH or go run)")
 	flag.Parse()
 
-	if strings.TrimSpace(*name) == "" {
+	if *checkDrift && *fromEmpty {
+		fatal("--check-drift cannot be combined with --from-empty")
+	}
+	if !*checkDrift && strings.TrimSpace(*name) == "" {
 		fatal("missing required --name")
 	}
-	if !validMigrationName(*name) {
+	if !*checkDrift && !validMigrationName(*name) {
 		fatal("invalid --name %q: use snake_case letters, digits, and underscores", *name)
 	}
 
@@ -81,6 +85,13 @@ func main() {
 	planSQL, err := runPlan(bin, *fromEmpty, *skipValidation, dsn, tablesDir, triggersDir)
 	if err != nil {
 		fatal("%v", err)
+	}
+	if *checkDrift {
+		if strings.TrimSpace(planSQL) != "" {
+			fatal("schema drift detected between migrations and schema/sql:\n%s", planSQL)
+		}
+		fmt.Println("no schema drift detected")
+		return
 	}
 	if strings.TrimSpace(planSQL) == "" {
 		fatal("no schema changes detected; edit services/api/schema/sql/*.sql first")
@@ -314,6 +325,9 @@ func filterIgnoredPlanStatements(planSQL string) string {
 			continue
 		}
 		if strings.HasPrefix(trimmed, "--") {
+			continue
+		}
+		if strings.HasPrefix(trimmed, "SET SESSION") {
 			continue
 		}
 		block = append(block, line)
