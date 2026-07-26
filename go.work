@@ -5,4 +5,5 @@ use (
 	./services/engine
 	./services/integrations
 	./tools/goalert-importer
+	./tools/pagerduty-importer
 )
