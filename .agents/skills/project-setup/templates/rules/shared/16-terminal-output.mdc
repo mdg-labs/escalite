@@ -1,0 +1,67 @@
+---
+description: Never truncate shell output; monitor long-running commands with alive signals
+alwaysApply: true
+---
+
+# Terminal output and long-running commands
+
+## Rule
+
+**Never gate or truncate live command output with `tail`, `head`, `sed` line limits, or similar while a command is still running.**
+
+Piping to `tail -10`, `head -50`, etc. hides streaming progress. You cannot tell whether the process is healthy, slow, or hung.
+
+## Forbidden during execution
+
+```bash
+# WRONG — hides progress; looks like a hang
+pnpm test 2>&1 | tail -20
+docker build . 2>&1 | tail -30
+gh run view --log-failed 2>&1 | head -300
+bash scripts/go-test.sh 2>&1 | tail -10
+```
+
+## What to do instead
+
+### Short commands
+
+Run them directly with no output truncation:
+
+```bash
+pnpm lint
+go test ./...
+```
+
+### Long or potentially slow commands
+
+1. **Run in the background** (`block_until_ms: 0`) or with a realistic `block_until_ms`.
+2. **Poll the terminal file** with `Await` or `Read` on the terminal output path.
+3. **Send alive signals** — when waiting more than ~30s, tell the user what is running and share the latest visible output line or status (e.g. "Go tests still running — last line: `PASS services/api/...`").
+4. **After completion**, if output is too large for context, filter with `rg`, `grep`, or read the terminal file with `offset`/`limit` — never truncate the live stream.
+
+### Watching for a specific event
+
+Use `Await` with a `pattern`, or `notify_on_output` on the Shell tool — not `tail`:
+
+```bash
+# Run the full command; watch for completion via Await/pattern
+bash scripts/ci-compose-e2e.sh
+```
+
+### Inspecting failed CI logs
+
+Fetch full logs first, then search after the command finishes:
+
+```bash
+gh run view <id> --log-failed
+# then rg/grep the saved terminal output for errors
+```
+
+## Alive-signal checklist
+
+When a command may run for minutes:
+
+- [ ] No `tail` / `head` on the running process
+- [ ] Background or adequate `block_until_ms`
+- [ ] Poll terminal output if blocked longer than expected
+- [ ] Brief status update to the user if wait exceeds ~30s without new output
