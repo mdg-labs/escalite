@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pre-commit gate: staged apps/mobile changes require a beta version bump.
+# Pre-commit gate: staged apps/mobile changes require a version bump (beta or stable).
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
@@ -115,10 +115,6 @@ try {
     process.exit(1);
   }
 
-  if (!currentVersion.prerelease) {
-    process.exit(1);
-  }
-
   process.exit(0);
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
@@ -130,11 +126,11 @@ then
 fi
 
 cat >&2 <<EOF
-pre-commit: staged changes under ${WATCH_PREFIX}/ require a prerelease bump in ${VERSION_FILE}.
+pre-commit: staged changes under ${WATCH_PREFIX}/ require a version bump in ${VERSION_FILE}.
 
 Staged version: ${staged_version:-<missing>}
 HEAD version:   ${head_version:-<none>}
 
-Bump version (e.g. 0.1.0-beta.N -> 0.1.0-beta.N+1) and stage ${VERSION_FILE}.
+Bump version (beta: 0.1.0-beta.N -> 0.1.0-beta.N+1, or stable: 0.1.0-beta.N -> 0.1.0) and stage ${VERSION_FILE}.
 EOF
 exit 1
