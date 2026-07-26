@@ -17,11 +17,17 @@ patchedDependencies:
   '@expo/cli@0.22.28':
     hash: zg2lm25jcrgqdhhxetv3ct4nde
     path: patches/@expo__cli@0.22.28.patch
+  minimatch@3.1.5:
+    hash: oewu6bm64l7gihpzb3brhaa674
+    path: patches/minimatch@3.1.5.patch
 
 importers:
 
   .:
     devDependencies:
+      husky:
+        specifier: ^9.1.7
+        version: 9.1.7
       turbo:
         specifier: ^2.5.4
         version: 2.10.6
@@ -1372,7 +1378,7 @@ packages:
 
   '@expo/bunyan@4.0.1':
     resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
-    engines: {'0': node >=0.10.0}
+    engines: {node: '>=0.10.0'}
 
   '@expo/cli@0.22.28':
     resolution: {integrity: sha512-lvt72KNitGuixYD2l3SZmRKVu2G4zJpmg5V7WfUBNpmUU5oODBw/6qmiJ6kSLAlfDozscUk+BBGknBBzxUrwrA==}
@@ -4576,6 +4582,11 @@ packages:
   human-signals@2.1.0:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
+
+  husky@9.1.7:
+    resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   hyphenate-style-name@1.1.0:
     resolution: {integrity: sha512-WDC/ui2VVRrz3jOVi+XtjqkDjiVjTtFaAGiW37k6b+ohyQ5wYDOGkvCZa8+H0nx3gyvv0+BST9xuOgIyGQ00gw==}
@@ -8050,7 +8061,7 @@ snapshots:
     dependencies:
       '@eslint/object-schema': 2.1.7
       debug: 4.4.3
-      minimatch: 3.1.5
+      minimatch: 3.1.5(patch_hash=oewu6bm64l7gihpzb3brhaa674)
     transitivePeerDependencies:
       - supports-color
 
@@ -8071,7 +8082,7 @@ snapshots:
       ignore: 5.3.2
       import-fresh: 3.3.1
       js-yaml: 4.3.0
-      minimatch: 3.1.5
+      minimatch: 3.1.5(patch_hash=oewu6bm64l7gihpzb3brhaa674)
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
       - supports-color
@@ -8134,7 +8145,7 @@ snapshots:
       is-docker: 2.2.1
       is-wsl: 2.2.0
       lodash.debounce: 4.0.8
-      minimatch: 3.1.5
+      minimatch: 3.1.5(patch_hash=oewu6bm64l7gihpzb3brhaa674)
       node-forge: 1.4.0
       npm-package-arg: 11.0.3
       ora: 3.4.0
@@ -8238,7 +8249,7 @@ snapshots:
       debug: 4.4.3
       find-up: 5.0.0
       getenv: 1.0.0
-      minimatch: 3.1.5
+      minimatch: 3.1.5(patch_hash=oewu6bm64l7gihpzb3brhaa674)
       p-limit: 3.1.0
       resolve-from: 5.0.0
       semver: 7.8.5
@@ -8291,7 +8302,7 @@ snapshots:
       glob: 10.5.0
       jsc-safe-url: 0.2.4
       lightningcss: 1.27.0
-      minimatch: 3.1.5
+      minimatch: 3.1.5(patch_hash=oewu6bm64l7gihpzb3brhaa674)
       postcss: 8.5.23
       resolve-from: 5.0.0
     transitivePeerDependencies:
@@ -12073,7 +12084,7 @@ snapshots:
       is-glob: 4.0.3
       json-stable-stringify-without-jsonify: 1.0.1
       lodash.merge: 4.6.2
-      minimatch: 3.1.5
+      minimatch: 3.1.5(patch_hash=oewu6bm64l7gihpzb3brhaa674)
       natural-compare: 1.4.0
       optionator: 0.9.4
     optionalDependencies:
@@ -12568,7 +12579,7 @@ snapshots:
       fs.realpath: 1.0.0
       inflight: 1.0.6
       inherits: 2.0.4
-      minimatch: 3.1.5
+      minimatch: 3.1.5(patch_hash=oewu6bm64l7gihpzb3brhaa674)
       once: 1.4.0
       path-is-absolute: 1.0.1
 
@@ -12704,6 +12715,8 @@ snapshots:
       - supports-color
 
   human-signals@2.1.0: {}
+
+  husky@9.1.7: {}
 
   hyphenate-style-name@1.1.0: {}
 
@@ -13511,7 +13524,7 @@ snapshots:
     dependencies:
       brace-expansion: 5.0.8
 
-  minimatch@3.1.5:
+  minimatch@3.1.5(patch_hash=oewu6bm64l7gihpzb3brhaa674):
     dependencies:
       brace-expansion: 5.0.8
 
@@ -13590,7 +13603,7 @@ snapshots:
 
   node-dir@0.1.17:
     dependencies:
-      minimatch: 3.1.5
+      minimatch: 3.1.5(patch_hash=oewu6bm64l7gihpzb3brhaa674)
 
   node-domexception@1.0.0: {}
 
@@ -14807,7 +14820,7 @@ snapshots:
     dependencies:
       '@istanbuljs/schema': 0.1.6
       glob: 7.2.3
-      minimatch: 3.1.5
+      minimatch: 3.1.5(patch_hash=oewu6bm64l7gihpzb3brhaa674)
 
   thenify-all@1.6.0:
     dependencies:
