@@ -1,7 +1,24 @@
 # Prod profile overrides — run built images without dev bind-mounts.
+# Resource limits are conservative defaults for a single-node install; adjust for your host.
 services:
+  postgres:
+    mem_limit: 1g
+    cpus: "1.0"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
+
   api:
     volumes: !reset []
+    mem_limit: 512m
+    cpus: "1.0"
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "1.0"
     healthcheck:
       test: ["CMD", "/wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
       interval: 5s
@@ -11,6 +28,19 @@ services:
 
   engine:
     volumes: !reset []
+    mem_limit: 512m
+    cpus: "1.0"
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "1.0"
+    healthcheck:
+      test: ["CMD", "/wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8081/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
@@ -19,3 +49,27 @@ services:
 
   web:
     volumes: !reset []
+    mem_limit: 256m
+    cpus: "0.5"
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/local/bin/wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:5173/healthz",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+    depends_on:
+      api:
+        condition: service_healthy

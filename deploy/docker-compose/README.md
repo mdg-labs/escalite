@@ -15,9 +15,11 @@ task compose:prod         # run prod profile (no bind-mounts)
 
 | File | Purpose |
 | ---- | ------- |
-| `docker-compose.yml` | Base stack (Postgres, api, engine, web) with dev + prod profiles |
-| `docker-compose.prod.yml` | Prod overrides — removes dev bind-mounts so built images run as-is |
+| `docker-compose.yml` | Base stack (Postgres, api, engine, web) with dev + prod profiles, healthchecks, and `restart: unless-stopped` |
+| `docker-compose.prod.yml` | Prod overrides — removes dev bind-mounts, sets resource limits, and distroless/wget health probes |
 | `docker-compose.release.yml` | Release overrides — pull digest-pinned images from a registry (no local build) |
+
+Operator procedures (backups, upgrades, resource tuning): [`docs/deploy/production.md`](../../docs/deploy/production.md).
 
 Merge order for release deploys:
 

@@ -17,7 +17,11 @@ COPY services/engine ./services/engine
 RUN cd services/engine && go build -trimpath -ldflags="-s -w" -o /out/engine ./cmd/engine
 
 # UID 65532 (nonroot) — no shell, minimal attack surface.
+FROM busybox:1.36.1-musl@sha256:3c6ae8008e2c2eedd141725c30b20d9c36b026eb796688f88205845ef17aa213 AS busybox
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:f5b485ea962d9bd1186b2f6b3a061191539b905b82ec395de78cbfae51f20e35 AS prod
+COPY --from=busybox /bin/wget /wget
 COPY --from=builder /out/engine /app/engine
 EXPOSE 8081
+HEALTHCHECK --interval=5s --timeout=3s --retries=12 --start-period=30s \
+  CMD ["/wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8081/healthz"]
 ENTRYPOINT ["/app/engine"]

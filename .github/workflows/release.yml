@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sbom:
+    name: SBOM (syft)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Go SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: services/
+          format: spdx-json
+          output-file: sbom-go.spdx.json
+
+      - name: Generate JavaScript SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom-js.spdx.json
+          dependency-snapshot: true
+
+      - name: Attach SBOMs to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            sbom-go.spdx.json
+            sbom-js.spdx.json
+
+      - name: Upload SBOM artifacts (manual run)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: |
+            sbom-go.spdx.json
+            sbom-js.spdx.json
+          retention-days: 90
