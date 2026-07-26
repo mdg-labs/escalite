@@ -2,18 +2,31 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 [--prerelease-only|--stable-only] <file-path>" >&2
+  echo "Usage: $0 [--no-bump-check] [--prerelease-only|--stable-only] <file-path>" >&2
   exit 2
 }
 
 mode="any"
-if [[ "${1:-}" == "--prerelease-only" ]]; then
-  mode="prerelease"
-  shift
-elif [[ "${1:-}" == "--stable-only" ]]; then
-  mode="stable"
-  shift
-fi
+no_bump_check=0
+while [[ "${1:-}" == --* ]]; do
+  case "${1}" in
+    --prerelease-only)
+      mode="prerelease"
+      shift
+      ;;
+    --stable-only)
+      mode="stable"
+      shift
+      ;;
+    --no-bump-check)
+      no_bump_check=1
+      shift
+      ;;
+    *)
+      usage
+      ;;
+  esac
+done
 
 file_path="${1:-}"
 if [[ -z "${file_path}" ]]; then
@@ -49,8 +62,9 @@ if git rev-parse HEAD~1 >/dev/null 2>&1; then
   fi
 fi
 
-node --input-type=module - "${current_version}" "${previous_version}" "${mode}" <<'EOF'
-const [current, previous, mode] = process.argv.slice(2)
+node --input-type=module - "${current_version}" "${previous_version}" "${mode}" "${no_bump_check}" <<'EOF'
+const [current, previous, mode, noBumpCheckArg] = process.argv.slice(2)
+const noBumpCheck = noBumpCheckArg === '1'
 
 function parseVersion(version) {
   const match = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/.exec(version)
@@ -110,7 +124,7 @@ try {
   const previousVersion = previous ? parseVersion(previous) : null
   const increased = previousVersion ? compareVersions(currentVersion, previousVersion) > 0 : true
 
-  if (!increased) {
+  if (!noBumpCheck && !increased) {
     process.exit(1)
   }
 
