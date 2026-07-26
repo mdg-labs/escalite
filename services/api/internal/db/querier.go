@@ -13,6 +13,7 @@ import (
 
 type Querier interface {
 	AcknowledgeAlert(ctx context.Context, arg AcknowledgeAlertParams) (Alert, error)
+	AddScimGroupMember(ctx context.Context, arg AddScimGroupMemberParams) error
 	AssignAlertToIncident(ctx context.Context, arg AssignAlertToIncidentParams) (Alert, error)
 	BootstrapOrganizationWithAdmin(ctx context.Context, arg BootstrapOrganizationWithAdminParams) (BootstrapOrganizationWithAdminRow, error)
 	CloseAlert(ctx context.Context, arg CloseAlertParams) (Alert, error)
@@ -39,6 +40,8 @@ type Querier interface {
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error)
 	CreateRotation(ctx context.Context, arg CreateRotationParams) (Rotation, error)
 	CreateSchedule(ctx context.Context, arg CreateScheduleParams) (Schedule, error)
+	CreateScimGroup(ctx context.Context, arg CreateScimGroupParams) (ScimGroup, error)
+	CreateScimUser(ctx context.Context, arg CreateScimUserParams) (User, error)
 	CreateService(ctx context.Context, arg CreateServiceParams) (Service, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateTeam(ctx context.Context, arg CreateTeamParams) (Team, error)
@@ -54,8 +57,11 @@ type Querier interface {
 	DeleteMaintenanceWindow(ctx context.Context, arg DeleteMaintenanceWindowParams) error
 	DeleteRotation(ctx context.Context, arg DeleteRotationParams) error
 	DeleteSchedule(ctx context.Context, arg DeleteScheduleParams) error
+	DeleteScimGroup(ctx context.Context, arg DeleteScimGroupParams) error
 	DeleteSession(ctx context.Context, arg DeleteSessionParams) error
+	DeleteTeamMembership(ctx context.Context, arg DeleteTeamMembershipParams) error
 	DeleteUserNotificationRule(ctx context.Context, arg DeleteUserNotificationRuleParams) error
+	DeprovisionUser(ctx context.Context, arg DeprovisionUserParams) (User, error)
 	GetActiveIntegrationKeyByTokenHash(ctx context.Context, token string) (IntegrationKey, error)
 	GetActiveSessionByID(ctx context.Context, id uuid.UUID) (Session, error)
 	GetAlertByID(ctx context.Context, arg GetAlertByIDParams) (Alert, error)
@@ -77,6 +83,8 @@ type Querier interface {
 	GetOpenIncidentForTeamWithServiceAlerts(ctx context.Context, arg GetOpenIncidentForTeamWithServiceAlertsParams) (Incident, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
 	GetOrganizationSamlSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSamlSetting, error)
+	GetOrganizationScimSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationScimSetting, error)
+	GetOrganizationScimSettingsByTokenHash(ctx context.Context, tokenHash string) (OrganizationScimSetting, error)
 	GetOrganizationSlackSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSlackSetting, error)
 	GetOrganizationSlackSettingsByWorkspaceID(ctx context.Context, workspaceID pgtype.Text) (OrganizationSlackSetting, error)
 	GetOverrideByID(ctx context.Context, arg GetOverrideByIDParams) (Override, error)
@@ -84,13 +92,18 @@ type Querier interface {
 	GetRefreshTokenByHash(ctx context.Context, tokenHash string) (RefreshToken, error)
 	GetRotationByID(ctx context.Context, arg GetRotationByIDParams) (Rotation, error)
 	GetScheduleByID(ctx context.Context, arg GetScheduleByIDParams) (Schedule, error)
+	GetScimGroupByExternalID(ctx context.Context, arg GetScimGroupByExternalIDParams) (ScimGroup, error)
+	GetScimGroupByID(ctx context.Context, arg GetScimGroupByIDParams) (ScimGroup, error)
 	GetServiceByID(ctx context.Context, arg GetServiceByIDParams) (Service, error)
 	GetSessionByID(ctx context.Context, arg GetSessionByIDParams) (Session, error)
 	GetTeamByID(ctx context.Context, arg GetTeamByIDParams) (Team, error)
+	GetTeamByName(ctx context.Context, arg GetTeamByNameParams) (Team, error)
 	GetTimelineEventByID(ctx context.Context, arg GetTimelineEventByIDParams) (TimelineEvent, error)
 	GetUserByEmail(ctx context.Context, arg GetUserByEmailParams) (User, error)
 	GetUserByEmailForAuth(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, arg GetUserByIDParams) (User, error)
+	GetUserByIDIncludingDeprovisioned(ctx context.Context, arg GetUserByIDIncludingDeprovisionedParams) (User, error)
+	GetUserByScimExternalID(ctx context.Context, arg GetUserByScimExternalIDParams) (User, error)
 	GetUserContactMethodByChannel(ctx context.Context, arg GetUserContactMethodByChannelParams) (UserContactMethod, error)
 	GetUserIDBySlackUserID(ctx context.Context, arg GetUserIDBySlackUserIDParams) (uuid.UUID, error)
 	GetUserNotificationRuleByPriority(ctx context.Context, arg GetUserNotificationRuleByPriorityParams) (UserNotificationRule, error)
@@ -119,6 +132,9 @@ type Querier interface {
 	ListRecentUnassignedAlertsByService(ctx context.Context, arg ListRecentUnassignedAlertsByServiceParams) ([]Alert, error)
 	ListRotationsByScheduleID(ctx context.Context, arg ListRotationsByScheduleIDParams) ([]Rotation, error)
 	ListSchedulesByTeamID(ctx context.Context, arg ListSchedulesByTeamIDParams) ([]Schedule, error)
+	ListScimGroupMemberUserIDs(ctx context.Context, arg ListScimGroupMemberUserIDsParams) ([]uuid.UUID, error)
+	ListScimGroupsByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]ScimGroup, error)
+	ListScimUsersByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]User, error)
 	ListServicesByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]Service, error)
 	ListTeamsByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]Team, error)
 	ListTimelineEventsByIncidentID(ctx context.Context, arg ListTimelineEventsByIncidentIDParams) ([]TimelineEvent, error)
@@ -128,7 +144,11 @@ type Querier interface {
 	PingDatabase(ctx context.Context) (int32, error)
 	ReEscalateAlert(ctx context.Context, arg ReEscalateAlertParams) (Alert, error)
 	RecordHeartbeatPing(ctx context.Context, tokenHash string) (HeartbeatMonitor, error)
+	RemoveAllScimGroupMembers(ctx context.Context, arg RemoveAllScimGroupMembersParams) error
+	RemoveScimGroupMember(ctx context.Context, arg RemoveScimGroupMemberParams) error
+	ReprovisionScimUser(ctx context.Context, arg ReprovisionScimUserParams) (User, error)
 	ResolveOpenAlert(ctx context.Context, arg ResolveOpenAlertParams) (Alert, error)
+	RevokeAllUserRefreshTokens(ctx context.Context, arg RevokeAllUserRefreshTokensParams) error
 	RevokeAllUserSessions(ctx context.Context, arg RevokeAllUserSessionsParams) error
 	RevokeIntegrationKey(ctx context.Context, arg RevokeIntegrationKeyParams) (IntegrationKey, error)
 	RevokeMobileDevice(ctx context.Context, arg RevokeMobileDeviceParams) (MobileDevice, error)
@@ -149,10 +169,13 @@ type Querier interface {
 	UpdateMaintenanceWindow(ctx context.Context, arg UpdateMaintenanceWindowParams) (MaintenanceWindow, error)
 	UpdateRotation(ctx context.Context, arg UpdateRotationParams) (Rotation, error)
 	UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Schedule, error)
+	UpdateScimGroupDisplayName(ctx context.Context, arg UpdateScimGroupDisplayNameParams) (ScimGroup, error)
+	UpdateScimUser(ctx context.Context, arg UpdateScimUserParams) (User, error)
 	UpdateService(ctx context.Context, arg UpdateServiceParams) (Service, error)
 	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
 	UpsertMobileDevice(ctx context.Context, arg UpsertMobileDeviceParams) (MobileDevice, error)
 	UpsertOrganizationSamlSettings(ctx context.Context, arg UpsertOrganizationSamlSettingsParams) (OrganizationSamlSetting, error)
+	UpsertOrganizationScimSettings(ctx context.Context, arg UpsertOrganizationScimSettingsParams) (OrganizationScimSetting, error)
 	// Reinstalling the Escalite Slack app (same organization) upserts this single row by
 	// organization_id, so re-authorizing never creates a duplicate workspace row.
 	UpsertOrganizationSlackOAuthInstall(ctx context.Context, arg UpsertOrganizationSlackOAuthInstallParams) (OrganizationSlackSetting, error)

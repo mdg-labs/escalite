@@ -1723,6 +1723,38 @@ func (r *mutationResolver) SaveSamlSettings(ctx context.Context, input model.Sav
 	return samlSettingsFromDB(&settings, r.publicURL), nil
 }
 
+// RotateScimToken is the resolver for the rotateScimToken field.
+func (r *mutationResolver) RotateScimToken(ctx context.Context) (*model.RotateScimTokenPayload, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	plaintext, tokenHash, prefix, err := auth.NewScimBearerToken()
+	if err != nil {
+		r.logger.Error("generate scim bearer token failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	queries := db.New(r.pool)
+	settings, err := queries.UpsertOrganizationScimSettings(ctx, db.UpsertOrganizationScimSettingsParams{
+		OrganizationID: sc.User.OrganizationID,
+		TokenHash:      tokenHash,
+		TokenPrefix:    prefix,
+	})
+	if err != nil {
+		r.logger.Error("save scim settings failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.ScimTokenRotated(ctx, queries, sc.User.OrganizationID, sc.User.ID)
+
+	return &model.RotateScimTokenPayload{
+		ScimSettings: scimSettingsFromDB(&settings, r.publicURL),
+		Token:        plaintext,
+	}, nil
+}
+
 // CreateIntegrationKey is the resolver for the createIntegrationKey field.
 func (r *mutationResolver) CreateIntegrationKey(ctx context.Context, input model.CreateIntegrationKeyInput) (*model.IntegrationKey, error) {
 	sc, err := requireAdminSession(ctx)
@@ -2988,6 +3020,26 @@ func (r *queryResolver) SamlSettings(ctx context.Context) (*model.SamlSettings, 
 	}
 
 	return samlSettingsFromDB(&settings, r.publicURL), nil
+}
+
+// ScimSettings is the resolver for the scimSettings field.
+func (r *queryResolver) ScimSettings(ctx context.Context) (*model.ScimSettings, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	settings, err := queries.GetOrganizationScimSettings(ctx, sc.User.OrganizationID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return scimSettingsFromDB(nil, r.publicURL), nil
+		}
+		r.logger.Error("load scim settings failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return scimSettingsFromDB(&settings, r.publicURL), nil
 }
 
 // IntegrationKeys is the resolver for the integrationKeys field.

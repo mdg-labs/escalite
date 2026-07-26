@@ -20,3 +20,9 @@ INSERT INTO team_memberships (
     $4
 )
 RETURNING *;
+
+-- name: DeleteTeamMembership :exec
+DELETE FROM team_memberships
+WHERE team_id = $1
+  AND user_id = $2
+  AND organization_id = $3;

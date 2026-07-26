@@ -42,6 +42,9 @@ const (
 	ActionServiceUpdated           = "service.updated"
 	ActionServiceDeleted           = "service.deleted"
 	ActionSlackWorkspaceConnected  = "slack_workspace.connected"
+	ActionScimUserProvisioned      = "scim.user_provisioned"
+	ActionScimUserDeprovisioned    = "scim.user_deprovisioned"
+	ActionScimTokenRotated         = "scim.token_rotated"
 
 	targetTypeUser              = "user"
 	targetTypeSlackWorkspace    = "organization_slack_settings"
@@ -500,6 +503,41 @@ func mustMarshalMeta(logger *slog.Logger, meta RequestMeta) []byte {
 		return []byte("{}")
 	}
 	return data
+}
+
+// ScimUserProvisioned records SCIM user creation.
+func (r *Recorder) ScimUserProvisioned(ctx context.Context, q db.Querier, orgID, userID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		TargetType:     pgtype.Text{String: targetTypeUser, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: userID, Valid: true},
+		Action:         ActionScimUserProvisioned,
+		Metadata:       []byte("{}"),
+	})
+}
+
+// ScimUserDeprovisioned records SCIM user deprovisioning.
+func (r *Recorder) ScimUserDeprovisioned(ctx context.Context, q db.Querier, orgID, userID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		TargetType:     pgtype.Text{String: targetTypeUser, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: userID, Valid: true},
+		Action:         ActionScimUserDeprovisioned,
+		Metadata:       []byte("{}"),
+	})
+}
+
+// ScimTokenRotated records SCIM bearer token rotation by an org admin.
+func (r *Recorder) ScimTokenRotated(ctx context.Context, q db.Querier, orgID, actorID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionScimTokenRotated,
+		Metadata:       []byte("{}"),
+	})
 }
 
 func mustMarshalAnyMeta(logger *slog.Logger, meta map[string]any) []byte {

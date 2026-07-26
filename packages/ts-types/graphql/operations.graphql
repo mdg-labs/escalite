@@ -557,3 +557,22 @@ subscription IncidentTimelineUpdated($incidentId: ID!) {
     ...TimelineEventFields
   }
 }
+
+query ScimSettings {
+  scimSettings {
+    configured
+    tokenHint
+    scimBaseUrl
+  }
+}
+
+mutation RotateScimToken {
+  rotateScimToken {
+    token
+    scimSettings {
+      configured
+      tokenHint
+      scimBaseUrl
+    }
+  }
+}

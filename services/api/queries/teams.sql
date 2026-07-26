@@ -22,3 +22,10 @@ INSERT INTO teams (
     $3
 )
 RETURNING *;
+
+-- name: GetTeamByName :one
+SELECT *
+FROM teams
+WHERE organization_id = $1
+  AND name = $2
+LIMIT 1;

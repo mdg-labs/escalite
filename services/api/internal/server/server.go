@@ -204,6 +204,28 @@ func New(deps Dependencies) http.Handler {
 			r.Get("/api/v1/auth/saml/metadata", deps.SAML.Metadata)
 		}
 
+		scimHandler := handlers.NewSCIMHandler(deps.Pool, deps.Logger, deps.PublicURL)
+		r.Route("/scim/v2", func(r chi.Router) {
+			r.Use(scimHandler.Middleware)
+			r.Get("/ServiceProviderConfig", scimHandler.ServiceProviderConfig)
+			r.Route("/Users", func(r chi.Router) {
+				r.Get("/", scimHandler.Users)
+				r.Post("/", scimHandler.Users)
+				r.Get("/{id}", scimHandler.UserByID)
+				r.Put("/{id}", scimHandler.UserByID)
+				r.Patch("/{id}", scimHandler.UserByID)
+				r.Delete("/{id}", scimHandler.UserByID)
+			})
+			r.Route("/Groups", func(r chi.Router) {
+				r.Get("/", scimHandler.Groups)
+				r.Post("/", scimHandler.Groups)
+				r.Get("/{id}", scimHandler.GroupByID)
+				r.Put("/{id}", scimHandler.GroupByID)
+				r.Patch("/{id}", scimHandler.GroupByID)
+				r.Delete("/{id}", scimHandler.GroupByID)
+			})
+		})
+
 		r.Group(func(r chi.Router) {
 			r.Use(handlers.RequireSession(deps.Pool, deps.Logger))
 			r.Post("/api/v1/mobile/auth/code", mobileAuth.IssueCode)

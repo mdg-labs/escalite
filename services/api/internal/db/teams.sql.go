@@ -69,6 +69,32 @@ func (q *Queries) GetTeamByID(ctx context.Context, arg GetTeamByIDParams) (Team,
 	return i, err
 }
 
+const getTeamByName = `-- name: GetTeamByName :one
+SELECT id, organization_id, name, created_at, updated_at
+FROM teams
+WHERE organization_id = $1
+  AND name = $2
+LIMIT 1
+`
+
+type GetTeamByNameParams struct {
+	OrganizationID uuid.UUID `json:"organization_id"`
+	Name           string    `json:"name"`
+}
+
+func (q *Queries) GetTeamByName(ctx context.Context, arg GetTeamByNameParams) (Team, error) {
+	row := q.db.QueryRow(ctx, getTeamByName, arg.OrganizationID, arg.Name)
+	var i Team
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listTeamsByOrganizationID = `-- name: ListTeamsByOrganizationID :many
 SELECT id, organization_id, name, created_at, updated_at
 FROM teams

@@ -342,6 +342,13 @@ type RegisterMobileDeviceInput struct {
 	DeviceLabel   *string `json:"deviceLabel,omitempty"`
 }
 
+// Result of rotating the organization SCIM bearer token.
+type RotateScimTokenPayload struct {
+	ScimSettings *ScimSettings `json:"scimSettings"`
+	// Plaintext SCIM bearer token; only returned from rotateScimToken.
+	Token string `json:"token"`
+}
+
 type Rotation struct {
 	ID             string    `json:"id"`
 	ScheduleID     string    `json:"scheduleId"`
@@ -392,6 +399,15 @@ type Schedule struct {
 	Rotations      []*Rotation `json:"rotations"`
 	CreatedAt      time.Time   `json:"createdAt"`
 	UpdatedAt      time.Time   `json:"updatedAt"`
+}
+
+// Organization SCIM provisioning configuration (admin only).
+type ScimSettings struct {
+	Configured bool `json:"configured"`
+	// Display prefix for the SCIM bearer token (last-4 style).
+	TokenHint *string `json:"tokenHint,omitempty"`
+	// Absolute base URL for SCIM 2.0 provisioning endpoints.
+	ScimBaseURL *string `json:"scimBaseUrl,omitempty"`
 }
 
 type Service struct {

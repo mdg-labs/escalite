@@ -105,6 +105,14 @@ table "users" {
     null = false
     type = text
   }
+  column "scim_external_id" {
+    null = true
+    type = text
+  }
+  column "deprovisioned_at" {
+    null = true
+    type = timestamptz
+  }
   column "created_at" {
     null    = false
     type    = timestamptz
@@ -134,8 +142,16 @@ table "users" {
     columns = [column.id, column.organization_id]
   }
 
+  unique "users_organization_id_scim_external_id_key" {
+    columns = [column.organization_id, column.scim_external_id]
+  }
+
   index "users_organization_id_idx" {
     columns = [column.organization_id]
+  }
+
+  index "users_deprovisioned_at_idx" {
+    columns = [column.deprovisioned_at]
   }
 
   check "users_role_check" {
@@ -2062,6 +2078,148 @@ table "organization_saml_settings" {
     columns     = [column.organization_id]
     ref_columns = [table.organizations.column.id]
     on_delete   = CASCADE
+  }
+}
+
+table "organization_scim_settings" {
+  schema = schema.public
+
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "token_hash" {
+    null = false
+    type = text
+  }
+  column "token_prefix" {
+    null = false
+    type = text
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.organization_id]
+  }
+
+  unique "organization_scim_settings_token_hash_key" {
+    columns = [column.token_hash]
+  }
+
+  foreign_key "organization_scim_settings_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+}
+
+table "scim_groups" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "external_id" {
+    null = false
+    type = text
+  }
+  column "display_name" {
+    null = false
+    type = text
+  }
+  column "team_id" {
+    null = false
+    type = uuid
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "scim_groups_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "scim_groups_team_id_organization_id_fkey" {
+    columns     = [column.team_id, column.organization_id]
+    ref_columns = [table.teams.column.id, table.teams.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "scim_groups_organization_id_external_id_key" {
+    columns = [column.organization_id, column.external_id]
+  }
+
+  index "scim_groups_team_id_idx" {
+    columns = [column.team_id]
+  }
+}
+
+table "scim_group_members" {
+  schema = schema.public
+
+  column "scim_group_id" {
+    null = false
+    type = uuid
+  }
+  column "user_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.scim_group_id, column.user_id]
+  }
+
+  foreign_key "scim_group_members_scim_group_id_fkey" {
+    columns     = [column.scim_group_id]
+    ref_columns = [table.scim_groups.column.id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "scim_group_members_user_id_organization_id_fkey" {
+    columns     = [column.user_id, column.organization_id]
+    ref_columns = [table.users.column.id, table.users.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  index "scim_group_members_user_id_idx" {
+    columns = [column.user_id]
   }
 }
 

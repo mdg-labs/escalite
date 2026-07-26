@@ -51,3 +51,71 @@ INSERT INTO users (
     $5
 )
 RETURNING *;
+
+-- name: CreateScimUser :one
+INSERT INTO users (
+    id,
+    organization_id,
+    email,
+    password_hash,
+    role,
+    scim_external_id
+) VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6
+)
+RETURNING *;
+
+-- name: GetUserByScimExternalID :one
+SELECT *
+FROM users
+WHERE organization_id = $1
+  AND scim_external_id = $2
+LIMIT 1;
+
+-- name: GetUserByIDIncludingDeprovisioned :one
+SELECT *
+FROM users
+WHERE id = $1
+  AND organization_id = $2
+LIMIT 1;
+
+-- name: ListScimUsersByOrganizationID :many
+SELECT *
+FROM users
+WHERE organization_id = $1
+  AND scim_external_id IS NOT NULL
+ORDER BY email ASC;
+
+-- name: UpdateScimUser :one
+UPDATE users
+SET email = $3,
+    scim_external_id = $4,
+    deprovisioned_at = $5,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+RETURNING *;
+
+-- name: DeprovisionUser :one
+UPDATE users
+SET deprovisioned_at = now(),
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+  AND deprovisioned_at IS NULL
+RETURNING *;
+
+-- name: ReprovisionScimUser :one
+UPDATE users
+SET email = $3,
+    scim_external_id = $4,
+    deprovisioned_at = NULL,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+RETURNING *;

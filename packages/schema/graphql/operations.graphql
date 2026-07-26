@@ -119,6 +119,11 @@ type Query {
   samlSettings: SamlSettings!
 
   """
+  Organization SCIM provisioning configuration (org admin only).
+  """
+  scimSettings: ScimSettings!
+
+  """
   List integration keys for a service (org admin only).
   """
   integrationKeys(serviceId: ID!): [IntegrationKey!]!
@@ -304,6 +309,11 @@ type Mutation {
   Save organization SAML IdP metadata and enable/disable SAML SSO (org admin only).
   """
   saveSamlSettings(input: SaveSamlSettingsInput!): SamlSettings!
+
+  """
+  Rotate the organization SCIM bearer token (org admin only). Returns plaintext token once.
+  """
+  rotateScimToken: RotateScimTokenPayload!
 
   """
   Create an inbound integration key for a service (org admin only).

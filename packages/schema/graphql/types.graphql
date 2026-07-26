@@ -244,6 +244,24 @@ type SamlSettings {
   samlLoginUrl: String
 }
 
+"""Organization SCIM provisioning configuration (admin only)."""
+type ScimSettings {
+  configured: Boolean!
+  """Display prefix for the SCIM bearer token (last-4 style)."""
+  tokenHint: String
+  """Absolute base URL for SCIM 2.0 provisioning endpoints."""
+  scimBaseUrl: String
+}
+
+"""Result of rotating the organization SCIM bearer token."""
+type RotateScimTokenPayload {
+  scimSettings: ScimSettings!
+  """
+  Plaintext SCIM bearer token; only returned from rotateScimToken.
+  """
+  token: String!
+}
+
 """Unauthenticated login method availability for the web app."""
 type LoginOptions {
   samlEnabled: Boolean!

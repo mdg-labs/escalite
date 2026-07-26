@@ -28,6 +28,7 @@ import { AlertTriangleIcon, CircleCheckIcon, SmartphoneIcon } from 'lucide-react
 
 import { AppShell } from '../components/app-shell'
 import { SamlSettingsPanel } from '../components/saml-settings-panel'
+import { ScimSettingsPanel } from '../components/scim-settings-panel'
 import { SlackSettingsPanel } from '../components/slack-settings-panel'
 import { formatDateTime, formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
@@ -91,6 +92,7 @@ export function SettingsPage(): ReactElement {
     <AppShell title={t('settings.title')}>
       <div className="space-y-6">
         <SamlSettingsPanel />
+        <ScimSettingsPanel />
         <SlackSettingsPanel />
 
         <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">

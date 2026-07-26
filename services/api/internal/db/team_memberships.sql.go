@@ -52,6 +52,24 @@ func (q *Queries) CreateTeamMembership(ctx context.Context, arg CreateTeamMember
 	return i, err
 }
 
+const deleteTeamMembership = `-- name: DeleteTeamMembership :exec
+DELETE FROM team_memberships
+WHERE team_id = $1
+  AND user_id = $2
+  AND organization_id = $3
+`
+
+type DeleteTeamMembershipParams struct {
+	TeamID         uuid.UUID `json:"team_id"`
+	UserID         uuid.UUID `json:"user_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+func (q *Queries) DeleteTeamMembership(ctx context.Context, arg DeleteTeamMembershipParams) error {
+	_, err := q.db.Exec(ctx, deleteTeamMembership, arg.TeamID, arg.UserID, arg.OrganizationID)
+	return err
+}
+
 const hasTeamMembership = `-- name: HasTeamMembership :one
 SELECT EXISTS(
     SELECT 1

@@ -120,6 +120,9 @@ func loadCookieSessionContext(
 		logger.Error("load session user failed", "error", err)
 		return auth.SessionContext{}, false, err
 	}
+	if user.DeprovisionedAt.Valid {
+		return auth.SessionContext{}, false, nil
+	}
 
 	return auth.SessionContext{
 		Session: session,
@@ -162,6 +165,9 @@ func loadRefreshTokenSessionContext(
 		}
 		logger.Error("load refresh token user failed", "error", err)
 		return auth.SessionContext{}, false, err
+	}
+	if user.DeprovisionedAt.Valid {
+		return auth.SessionContext{}, false, nil
 	}
 
 	return auth.SessionContext{

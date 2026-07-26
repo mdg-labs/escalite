@@ -21,7 +21,7 @@ WITH new_org AS (
 new_user AS (
     INSERT INTO users (id, organization_id, email, password_hash, role)
     VALUES ($3, (SELECT id FROM new_org), $4, $5, 'admin')
-    RETURNING id, organization_id, email, password_hash, role, created_at, updated_at
+    RETURNING id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
 )
 SELECT
     new_org.id AS organization_id,

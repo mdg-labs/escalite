@@ -209,6 +209,14 @@ type OrganizationSamlSetting struct {
 	UpdatedAt              pgtype.Timestamptz `json:"updated_at"`
 }
 
+type OrganizationScimSetting struct {
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	TokenHash      string             `json:"token_hash"`
+	TokenPrefix    string             `json:"token_prefix"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
 type OrganizationSlackSetting struct {
 	OrganizationID     uuid.UUID          `json:"organization_id"`
 	BotTokenCiphertext []byte             `json:"bot_token_ciphertext"`
@@ -283,6 +291,23 @@ type Schedule struct {
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
+type ScimGroup struct {
+	ID             uuid.UUID          `json:"id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	ExternalID     string             `json:"external_id"`
+	DisplayName    string             `json:"display_name"`
+	TeamID         uuid.UUID          `json:"team_id"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type ScimGroupMember struct {
+	ScimGroupID    uuid.UUID          `json:"scim_group_id"`
+	UserID         uuid.UUID          `json:"user_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type Service struct {
 	ID                                      uuid.UUID          `json:"id"`
 	OrganizationID                          uuid.UUID          `json:"organization_id"`
@@ -338,13 +363,15 @@ type TimelineEvent struct {
 }
 
 type User struct {
-	ID             uuid.UUID          `json:"id"`
-	OrganizationID uuid.UUID          `json:"organization_id"`
-	Email          string             `json:"email"`
-	PasswordHash   pgtype.Text        `json:"password_hash"`
-	Role           string             `json:"role"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	ID              uuid.UUID          `json:"id"`
+	OrganizationID  uuid.UUID          `json:"organization_id"`
+	Email           string             `json:"email"`
+	PasswordHash    pgtype.Text        `json:"password_hash"`
+	Role            string             `json:"role"`
+	ScimExternalID  pgtype.Text        `json:"scim_external_id"`
+	DeprovisionedAt pgtype.Timestamptz `json:"deprovisioned_at"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }
 
 type UserContactMethod struct {

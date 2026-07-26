@@ -31,3 +31,11 @@ SET revoked_at = now(),
 WHERE id = $1
   AND organization_id = $2
   AND revoked_at IS NULL;
+
+-- name: RevokeAllUserRefreshTokens :exec
+UPDATE refresh_tokens
+SET revoked_at = now(),
+    updated_at = now()
+WHERE user_id = $1
+  AND organization_id = $2
+  AND revoked_at IS NULL;

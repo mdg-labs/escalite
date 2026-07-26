@@ -136,6 +136,10 @@ func (h *SAMLHandler) ACS(w http.ResponseWriter, r *http.Request) {
 			WriteAPIError(w, http.StatusForbidden, CodeForbidden, "setup is required before saml login")
 			return
 		}
+		if errors.Is(err, errSAMLUserDeprovisioned) {
+			WriteAPIError(w, http.StatusUnauthorized, CodeUnauthenticated, "saml authentication failed")
+			return
+		}
 		h.logger.Error("resolve saml user failed", "error", err)
 		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
@@ -187,8 +191,9 @@ func (h *SAMLHandler) Metadata(w http.ResponseWriter, r *http.Request) {
 }
 
 var (
-	errSAMLDisabled      = errors.New("saml is disabled")
-	errSAMLSetupRequired = errors.New("organization setup required")
+	errSAMLDisabled           = errors.New("saml is disabled")
+	errSAMLSetupRequired      = errors.New("organization setup required")
+	errSAMLUserDeprovisioned  = errors.New("user is deprovisioned")
 )
 
 func (h *SAMLHandler) loadEnabledSettings(ctx context.Context) (db.OrganizationSamlSetting, error) {
@@ -230,6 +235,9 @@ func (h *SAMLHandler) resolveUser(ctx context.Context, email string) (db.User, e
 
 	user, err := queries.GetUserByEmailForAuth(ctx, email)
 	if err == nil {
+		if user.DeprovisionedAt.Valid {
+			return db.User{}, errSAMLUserDeprovisioned
+		}
 		return user, nil
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {

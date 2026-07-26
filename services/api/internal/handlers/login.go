@@ -111,6 +111,11 @@ func (h *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		WriteAPIError(w, http.StatusUnauthorized, CodeUnauthenticated, invalidCredentialsMessage)
 		return
 	}
+	if user.DeprovisionedAt.Valid {
+		h.recordFailedLogin(ctx, queries, &user, requestMeta)
+		WriteAPIError(w, http.StatusUnauthorized, CodeUnauthenticated, invalidCredentialsMessage)
+		return
+	}
 
 	sessionID := uuid.Must(uuid.NewV7())
 	expiresAt := time.Now().UTC().Add(auth.DefaultSessionTTL)

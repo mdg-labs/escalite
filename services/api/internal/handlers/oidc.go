@@ -112,6 +112,10 @@ func (h *OIDCHandler) Callback(w http.ResponseWriter, r *http.Request) {
 			WriteAPIError(w, http.StatusForbidden, CodeForbidden, "setup is required before oidc login")
 			return
 		}
+		if errors.Is(err, errOIDCUserDeprovisioned) {
+			WriteAPIError(w, http.StatusUnauthorized, CodeUnauthenticated, "oidc authentication failed")
+			return
+		}
 		h.logger.Error("resolve oidc user failed", "error", err)
 		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
@@ -127,12 +131,16 @@ func (h *OIDCHandler) Callback(w http.ResponseWriter, r *http.Request) {
 }
 
 var errOIDCSetupRequired = errors.New("organization setup required")
+var errOIDCUserDeprovisioned = errors.New("user is deprovisioned")
 
 func (h *OIDCHandler) resolveUser(ctx context.Context, email string) (db.User, error) {
 	queries := db.New(h.pool)
 
 	user, err := queries.GetUserByEmailForAuth(ctx, email)
 	if err == nil {
+		if user.DeprovisionedAt.Valid {
+			return db.User{}, errOIDCUserDeprovisioned
+		}
 		return user, nil
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {

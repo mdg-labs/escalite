@@ -216,6 +216,7 @@ type ComplexityRoot struct {
 		RevokeIntegrationKey         func(childComplexity int, id string) int
 		RevokeMobileDevice           func(childComplexity int, id string) int
 		RotateIntegrationKey         func(childComplexity int, id string) int
+		RotateScimToken              func(childComplexity int) int
 		SaveNotificationRule         func(childComplexity int, input model.SaveNotificationRuleInput) int
 		SaveSamlSettings             func(childComplexity int, input model.SaveSamlSettingsInput) int
 		SaveSlackSettings            func(childComplexity int, input model.SaveSlackSettingsInput) int
@@ -306,10 +307,16 @@ type ComplexityRoot struct {
 		SamlSettings            func(childComplexity int) int
 		Schedule                func(childComplexity int, id string) int
 		Schedules               func(childComplexity int, teamID string) int
+		ScimSettings            func(childComplexity int) int
 		Service                 func(childComplexity int, id string) int
 		Services                func(childComplexity int) int
 		SlackSettings           func(childComplexity int) int
 		Teams                   func(childComplexity int) int
+	}
+
+	RotateScimTokenPayload struct {
+		ScimSettings func(childComplexity int) int
+		Token        func(childComplexity int) int
 	}
 
 	Rotation struct {
@@ -341,6 +348,12 @@ type ComplexityRoot struct {
 		TeamID         func(childComplexity int) int
 		Timezone       func(childComplexity int) int
 		UpdatedAt      func(childComplexity int) int
+	}
+
+	ScimSettings struct {
+		Configured  func(childComplexity int) int
+		ScimBaseURL func(childComplexity int) int
+		TokenHint   func(childComplexity int) int
 	}
 
 	Service struct {
@@ -476,6 +489,7 @@ type MutationResolver interface {
 	DeleteNotificationRule(ctx context.Context, priority model.AlertPriority) (bool, error)
 	SaveSlackSettings(ctx context.Context, input model.SaveSlackSettingsInput) (*model.SlackSettings, error)
 	SaveSamlSettings(ctx context.Context, input model.SaveSamlSettingsInput) (*model.SamlSettings, error)
+	RotateScimToken(ctx context.Context) (*model.RotateScimTokenPayload, error)
 	CreateIntegrationKey(ctx context.Context, input model.CreateIntegrationKeyInput) (*model.IntegrationKey, error)
 	RevokeIntegrationKey(ctx context.Context, id string) (*model.IntegrationKey, error)
 	RotateIntegrationKey(ctx context.Context, id string) (*model.IntegrationKey, error)
@@ -513,6 +527,7 @@ type QueryResolver interface {
 	MobileDevices(ctx context.Context) ([]*model.MobileDevice, error)
 	SlackSettings(ctx context.Context) (*model.SlackSettings, error)
 	SamlSettings(ctx context.Context) (*model.SamlSettings, error)
+	ScimSettings(ctx context.Context) (*model.ScimSettings, error)
 	IntegrationKeys(ctx context.Context, serviceID string) ([]*model.IntegrationKey, error)
 	Teams(ctx context.Context) ([]*model.Team, error)
 	Services(ctx context.Context) ([]*model.Service, error)
@@ -1512,6 +1527,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RotateIntegrationKey(childComplexity, args["id"].(string)), true
+	case "Mutation.rotateScimToken":
+		if e.ComplexityRoot.Mutation.RotateScimToken == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.RotateScimToken(childComplexity), true
 	case "Mutation.saveNotificationRule":
 		if e.ComplexityRoot.Mutation.SaveNotificationRule == nil {
 			break
@@ -2067,6 +2088,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Schedules(childComplexity, args["teamId"].(string)), true
+	case "Query.scimSettings":
+		if e.ComplexityRoot.Query.ScimSettings == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.ScimSettings(childComplexity), true
 	case "Query.service":
 		if e.ComplexityRoot.Query.Service == nil {
 			break
@@ -2096,6 +2123,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Teams(childComplexity), true
+
+	case "RotateScimTokenPayload.scimSettings":
+		if e.ComplexityRoot.RotateScimTokenPayload.ScimSettings == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RotateScimTokenPayload.ScimSettings(childComplexity), true
+	case "RotateScimTokenPayload.token":
+		if e.ComplexityRoot.RotateScimTokenPayload.Token == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RotateScimTokenPayload.Token(childComplexity), true
 
 	case "Rotation.createdAt":
 		if e.ComplexityRoot.Rotation.CreatedAt == nil {
@@ -2231,6 +2271,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Schedule.UpdatedAt(childComplexity), true
+
+	case "ScimSettings.configured":
+		if e.ComplexityRoot.ScimSettings.Configured == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ScimSettings.Configured(childComplexity), true
+	case "ScimSettings.scimBaseUrl":
+		if e.ComplexityRoot.ScimSettings.ScimBaseURL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ScimSettings.ScimBaseURL(childComplexity), true
+	case "ScimSettings.tokenHint":
+		if e.ComplexityRoot.ScimSettings.TokenHint == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ScimSettings.TokenHint(childComplexity), true
 
 	case "Service.activeMaintenanceWindows":
 		if e.ComplexityRoot.Service.ActiveMaintenanceWindows == nil {
@@ -3074,6 +3133,11 @@ type Query {
   samlSettings: SamlSettings!
 
   """
+  Organization SCIM provisioning configuration (org admin only).
+  """
+  scimSettings: ScimSettings!
+
+  """
   List integration keys for a service (org admin only).
   """
   integrationKeys(serviceId: ID!): [IntegrationKey!]!
@@ -3259,6 +3323,11 @@ type Mutation {
   Save organization SAML IdP metadata and enable/disable SAML SSO (org admin only).
   """
   saveSamlSettings(input: SaveSamlSettingsInput!): SamlSettings!
+
+  """
+  Rotate the organization SCIM bearer token (org admin only). Returns plaintext token once.
+  """
+  rotateScimToken: RotateScimTokenPayload!
 
   """
   Create an inbound integration key for a service (org admin only).
@@ -3597,6 +3666,24 @@ type SamlSettings {
   certificateHint: String
   """Absolute URL to start SAML login when enabled."""
   samlLoginUrl: String
+}
+
+"""Organization SCIM provisioning configuration (admin only)."""
+type ScimSettings {
+  configured: Boolean!
+  """Display prefix for the SCIM bearer token (last-4 style)."""
+  tokenHint: String
+  """Absolute base URL for SCIM 2.0 provisioning endpoints."""
+  scimBaseUrl: String
+}
+
+"""Result of rotating the organization SCIM bearer token."""
+type RotateScimTokenPayload {
+  scimSettings: ScimSettings!
+  """
+  Plaintext SCIM bearer token; only returned from rotateScimToken.
+  """
+  token: String!
 }
 
 """Unauthenticated login method availability for the web app."""
@@ -4076,6 +4163,16 @@ func (ec *executionContext) childFields_Override(ctx context.Context, field grap
 	return nil, fmt.Errorf("no field named %q was found under type Override", field.Name)
 }
 
+func (ec *executionContext) childFields_RotateScimTokenPayload(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "scimSettings":
+		return ec.fieldContext_RotateScimTokenPayload_scimSettings(ctx, field)
+	case "token":
+		return ec.fieldContext_RotateScimTokenPayload_token(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type RotateScimTokenPayload", field.Name)
+}
+
 func (ec *executionContext) childFields_Rotation(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "id":
@@ -4136,6 +4233,18 @@ func (ec *executionContext) childFields_Schedule(ctx context.Context, field grap
 		return ec.fieldContext_Schedule_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Schedule", field.Name)
+}
+
+func (ec *executionContext) childFields_ScimSettings(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "configured":
+		return ec.fieldContext_ScimSettings_configured(ctx, field)
+	case "tokenHint":
+		return ec.fieldContext_ScimSettings_tokenHint(ctx, field)
+	case "scimBaseUrl":
+		return ec.fieldContext_ScimSettings_scimBaseUrl(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type ScimSettings", field.Name)
 }
 
 func (ec *executionContext) childFields_Service(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -9204,6 +9313,38 @@ func (ec *executionContext) fieldContext_Mutation_saveSamlSettings(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_rotateScimToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_rotateScimToken(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Mutation().RotateScimToken(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.RotateScimTokenPayload) graphql.Marshaler {
+			return ec.marshalNRotateScimTokenPayload2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRotateScimTokenPayload(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_rotateScimToken(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_RotateScimTokenPayload(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createIntegrationKey(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -11301,6 +11442,38 @@ func (ec *executionContext) fieldContext_Query_samlSettings(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_scimSettings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_scimSettings(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().ScimSettings(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.ScimSettings) graphql.Marshaler {
+			return ec.marshalNScimSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐScimSettings(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_scimSettings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ScimSettings(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_integrationKeys(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -11647,6 +11820,61 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _RotateScimTokenPayload_scimSettings(ctx context.Context, field graphql.CollectedField, obj *model.RotateScimTokenPayload) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RotateScimTokenPayload_scimSettings(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ScimSettings, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.ScimSettings) graphql.Marshaler {
+			return ec.marshalNScimSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐScimSettings(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RotateScimTokenPayload_scimSettings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RotateScimTokenPayload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ScimSettings(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RotateScimTokenPayload_token(ctx context.Context, field graphql.CollectedField, obj *model.RotateScimTokenPayload) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RotateScimTokenPayload_token(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Token, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RotateScimTokenPayload_token(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RotateScimTokenPayload", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Rotation_id(ctx context.Context, field graphql.CollectedField, obj *model.Rotation) (ret graphql.Marshaler) {
@@ -12162,6 +12390,75 @@ func (ec *executionContext) _Schedule_updatedAt(ctx context.Context, field graph
 }
 func (ec *executionContext) fieldContext_Schedule_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Schedule", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _ScimSettings_configured(ctx context.Context, field graphql.CollectedField, obj *model.ScimSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ScimSettings_configured(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Configured, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ScimSettings_configured(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ScimSettings", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _ScimSettings_tokenHint(ctx context.Context, field graphql.CollectedField, obj *model.ScimSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ScimSettings_tokenHint(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TokenHint, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ScimSettings_tokenHint(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ScimSettings", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _ScimSettings_scimBaseUrl(ctx context.Context, field graphql.CollectedField, obj *model.ScimSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ScimSettings_scimBaseUrl(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ScimBaseURL, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ScimSettings_scimBaseUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ScimSettings", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Service_id(ctx context.Context, field graphql.CollectedField, obj *model.Service) (ret graphql.Marshaler) {
@@ -17424,6 +17721,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "rotateScimToken":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_rotateScimToken(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createIntegrationKey":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createIntegrationKey(ctx, field)
@@ -18381,6 +18685,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "scimSettings":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_scimSettings(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "integrationKeys":
 			field := field
 
@@ -18548,6 +18874,49 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			})
 			if out.Values[i] == graphql.RequiredNull {
 				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var rotateScimTokenPayloadImplementors = []string{"RotateScimTokenPayload"}
+
+func (ec *executionContext) _RotateScimTokenPayload(ctx context.Context, sel ast.SelectionSet, obj *model.RotateScimTokenPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rotateScimTokenPayloadImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RotateScimTokenPayload")
+		case "scimSettings":
+			out.Values[i] = ec._RotateScimTokenPayload_scimSettings(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "token":
+			out.Values[i] = ec._RotateScimTokenPayload_token(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -18756,6 +19125,54 @@ func (ec *executionContext) _Schedule(ctx context.Context, sel ast.SelectionSet,
 		case "updatedAt":
 			out.Values[i] = ec._Schedule_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var scimSettingsImplementors = []string{"ScimSettings"}
+
+func (ec *executionContext) _ScimSettings(ctx context.Context, sel ast.SelectionSet, obj *model.ScimSettings) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, scimSettingsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ScimSettings")
+		case "configured":
+			out.Values[i] = ec._ScimSettings_configured(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tokenHint":
+			out.Values[i] = ec._ScimSettings_tokenHint(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "scimBaseUrl":
+			out.Values[i] = ec._ScimSettings_scimBaseUrl(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
 		default:
@@ -20590,6 +21007,20 @@ func (ec *executionContext) unmarshalNRegisterMobileDeviceInput2githubᚗcomᚋm
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNRotateScimTokenPayload2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRotateScimTokenPayload(ctx context.Context, sel ast.SelectionSet, v model.RotateScimTokenPayload) graphql.Marshaler {
+	return ec._RotateScimTokenPayload(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRotateScimTokenPayload2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRotateScimTokenPayload(ctx context.Context, sel ast.SelectionSet, v *model.RotateScimTokenPayload) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RotateScimTokenPayload(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNRotation2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRotation(ctx context.Context, sel ast.SelectionSet, v model.Rotation) graphql.Marshaler {
 	return ec._Rotation(ctx, sel, &v)
 }
@@ -20682,6 +21113,20 @@ func (ec *executionContext) marshalNSchedule2ᚖgithubᚗcomᚋmdgᚑlabsᚋesca
 		return graphql.Null
 	}
 	return ec._Schedule(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNScimSettings2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐScimSettings(ctx context.Context, sel ast.SelectionSet, v model.ScimSettings) graphql.Marshaler {
+	return ec._ScimSettings(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNScimSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐScimSettings(ctx context.Context, sel ast.SelectionSet, v *model.ScimSettings) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ScimSettings(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNService2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐService(ctx context.Context, sel ast.SelectionSet, v model.Service) graphql.Marshaler {
