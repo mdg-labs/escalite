@@ -42,7 +42,7 @@ jobs:
             services/engine/go.sum
             services/integrations/go.sum
 
-      - uses: golangci/golangci-lint-action@v6
+      - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.1.6
           args: --timeout=5m ./services/...
@@ -160,11 +160,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: golang/govulncheck-action@v1
-        with:
-          go-version-file: services/api/go.mod
-          work-dir: .
-          go-package: ./services/api/... ./services/engine/... ./services/integrations/...
+      - name: govulncheck
+        run: bash scripts/govulncheck.sh
 
-      - name: pnpm audit (critical)
-        run: pnpm audit --audit-level=critical
+      - name: pnpm audit (high)
+        run: pnpm audit --audit-level=high

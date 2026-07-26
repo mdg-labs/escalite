@@ -11,8 +11,16 @@ CMD ["go", "run", "./cmd/api"]
 
 FROM base AS builder
 ENV GOWORK=off
+COPY services/dbmigrate/go.mod services/dbmigrate/go.sum ./services/dbmigrate/
+COPY services/outboundintegrations/go.mod services/outboundintegrations/go.sum ./services/outboundintegrations/
+COPY services/integrations/go.mod services/integrations/go.sum ./services/integrations/
+COPY services/engine/go.mod services/engine/go.sum ./services/engine/
 COPY services/api/go.mod services/api/go.sum ./services/api/
 RUN cd services/api && go mod download
+COPY services/dbmigrate ./services/dbmigrate
+COPY services/outboundintegrations ./services/outboundintegrations
+COPY services/integrations ./services/integrations
+COPY services/engine ./services/engine
 COPY services/api ./services/api
 RUN cd services/api && go build -trimpath -ldflags="-s -w" -o /out/api ./cmd/api
 
