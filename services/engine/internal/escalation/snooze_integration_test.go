@@ -54,14 +54,7 @@ func TestSnoozeEscalationShiftsNextEscalationAt(t *testing.T) {
 
 	waitForNotificationCount(t, ctx, queries, alertID, fixture.orgID, 1)
 
-	before, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-		ID:             alertID,
-		OrganizationID: fixture.orgID,
-	})
-	require.NoError(t, err)
-
-	var beforeState escalation.State
-	require.NoError(t, json.Unmarshal(before.EscalationState, &beforeState))
+	beforeState := waitForPendingEscalationJob(t, ctx, queries, alertID, fixture.orgID)
 	require.NotNil(t, beforeState.NextEscalationAt)
 
 	snoozeMinutes := int32(15)

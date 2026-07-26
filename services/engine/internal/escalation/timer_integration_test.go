@@ -121,14 +121,7 @@ func TestAcknowledgedAlertCancelsPendingEscalation(t *testing.T) {
 
 	waitForNotificationCount(t, ctx, queries, alertID, fixture.orgID, 1)
 
-	alert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-		ID:             alertID,
-		OrganizationID: fixture.orgID,
-	})
-	require.NoError(t, err)
-
-	var beforeAck escalation.State
-	require.NoError(t, json.Unmarshal(alert.EscalationState, &beforeAck))
+	beforeAck := waitForPendingEscalationJob(t, ctx, queries, alertID, fixture.orgID)
 	require.NotNil(t, beforeAck.PendingEscalationJobID)
 
 	acknowledged, err := escalation.AcknowledgeAlert(ctx, queries, queueClient, alertID, fixture.orgID, fixture.adminID)
@@ -449,6 +442,34 @@ func waitForNotificationCount(
 		}
 		if time.Now().After(deadline) {
 			t.Fatalf("expected %d notification attempts within 5s, got %d", expected, count)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func waitForPendingEscalationJob(
+	t *testing.T,
+	ctx context.Context,
+	queries *db.Queries,
+	alertID, orgID uuid.UUID,
+) escalation.State {
+	t.Helper()
+
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		alert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+			ID:             alertID,
+			OrganizationID: orgID,
+		})
+		require.NoError(t, err)
+
+		var state escalation.State
+		require.NoError(t, json.Unmarshal(alert.EscalationState, &state))
+		if state.PendingEscalationJobID != nil {
+			return state
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("expected pending_escalation_job_id within 5s, got state %+v", state)
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
