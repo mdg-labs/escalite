@@ -37,9 +37,9 @@ COPY deploy/docker-compose/scripts/generate-runtime-config.sh /docker-entrypoint
 COPY deploy/docker-compose/scripts/docker-entrypoint-nginx.sh /docker-entrypoint-nginx.sh
 RUN chmod +x /docker-entrypoint.d/generate-runtime-config.sh /docker-entrypoint-nginx.sh \
   && mkdir -p /etc/escalite/nginx \
-  && rm -f /etc/nginx/templates/default.conf.template \
-  && chown -R nginx:nginx /etc/nginx/conf.d /etc/escalite/nginx /usr/share/nginx/html
+  && rm -f /etc/nginx/templates/default.conf.template
 COPY --from=builder /app/apps/status-page/dist /usr/share/nginx/html
+RUN chown -R nginx:nginx /etc/nginx/conf.d /etc/escalite/nginx /usr/share/nginx/html
 USER nginx
 EXPOSE 5174
 ENTRYPOINT ["/docker-entrypoint-nginx.sh"]

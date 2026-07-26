@@ -35,3 +35,7 @@ apps/web/playwright-report/index.html
 
 # .claude
 .claude/
+
+# test results
+apps/web/playwright-report/
+apps/web/test-results/
