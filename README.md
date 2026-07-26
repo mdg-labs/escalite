@@ -20,6 +20,7 @@ From the repo root you can also use `task compose:prod:build` then `task compose
 Operator guides:
 
 - [Production deploy, backups, and upgrades](docs/deploy/production.md)
+- [Coolify deployment (env vars, TLS, validation)](docs/deploy/coolify.md)
 - [Compose profiles and digest-pinned release images](deploy/docker-compose/README.md)
 
 ## Prerequisites

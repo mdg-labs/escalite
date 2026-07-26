@@ -44,7 +44,7 @@ Wait until all services are healthy:
 docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod ps
 ```
 
-Open the web UI at the host port mapped by `ESCALITE_WEB_PORT` (default `5173`). Place a reverse proxy (Caddy, Traefik, nginx, or a PaaS such as Coolify) in front for TLS — see `docs/specs/07-security-and-auth.md`.
+Open the web UI at the host port mapped by `ESCALITE_WEB_PORT` (default `5173`). Place a reverse proxy (Caddy, Traefik, nginx, or a PaaS such as Coolify) in front for TLS — see `docs/specs/07-security-and-auth.md`. For Coolify-specific env vars, TLS, and validation checklist, see [coolify.md](coolify.md).
 
 ### Release images (digest-pinned)
 
