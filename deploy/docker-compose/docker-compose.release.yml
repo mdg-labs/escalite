@@ -34,3 +34,8 @@ services:
     image: ${ESCALITE_WEB_IMAGE:?Set ESCALITE_WEB_IMAGE to a digest-pinned image reference}
     pull_policy: always
     build: !reset null
+
+  status-page:
+    image: ${ESCALITE_STATUS_PAGE_IMAGE:?Set ESCALITE_STATUS_PAGE_IMAGE to a digest-pinned image reference}
+    pull_policy: always
+    build: !reset null

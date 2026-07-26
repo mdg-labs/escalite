@@ -73,3 +73,30 @@ services:
     depends_on:
       api:
         condition: service_healthy
+
+  status-page:
+    volumes: !reset []
+    mem_limit: 256m
+    cpus: "0.5"
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/local/bin/wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:5174/healthz",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+    depends_on:
+      api:
+        condition: service_healthy

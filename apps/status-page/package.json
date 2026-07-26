@@ -1,0 +1,32 @@
+{
+  "name": "@escalite/status-page",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "lint": "eslint .",
+    "test:unit": "node --test test/*.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@escalite/ui": "workspace:*",
+    "lucide-react": "^0.555.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router": "^7.6.3"
+  },
+  "devDependencies": {
+    "@escalite/config": "workspace:*",
+    "@tailwindcss/vite": "^4.1.17",
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.5.2",
+    "eslint": "^9.28.0",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}
