@@ -1,4 +1,4 @@
-# sqlc cannot parse Atlas HCL; schema/sql/schema.sql is exported from schema/schema.hcl.
+# Canonical schema: services/api/schema/sql/ (see ADR-0002).
 version: "2"
 sql:
   - engine: postgresql

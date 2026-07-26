@@ -2,7 +2,7 @@ package migrations
 
 import "embed"
 
-// Files contains Atlas SQL migrations embedded for API startup.
+// Files contains SQL migrations embedded for API startup.
 //
-//go:embed *.sql atlas.sum
+//go:embed *.sql
 var Files embed.FS

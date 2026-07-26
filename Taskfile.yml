@@ -37,15 +37,6 @@ tasks:
       - sh: test -n "{{.DATABASE_URL}}"
         msg: "Set DATABASE_URL or ESCALITE_DATABASE_URL before running migrations"
 
-  schema:diff:
-    desc: Generate migration from canonical schema changes (atlas migrate diff)
-    dir: services/api
-    cmds:
-      - atlas migrate diff {{.CLI_ARGS}} --env local
-    preconditions:
-      - sh: test -n "{{.CLI_ARGS}}"
-        msg: "Usage: task schema:diff -- <migration_name>"
-
   compose:dev:
     desc: Start Docker Compose dev profile (postgres, api, engine, web)
     dir: deploy/docker-compose
