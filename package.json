@@ -10,7 +10,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test:unit",
     "typecheck": "turbo run typecheck",
-    "prepare": "husky"
+    "prepare": "node scripts/ci/husky-prepare.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",

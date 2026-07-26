@@ -33,6 +33,8 @@ The `mobile-v` prefix is applied by CI when creating Git tags — do **not** put
 
 Beta builds are gated by **tag / pre-release existence**, not by whether `package.json` increased on the latest commit. Set `apps/mobile/package.json` to the target prerelease semver (for example `0.1.0-beta.11` or `0.2.0-beta.1`); CI builds and publishes only when `mobile-v<semver>` does not already exist as a Git tag or GitHub pre-release. Re-push the same version to retry a failed build.
 
+Do **not** set `NODE_ENV=production` in `eas.json` build profiles. EAS already bundles release builds in production mode; setting `NODE_ENV` during `pnpm install` skips devDependencies (Babel, Tamagui plugin, Husky) and breaks monorepo installs on the EAS builder.
+
 A security patch can bump only `VERSION` on `main` (new `v*` release, no mobile build). Likewise, a mobile-only fix can bump only `apps/mobile/package.json`.
 
 ## Workflows

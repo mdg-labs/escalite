@@ -1,6 +1,6 @@
 {
   "name": "@escalite/mobile",
-  "version": "0.1.0-beta.10",
+  "version": "0.1.0-beta.11",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -10,7 +10,8 @@
     "test:unit": "node --test test/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "eas-build-post-install": "node ../../scripts/ci/sync-mobile-expo-version.mjs"
   },
   "dependencies": {
     "@babel/runtime": "^7.26.10",
