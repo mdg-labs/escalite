@@ -1,4 +1,9 @@
-import { cacheExchange, createClient, fetchExchange, subscriptionExchange } from 'urql'
+import {
+  createClient,
+  fetchExchange,
+  subscriptionExchange,
+} from 'urql'
+import { cacheExchange, type Cache } from '@urql/exchange-graphcache'
 import { createClient as createWSClient } from 'graphql-ws'
 
 import { appConfig } from './config'
@@ -21,10 +26,26 @@ const wsClient = createWSClient({
   url: graphqlWebSocketUrl(appConfig.graphqlUrl),
 })
 
+function invalidateQueryCache(cache: Cache): void {
+  cache.inspectFields('Query').forEach((field) => {
+    cache.invalidate('Query', field.fieldName, field.arguments ?? undefined)
+  })
+}
+
+const graphCache = cacheExchange({
+  updates: {
+    Mutation: {
+      switchOrganization(_result, _args, cache) {
+        invalidateQueryCache(cache)
+      },
+    },
+  },
+})
+
 export const urqlClient = createClient({
   url: appConfig.graphqlUrl,
   exchanges: [
-    cacheExchange,
+    graphCache,
     fetchExchange,
     subscriptionExchange({
       forwardSubscription(request) {

@@ -35,6 +35,13 @@ const messages = {
   'nav.alerts': 'Alerts',
   'nav.integrations': 'Integrations',
   'nav.settings': 'Settings',
+  'org.switcher.label': 'Organization',
+  'org.switcher.placeholder': 'Select organization',
+  'org.switcher.loading': 'Loading organizations…',
+  'org.switcher.error': 'Failed to switch organization',
+  'org.switcher.role.admin': 'Admin',
+  'org.switcher.role.member': 'Member',
+  'settings.org.description': 'Settings apply to {organization}. Switch organization from the header.',
   'nav.services': 'Services',
   'services.title': 'Services',
   'services.description':

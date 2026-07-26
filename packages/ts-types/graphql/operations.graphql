@@ -9,6 +9,27 @@ query Me {
   }
 }
 
+query MyOrganizations {
+  myOrganizations {
+    organization {
+      id
+      name
+    }
+    role
+  }
+}
+
+mutation SwitchOrganization($organizationId: ID!) {
+  switchOrganization(organizationId: $organizationId) {
+    user {
+      id
+      email
+      role
+      organizationId
+    }
+  }
+}
+
 query Health {
   health {
     status

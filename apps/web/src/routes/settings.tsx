@@ -1,6 +1,8 @@
 import { useState, type ReactElement } from 'react'
 import {
+  useMeQuery,
   useMobileDevicesQuery,
+  useMyOrganizationsQuery,
   useRevokeMobileDeviceMutation,
   type MobileDevicesQuery,
 } from '@escalite/ts-types'
@@ -64,6 +66,8 @@ function deviceLabel(device: MobileDeviceRow): string {
 }
 
 export function SettingsPage(): ReactElement {
+  const [{ data: meData }] = useMeQuery({ requestPolicy: 'cache-first' })
+  const [{ data: orgData }] = useMyOrganizationsQuery({ requestPolicy: 'cache-first' })
   const [{ data, fetching, error }, reexecuteQuery] = useMobileDevicesQuery({
     requestPolicy: 'network-only',
   })
@@ -72,6 +76,11 @@ export function SettingsPage(): ReactElement {
   const [actionDeviceId, setActionDeviceId] = useState<string | null>(null)
 
   const devices = data?.mobileDevices ?? []
+  const activeOrganizationId = meData?.me?.organizationId ?? ''
+  const activeOrganizationName =
+    orgData?.myOrganizations.find(
+      (membership) => membership.organization.id === activeOrganizationId,
+    )?.organization.name ?? ''
 
   async function handleRevoke(device: MobileDeviceRow): Promise<void> {
     setActionError(null)
@@ -91,6 +100,11 @@ export function SettingsPage(): ReactElement {
   return (
     <AppShell title={t('settings.title')}>
       <div className="space-y-6">
+        {activeOrganizationName ? (
+          <p className="text-sm text-muted-foreground">
+            {t('settings.org.description', { organization: activeOrganizationName })}
+          </p>
+        ) : null}
         <SamlSettingsPanel />
         <ScimSettingsPanel />
         <SlackSettingsPanel />
