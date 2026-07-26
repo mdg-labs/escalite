@@ -17,9 +17,44 @@ WHERE organization_id = $1
 LIMIT 1;
 
 -- name: GetUserByEmailForAuth :one
+SELECT u.*
+FROM users u
+JOIN accounts a ON a.id = u.account_id
+WHERE a.email = $1
+ORDER BY u.created_at ASC
+LIMIT 1;
+
+-- name: GetUserByAccountAndOrganization :one
 SELECT *
 FROM users
-WHERE email = $1
+WHERE account_id = $1
+  AND organization_id = $2
+  AND deprovisioned_at IS NULL
+LIMIT 1;
+
+-- name: ListOrganizationMembershipsByAccountID :many
+SELECT
+    sqlc.embed(u),
+    sqlc.embed(o)
+FROM users u
+JOIN organizations o ON o.id = u.organization_id
+WHERE u.account_id = $1
+  AND u.deprovisioned_at IS NULL
+ORDER BY o.name ASC;
+
+-- name: GetLoginMembershipByAccountID :one
+SELECT u.*
+FROM users u
+WHERE u.account_id = $1
+  AND u.deprovisioned_at IS NULL
+ORDER BY (
+    SELECT max(s.created_at)
+    FROM sessions s
+    WHERE s.user_id = u.id
+      AND s.organization_id = u.organization_id
+      AND s.revoked_at IS NULL
+) DESC NULLS LAST,
+u.created_at ASC
 LIMIT 1;
 
 -- name: GetFirstAdminUserByOrganization :one
@@ -30,18 +65,12 @@ WHERE organization_id = $1
 ORDER BY created_at ASC
 LIMIT 1;
 
--- name: UpdateUserPasswordHash :exec
-UPDATE users
-SET password_hash = $2,
-    updated_at = now()
-WHERE id = $1;
-
 -- name: CreateUser :one
 INSERT INTO users (
     id,
+    account_id,
     organization_id,
     email,
-    password_hash,
     role
 ) VALUES (
     $1,
@@ -55,9 +84,9 @@ RETURNING *;
 -- name: CreateScimUser :one
 INSERT INTO users (
     id,
+    account_id,
     organization_id,
     email,
-    password_hash,
     role,
     scim_external_id
 ) VALUES (

@@ -22,6 +22,11 @@ type Query {
   me: User
 
   """
+  Organizations the authenticated account belongs to (active org membership list).
+  """
+  myOrganizations: [OrganizationMembership!]!
+
+  """
   API liveness check (mirrors REST /healthz).
   """
   health: Health!
@@ -184,6 +189,11 @@ type Mutation {
   Bootstrap the first organization and admin user when no users exist.
   """
   setup(input: SetupInput!): SetupPayload!
+
+  """
+  Switch the active organization for the current session.
+  """
+  switchOrganization(organizationId: ID!): LoginPayload!
 
   """
   Create a heartbeat monitor for a service (org admin only).

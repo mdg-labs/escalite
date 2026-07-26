@@ -9,6 +9,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Account struct {
+	ID           uuid.UUID          `json:"id"`
+	Email        string             `json:"email"`
+	PasswordHash pgtype.Text        `json:"password_hash"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Alert struct {
 	ID                   uuid.UUID          `json:"id"`
 	OrganizationID       uuid.UUID          `json:"organization_id"`
@@ -432,9 +440,9 @@ type TimelineEvent struct {
 
 type User struct {
 	ID              uuid.UUID          `json:"id"`
+	AccountID       uuid.UUID          `json:"account_id"`
 	OrganizationID  uuid.UUID          `json:"organization_id"`
 	Email           string             `json:"email"`
-	PasswordHash    pgtype.Text        `json:"password_hash"`
 	Role            string             `json:"role"`
 	ScimExternalID  pgtype.Text        `json:"scim_external_id"`
 	DeprovisionedAt pgtype.Timestamptz `json:"deprovisioned_at"`

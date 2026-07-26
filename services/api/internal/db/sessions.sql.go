@@ -168,3 +168,36 @@ func (q *Queries) RevokeSession(ctx context.Context, arg RevokeSessionParams) er
 	_, err := q.db.Exec(ctx, revokeSession, arg.ID, arg.OrganizationID)
 	return err
 }
+
+const updateSessionOrganization = `-- name: UpdateSessionOrganization :one
+UPDATE sessions
+SET user_id = $2,
+    organization_id = $3,
+    updated_at = now()
+WHERE id = $1
+  AND revoked_at IS NULL
+  AND expires_at > now()
+RETURNING id, user_id, organization_id, expires_at, user_agent, revoked_at, created_at, updated_at
+`
+
+type UpdateSessionOrganizationParams struct {
+	ID             uuid.UUID `json:"id"`
+	UserID         uuid.UUID `json:"user_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+func (q *Queries) UpdateSessionOrganization(ctx context.Context, arg UpdateSessionOrganizationParams) (Session, error) {
+	row := q.db.QueryRow(ctx, updateSessionOrganization, arg.ID, arg.UserID, arg.OrganizationID)
+	var i Session
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.OrganizationID,
+		&i.ExpiresAt,
+		&i.UserAgent,
+		&i.RevokedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

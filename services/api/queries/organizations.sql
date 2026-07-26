@@ -30,9 +30,20 @@ WITH new_org AS (
     VALUES (sqlc.arg(org_id), sqlc.arg(org_name))
     RETURNING *
 ),
+new_account AS (
+    INSERT INTO accounts (id, email, password_hash)
+    VALUES (sqlc.arg(account_id), sqlc.arg(email), sqlc.arg(password_hash))
+    RETURNING *
+),
 new_user AS (
-    INSERT INTO users (id, organization_id, email, password_hash, role)
-    VALUES (sqlc.arg(user_id), (SELECT id FROM new_org), sqlc.arg(email), sqlc.arg(password_hash), 'admin')
+    INSERT INTO users (id, account_id, organization_id, email, role)
+    VALUES (
+        sqlc.arg(user_id),
+        (SELECT id FROM new_account),
+        (SELECT id FROM new_org),
+        sqlc.arg(email),
+        'admin'
+    )
     RETURNING *
 )
 SELECT
@@ -40,6 +51,8 @@ SELECT
     new_org.name AS organization_name,
     new_user.id AS user_id,
     new_user.email AS user_email,
-    new_user.role AS user_role
+    new_user.role AS user_role,
+    new_account.id AS account_id
 FROM new_org,
-     new_user;
+     new_user,
+     new_account;

@@ -188,7 +188,9 @@ func TestPasswordResetConfirmUpdatesPassword(t *testing.T) {
 	ctx := context.Background()
 	user, err := db.New(pool).GetUserByEmailForAuth(ctx, "admin@example.com")
 	require.NoError(t, err)
-	match, err := auth.VerifyPassword(newPassword, user.PasswordHash.String)
+	account, err := db.New(pool).GetAccountByID(ctx, user.AccountID)
+	require.NoError(t, err)
+	match, err := auth.VerifyPassword(newPassword, account.PasswordHash.String)
 	require.NoError(t, err)
 	require.True(t, match)
 

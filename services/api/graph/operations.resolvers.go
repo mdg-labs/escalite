@@ -52,29 +52,30 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 	}
 	requestMeta.Email = email
 
-	user, err := queries.GetUserByEmailForAuth(ctx, email)
+	account, err := auth.AuthenticateAccount(ctx, queries, email, password)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, auth.ErrInvalidCredentials) {
+			var failedUser *db.User
+			if account, accountErr := queries.GetAccountByEmail(ctx, email); accountErr == nil {
+				if membership, membershipErr := auth.LoginMembership(ctx, queries, account.ID); membershipErr == nil {
+					failedUser = &membership
+				}
+			}
+			r.recordFailedLogin(ctx, queries, failedUser, requestMeta)
+			return nil, gqlerr.New(handlers.CodeUnauthenticated, invalidCredentialsMessage)
+		}
+		r.logger.Error("login failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	user, err := auth.LoginMembership(ctx, queries, account.ID)
+	if err != nil {
+		if errors.Is(err, auth.ErrInvalidCredentials) || errors.Is(err, auth.ErrNoActiveMembership) {
 			r.recordFailedLogin(ctx, queries, nil, requestMeta)
 			return nil, gqlerr.New(handlers.CodeUnauthenticated, invalidCredentialsMessage)
 		}
-		r.logger.Error("lookup user failed", "error", err)
+		r.logger.Error("login failed", "error", err)
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
-	}
-
-	if !user.PasswordHash.Valid || user.PasswordHash.String == "" {
-		r.recordFailedLogin(ctx, queries, &user, requestMeta)
-		return nil, gqlerr.New(handlers.CodeUnauthenticated, invalidCredentialsMessage)
-	}
-
-	match, err := auth.VerifyPassword(password, user.PasswordHash.String)
-	if err != nil {
-		r.logger.Error("verify password failed", "error", err)
-		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
-	}
-	if !match {
-		r.recordFailedLogin(ctx, queries, &user, requestMeta)
-		return nil, gqlerr.New(handlers.CodeUnauthenticated, invalidCredentialsMessage)
 	}
 
 	sessionID := uuid.Must(uuid.NewV7())
@@ -142,6 +143,7 @@ func (r *mutationResolver) Setup(ctx context.Context, input model.SetupInput) (*
 	}
 
 	orgID := uuid.Must(uuid.NewV7())
+	accountID := uuid.Must(uuid.NewV7())
 	userID := uuid.Must(uuid.NewV7())
 	sessionID := uuid.Must(uuid.NewV7())
 	expiresAt := time.Now().UTC().Add(auth.DefaultSessionTTL)
@@ -164,6 +166,7 @@ func (r *mutationResolver) Setup(ctx context.Context, input model.SetupInput) (*
 	_, err = txQueries.BootstrapOrganizationWithAdmin(ctx, db.BootstrapOrganizationWithAdminParams{
 		OrgID:        orgID,
 		OrgName:      orgName,
+		AccountID:    accountID,
 		UserID:       userID,
 		Email:        email,
 		PasswordHash: pgtype.Text{String: passwordHash, Valid: true},
@@ -234,6 +237,52 @@ func (r *mutationResolver) Setup(ctx context.Context, input model.SetupInput) (*
 		Organization: organizationFromDB(org),
 		User:         userFromDB(user),
 	}, nil
+}
+
+// SwitchOrganization is the resolver for the switchOrganization field.
+func (r *mutationResolver) SwitchOrganization(ctx context.Context, organizationID string) (*model.LoginPayload, error) {
+	sc, ok := auth.SessionFromContext(ctx)
+	if !ok {
+		return nil, gqlerr.New(handlers.CodeUnauthenticated, "authentication required")
+	}
+
+	orgID, err := parseUUIDField(organizationID, "organizationId")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	accountID, err := accountIDFromSession(ctx, queries, sc)
+	if err != nil {
+		r.logger.Error("load account for org switch failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	var user db.User
+	if sc.Session.ID != uuid.Nil {
+		user, _, err = auth.SwitchOrganization(ctx, queries, sc.Session, accountID, orgID)
+	} else {
+		user, err = queries.GetUserByAccountAndOrganization(ctx, db.GetUserByAccountAndOrganizationParams{
+			AccountID:      accountID,
+			OrganizationID: orgID,
+		})
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, gqlerr.New(handlers.CodeForbidden, "access denied")
+			}
+			r.logger.Error("load target org membership failed", "error", err)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+	}
+	if err != nil {
+		if errors.Is(err, auth.ErrForbiddenOrg) {
+			return nil, gqlerr.New(handlers.CodeForbidden, "access denied")
+		}
+		r.logger.Error("switch organization failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return &model.LoginPayload{User: userFromDB(user)}, nil
 }
 
 // CreateHeartbeatMonitor is the resolver for the createHeartbeatMonitor field.
@@ -2868,6 +2917,33 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 		return nil, nil
 	}
 	return userFromDB(sc.User), nil
+}
+
+// MyOrganizations is the resolver for the myOrganizations field.
+func (r *queryResolver) MyOrganizations(ctx context.Context) ([]*model.OrganizationMembership, error) {
+	sc, ok := auth.SessionFromContext(ctx)
+	if !ok {
+		return nil, gqlerr.New(handlers.CodeUnauthenticated, "authentication required")
+	}
+
+	queries := db.New(r.pool)
+	accountID, err := accountIDFromSession(ctx, queries, sc)
+	if err != nil {
+		r.logger.Error("load account for memberships failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	rows, err := queries.ListOrganizationMembershipsByAccountID(ctx, accountID)
+	if err != nil {
+		r.logger.Error("list organization memberships failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	memberships := make([]*model.OrganizationMembership, 0, len(rows))
+	for _, row := range rows {
+		memberships = append(memberships, organizationMembershipFromDB(row))
+	}
+	return memberships, nil
 }
 
 // Health is the resolver for the health field.

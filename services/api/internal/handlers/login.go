@@ -8,11 +8,8 @@ import (
 	"net/http"
 	"net/mail"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/mdg-labs/escalite/services/api/internal/audit"
@@ -82,61 +79,31 @@ func (h *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	requestMeta := audit.RequestMetaFromHTTP(r)
 	requestMeta.Email = email
 
-	user, err := queries.GetUserByEmailForAuth(ctx, email)
+	user, err := authenticateForLogin(ctx, queries, email, password)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			h.recordFailedLogin(ctx, queries, nil, requestMeta)
-			WriteAPIError(w, http.StatusUnauthorized, CodeUnauthenticated, invalidCredentialsMessage)
+		if code, message, status, ok := mapAuthError(err); ok {
+			if errors.Is(err, auth.ErrInvalidCredentials) || errors.Is(err, auth.ErrNoActiveMembership) {
+				var failedUser *db.User
+				if account, accountErr := queries.GetAccountByEmail(ctx, email); accountErr == nil {
+					if membership, membershipErr := auth.LoginMembership(ctx, queries, account.ID); membershipErr == nil {
+						failedUser = &membership
+					}
+				}
+				h.recordFailedLogin(ctx, queries, failedUser, requestMeta)
+			}
+			WriteAPIError(w, status, code, message)
 			return
 		}
-		h.logger.Error("lookup user failed", "error", err)
+		h.logger.Error("login failed", "error", err)
 		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
 
-	if !user.PasswordHash.Valid || user.PasswordHash.String == "" {
-		h.recordFailedLogin(ctx, queries, &user, requestMeta)
-		WriteAPIError(w, http.StatusUnauthorized, CodeUnauthenticated, invalidCredentialsMessage)
-		return
-	}
-
-	match, err := auth.VerifyPassword(password, user.PasswordHash.String)
-	if err != nil {
-		h.logger.Error("verify password failed", "error", err)
-		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
-		return
-	}
-	if !match {
-		h.recordFailedLogin(ctx, queries, &user, requestMeta)
-		WriteAPIError(w, http.StatusUnauthorized, CodeUnauthenticated, invalidCredentialsMessage)
-		return
-	}
-	if user.DeprovisionedAt.Valid {
-		h.recordFailedLogin(ctx, queries, &user, requestMeta)
-		WriteAPIError(w, http.StatusUnauthorized, CodeUnauthenticated, invalidCredentialsMessage)
-		return
-	}
-
-	sessionID := uuid.Must(uuid.NewV7())
-	expiresAt := time.Now().UTC().Add(auth.DefaultSessionTTL)
-	userAgent := r.UserAgent()
-
-	_, err = queries.CreateSession(ctx, db.CreateSessionParams{
-		ID:             sessionID,
-		UserID:         user.ID,
-		OrganizationID: user.OrganizationID,
-		ExpiresAt:      pgtype.Timestamptz{Time: expiresAt, Valid: true},
-		UserAgent:      pgtype.Text{String: userAgent, Valid: userAgent != ""},
-	})
-	if err != nil {
+	if err := createLoginSession(ctx, queries, w, user, r.UserAgent(), h.audit, requestMeta); err != nil {
 		h.logger.Error("create session failed", "error", err)
 		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
-
-	auth.SetSessionCookie(w, sessionID, expiresAt)
-
-	h.audit.Login(ctx, queries, user.OrganizationID, user.ID, requestMeta)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

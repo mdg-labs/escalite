@@ -43,11 +43,18 @@ func seedMemberUser(t *testing.T, pool db.DBTX, orgID uuid.UUID, email, password
 	require.NoError(t, err)
 
 	queries := db.New(pool)
+	account, err := queries.CreateAccount(context.Background(), db.CreateAccountParams{
+		ID:           uuid.Must(uuid.NewV7()),
+		Email:        email,
+		PasswordHash: pgtype.Text{String: passwordHash, Valid: true},
+	})
+	require.NoError(t, err)
+
 	user, err := queries.CreateUser(context.Background(), db.CreateUserParams{
 		ID:             uuid.Must(uuid.NewV7()),
+		AccountID:      account.ID,
 		OrganizationID: orgID,
 		Email:          email,
-		PasswordHash:   pgtype.Text{String: passwordHash, Valid: true},
 		Role:           authz.RoleMember,
 	})
 	require.NoError(t, err)

@@ -208,10 +208,13 @@ func TestSetupIntegration(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, "admin", user.Role)
-	require.True(t, user.PasswordHash.Valid)
-	require.NotEmpty(t, user.PasswordHash.String)
 
-	match, err := auth.VerifyPassword("correct-horse-battery-staple", user.PasswordHash.String)
+	account, err := queries.GetAccountByID(ctx, user.AccountID)
+	require.NoError(t, err)
+	require.True(t, account.PasswordHash.Valid)
+	require.NotEmpty(t, account.PasswordHash.String)
+
+	match, err := auth.VerifyPassword("correct-horse-battery-staple", account.PasswordHash.String)
 	require.NoError(t, err)
 	require.True(t, match)
 

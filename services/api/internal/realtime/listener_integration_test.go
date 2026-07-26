@@ -134,7 +134,9 @@ func TestAcknowledgeAlertMutationEmitsNotify(t *testing.T) {
 	require.NoError(t, err)
 	_, err = conn.Exec(ctx, `INSERT INTO services (id, organization_id, team_id, name) VALUES ($1, $2, $3, 'api')`, serviceID, orgID, teamID)
 	require.NoError(t, err)
-	_, err = conn.Exec(ctx, `INSERT INTO users (id, organization_id, email, role, password_hash) VALUES ($1, $2, 'admin@example.com', 'admin', 'hash')`, userID, orgID)
+	_, err = conn.Exec(ctx, `INSERT INTO accounts (id, email) VALUES ($1, 'admin@example.com')`, userID)
+	require.NoError(t, err)
+	_, err = conn.Exec(ctx, `INSERT INTO users (id, account_id, organization_id, email, role) VALUES ($1, $2, $3, 'admin@example.com', 'admin')`, userID, userID, orgID)
 	require.NoError(t, err)
 
 	events, cancel := bridge.Hub.SubscribeAlerts(orgID)

@@ -12,7 +12,7 @@ import (
 )
 
 const getFirstAdminUserByOrganization = `-- name: GetFirstAdminUserByOrganization :one
-SELECT id, organization_id, email, password_hash, role, created_at, updated_at
+SELECT id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 FROM users
 WHERE organization_id = $1
   AND role = 'admin'
@@ -25,10 +25,12 @@ func (q *Queries) GetFirstAdminUserByOrganization(ctx context.Context, organizat
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
+		&i.ScimExternalID,
+		&i.DeprovisionedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -36,7 +38,7 @@ func (q *Queries) GetFirstAdminUserByOrganization(ctx context.Context, organizat
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, organization_id, email, password_hash, role, created_at, updated_at
+SELECT id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 FROM users
 WHERE id = $1
   AND organization_id = $2
@@ -53,10 +55,12 @@ func (q *Queries) GetUserByID(ctx context.Context, arg GetUserByIDParams) (User,
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
+		&i.ScimExternalID,
+		&i.DeprovisionedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

@@ -6,12 +6,24 @@ CREATE TABLE "organizations" (
   "updated_at" timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY ("id")
 );
+-- Create "accounts" table
+CREATE TABLE "accounts" (
+  "id" uuid NOT NULL,
+  "email" text NOT NULL,
+  "password_hash" text NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "accounts_email_key" UNIQUE ("email")
+);
+-- Create index "accounts_email_idx" to table: "accounts"
+CREATE INDEX "accounts_email_idx" ON "accounts" ("email");
 -- Create "users" table
 CREATE TABLE "users" (
   "id" uuid NOT NULL,
+  "account_id" uuid NOT NULL,
   "organization_id" uuid NOT NULL,
   "email" text NOT NULL,
-  "password_hash" text NULL,
   "role" text NOT NULL,
   "scim_external_id" text NULL,
   "deprovisioned_at" timestamptz NULL,
@@ -19,11 +31,15 @@ CREATE TABLE "users" (
   "updated_at" timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY ("id"),
   CONSTRAINT "users_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "users_account_id_organization_id_key" UNIQUE ("account_id", "organization_id"),
   CONSTRAINT "users_organization_id_email_key" UNIQUE ("organization_id", "email"),
   CONSTRAINT "users_organization_id_scim_external_id_key" UNIQUE ("organization_id", "scim_external_id"),
+  CONSTRAINT "users_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "accounts" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
   CONSTRAINT "users_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
   CONSTRAINT "users_role_check" CHECK (role = ANY (ARRAY['admin'::text, 'member'::text]))
 );
+-- Create index "users_account_id_idx" to table: "users"
+CREATE INDEX "users_account_id_idx" ON "users" ("account_id");
 -- Create index "users_deprovisioned_at_idx" to table: "users"
 CREATE INDEX "users_deprovisioned_at_idx" ON "users" ("deprovisioned_at");
 -- Create index "users_organization_id_idx" to table: "users"

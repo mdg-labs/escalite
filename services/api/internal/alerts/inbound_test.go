@@ -69,10 +69,12 @@ func seedInboundFixture(t *testing.T, pool *pgxpool.Pool) inboundFixture {
 	queries := db.New(pool)
 
 	orgID := uuid.Must(uuid.NewV7())
+	accountID := uuid.Must(uuid.NewV7())
 	userID := uuid.Must(uuid.NewV7())
 	_, err := queries.BootstrapOrganizationWithAdmin(ctx, db.BootstrapOrganizationWithAdminParams{
 		OrgID:        orgID,
 		OrgName:      "Acme",
+		AccountID:    accountID,
 		UserID:       userID,
 		Email:        "admin@example.com",
 		PasswordHash: pgtype.Text{String: "argon2id:test", Valid: true},
@@ -235,11 +237,17 @@ func TestProcessInboundCollapseAcknowledgedAlertDoesNotCreateNotifications(t *te
 	fixture := seedInboundFixture(t, pool)
 	jobs := newInboundJobs(t, pool)
 	oncallID := uuid.Must(uuid.NewV7())
-	_, err := fixture.queries.CreateUser(context.Background(), db.CreateUserParams{
+	account, err := fixture.queries.CreateAccount(context.Background(), db.CreateAccountParams{
+		ID:           uuid.Must(uuid.NewV7()),
+		Email:        "oncall@example.com",
+		PasswordHash: pgtype.Text{String: "argon2id:test", Valid: true},
+	})
+	require.NoError(t, err)
+	_, err = fixture.queries.CreateUser(context.Background(), db.CreateUserParams{
 		ID:             oncallID,
+		AccountID:      account.ID,
 		OrganizationID: fixture.key.OrganizationID,
 		Email:          "oncall@example.com",
-		PasswordHash:   pgtype.Text{String: "argon2id:test", Valid: true},
 		Role:           "member",
 	})
 	require.NoError(t, err)

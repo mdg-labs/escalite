@@ -76,6 +76,7 @@ func TestQueriesAgainstPostgres(t *testing.T) {
 	require.Equal(t, int64(0), count)
 
 	orgID := uuid.Must(uuid.NewV7())
+	accountID := uuid.Must(uuid.NewV7())
 	userID := uuid.Must(uuid.NewV7())
 	email := "admin@example.com"
 	passwordHash := "argon2id:test"
@@ -83,6 +84,7 @@ func TestQueriesAgainstPostgres(t *testing.T) {
 	bootstrap, err := queries.BootstrapOrganizationWithAdmin(ctx, db.BootstrapOrganizationWithAdminParams{
 		OrgID:        orgID,
 		OrgName:      "Acme",
+		AccountID:    accountID,
 		UserID:       userID,
 		Email:        email,
 		PasswordHash: pgtype.Text{String: passwordHash, Valid: true},

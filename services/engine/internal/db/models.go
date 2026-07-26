@@ -9,6 +9,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Account struct {
+	ID           uuid.UUID          `json:"id"`
+	Email        string             `json:"email"`
+	PasswordHash pgtype.Text        `json:"password_hash"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Alert struct {
 	ID                   uuid.UUID          `json:"id"`
 	OrganizationID       uuid.UUID          `json:"organization_id"`
@@ -99,6 +107,7 @@ type Incident struct {
 	CreatedByUserID uuid.UUID          `json:"created_by_user_id"`
 	ResolvedAt      pgtype.Timestamptz `json:"resolved_at"`
 	SlackChannelID  pgtype.Text        `json:"slack_channel_id"`
+	SlackThreadTs   pgtype.Text        `json:"slack_thread_ts"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }
@@ -194,6 +203,35 @@ type Organization struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
+type OrganizationAnalyticsSetting struct {
+	OrganizationID                 uuid.UUID          `json:"organization_id"`
+	ExcludeMaintenanceWindowAlerts bool               `json:"exclude_maintenance_window_alerts"`
+	CreatedAt                      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type OrganizationSamlSetting struct {
+	OrganizationID         uuid.UUID          `json:"organization_id"`
+	Enabled                bool               `json:"enabled"`
+	IdpEntityID            string             `json:"idp_entity_id"`
+	IdpSsoUrl              string             `json:"idp_sso_url"`
+	IdpCertificatePem      string             `json:"idp_certificate_pem"`
+	SpCertificatePem       string             `json:"sp_certificate_pem"`
+	SpPrivateKeyCiphertext []byte             `json:"sp_private_key_ciphertext"`
+	SpEncryptionKeyID      string             `json:"sp_encryption_key_id"`
+	CertificateHint        string             `json:"certificate_hint"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt              pgtype.Timestamptz `json:"updated_at"`
+}
+
+type OrganizationScimSetting struct {
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	TokenHash      string             `json:"token_hash"`
+	TokenPrefix    string             `json:"token_prefix"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
 type OrganizationSlackSetting struct {
 	OrganizationID     uuid.UUID          `json:"organization_id"`
 	BotTokenCiphertext []byte             `json:"bot_token_ciphertext"`
@@ -268,6 +306,23 @@ type Schedule struct {
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
+type ScimGroup struct {
+	ID             uuid.UUID          `json:"id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	ExternalID     string             `json:"external_id"`
+	DisplayName    string             `json:"display_name"`
+	TeamID         uuid.UUID          `json:"team_id"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type ScimGroupMember struct {
+	ScimGroupID    uuid.UUID          `json:"scim_group_id"`
+	UserID         uuid.UUID          `json:"user_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type Service struct {
 	ID                                      uuid.UUID          `json:"id"`
 	OrganizationID                          uuid.UUID          `json:"organization_id"`
@@ -292,6 +347,67 @@ type Session struct {
 	RevokedAt      pgtype.Timestamptz `json:"revoked_at"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type StatusPage struct {
+	ID                uuid.UUID          `json:"id"`
+	OrganizationID    uuid.UUID          `json:"organization_id"`
+	Slug              string             `json:"slug"`
+	Title             string             `json:"title"`
+	Enabled           bool               `json:"enabled"`
+	FrameAncestorsCsp pgtype.Text        `json:"frame_ancestors_csp"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+}
+
+type StatusPageComponent struct {
+	ID             uuid.UUID          `json:"id"`
+	StatusPageID   uuid.UUID          `json:"status_page_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	Name           string             `json:"name"`
+	Description    pgtype.Text        `json:"description"`
+	Status         string             `json:"status"`
+	Position       int32              `json:"position"`
+	ServiceID      pgtype.UUID        `json:"service_id"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type StatusPageIncident struct {
+	ID             uuid.UUID          `json:"id"`
+	StatusPageID   uuid.UUID          `json:"status_page_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	IncidentID     pgtype.UUID        `json:"incident_id"`
+	Title          string             `json:"title"`
+	Status         string             `json:"status"`
+	ResolvedAt     pgtype.Timestamptz `json:"resolved_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type StatusPageIncidentComponent struct {
+	StatusPageIncidentID  uuid.UUID          `json:"status_page_incident_id"`
+	StatusPageComponentID uuid.UUID          `json:"status_page_component_id"`
+	OrganizationID        uuid.UUID          `json:"organization_id"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+}
+
+type StatusPageIncidentUpdate struct {
+	ID                   uuid.UUID          `json:"id"`
+	StatusPageIncidentID uuid.UUID          `json:"status_page_incident_id"`
+	OrganizationID       uuid.UUID          `json:"organization_id"`
+	Body                 string             `json:"body"`
+	Status               string             `json:"status"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+}
+
+type StatusPageSubscription struct {
+	ID             uuid.UUID          `json:"id"`
+	StatusPageID   uuid.UUID          `json:"status_page_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	Email          string             `json:"email"`
+	UnsubscribedAt pgtype.Timestamptz `json:"unsubscribed_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
 type Team struct {
@@ -323,13 +439,15 @@ type TimelineEvent struct {
 }
 
 type User struct {
-	ID             uuid.UUID          `json:"id"`
-	OrganizationID uuid.UUID          `json:"organization_id"`
-	Email          string             `json:"email"`
-	PasswordHash   pgtype.Text        `json:"password_hash"`
-	Role           string             `json:"role"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	ID              uuid.UUID          `json:"id"`
+	AccountID       uuid.UUID          `json:"account_id"`
+	OrganizationID  uuid.UUID          `json:"organization_id"`
+	Email           string             `json:"email"`
+	Role            string             `json:"role"`
+	ScimExternalID  pgtype.Text        `json:"scim_external_id"`
+	DeprovisionedAt pgtype.Timestamptz `json:"deprovisioned_at"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }
 
 type UserContactMethod struct {

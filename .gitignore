@@ -19,6 +19,9 @@ bin/
 *.exe
 *.test
 *.out
+.go-cache/
+.go-mod-cache/
+.tmp-go-build/
 
 # IDE / OS
 .idea/

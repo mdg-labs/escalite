@@ -344,6 +344,12 @@ type Organization struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+// Active organization membership for the authenticated account.
+type OrganizationMembership struct {
+	Organization *Organization `json:"organization"`
+	Role         UserRole      `json:"role"`
+}
+
 // One-off on-call swap that takes precedence over rotation for a time window.
 type Override struct {
 	ID              string    `json:"id"`

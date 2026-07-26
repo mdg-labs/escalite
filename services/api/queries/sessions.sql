@@ -47,6 +47,16 @@ WHERE user_id = $1
   AND organization_id = $2
   AND revoked_at IS NULL;
 
+-- name: UpdateSessionOrganization :one
+UPDATE sessions
+SET user_id = $2,
+    organization_id = $3,
+    updated_at = now()
+WHERE id = $1
+  AND revoked_at IS NULL
+  AND expires_at > now()
+RETURNING *;
+
 -- name: DeleteSession :exec
 DELETE FROM sessions
 WHERE id = $1

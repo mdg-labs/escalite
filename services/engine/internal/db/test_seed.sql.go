@@ -18,9 +18,20 @@ WITH new_org AS (
     VALUES ($1, $2)
     RETURNING id, name
 ),
+new_account AS (
+    INSERT INTO accounts (id, email, password_hash)
+    VALUES ($3, $4, $5)
+    RETURNING id
+),
 new_user AS (
-    INSERT INTO users (id, organization_id, email, password_hash, role)
-    VALUES ($3, (SELECT id FROM new_org), $4, $5, 'admin')
+    INSERT INTO users (id, account_id, organization_id, email, role)
+    VALUES (
+        $6,
+        (SELECT id FROM new_account),
+        (SELECT id FROM new_org),
+        $4,
+        'admin'
+    )
     RETURNING id, organization_id, email, role
 )
 SELECT
@@ -35,9 +46,10 @@ FROM new_org, new_user
 type BootstrapOrganizationWithAdminParams struct {
 	OrgID        uuid.UUID   `json:"org_id"`
 	OrgName      string      `json:"org_name"`
-	UserID       uuid.UUID   `json:"user_id"`
+	AccountID    uuid.UUID   `json:"account_id"`
 	Email        string      `json:"email"`
 	PasswordHash pgtype.Text `json:"password_hash"`
+	UserID       uuid.UUID   `json:"user_id"`
 }
 
 type BootstrapOrganizationWithAdminRow struct {
@@ -52,9 +64,10 @@ func (q *Queries) BootstrapOrganizationWithAdmin(ctx context.Context, arg Bootst
 	row := q.db.QueryRow(ctx, bootstrapOrganizationWithAdmin,
 		arg.OrgID,
 		arg.OrgName,
-		arg.UserID,
+		arg.AccountID,
 		arg.Email,
 		arg.PasswordHash,
+		arg.UserID,
 	)
 	var i BootstrapOrganizationWithAdminRow
 	err := row.Scan(
@@ -338,34 +351,36 @@ func (q *Queries) CreateTriggeredAlert(ctx context.Context, arg CreateTriggeredA
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (id, organization_id, email, password_hash, role)
+INSERT INTO users (id, account_id, organization_id, email, role)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING id, organization_id, email, password_hash, role, created_at, updated_at
+RETURNING id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	ID             uuid.UUID   `json:"id"`
-	OrganizationID uuid.UUID   `json:"organization_id"`
-	Email          string      `json:"email"`
-	PasswordHash   pgtype.Text `json:"password_hash"`
-	Role           string      `json:"role"`
+	ID             uuid.UUID `json:"id"`
+	AccountID      uuid.UUID `json:"account_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	Email          string    `json:"email"`
+	Role           string    `json:"role"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, createUser,
 		arg.ID,
+		arg.AccountID,
 		arg.OrganizationID,
 		arg.Email,
-		arg.PasswordHash,
 		arg.Role,
 	)
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
+		&i.ScimExternalID,
+		&i.DeprovisionedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

@@ -18,27 +18,41 @@ WITH new_org AS (
     VALUES ($1, $2)
     RETURNING id, name, created_at, updated_at
 ),
+new_account AS (
+    INSERT INTO accounts (id, email, password_hash)
+    VALUES ($3, $4, $5)
+    RETURNING id, email, password_hash, created_at, updated_at
+),
 new_user AS (
-    INSERT INTO users (id, organization_id, email, password_hash, role)
-    VALUES ($3, (SELECT id FROM new_org), $4, $5, 'admin')
-    RETURNING id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
+    INSERT INTO users (id, account_id, organization_id, email, role)
+    VALUES (
+        $6,
+        (SELECT id FROM new_account),
+        (SELECT id FROM new_org),
+        $4,
+        'admin'
+    )
+    RETURNING id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 )
 SELECT
     new_org.id AS organization_id,
     new_org.name AS organization_name,
     new_user.id AS user_id,
     new_user.email AS user_email,
-    new_user.role AS user_role
+    new_user.role AS user_role,
+    new_account.id AS account_id
 FROM new_org,
-     new_user
+     new_user,
+     new_account
 `
 
 type BootstrapOrganizationWithAdminParams struct {
 	OrgID        uuid.UUID   `json:"org_id"`
 	OrgName      string      `json:"org_name"`
-	UserID       uuid.UUID   `json:"user_id"`
+	AccountID    uuid.UUID   `json:"account_id"`
 	Email        string      `json:"email"`
 	PasswordHash pgtype.Text `json:"password_hash"`
+	UserID       uuid.UUID   `json:"user_id"`
 }
 
 type BootstrapOrganizationWithAdminRow struct {
@@ -47,15 +61,17 @@ type BootstrapOrganizationWithAdminRow struct {
 	UserID           uuid.UUID `json:"user_id"`
 	UserEmail        string    `json:"user_email"`
 	UserRole         string    `json:"user_role"`
+	AccountID        uuid.UUID `json:"account_id"`
 }
 
 func (q *Queries) BootstrapOrganizationWithAdmin(ctx context.Context, arg BootstrapOrganizationWithAdminParams) (BootstrapOrganizationWithAdminRow, error) {
 	row := q.db.QueryRow(ctx, bootstrapOrganizationWithAdmin,
 		arg.OrgID,
 		arg.OrgName,
-		arg.UserID,
+		arg.AccountID,
 		arg.Email,
 		arg.PasswordHash,
+		arg.UserID,
 	)
 	var i BootstrapOrganizationWithAdminRow
 	err := row.Scan(
@@ -64,6 +80,7 @@ func (q *Queries) BootstrapOrganizationWithAdmin(ctx context.Context, arg Bootst
 		&i.UserID,
 		&i.UserEmail,
 		&i.UserRole,
+		&i.AccountID,
 	)
 	return i, err
 }

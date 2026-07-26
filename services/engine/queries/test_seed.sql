@@ -4,9 +4,20 @@ WITH new_org AS (
     VALUES (sqlc.arg(org_id), sqlc.arg(org_name))
     RETURNING id, name
 ),
+new_account AS (
+    INSERT INTO accounts (id, email, password_hash)
+    VALUES (sqlc.arg(account_id), sqlc.arg(email), sqlc.arg(password_hash))
+    RETURNING id
+),
 new_user AS (
-    INSERT INTO users (id, organization_id, email, password_hash, role)
-    VALUES (sqlc.arg(user_id), (SELECT id FROM new_org), sqlc.arg(email), sqlc.arg(password_hash), 'admin')
+    INSERT INTO users (id, account_id, organization_id, email, role)
+    VALUES (
+        sqlc.arg(user_id),
+        (SELECT id FROM new_account),
+        (SELECT id FROM new_org),
+        sqlc.arg(email),
+        'admin'
+    )
     RETURNING id, organization_id, email, role
 )
 SELECT
@@ -18,7 +29,7 @@ SELECT
 FROM new_org, new_user;
 
 -- name: CreateUser :one
-INSERT INTO users (id, organization_id, email, password_hash, role)
+INSERT INTO users (id, account_id, organization_id, email, role)
 VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 

@@ -109,6 +109,7 @@ func (h *SetupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	orgID := uuid.Must(uuid.NewV7())
+	accountID := uuid.Must(uuid.NewV7())
 	userID := uuid.Must(uuid.NewV7())
 	sessionID := uuid.Must(uuid.NewV7())
 	expiresAt := time.Now().UTC().Add(auth.DefaultSessionTTL)
@@ -129,6 +130,7 @@ func (h *SetupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	bootstrap, err := txQueries.BootstrapOrganizationWithAdmin(ctx, db.BootstrapOrganizationWithAdminParams{
 		OrgID:        orgID,
 		OrgName:      orgName,
+		AccountID:    accountID,
 		UserID:       userID,
 		Email:        email,
 		PasswordHash: pgtype.Text{String: passwordHash, Valid: true},

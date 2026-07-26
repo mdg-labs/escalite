@@ -233,15 +233,17 @@ func (h *SAMLHandler) serviceProvider(settings db.OrganizationSamlSetting) (*esc
 func (h *SAMLHandler) resolveUser(ctx context.Context, email string) (db.User, error) {
 	queries := db.New(h.pool)
 
-	user, err := queries.GetUserByEmailForAuth(ctx, email)
-	if err == nil {
-		if user.DeprovisionedAt.Valid {
-			return db.User{}, errSAMLUserDeprovisioned
+	account, accountErr := queries.GetAccountByEmail(ctx, email)
+	if accountErr == nil {
+		user, err := auth.LoginMembership(ctx, queries, account.ID)
+		if err == nil {
+			return user, nil
 		}
-		return user, nil
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		return db.User{}, err
+		if !errors.Is(err, auth.ErrNoActiveMembership) {
+			return db.User{}, err
+		}
+	} else if !errors.Is(accountErr, pgx.ErrNoRows) {
+		return db.User{}, accountErr
 	}
 
 	org, err := queries.GetFirstOrganization(ctx)
@@ -252,14 +254,16 @@ func (h *SAMLHandler) resolveUser(ctx context.Context, email string) (db.User, e
 		return db.User{}, err
 	}
 
-	userID := uuid.Must(uuid.NewV7())
-	return queries.CreateUser(ctx, db.CreateUserParams{
-		ID:             userID,
-		OrganizationID: org.ID,
-		Email:          email,
-		PasswordHash:   pgtype.Text{},
-		Role:           authz.RoleMember,
-	})
+	if accountErr == nil {
+		return auth.EnsureOrgMembership(ctx, queries, account, org.ID, authz.RoleMember)
+	}
+
+	account, err = auth.FindOrCreateAccountByEmail(ctx, queries, email)
+	if err != nil {
+		return db.User{}, err
+	}
+
+	return auth.EnsureOrgMembership(ctx, queries, account, org.ID, authz.RoleMember)
 }
 
 func (h *SAMLHandler) createSession(ctx context.Context, w http.ResponseWriter, r *http.Request, user db.User) error {

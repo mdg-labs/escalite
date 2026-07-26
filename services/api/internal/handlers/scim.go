@@ -253,11 +253,18 @@ func (h *SCIMHandler) createUser(w http.ResponseWriter, r *http.Request) {
 		externalID = pgtype.Text{String: payload.ExternalID, Valid: true}
 	}
 
+	account, err := auth.FindOrCreateAccountByEmail(r.Context(), queries, email)
+	if err != nil {
+		h.logger.Error("resolve scim account failed", "error", err)
+		h.writeError(w, http.StatusInternalServerError, "", "internal error")
+		return
+	}
+
 	user, err := queries.CreateScimUser(r.Context(), db.CreateScimUserParams{
 		ID:             userID,
+		AccountID:      account.ID,
 		OrganizationID: sc.organizationID,
 		Email:          email,
-		PasswordHash:   pgtype.Text{},
 		Role:           authz.RoleMember,
 		ScimExternalID: externalID,
 	})

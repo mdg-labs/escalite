@@ -113,13 +113,24 @@ func (h *PasswordResetHandler) Request(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	queries := db.New(h.pool)
 
-	user, err := queries.GetUserByEmailForAuth(ctx, emailAddr)
+	account, err := queries.GetAccountByEmail(ctx, emailAddr)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			h.writeAccepted(w)
 			return
 		}
-		h.logger.Error("password reset user lookup failed", "error", err)
+		h.logger.Error("password reset account lookup failed", "error", err)
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
+	}
+
+	user, err := auth.LoginMembership(ctx, queries, account.ID)
+	if err != nil {
+		if errors.Is(err, auth.ErrNoActiveMembership) {
+			h.writeAccepted(w)
+			return
+		}
+		h.logger.Error("password reset membership lookup failed", "error", err)
 		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
@@ -199,8 +210,18 @@ func (h *PasswordResetHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 
 	txQueries := queries.WithTx(tx)
 
-	if err := txQueries.UpdateUserPasswordHash(ctx, db.UpdateUserPasswordHashParams{
-		ID:           resetToken.UserID,
+	resetUser, err := txQueries.GetUserByID(ctx, db.GetUserByIDParams{
+		ID:             resetToken.UserID,
+		OrganizationID: resetToken.OrganizationID,
+	})
+	if err != nil {
+		h.logger.Error("load reset user failed", "error", err)
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
+	}
+
+	if err := txQueries.UpdateAccountPasswordHash(ctx, db.UpdateAccountPasswordHashParams{
+		ID:           resetUser.AccountID,
 		PasswordHash: pgtype.Text{String: passwordHash, Valid: true},
 	}); err != nil {
 		h.logger.Error("update password failed", "error", err)

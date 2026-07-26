@@ -27,9 +27,9 @@ func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
 const createScimUser = `-- name: CreateScimUser :one
 INSERT INTO users (
     id,
+    account_id,
     organization_id,
     email,
-    password_hash,
     role,
     scim_external_id
 ) VALUES (
@@ -40,14 +40,14 @@ INSERT INTO users (
     $5,
     $6
 )
-RETURNING id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
+RETURNING id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 `
 
 type CreateScimUserParams struct {
 	ID             uuid.UUID   `json:"id"`
+	AccountID      uuid.UUID   `json:"account_id"`
 	OrganizationID uuid.UUID   `json:"organization_id"`
 	Email          string      `json:"email"`
-	PasswordHash   pgtype.Text `json:"password_hash"`
 	Role           string      `json:"role"`
 	ScimExternalID pgtype.Text `json:"scim_external_id"`
 }
@@ -55,18 +55,18 @@ type CreateScimUserParams struct {
 func (q *Queries) CreateScimUser(ctx context.Context, arg CreateScimUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, createScimUser,
 		arg.ID,
+		arg.AccountID,
 		arg.OrganizationID,
 		arg.Email,
-		arg.PasswordHash,
 		arg.Role,
 		arg.ScimExternalID,
 	)
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
 		&i.ScimExternalID,
 		&i.DeprovisionedAt,
@@ -79,9 +79,9 @@ func (q *Queries) CreateScimUser(ctx context.Context, arg CreateScimUserParams) 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
     id,
+    account_id,
     organization_id,
     email,
-    password_hash,
     role
 ) VALUES (
     $1,
@@ -90,31 +90,31 @@ INSERT INTO users (
     $4,
     $5
 )
-RETURNING id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
+RETURNING id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	ID             uuid.UUID   `json:"id"`
-	OrganizationID uuid.UUID   `json:"organization_id"`
-	Email          string      `json:"email"`
-	PasswordHash   pgtype.Text `json:"password_hash"`
-	Role           string      `json:"role"`
+	ID             uuid.UUID `json:"id"`
+	AccountID      uuid.UUID `json:"account_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	Email          string    `json:"email"`
+	Role           string    `json:"role"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, createUser,
 		arg.ID,
+		arg.AccountID,
 		arg.OrganizationID,
 		arg.Email,
-		arg.PasswordHash,
 		arg.Role,
 	)
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
 		&i.ScimExternalID,
 		&i.DeprovisionedAt,
@@ -131,7 +131,7 @@ SET deprovisioned_at = now(),
 WHERE id = $1
   AND organization_id = $2
   AND deprovisioned_at IS NULL
-RETURNING id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
+RETURNING id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 `
 
 type DeprovisionUserParams struct {
@@ -144,9 +144,9 @@ func (q *Queries) DeprovisionUser(ctx context.Context, arg DeprovisionUserParams
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
 		&i.ScimExternalID,
 		&i.DeprovisionedAt,
@@ -157,7 +157,7 @@ func (q *Queries) DeprovisionUser(ctx context.Context, arg DeprovisionUserParams
 }
 
 const getFirstAdminUserByOrganization = `-- name: GetFirstAdminUserByOrganization :one
-SELECT id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
+SELECT id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 FROM users
 WHERE organization_id = $1
   AND role = 'admin'
@@ -170,9 +170,73 @@ func (q *Queries) GetFirstAdminUserByOrganization(ctx context.Context, organizat
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
+		&i.Role,
+		&i.ScimExternalID,
+		&i.DeprovisionedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getLoginMembershipByAccountID = `-- name: GetLoginMembershipByAccountID :one
+SELECT u.id, u.account_id, u.organization_id, u.email, u.role, u.scim_external_id, u.deprovisioned_at, u.created_at, u.updated_at
+FROM users u
+WHERE u.account_id = $1
+  AND u.deprovisioned_at IS NULL
+ORDER BY (
+    SELECT max(s.created_at)
+    FROM sessions s
+    WHERE s.user_id = u.id
+      AND s.organization_id = u.organization_id
+      AND s.revoked_at IS NULL
+) DESC NULLS LAST,
+u.created_at ASC
+LIMIT 1
+`
+
+func (q *Queries) GetLoginMembershipByAccountID(ctx context.Context, accountID uuid.UUID) (User, error) {
+	row := q.db.QueryRow(ctx, getLoginMembershipByAccountID, accountID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.OrganizationID,
+		&i.Email,
+		&i.Role,
+		&i.ScimExternalID,
+		&i.DeprovisionedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserByAccountAndOrganization = `-- name: GetUserByAccountAndOrganization :one
+SELECT id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
+FROM users
+WHERE account_id = $1
+  AND organization_id = $2
+  AND deprovisioned_at IS NULL
+LIMIT 1
+`
+
+type GetUserByAccountAndOrganizationParams struct {
+	AccountID      uuid.UUID `json:"account_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+func (q *Queries) GetUserByAccountAndOrganization(ctx context.Context, arg GetUserByAccountAndOrganizationParams) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByAccountAndOrganization, arg.AccountID, arg.OrganizationID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.OrganizationID,
+		&i.Email,
 		&i.Role,
 		&i.ScimExternalID,
 		&i.DeprovisionedAt,
@@ -183,7 +247,7 @@ func (q *Queries) GetFirstAdminUserByOrganization(ctx context.Context, organizat
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
+SELECT id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 FROM users
 WHERE organization_id = $1
   AND email = $2
@@ -200,9 +264,9 @@ func (q *Queries) GetUserByEmail(ctx context.Context, arg GetUserByEmailParams) 
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
 		&i.ScimExternalID,
 		&i.DeprovisionedAt,
@@ -213,9 +277,11 @@ func (q *Queries) GetUserByEmail(ctx context.Context, arg GetUserByEmailParams) 
 }
 
 const getUserByEmailForAuth = `-- name: GetUserByEmailForAuth :one
-SELECT id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
-FROM users
-WHERE email = $1
+SELECT u.id, u.account_id, u.organization_id, u.email, u.role, u.scim_external_id, u.deprovisioned_at, u.created_at, u.updated_at
+FROM users u
+JOIN accounts a ON a.id = u.account_id
+WHERE a.email = $1
+ORDER BY u.created_at ASC
 LIMIT 1
 `
 
@@ -224,9 +290,9 @@ func (q *Queries) GetUserByEmailForAuth(ctx context.Context, email string) (User
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
 		&i.ScimExternalID,
 		&i.DeprovisionedAt,
@@ -237,7 +303,7 @@ func (q *Queries) GetUserByEmailForAuth(ctx context.Context, email string) (User
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
+SELECT id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 FROM users
 WHERE id = $1
   AND organization_id = $2
@@ -254,9 +320,9 @@ func (q *Queries) GetUserByID(ctx context.Context, arg GetUserByIDParams) (User,
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
 		&i.ScimExternalID,
 		&i.DeprovisionedAt,
@@ -267,7 +333,7 @@ func (q *Queries) GetUserByID(ctx context.Context, arg GetUserByIDParams) (User,
 }
 
 const getUserByIDIncludingDeprovisioned = `-- name: GetUserByIDIncludingDeprovisioned :one
-SELECT id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
+SELECT id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 FROM users
 WHERE id = $1
   AND organization_id = $2
@@ -284,9 +350,9 @@ func (q *Queries) GetUserByIDIncludingDeprovisioned(ctx context.Context, arg Get
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
 		&i.ScimExternalID,
 		&i.DeprovisionedAt,
@@ -297,7 +363,7 @@ func (q *Queries) GetUserByIDIncludingDeprovisioned(ctx context.Context, arg Get
 }
 
 const getUserByScimExternalID = `-- name: GetUserByScimExternalID :one
-SELECT id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
+SELECT id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 FROM users
 WHERE organization_id = $1
   AND scim_external_id = $2
@@ -314,9 +380,9 @@ func (q *Queries) GetUserByScimExternalID(ctx context.Context, arg GetUserByScim
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
 		&i.ScimExternalID,
 		&i.DeprovisionedAt,
@@ -326,8 +392,58 @@ func (q *Queries) GetUserByScimExternalID(ctx context.Context, arg GetUserByScim
 	return i, err
 }
 
+const listOrganizationMembershipsByAccountID = `-- name: ListOrganizationMembershipsByAccountID :many
+SELECT
+    u.id, u.account_id, u.organization_id, u.email, u.role, u.scim_external_id, u.deprovisioned_at, u.created_at, u.updated_at,
+    o.id, o.name, o.created_at, o.updated_at
+FROM users u
+JOIN organizations o ON o.id = u.organization_id
+WHERE u.account_id = $1
+  AND u.deprovisioned_at IS NULL
+ORDER BY o.name ASC
+`
+
+type ListOrganizationMembershipsByAccountIDRow struct {
+	User         User         `json:"user"`
+	Organization Organization `json:"organization"`
+}
+
+func (q *Queries) ListOrganizationMembershipsByAccountID(ctx context.Context, accountID uuid.UUID) ([]ListOrganizationMembershipsByAccountIDRow, error) {
+	rows, err := q.db.Query(ctx, listOrganizationMembershipsByAccountID, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOrganizationMembershipsByAccountIDRow{}
+	for rows.Next() {
+		var i ListOrganizationMembershipsByAccountIDRow
+		if err := rows.Scan(
+			&i.User.ID,
+			&i.User.AccountID,
+			&i.User.OrganizationID,
+			&i.User.Email,
+			&i.User.Role,
+			&i.User.ScimExternalID,
+			&i.User.DeprovisionedAt,
+			&i.User.CreatedAt,
+			&i.User.UpdatedAt,
+			&i.Organization.ID,
+			&i.Organization.Name,
+			&i.Organization.CreatedAt,
+			&i.Organization.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listScimUsersByOrganizationID = `-- name: ListScimUsersByOrganizationID :many
-SELECT id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
+SELECT id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 FROM users
 WHERE organization_id = $1
   AND scim_external_id IS NOT NULL
@@ -345,9 +461,9 @@ func (q *Queries) ListScimUsersByOrganizationID(ctx context.Context, organizatio
 		var i User
 		if err := rows.Scan(
 			&i.ID,
+			&i.AccountID,
 			&i.OrganizationID,
 			&i.Email,
-			&i.PasswordHash,
 			&i.Role,
 			&i.ScimExternalID,
 			&i.DeprovisionedAt,
@@ -372,7 +488,7 @@ SET email = $3,
     updated_at = now()
 WHERE id = $1
   AND organization_id = $2
-RETURNING id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
+RETURNING id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 `
 
 type ReprovisionScimUserParams struct {
@@ -392,9 +508,9 @@ func (q *Queries) ReprovisionScimUser(ctx context.Context, arg ReprovisionScimUs
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
 		&i.ScimExternalID,
 		&i.DeprovisionedAt,
@@ -412,7 +528,7 @@ SET email = $3,
     updated_at = now()
 WHERE id = $1
   AND organization_id = $2
-RETURNING id, organization_id, email, password_hash, role, scim_external_id, deprovisioned_at, created_at, updated_at
+RETURNING id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 `
 
 type UpdateScimUserParams struct {
@@ -434,9 +550,9 @@ func (q *Queries) UpdateScimUser(ctx context.Context, arg UpdateScimUserParams) 
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.AccountID,
 		&i.OrganizationID,
 		&i.Email,
-		&i.PasswordHash,
 		&i.Role,
 		&i.ScimExternalID,
 		&i.DeprovisionedAt,
@@ -444,21 +560,4 @@ func (q *Queries) UpdateScimUser(ctx context.Context, arg UpdateScimUserParams) 
 		&i.UpdatedAt,
 	)
 	return i, err
-}
-
-const updateUserPasswordHash = `-- name: UpdateUserPasswordHash :exec
-UPDATE users
-SET password_hash = $2,
-    updated_at = now()
-WHERE id = $1
-`
-
-type UpdateUserPasswordHashParams struct {
-	ID           uuid.UUID   `json:"id"`
-	PasswordHash pgtype.Text `json:"password_hash"`
-}
-
-func (q *Queries) UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error {
-	_, err := q.db.Exec(ctx, updateUserPasswordHash, arg.ID, arg.PasswordHash)
-	return err
 }
