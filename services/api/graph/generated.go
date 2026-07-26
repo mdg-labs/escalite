@@ -186,52 +186,59 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AcknowledgeAlert             func(childComplexity int, id string) int
-		AddIncidentTimelineNote      func(childComplexity int, input model.AddIncidentTimelineNoteInput) int
-		AssignIncidentRole           func(childComplexity int, input model.AssignIncidentRoleInput) int
-		CloseAlert                   func(childComplexity int, id string) int
-		CreateEscalationPolicy       func(childComplexity int, input model.CreateEscalationPolicyInput) int
-		CreateHeartbeatMonitor       func(childComplexity int, input model.CreateHeartbeatMonitorInput) int
-		CreateIncident               func(childComplexity int, input model.CreateIncidentInput) int
-		CreateIncidentRoleDefinition func(childComplexity int, input model.CreateIncidentRoleDefinitionInput) int
-		CreateIntegrationKey         func(childComplexity int, input model.CreateIntegrationKeyInput) int
-		CreateMaintenanceWindow      func(childComplexity int, input model.CreateMaintenanceWindowInput) int
-		CreateOverride               func(childComplexity int, input model.CreateOverrideInput) int
-		CreateRotation               func(childComplexity int, input model.CreateRotationInput) int
-		CreateSchedule               func(childComplexity int, input model.CreateScheduleInput) int
-		CreateService                func(childComplexity int, input model.CreateServiceInput) int
-		DeleteEscalationPolicy       func(childComplexity int, id string) int
-		DeleteHeartbeatMonitor       func(childComplexity int, id string) int
-		DeleteIncidentRoleDefinition func(childComplexity int, id string) int
-		DeleteMaintenanceWindow      func(childComplexity int, id string) int
-		DeleteNotificationRule       func(childComplexity int, priority model.AlertPriority) int
-		DeleteOverride               func(childComplexity int, id string) int
-		DeleteRotation               func(childComplexity int, id string) int
-		DeleteSchedule               func(childComplexity int, id string) int
-		DeleteService                func(childComplexity int, id string) int
-		Login                        func(childComplexity int, input model.LoginInput) int
-		PromoteAlertToIncident       func(childComplexity int, input model.PromoteAlertToIncidentInput) int
-		ReEscalateAlert              func(childComplexity int, id string) int
-		RegisterMobileDevice         func(childComplexity int, input model.RegisterMobileDeviceInput) int
-		RevokeIntegrationKey         func(childComplexity int, id string) int
-		RevokeMobileDevice           func(childComplexity int, id string) int
-		RotateIntegrationKey         func(childComplexity int, id string) int
-		RotateScimToken              func(childComplexity int) int
-		SaveNotificationRule         func(childComplexity int, input model.SaveNotificationRuleInput) int
-		SaveSamlSettings             func(childComplexity int, input model.SaveSamlSettingsInput) int
-		SaveSlackSettings            func(childComplexity int, input model.SaveSlackSettingsInput) int
-		SaveUserContactMethod        func(childComplexity int, input model.SaveUserContactMethodInput) int
-		Setup                        func(childComplexity int, input model.SetupInput) int
-		SnoozeAlert                  func(childComplexity int, id string, durationMinutes int) int
-		UnassignIncidentRole         func(childComplexity int, id string) int
-		UpdateEscalationPolicy       func(childComplexity int, input model.UpdateEscalationPolicyInput) int
-		UpdateHeartbeatMonitor       func(childComplexity int, input model.UpdateHeartbeatMonitorInput) int
-		UpdateIncidentRoleDefinition func(childComplexity int, input model.UpdateIncidentRoleDefinitionInput) int
-		UpdateIncidentStatus         func(childComplexity int, input model.UpdateIncidentStatusInput) int
-		UpdateMaintenanceWindow      func(childComplexity int, input model.UpdateMaintenanceWindowInput) int
-		UpdateRotation               func(childComplexity int, input model.UpdateRotationInput) int
-		UpdateSchedule               func(childComplexity int, input model.UpdateScheduleInput) int
-		UpdateService                func(childComplexity int, input model.UpdateServiceInput) int
+		AcknowledgeAlert               func(childComplexity int, id string) int
+		AddIncidentTimelineNote        func(childComplexity int, input model.AddIncidentTimelineNoteInput) int
+		AssignIncidentRole             func(childComplexity int, input model.AssignIncidentRoleInput) int
+		CloseAlert                     func(childComplexity int, id string) int
+		CreateEscalationPolicy         func(childComplexity int, input model.CreateEscalationPolicyInput) int
+		CreateHeartbeatMonitor         func(childComplexity int, input model.CreateHeartbeatMonitorInput) int
+		CreateIncident                 func(childComplexity int, input model.CreateIncidentInput) int
+		CreateIncidentRoleDefinition   func(childComplexity int, input model.CreateIncidentRoleDefinitionInput) int
+		CreateIntegrationKey           func(childComplexity int, input model.CreateIntegrationKeyInput) int
+		CreateMaintenanceWindow        func(childComplexity int, input model.CreateMaintenanceWindowInput) int
+		CreateOverride                 func(childComplexity int, input model.CreateOverrideInput) int
+		CreateRotation                 func(childComplexity int, input model.CreateRotationInput) int
+		CreateSchedule                 func(childComplexity int, input model.CreateScheduleInput) int
+		CreateService                  func(childComplexity int, input model.CreateServiceInput) int
+		CreateStatusPageComponent      func(childComplexity int, input model.CreateStatusPageComponentInput) int
+		CreateStatusPageIncidentUpdate func(childComplexity int, input model.CreateStatusPageIncidentUpdateInput) int
+		DeleteEscalationPolicy         func(childComplexity int, id string) int
+		DeleteHeartbeatMonitor         func(childComplexity int, id string) int
+		DeleteIncidentRoleDefinition   func(childComplexity int, id string) int
+		DeleteMaintenanceWindow        func(childComplexity int, id string) int
+		DeleteNotificationRule         func(childComplexity int, priority model.AlertPriority) int
+		DeleteOverride                 func(childComplexity int, id string) int
+		DeleteRotation                 func(childComplexity int, id string) int
+		DeleteSchedule                 func(childComplexity int, id string) int
+		DeleteService                  func(childComplexity int, id string) int
+		DeleteStatusPageComponent      func(childComplexity int, id string) int
+		Login                          func(childComplexity int, input model.LoginInput) int
+		PromoteAlertToIncident         func(childComplexity int, input model.PromoteAlertToIncidentInput) int
+		PublishIncidentToStatusPage    func(childComplexity int, input model.PublishIncidentToStatusPageInput) int
+		ReEscalateAlert                func(childComplexity int, id string) int
+		RegisterMobileDevice           func(childComplexity int, input model.RegisterMobileDeviceInput) int
+		RevokeIntegrationKey           func(childComplexity int, id string) int
+		RevokeMobileDevice             func(childComplexity int, id string) int
+		RotateIntegrationKey           func(childComplexity int, id string) int
+		RotateScimToken                func(childComplexity int) int
+		SaveNotificationRule           func(childComplexity int, input model.SaveNotificationRuleInput) int
+		SaveSamlSettings               func(childComplexity int, input model.SaveSamlSettingsInput) int
+		SaveSlackSettings              func(childComplexity int, input model.SaveSlackSettingsInput) int
+		SaveStatusPage                 func(childComplexity int, input model.SaveStatusPageInput) int
+		SaveUserContactMethod          func(childComplexity int, input model.SaveUserContactMethodInput) int
+		Setup                          func(childComplexity int, input model.SetupInput) int
+		SnoozeAlert                    func(childComplexity int, id string, durationMinutes int) int
+		UnassignIncidentRole           func(childComplexity int, id string) int
+		UpdateEscalationPolicy         func(childComplexity int, input model.UpdateEscalationPolicyInput) int
+		UpdateHeartbeatMonitor         func(childComplexity int, input model.UpdateHeartbeatMonitorInput) int
+		UpdateIncidentRoleDefinition   func(childComplexity int, input model.UpdateIncidentRoleDefinitionInput) int
+		UpdateIncidentStatus           func(childComplexity int, input model.UpdateIncidentStatusInput) int
+		UpdateMaintenanceWindow        func(childComplexity int, input model.UpdateMaintenanceWindowInput) int
+		UpdateRotation                 func(childComplexity int, input model.UpdateRotationInput) int
+		UpdateSchedule                 func(childComplexity int, input model.UpdateScheduleInput) int
+		UpdateService                  func(childComplexity int, input model.UpdateServiceInput) int
+		UpdateStatusPageComponent      func(childComplexity int, input model.UpdateStatusPageComponentInput) int
+		UpdateStatusPageIncidentStatus func(childComplexity int, input model.UpdateStatusPageIncidentStatusInput) int
 	}
 
 	NotificationChannelDefinition struct {
@@ -311,6 +318,7 @@ type ComplexityRoot struct {
 		Service                 func(childComplexity int, id string) int
 		Services                func(childComplexity int) int
 		SlackSettings           func(childComplexity int) int
+		StatusPage              func(childComplexity int) int
 		Teams                   func(childComplexity int) int
 	}
 
@@ -384,6 +392,58 @@ type ComplexityRoot struct {
 		OauthInstallURL func(childComplexity int) int
 		TokenHint       func(childComplexity int) int
 		WorkspaceName   func(childComplexity int) int
+	}
+
+	StatusPage struct {
+		Components        func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
+		Enabled           func(childComplexity int) int
+		FrameAncestorsCsp func(childComplexity int) int
+		ID                func(childComplexity int) int
+		Incidents         func(childComplexity int) int
+		OrganizationID    func(childComplexity int) int
+		Slug              func(childComplexity int) int
+		Subscriptions     func(childComplexity int) int
+		Title             func(childComplexity int) int
+		UpdatedAt         func(childComplexity int) int
+	}
+
+	StatusPageComponent struct {
+		CreatedAt    func(childComplexity int) int
+		Description  func(childComplexity int) int
+		ID           func(childComplexity int) int
+		Name         func(childComplexity int) int
+		Position     func(childComplexity int) int
+		ServiceID    func(childComplexity int) int
+		Status       func(childComplexity int) int
+		StatusPageID func(childComplexity int) int
+		UpdatedAt    func(childComplexity int) int
+	}
+
+	StatusPageIncident struct {
+		AffectedComponentIds func(childComplexity int) int
+		CreatedAt            func(childComplexity int) int
+		ID                   func(childComplexity int) int
+		IncidentID           func(childComplexity int) int
+		ResolvedAt           func(childComplexity int) int
+		Status               func(childComplexity int) int
+		StatusPageID         func(childComplexity int) int
+		Title                func(childComplexity int) int
+		UpdatedAt            func(childComplexity int) int
+		Updates              func(childComplexity int) int
+	}
+
+	StatusPageIncidentUpdate struct {
+		Body      func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Status    func(childComplexity int) int
+	}
+
+	StatusPageSubscription struct {
+		CreatedAt func(childComplexity int) int
+		Email     func(childComplexity int) int
+		ID        func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -505,6 +565,13 @@ type MutationResolver interface {
 	AssignIncidentRole(ctx context.Context, input model.AssignIncidentRoleInput) (*model.IncidentRoleAssignment, error)
 	UnassignIncidentRole(ctx context.Context, id string) (bool, error)
 	PromoteAlertToIncident(ctx context.Context, input model.PromoteAlertToIncidentInput) (*model.Alert, error)
+	SaveStatusPage(ctx context.Context, input model.SaveStatusPageInput) (*model.StatusPage, error)
+	CreateStatusPageComponent(ctx context.Context, input model.CreateStatusPageComponentInput) (*model.StatusPageComponent, error)
+	UpdateStatusPageComponent(ctx context.Context, input model.UpdateStatusPageComponentInput) (*model.StatusPageComponent, error)
+	DeleteStatusPageComponent(ctx context.Context, id string) (bool, error)
+	PublishIncidentToStatusPage(ctx context.Context, input model.PublishIncidentToStatusPageInput) (*model.StatusPageIncident, error)
+	CreateStatusPageIncidentUpdate(ctx context.Context, input model.CreateStatusPageIncidentUpdateInput) (*model.StatusPageIncidentUpdate, error)
+	UpdateStatusPageIncidentStatus(ctx context.Context, input model.UpdateStatusPageIncidentStatusInput) (*model.StatusPageIncident, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
@@ -535,6 +602,7 @@ type QueryResolver interface {
 	Incident(ctx context.Context, id string) (*model.Incident, error)
 	Incidents(ctx context.Context, status *model.IncidentStatus, teamID *string, limit *int) ([]*model.Incident, error)
 	IncidentRoleDefinitions(ctx context.Context) ([]*model.IncidentRoleDefinition, error)
+	StatusPage(ctx context.Context) (*model.StatusPage, error)
 }
 type ServiceResolver interface {
 	ActiveMaintenanceWindows(ctx context.Context, obj *model.Service) ([]*model.MaintenanceWindow, error)
@@ -1351,6 +1419,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateService(childComplexity, args["input"].(model.CreateServiceInput)), true
+	case "Mutation.createStatusPageComponent":
+		if e.ComplexityRoot.Mutation.CreateStatusPageComponent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createStatusPageComponent_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateStatusPageComponent(childComplexity, args["input"].(model.CreateStatusPageComponentInput)), true
+	case "Mutation.createStatusPageIncidentUpdate":
+		if e.ComplexityRoot.Mutation.CreateStatusPageIncidentUpdate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createStatusPageIncidentUpdate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateStatusPageIncidentUpdate(childComplexity, args["input"].(model.CreateStatusPageIncidentUpdateInput)), true
 	case "Mutation.deleteEscalationPolicy":
 		if e.ComplexityRoot.Mutation.DeleteEscalationPolicy == nil {
 			break
@@ -1450,6 +1540,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteService(childComplexity, args["id"].(string)), true
+	case "Mutation.deleteStatusPageComponent":
+		if e.ComplexityRoot.Mutation.DeleteStatusPageComponent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteStatusPageComponent_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteStatusPageComponent(childComplexity, args["id"].(string)), true
 	case "Mutation.login":
 		if e.ComplexityRoot.Mutation.Login == nil {
 			break
@@ -1472,6 +1573,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.PromoteAlertToIncident(childComplexity, args["input"].(model.PromoteAlertToIncidentInput)), true
+	case "Mutation.publishIncidentToStatusPage":
+		if e.ComplexityRoot.Mutation.PublishIncidentToStatusPage == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_publishIncidentToStatusPage_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.PublishIncidentToStatusPage(childComplexity, args["input"].(model.PublishIncidentToStatusPageInput)), true
 	case "Mutation.reEscalateAlert":
 		if e.ComplexityRoot.Mutation.ReEscalateAlert == nil {
 			break
@@ -1566,6 +1678,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SaveSlackSettings(childComplexity, args["input"].(model.SaveSlackSettingsInput)), true
+	case "Mutation.saveStatusPage":
+		if e.ComplexityRoot.Mutation.SaveStatusPage == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveStatusPage_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SaveStatusPage(childComplexity, args["input"].(model.SaveStatusPageInput)), true
 	case "Mutation.saveUserContactMethod":
 		if e.ComplexityRoot.Mutation.SaveUserContactMethod == nil {
 			break
@@ -1698,6 +1821,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateService(childComplexity, args["input"].(model.UpdateServiceInput)), true
+	case "Mutation.updateStatusPageComponent":
+		if e.ComplexityRoot.Mutation.UpdateStatusPageComponent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateStatusPageComponent_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateStatusPageComponent(childComplexity, args["input"].(model.UpdateStatusPageComponentInput)), true
+	case "Mutation.updateStatusPageIncidentStatus":
+		if e.ComplexityRoot.Mutation.UpdateStatusPageIncidentStatus == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateStatusPageIncidentStatus_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateStatusPageIncidentStatus(childComplexity, args["input"].(model.UpdateStatusPageIncidentStatusInput)), true
 
 	case "NotificationChannelDefinition.configSchema":
 		if e.ComplexityRoot.NotificationChannelDefinition.ConfigSchema == nil {
@@ -2117,6 +2262,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.SlackSettings(childComplexity), true
+	case "Query.statusPage":
+		if e.ComplexityRoot.Query.StatusPage == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.StatusPage(childComplexity), true
 	case "Query.teams":
 		if e.ComplexityRoot.Query.Teams == nil {
 			break
@@ -2403,6 +2554,233 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.SlackSettings.WorkspaceName(childComplexity), true
 
+	case "StatusPage.components":
+		if e.ComplexityRoot.StatusPage.Components == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPage.Components(childComplexity), true
+	case "StatusPage.createdAt":
+		if e.ComplexityRoot.StatusPage.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPage.CreatedAt(childComplexity), true
+	case "StatusPage.enabled":
+		if e.ComplexityRoot.StatusPage.Enabled == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPage.Enabled(childComplexity), true
+	case "StatusPage.frameAncestorsCsp":
+		if e.ComplexityRoot.StatusPage.FrameAncestorsCsp == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPage.FrameAncestorsCsp(childComplexity), true
+	case "StatusPage.id":
+		if e.ComplexityRoot.StatusPage.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPage.ID(childComplexity), true
+	case "StatusPage.incidents":
+		if e.ComplexityRoot.StatusPage.Incidents == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPage.Incidents(childComplexity), true
+	case "StatusPage.organizationId":
+		if e.ComplexityRoot.StatusPage.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPage.OrganizationID(childComplexity), true
+	case "StatusPage.slug":
+		if e.ComplexityRoot.StatusPage.Slug == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPage.Slug(childComplexity), true
+	case "StatusPage.subscriptions":
+		if e.ComplexityRoot.StatusPage.Subscriptions == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPage.Subscriptions(childComplexity), true
+	case "StatusPage.title":
+		if e.ComplexityRoot.StatusPage.Title == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPage.Title(childComplexity), true
+	case "StatusPage.updatedAt":
+		if e.ComplexityRoot.StatusPage.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPage.UpdatedAt(childComplexity), true
+
+	case "StatusPageComponent.createdAt":
+		if e.ComplexityRoot.StatusPageComponent.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageComponent.CreatedAt(childComplexity), true
+	case "StatusPageComponent.description":
+		if e.ComplexityRoot.StatusPageComponent.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageComponent.Description(childComplexity), true
+	case "StatusPageComponent.id":
+		if e.ComplexityRoot.StatusPageComponent.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageComponent.ID(childComplexity), true
+	case "StatusPageComponent.name":
+		if e.ComplexityRoot.StatusPageComponent.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageComponent.Name(childComplexity), true
+	case "StatusPageComponent.position":
+		if e.ComplexityRoot.StatusPageComponent.Position == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageComponent.Position(childComplexity), true
+	case "StatusPageComponent.serviceId":
+		if e.ComplexityRoot.StatusPageComponent.ServiceID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageComponent.ServiceID(childComplexity), true
+	case "StatusPageComponent.status":
+		if e.ComplexityRoot.StatusPageComponent.Status == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageComponent.Status(childComplexity), true
+	case "StatusPageComponent.statusPageId":
+		if e.ComplexityRoot.StatusPageComponent.StatusPageID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageComponent.StatusPageID(childComplexity), true
+	case "StatusPageComponent.updatedAt":
+		if e.ComplexityRoot.StatusPageComponent.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageComponent.UpdatedAt(childComplexity), true
+
+	case "StatusPageIncident.affectedComponentIds":
+		if e.ComplexityRoot.StatusPageIncident.AffectedComponentIds == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncident.AffectedComponentIds(childComplexity), true
+	case "StatusPageIncident.createdAt":
+		if e.ComplexityRoot.StatusPageIncident.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncident.CreatedAt(childComplexity), true
+	case "StatusPageIncident.id":
+		if e.ComplexityRoot.StatusPageIncident.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncident.ID(childComplexity), true
+	case "StatusPageIncident.incidentId":
+		if e.ComplexityRoot.StatusPageIncident.IncidentID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncident.IncidentID(childComplexity), true
+	case "StatusPageIncident.resolvedAt":
+		if e.ComplexityRoot.StatusPageIncident.ResolvedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncident.ResolvedAt(childComplexity), true
+	case "StatusPageIncident.status":
+		if e.ComplexityRoot.StatusPageIncident.Status == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncident.Status(childComplexity), true
+	case "StatusPageIncident.statusPageId":
+		if e.ComplexityRoot.StatusPageIncident.StatusPageID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncident.StatusPageID(childComplexity), true
+	case "StatusPageIncident.title":
+		if e.ComplexityRoot.StatusPageIncident.Title == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncident.Title(childComplexity), true
+	case "StatusPageIncident.updatedAt":
+		if e.ComplexityRoot.StatusPageIncident.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncident.UpdatedAt(childComplexity), true
+	case "StatusPageIncident.updates":
+		if e.ComplexityRoot.StatusPageIncident.Updates == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncident.Updates(childComplexity), true
+
+	case "StatusPageIncidentUpdate.body":
+		if e.ComplexityRoot.StatusPageIncidentUpdate.Body == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncidentUpdate.Body(childComplexity), true
+	case "StatusPageIncidentUpdate.createdAt":
+		if e.ComplexityRoot.StatusPageIncidentUpdate.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncidentUpdate.CreatedAt(childComplexity), true
+	case "StatusPageIncidentUpdate.id":
+		if e.ComplexityRoot.StatusPageIncidentUpdate.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncidentUpdate.ID(childComplexity), true
+	case "StatusPageIncidentUpdate.status":
+		if e.ComplexityRoot.StatusPageIncidentUpdate.Status == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageIncidentUpdate.Status(childComplexity), true
+
+	case "StatusPageSubscription.createdAt":
+		if e.ComplexityRoot.StatusPageSubscription.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageSubscription.CreatedAt(childComplexity), true
+	case "StatusPageSubscription.email":
+		if e.ComplexityRoot.StatusPageSubscription.Email == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageSubscription.Email(childComplexity), true
+	case "StatusPageSubscription.id":
+		if e.ComplexityRoot.StatusPageSubscription.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.StatusPageSubscription.ID(childComplexity), true
+
 	case "Subscription.alertUpdated":
 		if e.ComplexityRoot.Subscription.AlertUpdated == nil {
 			break
@@ -2648,15 +3026,19 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateRotationInput,
 		ec.unmarshalInputCreateScheduleInput,
 		ec.unmarshalInputCreateServiceInput,
+		ec.unmarshalInputCreateStatusPageComponentInput,
+		ec.unmarshalInputCreateStatusPageIncidentUpdateInput,
 		ec.unmarshalInputEscalationStepInput,
 		ec.unmarshalInputEscalationStepTargetInput,
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputNotificationRuleStepInput,
 		ec.unmarshalInputPromoteAlertToIncidentInput,
+		ec.unmarshalInputPublishIncidentToStatusPageInput,
 		ec.unmarshalInputRegisterMobileDeviceInput,
 		ec.unmarshalInputSaveNotificationRuleInput,
 		ec.unmarshalInputSaveSamlSettingsInput,
 		ec.unmarshalInputSaveSlackSettingsInput,
+		ec.unmarshalInputSaveStatusPageInput,
 		ec.unmarshalInputSaveUserContactMethodInput,
 		ec.unmarshalInputSetupInput,
 		ec.unmarshalInputUpdateEscalationPolicyInput,
@@ -2667,6 +3049,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateRotationInput,
 		ec.unmarshalInputUpdateScheduleInput,
 		ec.unmarshalInputUpdateServiceInput,
+		ec.unmarshalInputUpdateStatusPageComponentInput,
+		ec.unmarshalInputUpdateStatusPageIncidentStatusInput,
 	)
 	first := true
 
@@ -2812,6 +3196,16 @@ enum TimelineEventType {
   NOTE
   ROLE_ASSIGNED
   ROLE_UNASSIGNED
+}
+
+"""
+Public-facing component health on a status page.
+"""
+enum StatusPageComponentStatus {
+  OPERATIONAL
+  DEGRADED
+  PARTIAL_OUTAGE
+  MAJOR_OUTAGE
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/inputs.graphql", Input: `input LoginInput {
@@ -3011,6 +3405,49 @@ input PromoteAlertToIncidentInput {
   """Title when creating a new incident; defaults to the alert summary."""
   title: String
 }
+
+input SaveStatusPageInput {
+  slug: String!
+  title: String!
+  enabled: Boolean!
+  frameAncestorsCsp: String
+}
+
+input CreateStatusPageComponentInput {
+  name: String!
+  description: String
+  status: StatusPageComponentStatus = OPERATIONAL
+  position: Int = 0
+  serviceId: ID
+}
+
+input UpdateStatusPageComponentInput {
+  id: ID!
+  name: String!
+  description: String
+  status: StatusPageComponentStatus!
+  position: Int!
+  serviceId: ID
+}
+
+input PublishIncidentToStatusPageInput {
+  incidentId: ID!
+  title: String
+  affectedComponentIds: [ID!]!
+  body: String!
+}
+
+input CreateStatusPageIncidentUpdateInput {
+  statusPageIncidentId: ID!
+  body: String!
+  status: IncidentStatus!
+}
+
+input UpdateStatusPageIncidentStatusInput {
+  id: ID!
+  status: IncidentStatus!
+  body: String
+}
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Subscription {
   """
@@ -3171,6 +3608,11 @@ type Query {
   List configurable incident role definitions (org admin only).
   """
   incidentRoleDefinitions: [IncidentRoleDefinition!]!
+
+  """
+  Organization status page configuration (org admin only). Null when not yet created.
+  """
+  statusPage: StatusPage
 }
 
 type Mutation {
@@ -3403,6 +3845,41 @@ type Mutation {
   Promote an alert into a new or existing incident (team access required).
   """
   promoteAlertToIncident(input: PromoteAlertToIncidentInput!): Alert!
+
+  """
+  Create or update the organization status page (org admin only).
+  """
+  saveStatusPage(input: SaveStatusPageInput!): StatusPage!
+
+  """
+  Create a status page component (org admin only).
+  """
+  createStatusPageComponent(input: CreateStatusPageComponentInput!): StatusPageComponent!
+
+  """
+  Update a status page component (org admin only).
+  """
+  updateStatusPageComponent(input: UpdateStatusPageComponentInput!): StatusPageComponent!
+
+  """
+  Delete a status page component (org admin only).
+  """
+  deleteStatusPageComponent(id: ID!): Boolean!
+
+  """
+  Publish an internal incident to the public status page (org admin only).
+  """
+  publishIncidentToStatusPage(input: PublishIncidentToStatusPageInput!): StatusPageIncident!
+
+  """
+  Post a public update to a status page incident (org admin only).
+  """
+  createStatusPageIncidentUpdate(input: CreateStatusPageIncidentUpdateInput!): StatusPageIncidentUpdate!
+
+  """
+  Update a status page incident status (org admin only).
+  """
+  updateStatusPageIncidentStatus(input: UpdateStatusPageIncidentStatusInput!): StatusPageIncident!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/scalars.graphql", Input: `"""
@@ -3771,6 +4248,66 @@ type IncidentRoleAssignment {
   role: IncidentRoleDefinition!
   user: User!
   assignedBy: User!
+  createdAt: DateTime!
+}
+
+"""Organization public status page configuration (admin only)."""
+type StatusPage {
+  id: ID!
+  organizationId: ID!
+  slug: String!
+  title: String!
+  enabled: Boolean!
+  """Optional frame-ancestors CSP directive for status page embedding."""
+  frameAncestorsCsp: String
+  components: [StatusPageComponent!]!
+  incidents: [StatusPageIncident!]!
+  subscriptions: [StatusPageSubscription!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Component displayed on a public status page."""
+type StatusPageComponent {
+  id: ID!
+  statusPageId: ID!
+  name: String!
+  description: String
+  status: StatusPageComponentStatus!
+  position: Int!
+  """Optional linked internal service (admin only; never exposed on public API)."""
+  serviceId: ID
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Email subscription to status page incident updates."""
+type StatusPageSubscription {
+  id: ID!
+  email: String!
+  createdAt: DateTime!
+}
+
+"""Public incident published on a status page."""
+type StatusPageIncident {
+  id: ID!
+  statusPageId: ID!
+  """Linked internal incident when published from Escalite (admin only)."""
+  incidentId: ID
+  title: String!
+  status: IncidentStatus!
+  affectedComponentIds: [ID!]!
+  updates: [StatusPageIncidentUpdate!]!
+  resolvedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Public update posted to a status page incident."""
+type StatusPageIncidentUpdate {
+  id: ID!
+  body: String!
+  status: IncidentStatus!
   createdAt: DateTime!
 }
 `, BuiltIn: false},
@@ -4307,6 +4844,110 @@ func (ec *executionContext) childFields_SlackSettings(ctx context.Context, field
 	return nil, fmt.Errorf("no field named %q was found under type SlackSettings", field.Name)
 }
 
+func (ec *executionContext) childFields_StatusPage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_StatusPage_id(ctx, field)
+	case "organizationId":
+		return ec.fieldContext_StatusPage_organizationId(ctx, field)
+	case "slug":
+		return ec.fieldContext_StatusPage_slug(ctx, field)
+	case "title":
+		return ec.fieldContext_StatusPage_title(ctx, field)
+	case "enabled":
+		return ec.fieldContext_StatusPage_enabled(ctx, field)
+	case "frameAncestorsCsp":
+		return ec.fieldContext_StatusPage_frameAncestorsCsp(ctx, field)
+	case "components":
+		return ec.fieldContext_StatusPage_components(ctx, field)
+	case "incidents":
+		return ec.fieldContext_StatusPage_incidents(ctx, field)
+	case "subscriptions":
+		return ec.fieldContext_StatusPage_subscriptions(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_StatusPage_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_StatusPage_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type StatusPage", field.Name)
+}
+
+func (ec *executionContext) childFields_StatusPageComponent(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_StatusPageComponent_id(ctx, field)
+	case "statusPageId":
+		return ec.fieldContext_StatusPageComponent_statusPageId(ctx, field)
+	case "name":
+		return ec.fieldContext_StatusPageComponent_name(ctx, field)
+	case "description":
+		return ec.fieldContext_StatusPageComponent_description(ctx, field)
+	case "status":
+		return ec.fieldContext_StatusPageComponent_status(ctx, field)
+	case "position":
+		return ec.fieldContext_StatusPageComponent_position(ctx, field)
+	case "serviceId":
+		return ec.fieldContext_StatusPageComponent_serviceId(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_StatusPageComponent_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_StatusPageComponent_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type StatusPageComponent", field.Name)
+}
+
+func (ec *executionContext) childFields_StatusPageIncident(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_StatusPageIncident_id(ctx, field)
+	case "statusPageId":
+		return ec.fieldContext_StatusPageIncident_statusPageId(ctx, field)
+	case "incidentId":
+		return ec.fieldContext_StatusPageIncident_incidentId(ctx, field)
+	case "title":
+		return ec.fieldContext_StatusPageIncident_title(ctx, field)
+	case "status":
+		return ec.fieldContext_StatusPageIncident_status(ctx, field)
+	case "affectedComponentIds":
+		return ec.fieldContext_StatusPageIncident_affectedComponentIds(ctx, field)
+	case "updates":
+		return ec.fieldContext_StatusPageIncident_updates(ctx, field)
+	case "resolvedAt":
+		return ec.fieldContext_StatusPageIncident_resolvedAt(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_StatusPageIncident_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_StatusPageIncident_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type StatusPageIncident", field.Name)
+}
+
+func (ec *executionContext) childFields_StatusPageIncidentUpdate(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_StatusPageIncidentUpdate_id(ctx, field)
+	case "body":
+		return ec.fieldContext_StatusPageIncidentUpdate_body(ctx, field)
+	case "status":
+		return ec.fieldContext_StatusPageIncidentUpdate_status(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_StatusPageIncidentUpdate_createdAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type StatusPageIncidentUpdate", field.Name)
+}
+
+func (ec *executionContext) childFields_StatusPageSubscription(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_StatusPageSubscription_id(ctx, field)
+	case "email":
+		return ec.fieldContext_StatusPageSubscription_email(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_StatusPageSubscription_createdAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type StatusPageSubscription", field.Name)
+}
+
 func (ec *executionContext) childFields_Team(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "id":
@@ -4711,6 +5352,34 @@ func (ec *executionContext) field_Mutation_createService_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createStatusPageComponent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateStatusPageComponentInput, error) {
+			return ec.unmarshalNCreateStatusPageComponentInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateStatusPageComponentInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createStatusPageIncidentUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateStatusPageIncidentUpdateInput, error) {
+			return ec.unmarshalNCreateStatusPageIncidentUpdateInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateStatusPageIncidentUpdateInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteEscalationPolicy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -4837,6 +5506,20 @@ func (ec *executionContext) field_Mutation_deleteService_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteStatusPageComponent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -4857,6 +5540,20 @@ func (ec *executionContext) field_Mutation_promoteAlertToIncident_args(ctx conte
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.PromoteAlertToIncidentInput, error) {
 			return ec.unmarshalNPromoteAlertToIncidentInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐPromoteAlertToIncidentInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_publishIncidentToStatusPage_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.PublishIncidentToStatusPageInput, error) {
+			return ec.unmarshalNPublishIncidentToStatusPageInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐPublishIncidentToStatusPageInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -4969,6 +5666,20 @@ func (ec *executionContext) field_Mutation_saveSlackSettings_args(ctx context.Co
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.SaveSlackSettingsInput, error) {
 			return ec.unmarshalNSaveSlackSettingsInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveSlackSettingsInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_saveStatusPage_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.SaveStatusPageInput, error) {
+			return ec.unmarshalNSaveStatusPageInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveStatusPageInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -5145,6 +5856,34 @@ func (ec *executionContext) field_Mutation_updateService_args(ctx context.Contex
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.UpdateServiceInput, error) {
 			return ec.unmarshalNUpdateServiceInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateServiceInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateStatusPageComponent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateStatusPageComponentInput, error) {
+			return ec.unmarshalNUpdateStatusPageComponentInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateStatusPageComponentInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateStatusPageIncidentStatus_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateStatusPageIncidentStatusInput, error) {
+			return ec.unmarshalNUpdateStatusPageIncidentStatusInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateStatusPageIncidentStatusInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -10005,6 +10744,314 @@ func (ec *executionContext) fieldContext_Mutation_promoteAlertToIncident(ctx con
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_saveStatusPage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_saveStatusPage(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SaveStatusPage(ctx, fc.Args["input"].(model.SaveStatusPageInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.StatusPage) graphql.Marshaler {
+			return ec.marshalNStatusPage2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPage(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_saveStatusPage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StatusPage(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveStatusPage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createStatusPageComponent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createStatusPageComponent(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateStatusPageComponent(ctx, fc.Args["input"].(model.CreateStatusPageComponentInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.StatusPageComponent) graphql.Marshaler {
+			return ec.marshalNStatusPageComponent2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponent(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createStatusPageComponent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StatusPageComponent(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createStatusPageComponent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateStatusPageComponent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateStatusPageComponent(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateStatusPageComponent(ctx, fc.Args["input"].(model.UpdateStatusPageComponentInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.StatusPageComponent) graphql.Marshaler {
+			return ec.marshalNStatusPageComponent2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponent(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateStatusPageComponent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StatusPageComponent(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateStatusPageComponent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteStatusPageComponent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteStatusPageComponent(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteStatusPageComponent(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteStatusPageComponent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteStatusPageComponent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_publishIncidentToStatusPage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_publishIncidentToStatusPage(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().PublishIncidentToStatusPage(ctx, fc.Args["input"].(model.PublishIncidentToStatusPageInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.StatusPageIncident) graphql.Marshaler {
+			return ec.marshalNStatusPageIncident2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncident(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_publishIncidentToStatusPage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StatusPageIncident(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_publishIncidentToStatusPage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createStatusPageIncidentUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createStatusPageIncidentUpdate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateStatusPageIncidentUpdate(ctx, fc.Args["input"].(model.CreateStatusPageIncidentUpdateInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.StatusPageIncidentUpdate) graphql.Marshaler {
+			return ec.marshalNStatusPageIncidentUpdate2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncidentUpdate(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createStatusPageIncidentUpdate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StatusPageIncidentUpdate(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createStatusPageIncidentUpdate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateStatusPageIncidentStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateStatusPageIncidentStatus(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateStatusPageIncidentStatus(ctx, fc.Args["input"].(model.UpdateStatusPageIncidentStatusInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.StatusPageIncident) graphql.Marshaler {
+			return ec.marshalNStatusPageIncident2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncident(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateStatusPageIncidentStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StatusPageIncident(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateStatusPageIncidentStatus_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NotificationChannelDefinition_name(ctx context.Context, field graphql.CollectedField, obj *model.NotificationChannelDefinition) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -11746,6 +12793,38 @@ func (ec *executionContext) fieldContext_Query_incidentRoleDefinitions(_ context
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_statusPage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_statusPage(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().StatusPage(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.StatusPage) graphql.Marshaler {
+			return ec.marshalOStatusPage2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPage(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_statusPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StatusPage(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -12909,6 +13988,893 @@ func (ec *executionContext) _SlackSettings_oauthInstallUrl(ctx context.Context, 
 }
 func (ec *executionContext) fieldContext_SlackSettings_oauthInstallUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("SlackSettings", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPage_id(ctx context.Context, field graphql.CollectedField, obj *model.StatusPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPage_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPage_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPage", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPage_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.StatusPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPage_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPage_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPage", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPage_slug(ctx context.Context, field graphql.CollectedField, obj *model.StatusPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPage_slug(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Slug, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPage_slug(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPage", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPage_title(ctx context.Context, field graphql.CollectedField, obj *model.StatusPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPage_title(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPage_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPage", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPage_enabled(ctx context.Context, field graphql.CollectedField, obj *model.StatusPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPage_enabled(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Enabled, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPage_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPage", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPage_frameAncestorsCsp(ctx context.Context, field graphql.CollectedField, obj *model.StatusPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPage_frameAncestorsCsp(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.FrameAncestorsCsp, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPage_frameAncestorsCsp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPage", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPage_components(ctx context.Context, field graphql.CollectedField, obj *model.StatusPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPage_components(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Components, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.StatusPageComponent) graphql.Marshaler {
+			return ec.marshalNStatusPageComponent2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponentᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPage_components(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StatusPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StatusPageComponent(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StatusPage_incidents(ctx context.Context, field graphql.CollectedField, obj *model.StatusPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPage_incidents(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Incidents, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.StatusPageIncident) graphql.Marshaler {
+			return ec.marshalNStatusPageIncident2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncidentᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPage_incidents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StatusPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StatusPageIncident(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StatusPage_subscriptions(ctx context.Context, field graphql.CollectedField, obj *model.StatusPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPage_subscriptions(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Subscriptions, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.StatusPageSubscription) graphql.Marshaler {
+			return ec.marshalNStatusPageSubscription2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageSubscriptionᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPage_subscriptions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StatusPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StatusPageSubscription(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StatusPage_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.StatusPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPage_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPage_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPage", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPage_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.StatusPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPage_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPage_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPage", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageComponent_id(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageComponent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageComponent_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageComponent_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageComponent", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageComponent_statusPageId(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageComponent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageComponent_statusPageId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StatusPageID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageComponent_statusPageId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageComponent", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageComponent_name(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageComponent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageComponent_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageComponent_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageComponent", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageComponent_description(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageComponent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageComponent_description(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageComponent_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageComponent", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageComponent_status(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageComponent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageComponent_status(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.StatusPageComponentStatus) graphql.Marshaler {
+			return ec.marshalNStatusPageComponentStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponentStatus(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageComponent_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageComponent", field, false, false, errors.New("field of type StatusPageComponentStatus does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageComponent_position(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageComponent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageComponent_position(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Position, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageComponent_position(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageComponent", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageComponent_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageComponent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageComponent_serviceId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageComponent_serviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageComponent", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageComponent_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageComponent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageComponent_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageComponent_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageComponent", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageComponent_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageComponent) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageComponent_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageComponent_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageComponent", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncident_id(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncident_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncident_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncident", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncident_statusPageId(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncident_statusPageId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StatusPageID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncident_statusPageId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncident", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncident_incidentId(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncident_incidentId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IncidentID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncident_incidentId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncident", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncident_title(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncident_title(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncident_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncident", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncident_status(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncident_status(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.IncidentStatus) graphql.Marshaler {
+			return ec.marshalNIncidentStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentStatus(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncident_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncident", field, false, false, errors.New("field of type IncidentStatus does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncident_affectedComponentIds(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncident_affectedComponentIds(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AffectedComponentIds, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []string) graphql.Marshaler {
+			return ec.marshalNID2ᚕstringᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncident_affectedComponentIds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncident", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncident_updates(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncident_updates(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Updates, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.StatusPageIncidentUpdate) graphql.Marshaler {
+			return ec.marshalNStatusPageIncidentUpdate2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncidentUpdateᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncident_updates(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StatusPageIncident",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_StatusPageIncidentUpdate(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StatusPageIncident_resolvedAt(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncident_resolvedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ResolvedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalODateTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncident_resolvedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncident", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncident_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncident_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncident_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncident", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncident_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncident_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncident_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncident", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncidentUpdate_id(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncidentUpdate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncidentUpdate_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncidentUpdate_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncidentUpdate", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncidentUpdate_body(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncidentUpdate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncidentUpdate_body(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Body, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncidentUpdate_body(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncidentUpdate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncidentUpdate_status(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncidentUpdate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncidentUpdate_status(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.IncidentStatus) graphql.Marshaler {
+			return ec.marshalNIncidentStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentStatus(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncidentUpdate_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncidentUpdate", field, false, false, errors.New("field of type IncidentStatus does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageIncidentUpdate_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageIncidentUpdate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageIncidentUpdate_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageIncidentUpdate_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageIncidentUpdate", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageSubscription_id(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageSubscription) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageSubscription_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageSubscription_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageSubscription", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageSubscription_email(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageSubscription) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageSubscription_email(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Email, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageSubscription_email(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageSubscription", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _StatusPageSubscription_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.StatusPageSubscription) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_StatusPageSubscription_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_StatusPageSubscription_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("StatusPageSubscription", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
 func (ec *executionContext) _Subscription_alertUpdated(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
@@ -15400,6 +17366,115 @@ func (ec *executionContext) unmarshalInputCreateServiceInput(ctx context.Context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateStatusPageComponentInput(ctx context.Context, obj any) (model.CreateStatusPageComponentInput, error) {
+	var it model.CreateStatusPageComponentInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["status"]; !present {
+		asMap["status"] = "OPERATIONAL"
+	}
+	if _, present := asMap["position"]; !present {
+		asMap["position"] = 0
+	}
+
+	fieldsInOrder := [...]string{"name", "description", "status", "position", "serviceId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "status":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalOStatusPageComponentStatus2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponentStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		case "position":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("position"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Position = data
+		case "serviceId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceID = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateStatusPageIncidentUpdateInput(ctx context.Context, obj any) (model.CreateStatusPageIncidentUpdateInput, error) {
+	var it model.CreateStatusPageIncidentUpdateInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"statusPageIncidentId", "body", "status"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "statusPageIncidentId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statusPageIncidentId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StatusPageIncidentID = data
+		case "body":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("body"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Body = data
+		case "status":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalNIncidentStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputEscalationStepInput(ctx context.Context, obj any) (model.EscalationStepInput, error) {
 	var it model.EscalationStepInput
 	if obj == nil {
@@ -15631,6 +17706,57 @@ func (ec *executionContext) unmarshalInputPromoteAlertToIncidentInput(ctx contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPublishIncidentToStatusPageInput(ctx context.Context, obj any) (model.PublishIncidentToStatusPageInput, error) {
+	var it model.PublishIncidentToStatusPageInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"incidentId", "title", "affectedComponentIds", "body"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "incidentId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("incidentId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IncidentID = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "affectedComponentIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("affectedComponentIds"))
+			data, err := ec.unmarshalNID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AffectedComponentIds = data
+		case "body":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("body"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Body = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputRegisterMobileDeviceInput(ctx context.Context, obj any) (model.RegisterMobileDeviceInput, error) {
 	var it model.RegisterMobileDeviceInput
 	if obj == nil {
@@ -15774,6 +17900,57 @@ func (ec *executionContext) unmarshalInputSaveSlackSettingsInput(ctx context.Con
 				return it, err
 			}
 			it.BotToken = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSaveStatusPageInput(ctx context.Context, obj any) (model.SaveStatusPageInput, error) {
+	var it model.SaveStatusPageInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"slug", "title", "enabled", "frameAncestorsCsp"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "slug":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("slug"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Slug = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		case "frameAncestorsCsp":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("frameAncestorsCsp"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FrameAncestorsCsp = data
 		}
 	}
 	return it, nil
@@ -16270,6 +18447,115 @@ func (ec *executionContext) unmarshalInputUpdateServiceInput(ctx context.Context
 				return it, err
 			}
 			it.AutoPromoteSuppressEscalationPriorities = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateStatusPageComponentInput(ctx context.Context, obj any) (model.UpdateStatusPageComponentInput, error) {
+	var it model.UpdateStatusPageComponentInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "description", "status", "position", "serviceId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "status":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalNStatusPageComponentStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponentStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		case "position":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("position"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Position = data
+		case "serviceId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceID = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateStatusPageIncidentStatusInput(ctx context.Context, obj any) (model.UpdateStatusPageIncidentStatusInput, error) {
+	var it model.UpdateStatusPageIncidentStatusInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "status", "body"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "status":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalNIncidentStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIncidentStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		case "body":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("body"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Body = data
 		}
 	}
 	return it, nil
@@ -17833,6 +20119,55 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "saveStatusPage":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveStatusPage(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createStatusPageComponent":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createStatusPageComponent(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateStatusPageComponent":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateStatusPageComponent(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteStatusPageComponent":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteStatusPageComponent(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "publishIncidentToStatusPage":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_publishIncidentToStatusPage(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createStatusPageIncidentUpdate":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createStatusPageIncidentUpdate(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateStatusPageIncidentStatus":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateStatusPageIncidentStatus(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -18861,6 +21196,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "statusPage":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_statusPage(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -19428,6 +21785,356 @@ func (ec *executionContext) _SlackSettings(ctx context.Context, sel ast.Selectio
 		case "oauthInstallUrl":
 			out.Values[i] = ec._SlackSettings_oauthInstallUrl(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var statusPageImplementors = []string{"StatusPage"}
+
+func (ec *executionContext) _StatusPage(ctx context.Context, sel ast.SelectionSet, obj *model.StatusPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, statusPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StatusPage")
+		case "id":
+			out.Values[i] = ec._StatusPage_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "organizationId":
+			out.Values[i] = ec._StatusPage_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "slug":
+			out.Values[i] = ec._StatusPage_slug(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._StatusPage_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "enabled":
+			out.Values[i] = ec._StatusPage_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "frameAncestorsCsp":
+			out.Values[i] = ec._StatusPage_frameAncestorsCsp(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "components":
+			out.Values[i] = ec._StatusPage_components(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "incidents":
+			out.Values[i] = ec._StatusPage_incidents(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "subscriptions":
+			out.Values[i] = ec._StatusPage_subscriptions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._StatusPage_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._StatusPage_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var statusPageComponentImplementors = []string{"StatusPageComponent"}
+
+func (ec *executionContext) _StatusPageComponent(ctx context.Context, sel ast.SelectionSet, obj *model.StatusPageComponent) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, statusPageComponentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StatusPageComponent")
+		case "id":
+			out.Values[i] = ec._StatusPageComponent_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "statusPageId":
+			out.Values[i] = ec._StatusPageComponent_statusPageId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._StatusPageComponent_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._StatusPageComponent_description(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._StatusPageComponent_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "position":
+			out.Values[i] = ec._StatusPageComponent_position(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceId":
+			out.Values[i] = ec._StatusPageComponent_serviceId(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._StatusPageComponent_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._StatusPageComponent_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var statusPageIncidentImplementors = []string{"StatusPageIncident"}
+
+func (ec *executionContext) _StatusPageIncident(ctx context.Context, sel ast.SelectionSet, obj *model.StatusPageIncident) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, statusPageIncidentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StatusPageIncident")
+		case "id":
+			out.Values[i] = ec._StatusPageIncident_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "statusPageId":
+			out.Values[i] = ec._StatusPageIncident_statusPageId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "incidentId":
+			out.Values[i] = ec._StatusPageIncident_incidentId(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._StatusPageIncident_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._StatusPageIncident_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "affectedComponentIds":
+			out.Values[i] = ec._StatusPageIncident_affectedComponentIds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updates":
+			out.Values[i] = ec._StatusPageIncident_updates(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "resolvedAt":
+			out.Values[i] = ec._StatusPageIncident_resolvedAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._StatusPageIncident_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._StatusPageIncident_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var statusPageIncidentUpdateImplementors = []string{"StatusPageIncidentUpdate"}
+
+func (ec *executionContext) _StatusPageIncidentUpdate(ctx context.Context, sel ast.SelectionSet, obj *model.StatusPageIncidentUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, statusPageIncidentUpdateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StatusPageIncidentUpdate")
+		case "id":
+			out.Values[i] = ec._StatusPageIncidentUpdate_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "body":
+			out.Values[i] = ec._StatusPageIncidentUpdate_body(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._StatusPageIncidentUpdate_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._StatusPageIncidentUpdate_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var statusPageSubscriptionImplementors = []string{"StatusPageSubscription"}
+
+func (ec *executionContext) _StatusPageSubscription(ctx context.Context, sel ast.SelectionSet, obj *model.StatusPageSubscription) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, statusPageSubscriptionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StatusPageSubscription")
+		case "id":
+			out.Values[i] = ec._StatusPageSubscription_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "email":
+			out.Values[i] = ec._StatusPageSubscription_email(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._StatusPageSubscription_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		default:
@@ -20376,6 +23083,16 @@ func (ec *executionContext) unmarshalNCreateServiceInput2githubᚗcomᚋmdgᚑla
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateStatusPageComponentInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateStatusPageComponentInput(ctx context.Context, v any) (model.CreateStatusPageComponentInput, error) {
+	res, err := ec.unmarshalInputCreateStatusPageComponentInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateStatusPageIncidentUpdateInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateStatusPageIncidentUpdateInput(ctx context.Context, v any) (model.CreateStatusPageIncidentUpdateInput, error) {
+	res, err := ec.unmarshalInputCreateStatusPageIncidentUpdateInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNDateTime2timeᚐTime(ctx context.Context, v any) (time.Time, error) {
 	res, err := graphql.UnmarshalTime(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -21002,6 +23719,11 @@ func (ec *executionContext) unmarshalNPromoteAlertToIncidentInput2githubᚗcom�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNPublishIncidentToStatusPageInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐPublishIncidentToStatusPageInput(ctx context.Context, v any) (model.PublishIncidentToStatusPageInput, error) {
+	res, err := ec.unmarshalInputPublishIncidentToStatusPageInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNRegisterMobileDeviceInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRegisterMobileDeviceInput(ctx context.Context, v any) (model.RegisterMobileDeviceInput, error) {
 	res, err := ec.unmarshalInputRegisterMobileDeviceInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -21077,6 +23799,11 @@ func (ec *executionContext) unmarshalNSaveSamlSettingsInput2githubᚗcomᚋmdg�
 
 func (ec *executionContext) unmarshalNSaveSlackSettingsInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveSlackSettingsInput(ctx context.Context, v any) (model.SaveSlackSettingsInput, error) {
 	res, err := ec.unmarshalInputSaveSlackSettingsInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNSaveStatusPageInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveStatusPageInput(ctx context.Context, v any) (model.SaveStatusPageInput, error) {
+	res, err := ec.unmarshalInputSaveStatusPageInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -21202,6 +23929,146 @@ func (ec *executionContext) marshalNSlackSettings2ᚖgithubᚗcomᚋmdgᚑlabs�
 	return ec._SlackSettings(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNStatusPage2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPage(ctx context.Context, sel ast.SelectionSet, v model.StatusPage) graphql.Marshaler {
+	return ec._StatusPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNStatusPage2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPage(ctx context.Context, sel ast.SelectionSet, v *model.StatusPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StatusPage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStatusPageComponent2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponent(ctx context.Context, sel ast.SelectionSet, v model.StatusPageComponent) graphql.Marshaler {
+	return ec._StatusPageComponent(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNStatusPageComponent2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.StatusPageComponent) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNStatusPageComponent2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponent(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNStatusPageComponent2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponent(ctx context.Context, sel ast.SelectionSet, v *model.StatusPageComponent) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StatusPageComponent(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNStatusPageComponentStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponentStatus(ctx context.Context, v any) (model.StatusPageComponentStatus, error) {
+	var res model.StatusPageComponentStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNStatusPageComponentStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponentStatus(ctx context.Context, sel ast.SelectionSet, v model.StatusPageComponentStatus) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNStatusPageIncident2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncident(ctx context.Context, sel ast.SelectionSet, v model.StatusPageIncident) graphql.Marshaler {
+	return ec._StatusPageIncident(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNStatusPageIncident2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncidentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.StatusPageIncident) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNStatusPageIncident2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncident(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNStatusPageIncident2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncident(ctx context.Context, sel ast.SelectionSet, v *model.StatusPageIncident) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StatusPageIncident(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStatusPageIncidentUpdate2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncidentUpdate(ctx context.Context, sel ast.SelectionSet, v model.StatusPageIncidentUpdate) graphql.Marshaler {
+	return ec._StatusPageIncidentUpdate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNStatusPageIncidentUpdate2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncidentUpdateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.StatusPageIncidentUpdate) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNStatusPageIncidentUpdate2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncidentUpdate(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNStatusPageIncidentUpdate2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageIncidentUpdate(ctx context.Context, sel ast.SelectionSet, v *model.StatusPageIncidentUpdate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StatusPageIncidentUpdate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStatusPageSubscription2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageSubscriptionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.StatusPageSubscription) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNStatusPageSubscription2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageSubscription(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNStatusPageSubscription2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageSubscription(ctx context.Context, sel ast.SelectionSet, v *model.StatusPageSubscription) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StatusPageSubscription(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -21321,6 +24188,16 @@ func (ec *executionContext) unmarshalNUpdateScheduleInput2githubᚗcomᚋmdgᚑl
 
 func (ec *executionContext) unmarshalNUpdateServiceInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateServiceInput(ctx context.Context, v any) (model.UpdateServiceInput, error) {
 	res, err := ec.unmarshalInputUpdateServiceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateStatusPageComponentInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateStatusPageComponentInput(ctx context.Context, v any) (model.UpdateStatusPageComponentInput, error) {
+	res, err := ec.unmarshalInputUpdateStatusPageComponentInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateStatusPageIncidentStatusInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateStatusPageIncidentStatusInput(ctx context.Context, v any) (model.UpdateStatusPageIncidentStatusInput, error) {
+	res, err := ec.unmarshalInputUpdateStatusPageIncidentStatusInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -21738,6 +24615,29 @@ func (ec *executionContext) marshalOService2ᚖgithubᚗcomᚋmdgᚑlabsᚋescal
 		return graphql.Null
 	}
 	return ec._Service(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOStatusPage2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPage(ctx context.Context, sel ast.SelectionSet, v *model.StatusPage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._StatusPage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOStatusPageComponentStatus2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponentStatus(ctx context.Context, v any) (*model.StatusPageComponentStatus, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.StatusPageComponentStatus)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOStatusPageComponentStatus2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐStatusPageComponentStatus(ctx context.Context, sel ast.SelectionSet, v *model.StatusPageComponentStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

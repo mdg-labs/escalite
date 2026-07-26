@@ -6,6 +6,7 @@
 // Sessions, audit_events, mobile_auth_codes, refresh_tokens, mobile_devices (#43, #105, #106).
 // Password reset tokens (#51).
 // Incidents, timeline_events, incident roles (#116).
+// Status pages, components, subscriptions, public incidents (#132).
 
 schema "public" {
 }
@@ -2413,5 +2414,374 @@ table "user_notification_rules" {
 
   check "user_notification_rules_priority_check" {
     expr = "(priority = ANY (ARRAY['low'::text, 'high'::text]))"
+  }
+}
+
+table "status_pages" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "slug" {
+    null = false
+    type = text
+  }
+  column "title" {
+    null = false
+    type = text
+  }
+  column "enabled" {
+    null    = false
+    type    = boolean
+    default = false
+  }
+  column "frame_ancestors_csp" {
+    null = true
+    type = text
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "status_pages_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+
+  unique "status_pages_organization_id_key" {
+    columns = [column.organization_id]
+  }
+
+  unique "status_pages_slug_key" {
+    columns = [column.slug]
+  }
+
+  unique "status_pages_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "status_pages_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+}
+
+table "status_page_components" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "status_page_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "name" {
+    null = false
+    type = text
+  }
+  column "description" {
+    null = true
+    type = text
+  }
+  column "status" {
+    null    = false
+    type    = text
+    default = "operational"
+  }
+  column "position" {
+    null    = false
+    type    = integer
+    default = 0
+  }
+  column "service_id" {
+    null = true
+    type = uuid
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "status_page_components_status_page_id_organization_id_fkey" {
+    columns     = [column.status_page_id, column.organization_id]
+    ref_columns = [table.status_pages.column.id, table.status_pages.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "status_page_components_service_id_organization_id_fkey" {
+    columns     = [column.service_id, column.organization_id]
+    ref_columns = [table.services.column.id, table.services.column.organization_id]
+    on_delete   = SET_NULL
+  }
+
+  unique "status_page_components_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "status_page_components_status_page_id_idx" {
+    columns = [column.status_page_id]
+  }
+
+  index "status_page_components_organization_id_idx" {
+    columns = [column.organization_id]
+  }
+
+  check "status_page_components_status_check" {
+    expr = "(status = ANY (ARRAY['operational'::text, 'degraded'::text, 'partial_outage'::text, 'major_outage'::text]))"
+  }
+}
+
+table "status_page_subscriptions" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "status_page_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "email" {
+    null = false
+    type = text
+  }
+  column "unsubscribed_at" {
+    null = true
+    type = timestamptz
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "status_page_subscriptions_status_page_id_organization_id_fkey" {
+    columns     = [column.status_page_id, column.organization_id]
+    ref_columns = [table.status_pages.column.id, table.status_pages.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "status_page_subscriptions_status_page_id_email_key" {
+    columns = [column.status_page_id, column.email]
+  }
+
+  unique "status_page_subscriptions_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "status_page_subscriptions_status_page_id_idx" {
+    columns = [column.status_page_id]
+  }
+}
+
+table "status_page_incidents" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "status_page_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "incident_id" {
+    null = true
+    type = uuid
+  }
+  column "title" {
+    null = false
+    type = text
+  }
+  column "status" {
+    null    = false
+    type    = text
+    default = "investigating"
+  }
+  column "resolved_at" {
+    null = true
+    type = timestamptz
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "status_page_incidents_status_page_id_organization_id_fkey" {
+    columns     = [column.status_page_id, column.organization_id]
+    ref_columns = [table.status_pages.column.id, table.status_pages.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "status_page_incidents_incident_id_organization_id_fkey" {
+    columns     = [column.incident_id, column.organization_id]
+    ref_columns = [table.incidents.column.id, table.incidents.column.organization_id]
+    on_delete   = SET_NULL
+  }
+
+  unique "status_page_incidents_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "status_page_incidents_status_page_id_idx" {
+    columns = [column.status_page_id]
+  }
+
+  index "status_page_incidents_incident_id_idx" {
+    columns = [column.incident_id]
+  }
+
+  check "status_page_incidents_status_check" {
+    expr = "(status = ANY (ARRAY['investigating'::text, 'identified'::text, 'monitoring'::text, 'resolved'::text]))"
+  }
+}
+
+table "status_page_incident_updates" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "status_page_incident_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "body" {
+    null = false
+    type = text
+  }
+  column "status" {
+    null = false
+    type = text
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "status_page_incident_updates_status_page_incident_id_organization_id_fkey" {
+    columns     = [column.status_page_incident_id, column.organization_id]
+    ref_columns = [table.status_page_incidents.column.id, table.status_page_incidents.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  unique "status_page_incident_updates_id_organization_id_key" {
+    columns = [column.id, column.organization_id]
+  }
+
+  index "status_page_incident_updates_status_page_incident_id_idx" {
+    columns = [column.status_page_incident_id]
+  }
+
+  check "status_page_incident_updates_status_check" {
+    expr = "(status = ANY (ARRAY['investigating'::text, 'identified'::text, 'monitoring'::text, 'resolved'::text]))"
+  }
+}
+
+table "status_page_incident_components" {
+  schema = schema.public
+
+  column "status_page_incident_id" {
+    null = false
+    type = uuid
+  }
+  column "status_page_component_id" {
+    null = false
+    type = uuid
+  }
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.status_page_incident_id, column.status_page_component_id]
+  }
+
+  foreign_key "status_page_incident_components_status_page_incident_id_organization_id_fkey" {
+    columns     = [column.status_page_incident_id, column.organization_id]
+    ref_columns = [table.status_page_incidents.column.id, table.status_page_incidents.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  foreign_key "status_page_incident_components_status_page_component_id_organization_id_fkey" {
+    columns     = [column.status_page_component_id, column.organization_id]
+    ref_columns = [table.status_page_components.column.id, table.status_page_components.column.organization_id]
+    on_delete   = CASCADE
+  }
+
+  index "status_page_incident_components_component_id_idx" {
+    columns = [column.status_page_component_id]
   }
 }

@@ -452,34 +452,6 @@ CREATE TABLE "organization_scim_settings" (
   CONSTRAINT "organization_scim_settings_token_hash_key" UNIQUE ("token_hash"),
   CONSTRAINT "organization_scim_settings_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
--- Create "scim_groups" table
-CREATE TABLE "scim_groups" (
-  "id" uuid NOT NULL,
-  "organization_id" uuid NOT NULL,
-  "external_id" text NOT NULL,
-  "display_name" text NOT NULL,
-  "team_id" uuid NOT NULL,
-  "created_at" timestamptz NOT NULL DEFAULT now(),
-  "updated_at" timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY ("id"),
-  CONSTRAINT "scim_groups_organization_id_external_id_key" UNIQUE ("organization_id", "external_id"),
-  CONSTRAINT "scim_groups_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
-  CONSTRAINT "scim_groups_team_id_organization_id_fkey" FOREIGN KEY ("team_id", "organization_id") REFERENCES "teams" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
-);
--- Create index "scim_groups_team_id_idx" to table: "scim_groups"
-CREATE INDEX "scim_groups_team_id_idx" ON "scim_groups" ("team_id");
--- Create "scim_group_members" table
-CREATE TABLE "scim_group_members" (
-  "scim_group_id" uuid NOT NULL,
-  "user_id" uuid NOT NULL,
-  "organization_id" uuid NOT NULL,
-  "created_at" timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY ("scim_group_id", "user_id"),
-  CONSTRAINT "scim_group_members_scim_group_id_fkey" FOREIGN KEY ("scim_group_id") REFERENCES "scim_groups" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
-  CONSTRAINT "scim_group_members_user_id_organization_id_fkey" FOREIGN KEY ("user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
-);
--- Create index "scim_group_members_user_id_idx" to table: "scim_group_members"
-CREATE INDEX "scim_group_members_user_id_idx" ON "scim_group_members" ("user_id");
 -- Create "organization_slack_settings" table
 CREATE TABLE "organization_slack_settings" (
   "organization_id" uuid NOT NULL,
@@ -568,6 +540,34 @@ CREATE TABLE "password_reset_tokens" (
 CREATE INDEX "password_reset_tokens_expires_at_idx" ON "password_reset_tokens" ("expires_at");
 -- Create index "password_reset_tokens_user_id_idx" to table: "password_reset_tokens"
 CREATE INDEX "password_reset_tokens_user_id_idx" ON "password_reset_tokens" ("user_id");
+-- Create "scim_groups" table
+CREATE TABLE "scim_groups" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "external_id" text NOT NULL,
+  "display_name" text NOT NULL,
+  "team_id" uuid NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "scim_groups_organization_id_external_id_key" UNIQUE ("organization_id", "external_id"),
+  CONSTRAINT "scim_groups_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "scim_groups_team_id_organization_id_fkey" FOREIGN KEY ("team_id", "organization_id") REFERENCES "teams" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "scim_groups_team_id_idx" to table: "scim_groups"
+CREATE INDEX "scim_groups_team_id_idx" ON "scim_groups" ("team_id");
+-- Create "scim_group_members" table
+CREATE TABLE "scim_group_members" (
+  "scim_group_id" uuid NOT NULL,
+  "user_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("scim_group_id", "user_id"),
+  CONSTRAINT "scim_group_members_scim_group_id_fkey" FOREIGN KEY ("scim_group_id") REFERENCES "scim_groups" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "scim_group_members_user_id_organization_id_fkey" FOREIGN KEY ("user_id", "organization_id") REFERENCES "users" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "scim_group_members_user_id_idx" to table: "scim_group_members"
+CREATE INDEX "scim_group_members_user_id_idx" ON "scim_group_members" ("user_id");
 -- Create "sessions" table
 CREATE TABLE "sessions" (
   "id" uuid NOT NULL,
@@ -589,6 +589,109 @@ CREATE INDEX "sessions_expires_at_idx" ON "sessions" ("expires_at");
 CREATE INDEX "sessions_organization_id_idx" ON "sessions" ("organization_id");
 -- Create index "sessions_user_id_idx" to table: "sessions"
 CREATE INDEX "sessions_user_id_idx" ON "sessions" ("user_id");
+-- Create "status_pages" table
+CREATE TABLE "status_pages" (
+  "id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "slug" text NOT NULL,
+  "title" text NOT NULL,
+  "enabled" boolean NOT NULL DEFAULT false,
+  "frame_ancestors_csp" text NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "status_pages_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "status_pages_organization_id_key" UNIQUE ("organization_id"),
+  CONSTRAINT "status_pages_slug_key" UNIQUE ("slug"),
+  CONSTRAINT "status_pages_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "status_pages_organization_id_idx" to table: "status_pages"
+CREATE INDEX "status_pages_organization_id_idx" ON "status_pages" ("organization_id");
+-- Create "status_page_components" table
+CREATE TABLE "status_page_components" (
+  "id" uuid NOT NULL,
+  "status_page_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "description" text NULL,
+  "status" text NOT NULL DEFAULT 'operational',
+  "position" integer NOT NULL DEFAULT 0,
+  "service_id" uuid NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "status_page_components_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "status_page_components_service_id_organization_id_fkey" FOREIGN KEY ("service_id", "organization_id") REFERENCES "services" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE SET NULL,
+  CONSTRAINT "status_page_components_status_page_id_organization_id_fkey" FOREIGN KEY ("status_page_id", "organization_id") REFERENCES "status_pages" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "status_page_components_status_check" CHECK (status = ANY (ARRAY['operational'::text, 'degraded'::text, 'partial_outage'::text, 'major_outage'::text]))
+);
+-- Create index "status_page_components_organization_id_idx" to table: "status_page_components"
+CREATE INDEX "status_page_components_organization_id_idx" ON "status_page_components" ("organization_id");
+-- Create index "status_page_components_status_page_id_idx" to table: "status_page_components"
+CREATE INDEX "status_page_components_status_page_id_idx" ON "status_page_components" ("status_page_id");
+-- Create "status_page_incidents" table
+CREATE TABLE "status_page_incidents" (
+  "id" uuid NOT NULL,
+  "status_page_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "incident_id" uuid NULL,
+  "title" text NOT NULL,
+  "status" text NOT NULL DEFAULT 'investigating',
+  "resolved_at" timestamptz NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "status_page_incidents_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "status_page_incidents_incident_id_organization_id_fkey" FOREIGN KEY ("incident_id", "organization_id") REFERENCES "incidents" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE SET NULL,
+  CONSTRAINT "status_page_incidents_status_page_id_organization_id_fkey" FOREIGN KEY ("status_page_id", "organization_id") REFERENCES "status_pages" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "status_page_incidents_status_check" CHECK (status = ANY (ARRAY['investigating'::text, 'identified'::text, 'monitoring'::text, 'resolved'::text]))
+);
+-- Create index "status_page_incidents_incident_id_idx" to table: "status_page_incidents"
+CREATE INDEX "status_page_incidents_incident_id_idx" ON "status_page_incidents" ("incident_id");
+-- Create index "status_page_incidents_status_page_id_idx" to table: "status_page_incidents"
+CREATE INDEX "status_page_incidents_status_page_id_idx" ON "status_page_incidents" ("status_page_id");
+-- Create "status_page_incident_components" table
+CREATE TABLE "status_page_incident_components" (
+  "status_page_incident_id" uuid NOT NULL,
+  "status_page_component_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("status_page_incident_id", "status_page_component_id"),
+  CONSTRAINT "status_page_incident_components_status_page_component_id_organi" FOREIGN KEY ("status_page_component_id", "organization_id") REFERENCES "status_page_components" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "status_page_incident_components_status_page_incident_id_organiz" FOREIGN KEY ("status_page_incident_id", "organization_id") REFERENCES "status_page_incidents" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "status_page_incident_components_component_id_idx" to table: "status_page_incident_components"
+CREATE INDEX "status_page_incident_components_component_id_idx" ON "status_page_incident_components" ("status_page_component_id");
+-- Create "status_page_incident_updates" table
+CREATE TABLE "status_page_incident_updates" (
+  "id" uuid NOT NULL,
+  "status_page_incident_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "body" text NOT NULL,
+  "status" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "status_page_incident_updates_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "status_page_incident_updates_status_page_incident_id_organizati" FOREIGN KEY ("status_page_incident_id", "organization_id") REFERENCES "status_page_incidents" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "status_page_incident_updates_status_check" CHECK (status = ANY (ARRAY['investigating'::text, 'identified'::text, 'monitoring'::text, 'resolved'::text]))
+);
+-- Create index "status_page_incident_updates_status_page_incident_id_idx" to table: "status_page_incident_updates"
+CREATE INDEX "status_page_incident_updates_status_page_incident_id_idx" ON "status_page_incident_updates" ("status_page_incident_id");
+-- Create "status_page_subscriptions" table
+CREATE TABLE "status_page_subscriptions" (
+  "id" uuid NOT NULL,
+  "status_page_id" uuid NOT NULL,
+  "organization_id" uuid NOT NULL,
+  "email" text NOT NULL,
+  "unsubscribed_at" timestamptz NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "status_page_subscriptions_id_organization_id_key" UNIQUE ("id", "organization_id"),
+  CONSTRAINT "status_page_subscriptions_status_page_id_email_key" UNIQUE ("status_page_id", "email"),
+  CONSTRAINT "status_page_subscriptions_status_page_id_organization_id_fkey" FOREIGN KEY ("status_page_id", "organization_id") REFERENCES "status_pages" ("id", "organization_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "status_page_subscriptions_status_page_id_idx" to table: "status_page_subscriptions"
+CREATE INDEX "status_page_subscriptions_status_page_id_idx" ON "status_page_subscriptions" ("status_page_id");
 -- Create "team_memberships" table
 CREATE TABLE "team_memberships" (
   "id" uuid NOT NULL,

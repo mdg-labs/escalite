@@ -52,3 +52,13 @@ enum TimelineEventType {
   ROLE_ASSIGNED
   ROLE_UNASSIGNED
 }
+
+"""
+Public-facing component health on a status page.
+"""
+enum StatusPageComponentStatus {
+  OPERATIONAL
+  DEGRADED
+  PARTIAL_OUTAGE
+  MAJOR_OUTAGE
+}

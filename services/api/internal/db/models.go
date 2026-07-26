@@ -334,6 +334,67 @@ type Session struct {
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
+type StatusPage struct {
+	ID                uuid.UUID          `json:"id"`
+	OrganizationID    uuid.UUID          `json:"organization_id"`
+	Slug              string             `json:"slug"`
+	Title             string             `json:"title"`
+	Enabled           bool               `json:"enabled"`
+	FrameAncestorsCsp pgtype.Text        `json:"frame_ancestors_csp"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+}
+
+type StatusPageComponent struct {
+	ID             uuid.UUID          `json:"id"`
+	StatusPageID   uuid.UUID          `json:"status_page_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	Name           string             `json:"name"`
+	Description    pgtype.Text        `json:"description"`
+	Status         string             `json:"status"`
+	Position       int32              `json:"position"`
+	ServiceID      pgtype.UUID        `json:"service_id"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type StatusPageIncident struct {
+	ID             uuid.UUID          `json:"id"`
+	StatusPageID   uuid.UUID          `json:"status_page_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	IncidentID     pgtype.UUID        `json:"incident_id"`
+	Title          string             `json:"title"`
+	Status         string             `json:"status"`
+	ResolvedAt     pgtype.Timestamptz `json:"resolved_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type StatusPageIncidentComponent struct {
+	StatusPageIncidentID  uuid.UUID          `json:"status_page_incident_id"`
+	StatusPageComponentID uuid.UUID          `json:"status_page_component_id"`
+	OrganizationID        uuid.UUID          `json:"organization_id"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+}
+
+type StatusPageIncidentUpdate struct {
+	ID                   uuid.UUID          `json:"id"`
+	StatusPageIncidentID uuid.UUID          `json:"status_page_incident_id"`
+	OrganizationID       uuid.UUID          `json:"organization_id"`
+	Body                 string             `json:"body"`
+	Status               string             `json:"status"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+}
+
+type StatusPageSubscription struct {
+	ID             uuid.UUID          `json:"id"`
+	StatusPageID   uuid.UUID          `json:"status_page_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	Email          string             `json:"email"`
+	UnsubscribedAt pgtype.Timestamptz `json:"unsubscribed_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type Team struct {
 	ID             uuid.UUID          `json:"id"`
 	OrganizationID uuid.UUID          `json:"organization_id"`

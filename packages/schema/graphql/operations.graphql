@@ -157,6 +157,11 @@ type Query {
   List configurable incident role definitions (org admin only).
   """
   incidentRoleDefinitions: [IncidentRoleDefinition!]!
+
+  """
+  Organization status page configuration (org admin only). Null when not yet created.
+  """
+  statusPage: StatusPage
 }
 
 type Mutation {
@@ -389,4 +394,39 @@ type Mutation {
   Promote an alert into a new or existing incident (team access required).
   """
   promoteAlertToIncident(input: PromoteAlertToIncidentInput!): Alert!
+
+  """
+  Create or update the organization status page (org admin only).
+  """
+  saveStatusPage(input: SaveStatusPageInput!): StatusPage!
+
+  """
+  Create a status page component (org admin only).
+  """
+  createStatusPageComponent(input: CreateStatusPageComponentInput!): StatusPageComponent!
+
+  """
+  Update a status page component (org admin only).
+  """
+  updateStatusPageComponent(input: UpdateStatusPageComponentInput!): StatusPageComponent!
+
+  """
+  Delete a status page component (org admin only).
+  """
+  deleteStatusPageComponent(id: ID!): Boolean!
+
+  """
+  Publish an internal incident to the public status page (org admin only).
+  """
+  publishIncidentToStatusPage(input: PublishIncidentToStatusPageInput!): StatusPageIncident!
+
+  """
+  Post a public update to a status page incident (org admin only).
+  """
+  createStatusPageIncidentUpdate(input: CreateStatusPageIncidentUpdateInput!): StatusPageIncidentUpdate!
+
+  """
+  Update a status page incident status (org admin only).
+  """
+  updateStatusPageIncidentStatus(input: UpdateStatusPageIncidentStatusInput!): StatusPageIncident!
 }

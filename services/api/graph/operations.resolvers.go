@@ -2426,6 +2426,421 @@ func (r *mutationResolver) PromoteAlertToIncident(ctx context.Context, input mod
 	return r.promoteAlertToNewIncident(ctx, queries, sc, alert, alertID, service.TeamID, input.Title)
 }
 
+// SaveStatusPage is the resolver for the saveStatusPage field.
+func (r *mutationResolver) SaveStatusPage(ctx context.Context, input model.SaveStatusPageInput) (*model.StatusPage, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	slug := strings.ToLower(strings.TrimSpace(input.Slug))
+	if err := validateStatusPageSlug(slug); err != nil {
+		return nil, err
+	}
+
+	title := strings.TrimSpace(input.Title)
+	if title == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "title is required")
+	}
+
+	queries := db.New(r.pool)
+	existing, err := queries.GetStatusPageByOrganizationID(ctx, sc.User.OrganizationID)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		r.logger.Error("load status page failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	var frameAncestors pgtype.Text
+	if input.FrameAncestorsCsp != nil {
+		value := strings.TrimSpace(*input.FrameAncestorsCsp)
+		if value != "" {
+			frameAncestors = pgtype.Text{String: value, Valid: true}
+		}
+	}
+
+	var page db.StatusPage
+	if errors.Is(err, pgx.ErrNoRows) {
+		page, err = queries.CreateStatusPage(ctx, db.CreateStatusPageParams{
+			ID:                uuid.Must(uuid.NewV7()),
+			OrganizationID:    sc.User.OrganizationID,
+			Slug:              slug,
+			Title:             title,
+			Enabled:           input.Enabled,
+			FrameAncestorsCsp: frameAncestors,
+		})
+	} else {
+		page, err = queries.UpdateStatusPage(ctx, db.UpdateStatusPageParams{
+			ID:                existing.ID,
+			OrganizationID:    sc.User.OrganizationID,
+			Slug:              slug,
+			Title:             title,
+			Enabled:           input.Enabled,
+			FrameAncestorsCsp: frameAncestors,
+		})
+	}
+	if err != nil {
+		if isStatusPageSlugConflict(err) {
+			return nil, gqlerr.New(handlers.CodeValidation, "slug is already in use")
+		}
+		r.logger.Error("save status page failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return r.populateStatusPage(ctx, queries, page)
+}
+
+// CreateStatusPageComponent is the resolver for the createStatusPageComponent field.
+func (r *mutationResolver) CreateStatusPageComponent(ctx context.Context, input model.CreateStatusPageComponentInput) (*model.StatusPageComponent, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+
+	queries := db.New(r.pool)
+	page, err := r.requireOrgStatusPage(ctx, queries, sc.User.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+
+	var description pgtype.Text
+	if input.Description != nil {
+		value := strings.TrimSpace(*input.Description)
+		if value != "" {
+			description = pgtype.Text{String: value, Valid: true}
+		}
+	}
+
+	status := model.StatusPageComponentStatusOperational
+	if input.Status != nil {
+		status = *input.Status
+	}
+
+	position := 0
+	if input.Position != nil {
+		position = *input.Position
+	}
+
+	serviceID := optionalUUIDParam(input.ServiceID)
+	if serviceID.Valid {
+		if _, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+			ID:             uuid.UUID(serviceID.Bytes),
+			OrganizationID: sc.User.OrganizationID,
+		}); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, gqlerr.New(handlers.CodeNotFound, "service not found")
+			}
+			r.logger.Error("load service failed", "error", err)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+	}
+
+	component, err := queries.CreateStatusPageComponent(ctx, db.CreateStatusPageComponentParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		StatusPageID:   page.ID,
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+		Description:    description,
+		Status:         statusPageComponentStatusToDB(status),
+		Position:       int32(position),
+		ServiceID:      serviceID,
+	})
+	if err != nil {
+		r.logger.Error("create status page component failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return statusPageComponentFromDB(component), nil
+}
+
+// UpdateStatusPageComponent is the resolver for the updateStatusPageComponent field.
+func (r *mutationResolver) UpdateStatusPageComponent(ctx context.Context, input model.UpdateStatusPageComponentInput) (*model.StatusPageComponent, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	componentID, err := parseUUIDField(input.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+
+	queries := db.New(r.pool)
+	if _, err := r.requireOrgStatusPage(ctx, queries, sc.User.OrganizationID); err != nil {
+		return nil, err
+	}
+
+	var description pgtype.Text
+	if input.Description != nil {
+		value := strings.TrimSpace(*input.Description)
+		if value != "" {
+			description = pgtype.Text{String: value, Valid: true}
+		}
+	}
+
+	serviceID := optionalUUIDParam(input.ServiceID)
+	if serviceID.Valid {
+		if _, err := queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+			ID:             uuid.UUID(serviceID.Bytes),
+			OrganizationID: sc.User.OrganizationID,
+		}); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, gqlerr.New(handlers.CodeNotFound, "service not found")
+			}
+			r.logger.Error("load service failed", "error", err)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+	}
+
+	component, err := queries.UpdateStatusPageComponent(ctx, db.UpdateStatusPageComponentParams{
+		ID:             componentID,
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+		Description:    description,
+		Status:         statusPageComponentStatusToDB(input.Status),
+		Position:       int32(input.Position),
+		ServiceID:      serviceID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "status page component not found")
+		}
+		r.logger.Error("update status page component failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return statusPageComponentFromDB(component), nil
+}
+
+// DeleteStatusPageComponent is the resolver for the deleteStatusPageComponent field.
+func (r *mutationResolver) DeleteStatusPageComponent(ctx context.Context, id string) (bool, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	componentID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return false, err
+	}
+
+	queries := db.New(r.pool)
+	if _, err := r.requireOrgStatusPage(ctx, queries, sc.User.OrganizationID); err != nil {
+		return false, err
+	}
+
+	if err := queries.DeleteStatusPageComponent(ctx, db.DeleteStatusPageComponentParams{
+		ID:             componentID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		r.logger.Error("delete status page component failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return true, nil
+}
+
+// PublishIncidentToStatusPage is the resolver for the publishIncidentToStatusPage field.
+func (r *mutationResolver) PublishIncidentToStatusPage(ctx context.Context, input model.PublishIncidentToStatusPageInput) (*model.StatusPageIncident, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	incidentID, err := parseUUIDField(input.IncidentID, "incidentId")
+	if err != nil {
+		return nil, err
+	}
+
+	body := strings.TrimSpace(input.Body)
+	if body == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "body is required")
+	}
+	if len(input.AffectedComponentIds) == 0 {
+		return nil, gqlerr.New(handlers.CodeValidation, "at least one affected component is required")
+	}
+
+	queries := db.New(r.pool)
+	page, err := r.requireOrgStatusPage(ctx, queries, sc.User.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+
+	incident, err := queries.GetIncidentByID(ctx, db.GetIncidentByIDParams{
+		ID:             incidentID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "incident not found")
+		}
+		r.logger.Error("load incident failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	title := strings.TrimSpace(ptrString(input.Title))
+	if title == "" {
+		title = incident.Title
+	}
+
+	componentUUIDs := make([]uuid.UUID, 0, len(input.AffectedComponentIds))
+	for _, rawID := range input.AffectedComponentIds {
+		componentID, parseErr := parseUUIDField(rawID, "affectedComponentIds")
+		if parseErr != nil {
+			return nil, parseErr
+		}
+		if _, loadErr := queries.GetStatusPageComponentByID(ctx, db.GetStatusPageComponentByIDParams{
+			ID:             componentID,
+			OrganizationID: sc.User.OrganizationID,
+		}); loadErr != nil {
+			if errors.Is(loadErr, pgx.ErrNoRows) {
+				return nil, gqlerr.New(handlers.CodeNotFound, "status page component not found")
+			}
+			r.logger.Error("load status page component failed", "error", loadErr)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+		componentUUIDs = append(componentUUIDs, componentID)
+	}
+
+	publicIncidentID := uuid.Must(uuid.NewV7())
+	publicIncident, err := queries.CreateStatusPageIncident(ctx, db.CreateStatusPageIncidentParams{
+		ID:             publicIncidentID,
+		StatusPageID:   page.ID,
+		OrganizationID: sc.User.OrganizationID,
+		IncidentID:     pgtype.UUID{Bytes: incidentID, Valid: true},
+		Title:          title,
+		Status:         incident.Status,
+	})
+	if err != nil {
+		r.logger.Error("create status page incident failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if err := r.setStatusPageIncidentComponents(ctx, queries, sc.User.OrganizationID, publicIncidentID, componentUUIDs); err != nil {
+		return nil, err
+	}
+
+	update, err := queries.CreateStatusPageIncidentUpdate(ctx, db.CreateStatusPageIncidentUpdateParams{
+		ID:                   uuid.Must(uuid.NewV7()),
+		StatusPageIncidentID: publicIncidentID,
+		OrganizationID:       sc.User.OrganizationID,
+		Body:                 body,
+		Status:               incident.Status,
+	})
+	if err != nil {
+		r.logger.Error("create status page incident update failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	affected := make([]string, 0, len(componentUUIDs))
+	for _, id := range componentUUIDs {
+		affected = append(affected, id.String())
+	}
+
+	return statusPageIncidentFromDB(publicIncident, affected, []*model.StatusPageIncidentUpdate{
+		statusPageIncidentUpdateFromDB(update),
+	}), nil
+}
+
+// CreateStatusPageIncidentUpdate is the resolver for the createStatusPageIncidentUpdate field.
+func (r *mutationResolver) CreateStatusPageIncidentUpdate(ctx context.Context, input model.CreateStatusPageIncidentUpdateInput) (*model.StatusPageIncidentUpdate, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	incidentID, err := parseUUIDField(input.StatusPageIncidentID, "statusPageIncidentId")
+	if err != nil {
+		return nil, err
+	}
+
+	body := strings.TrimSpace(input.Body)
+	if body == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "body is required")
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetStatusPageIncidentByID(ctx, db.GetStatusPageIncidentByIDParams{
+		ID:             incidentID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "status page incident not found")
+		}
+		r.logger.Error("load status page incident failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	update, err := queries.CreateStatusPageIncidentUpdate(ctx, db.CreateStatusPageIncidentUpdateParams{
+		ID:                   uuid.Must(uuid.NewV7()),
+		StatusPageIncidentID: incidentID,
+		OrganizationID:       sc.User.OrganizationID,
+		Body:                 body,
+		Status:               incidentStatusToDB(input.Status),
+	})
+	if err != nil {
+		r.logger.Error("create status page incident update failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return statusPageIncidentUpdateFromDB(update), nil
+}
+
+// UpdateStatusPageIncidentStatus is the resolver for the updateStatusPageIncidentStatus field.
+func (r *mutationResolver) UpdateStatusPageIncidentStatus(ctx context.Context, input model.UpdateStatusPageIncidentStatusInput) (*model.StatusPageIncident, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	incidentID, err := parseUUIDField(input.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	incident, err := queries.UpdateStatusPageIncidentStatus(ctx, db.UpdateStatusPageIncidentStatusParams{
+		ID:             incidentID,
+		OrganizationID: sc.User.OrganizationID,
+		Status:         incidentStatusToDB(input.Status),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "status page incident not found")
+		}
+		r.logger.Error("update status page incident status failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if input.Body != nil && strings.TrimSpace(*input.Body) != "" {
+		if _, err := queries.CreateStatusPageIncidentUpdate(ctx, db.CreateStatusPageIncidentUpdateParams{
+			ID:                   uuid.Must(uuid.NewV7()),
+			StatusPageIncidentID: incidentID,
+			OrganizationID:       sc.User.OrganizationID,
+			Body:                 strings.TrimSpace(*input.Body),
+			Status:               incidentStatusToDB(input.Status),
+		}); err != nil {
+			r.logger.Error("create status page incident update failed", "error", err)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+	}
+
+	incidents, err := r.statusPageIncidentsFromDB(ctx, queries, sc.User.OrganizationID, []db.StatusPageIncident{incident})
+	if err != nil {
+		return nil, err
+	}
+	return incidents[0], nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	sc, ok := auth.SessionFromContext(ctx)
@@ -3178,6 +3593,17 @@ func (r *queryResolver) IncidentRoleDefinitions(ctx context.Context) ([]*model.I
 	}
 
 	return incidentRoleDefinitionsFromDB(defs), nil
+}
+
+// StatusPage is the resolver for the statusPage field.
+func (r *queryResolver) StatusPage(ctx context.Context) (*model.StatusPage, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	return r.loadStatusPageForOrg(ctx, queries, sc.User.OrganizationID)
 }
 
 // AlertUpdated is the resolver for the alertUpdated field.

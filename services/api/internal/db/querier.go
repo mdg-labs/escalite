@@ -44,6 +44,11 @@ type Querier interface {
 	CreateScimUser(ctx context.Context, arg CreateScimUserParams) (User, error)
 	CreateService(ctx context.Context, arg CreateServiceParams) (Service, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
+	CreateStatusPage(ctx context.Context, arg CreateStatusPageParams) (StatusPage, error)
+	CreateStatusPageComponent(ctx context.Context, arg CreateStatusPageComponentParams) (StatusPageComponent, error)
+	CreateStatusPageIncident(ctx context.Context, arg CreateStatusPageIncidentParams) (StatusPageIncident, error)
+	CreateStatusPageIncidentUpdate(ctx context.Context, arg CreateStatusPageIncidentUpdateParams) (StatusPageIncidentUpdate, error)
+	CreateStatusPageSubscription(ctx context.Context, arg CreateStatusPageSubscriptionParams) (StatusPageSubscription, error)
 	CreateTeam(ctx context.Context, arg CreateTeamParams) (Team, error)
 	CreateTeamMembership(ctx context.Context, arg CreateTeamMembershipParams) (TeamMembership, error)
 	CreateTimelineEvent(ctx context.Context, arg CreateTimelineEventParams) (TimelineEvent, error)
@@ -59,6 +64,7 @@ type Querier interface {
 	DeleteSchedule(ctx context.Context, arg DeleteScheduleParams) error
 	DeleteScimGroup(ctx context.Context, arg DeleteScimGroupParams) error
 	DeleteSession(ctx context.Context, arg DeleteSessionParams) error
+	DeleteStatusPageComponent(ctx context.Context, arg DeleteStatusPageComponentParams) error
 	DeleteTeamMembership(ctx context.Context, arg DeleteTeamMembershipParams) error
 	DeleteUserNotificationRule(ctx context.Context, arg DeleteUserNotificationRuleParams) error
 	DeprovisionUser(ctx context.Context, arg DeprovisionUserParams) (User, error)
@@ -96,6 +102,10 @@ type Querier interface {
 	GetScimGroupByID(ctx context.Context, arg GetScimGroupByIDParams) (ScimGroup, error)
 	GetServiceByID(ctx context.Context, arg GetServiceByIDParams) (Service, error)
 	GetSessionByID(ctx context.Context, arg GetSessionByIDParams) (Session, error)
+	GetStatusPageByOrganizationID(ctx context.Context, organizationID uuid.UUID) (StatusPage, error)
+	GetStatusPageBySlug(ctx context.Context, slug string) (StatusPage, error)
+	GetStatusPageComponentByID(ctx context.Context, arg GetStatusPageComponentByIDParams) (StatusPageComponent, error)
+	GetStatusPageIncidentByID(ctx context.Context, arg GetStatusPageIncidentByIDParams) (StatusPageIncident, error)
 	GetTeamByID(ctx context.Context, arg GetTeamByIDParams) (Team, error)
 	GetTeamByName(ctx context.Context, arg GetTeamByNameParams) (Team, error)
 	GetTimelineEventByID(ctx context.Context, arg GetTimelineEventByIDParams) (TimelineEvent, error)
@@ -109,10 +119,12 @@ type Querier interface {
 	GetUserNotificationRuleByPriority(ctx context.Context, arg GetUserNotificationRuleByPriorityParams) (UserNotificationRule, error)
 	HasTeamMembership(ctx context.Context, arg HasTeamMembershipParams) (bool, error)
 	IncrementOpenAlertEventCount(ctx context.Context, arg IncrementOpenAlertEventCountParams) (Alert, error)
+	InsertStatusPageIncidentComponent(ctx context.Context, arg InsertStatusPageIncidentComponentParams) error
 	InvalidateUnusedPasswordResetTokensForUser(ctx context.Context, userID uuid.UUID) error
 	ListActiveMaintenanceWindowsByServiceID(ctx context.Context, arg ListActiveMaintenanceWindowsByServiceIDParams) ([]MaintenanceWindow, error)
 	ListActiveOverridesByScheduleAt(ctx context.Context, arg ListActiveOverridesByScheduleAtParams) ([]Override, error)
 	ListActiveOverridesByScheduleID(ctx context.Context, arg ListActiveOverridesByScheduleIDParams) ([]Override, error)
+	ListActiveStatusPageIncidents(ctx context.Context, arg ListActiveStatusPageIncidentsParams) ([]StatusPageIncident, error)
 	ListAlertsByIncidentID(ctx context.Context, arg ListAlertsByIncidentIDParams) ([]Alert, error)
 	ListAlertsForOrgAdmin(ctx context.Context, arg ListAlertsForOrgAdminParams) ([]Alert, error)
 	ListAlertsForTeamMember(ctx context.Context, arg ListAlertsForTeamMemberParams) ([]Alert, error)
@@ -129,6 +141,9 @@ type Querier interface {
 	ListMaintenanceWindowsByServiceID(ctx context.Context, arg ListMaintenanceWindowsByServiceIDParams) ([]MaintenanceWindow, error)
 	ListMobileDevicesForUser(ctx context.Context, arg ListMobileDevicesForUserParams) ([]MobileDevice, error)
 	ListNotificationAttemptsByAlertID(ctx context.Context, arg ListNotificationAttemptsByAlertIDParams) ([]NotificationAttempt, error)
+	ListPublicStatusPageComponents(ctx context.Context, arg ListPublicStatusPageComponentsParams) ([]ListPublicStatusPageComponentsRow, error)
+	ListPublicStatusPageIncidentUpdates(ctx context.Context, arg ListPublicStatusPageIncidentUpdatesParams) ([]StatusPageIncidentUpdate, error)
+	ListPublicStatusPageIncidents(ctx context.Context, arg ListPublicStatusPageIncidentsParams) ([]ListPublicStatusPageIncidentsRow, error)
 	ListRecentUnassignedAlertsByService(ctx context.Context, arg ListRecentUnassignedAlertsByServiceParams) ([]Alert, error)
 	ListRotationsByScheduleID(ctx context.Context, arg ListRotationsByScheduleIDParams) ([]Rotation, error)
 	ListSchedulesByTeamID(ctx context.Context, arg ListSchedulesByTeamIDParams) ([]Schedule, error)
@@ -136,6 +151,10 @@ type Querier interface {
 	ListScimGroupsByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]ScimGroup, error)
 	ListScimUsersByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]User, error)
 	ListServicesByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]Service, error)
+	ListStatusPageComponents(ctx context.Context, arg ListStatusPageComponentsParams) ([]StatusPageComponent, error)
+	ListStatusPageIncidentComponentIDs(ctx context.Context, arg ListStatusPageIncidentComponentIDsParams) ([]uuid.UUID, error)
+	ListStatusPageIncidentUpdates(ctx context.Context, arg ListStatusPageIncidentUpdatesParams) ([]StatusPageIncidentUpdate, error)
+	ListStatusPageSubscriptions(ctx context.Context, arg ListStatusPageSubscriptionsParams) ([]StatusPageSubscription, error)
 	ListTeamsByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]Team, error)
 	ListTimelineEventsByIncidentID(ctx context.Context, arg ListTimelineEventsByIncidentIDParams) ([]TimelineEvent, error)
 	ListUserNotificationRules(ctx context.Context, arg ListUserNotificationRulesParams) ([]UserNotificationRule, error)
@@ -146,6 +165,7 @@ type Querier interface {
 	RecordHeartbeatPing(ctx context.Context, tokenHash string) (HeartbeatMonitor, error)
 	RemoveAllScimGroupMembers(ctx context.Context, arg RemoveAllScimGroupMembersParams) error
 	RemoveScimGroupMember(ctx context.Context, arg RemoveScimGroupMemberParams) error
+	ReplaceStatusPageIncidentComponents(ctx context.Context, arg ReplaceStatusPageIncidentComponentsParams) error
 	ReprovisionScimUser(ctx context.Context, arg ReprovisionScimUserParams) (User, error)
 	ResolveOpenAlert(ctx context.Context, arg ResolveOpenAlertParams) (Alert, error)
 	RevokeAllUserRefreshTokens(ctx context.Context, arg RevokeAllUserRefreshTokensParams) error
@@ -172,6 +192,9 @@ type Querier interface {
 	UpdateScimGroupDisplayName(ctx context.Context, arg UpdateScimGroupDisplayNameParams) (ScimGroup, error)
 	UpdateScimUser(ctx context.Context, arg UpdateScimUserParams) (User, error)
 	UpdateService(ctx context.Context, arg UpdateServiceParams) (Service, error)
+	UpdateStatusPage(ctx context.Context, arg UpdateStatusPageParams) (StatusPage, error)
+	UpdateStatusPageComponent(ctx context.Context, arg UpdateStatusPageComponentParams) (StatusPageComponent, error)
+	UpdateStatusPageIncidentStatus(ctx context.Context, arg UpdateStatusPageIncidentStatusParams) (StatusPageIncident, error)
 	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
 	UpsertMobileDevice(ctx context.Context, arg UpsertMobileDeviceParams) (MobileDevice, error)
 	UpsertOrganizationSamlSettings(ctx context.Context, arg UpsertOrganizationSamlSettingsParams) (OrganizationSamlSetting, error)

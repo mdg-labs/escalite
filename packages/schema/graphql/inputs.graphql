@@ -195,3 +195,46 @@ input PromoteAlertToIncidentInput {
   """Title when creating a new incident; defaults to the alert summary."""
   title: String
 }
+
+input SaveStatusPageInput {
+  slug: String!
+  title: String!
+  enabled: Boolean!
+  frameAncestorsCsp: String
+}
+
+input CreateStatusPageComponentInput {
+  name: String!
+  description: String
+  status: StatusPageComponentStatus = OPERATIONAL
+  position: Int = 0
+  serviceId: ID
+}
+
+input UpdateStatusPageComponentInput {
+  id: ID!
+  name: String!
+  description: String
+  status: StatusPageComponentStatus!
+  position: Int!
+  serviceId: ID
+}
+
+input PublishIncidentToStatusPageInput {
+  incidentId: ID!
+  title: String
+  affectedComponentIds: [ID!]!
+  body: String!
+}
+
+input CreateStatusPageIncidentUpdateInput {
+  statusPageIncidentId: ID!
+  body: String!
+  status: IncidentStatus!
+}
+
+input UpdateStatusPageIncidentStatusInput {
+  id: ID!
+  status: IncidentStatus!
+  body: String
+}

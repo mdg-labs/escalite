@@ -105,6 +105,20 @@ type CreateServiceInput struct {
 	Name   string `json:"name"`
 }
 
+type CreateStatusPageComponentInput struct {
+	Name        string                     `json:"name"`
+	Description *string                    `json:"description,omitempty"`
+	Status      *StatusPageComponentStatus `json:"status,omitempty"`
+	Position    *int                       `json:"position,omitempty"`
+	ServiceID   *string                    `json:"serviceId,omitempty"`
+}
+
+type CreateStatusPageIncidentUpdateInput struct {
+	StatusPageIncidentID string         `json:"statusPageIncidentId"`
+	Body                 string         `json:"body"`
+	Status               IncidentStatus `json:"status"`
+}
+
 type EscalationPolicy struct {
 	ID             string            `json:"id"`
 	OrganizationID string            `json:"organizationId"`
@@ -333,6 +347,13 @@ type PromoteAlertToIncidentInput struct {
 	Title *string `json:"title,omitempty"`
 }
 
+type PublishIncidentToStatusPageInput struct {
+	IncidentID           string   `json:"incidentId"`
+	Title                *string  `json:"title,omitempty"`
+	AffectedComponentIds []string `json:"affectedComponentIds"`
+	Body                 string   `json:"body"`
+}
+
 type Query struct {
 }
 
@@ -383,6 +404,13 @@ type SaveSamlSettingsInput struct {
 
 type SaveSlackSettingsInput struct {
 	BotToken string `json:"botToken"`
+}
+
+type SaveStatusPageInput struct {
+	Slug              string  `json:"slug"`
+	Title             string  `json:"title"`
+	Enabled           bool    `json:"enabled"`
+	FrameAncestorsCsp *string `json:"frameAncestorsCsp,omitempty"`
 }
 
 type SaveUserContactMethodInput struct {
@@ -451,6 +479,66 @@ type SlackSettings struct {
 	WorkspaceName *string `json:"workspaceName,omitempty"`
 	// Absolute URL to start Slack OAuth install when enabled; null when OAuth is not configured.
 	OauthInstallURL *string `json:"oauthInstallUrl,omitempty"`
+}
+
+// Organization public status page configuration (admin only).
+type StatusPage struct {
+	ID             string `json:"id"`
+	OrganizationID string `json:"organizationId"`
+	Slug           string `json:"slug"`
+	Title          string `json:"title"`
+	Enabled        bool   `json:"enabled"`
+	// Optional frame-ancestors CSP directive for status page embedding.
+	FrameAncestorsCsp *string                   `json:"frameAncestorsCsp,omitempty"`
+	Components        []*StatusPageComponent    `json:"components"`
+	Incidents         []*StatusPageIncident     `json:"incidents"`
+	Subscriptions     []*StatusPageSubscription `json:"subscriptions"`
+	CreatedAt         time.Time                 `json:"createdAt"`
+	UpdatedAt         time.Time                 `json:"updatedAt"`
+}
+
+// Component displayed on a public status page.
+type StatusPageComponent struct {
+	ID           string                    `json:"id"`
+	StatusPageID string                    `json:"statusPageId"`
+	Name         string                    `json:"name"`
+	Description  *string                   `json:"description,omitempty"`
+	Status       StatusPageComponentStatus `json:"status"`
+	Position     int                       `json:"position"`
+	// Optional linked internal service (admin only; never exposed on public API).
+	ServiceID *string   `json:"serviceId,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// Public incident published on a status page.
+type StatusPageIncident struct {
+	ID           string `json:"id"`
+	StatusPageID string `json:"statusPageId"`
+	// Linked internal incident when published from Escalite (admin only).
+	IncidentID           *string                     `json:"incidentId,omitempty"`
+	Title                string                      `json:"title"`
+	Status               IncidentStatus              `json:"status"`
+	AffectedComponentIds []string                    `json:"affectedComponentIds"`
+	Updates              []*StatusPageIncidentUpdate `json:"updates"`
+	ResolvedAt           *time.Time                  `json:"resolvedAt,omitempty"`
+	CreatedAt            time.Time                   `json:"createdAt"`
+	UpdatedAt            time.Time                   `json:"updatedAt"`
+}
+
+// Public update posted to a status page incident.
+type StatusPageIncidentUpdate struct {
+	ID        string         `json:"id"`
+	Body      string         `json:"body"`
+	Status    IncidentStatus `json:"status"`
+	CreatedAt time.Time      `json:"createdAt"`
+}
+
+// Email subscription to status page incident updates.
+type StatusPageSubscription struct {
+	ID        string    `json:"id"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type Subscription struct {
@@ -532,6 +620,21 @@ type UpdateServiceInput struct {
 	AutoPromoteAlertThreshold               *int            `json:"autoPromoteAlertThreshold,omitempty"`
 	AutoPromoteWindowSeconds                *int            `json:"autoPromoteWindowSeconds,omitempty"`
 	AutoPromoteSuppressEscalationPriorities []AlertPriority `json:"autoPromoteSuppressEscalationPriorities,omitempty"`
+}
+
+type UpdateStatusPageComponentInput struct {
+	ID          string                    `json:"id"`
+	Name        string                    `json:"name"`
+	Description *string                   `json:"description,omitempty"`
+	Status      StatusPageComponentStatus `json:"status"`
+	Position    int                       `json:"position"`
+	ServiceID   *string                   `json:"serviceId,omitempty"`
+}
+
+type UpdateStatusPageIncidentStatusInput struct {
+	ID     string         `json:"id"`
+	Status IncidentStatus `json:"status"`
+	Body   *string        `json:"body,omitempty"`
 }
 
 type User struct {
@@ -790,6 +893,66 @@ func (e *IncidentStatus) UnmarshalJSON(b []byte) error {
 }
 
 func (e IncidentStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+// Public-facing component health on a status page.
+type StatusPageComponentStatus string
+
+const (
+	StatusPageComponentStatusOperational   StatusPageComponentStatus = "OPERATIONAL"
+	StatusPageComponentStatusDegraded      StatusPageComponentStatus = "DEGRADED"
+	StatusPageComponentStatusPartialOutage StatusPageComponentStatus = "PARTIAL_OUTAGE"
+	StatusPageComponentStatusMajorOutage   StatusPageComponentStatus = "MAJOR_OUTAGE"
+)
+
+var AllStatusPageComponentStatus = []StatusPageComponentStatus{
+	StatusPageComponentStatusOperational,
+	StatusPageComponentStatusDegraded,
+	StatusPageComponentStatusPartialOutage,
+	StatusPageComponentStatusMajorOutage,
+}
+
+func (e StatusPageComponentStatus) IsValid() bool {
+	switch e {
+	case StatusPageComponentStatusOperational, StatusPageComponentStatusDegraded, StatusPageComponentStatusPartialOutage, StatusPageComponentStatusMajorOutage:
+		return true
+	}
+	return false
+}
+
+func (e StatusPageComponentStatus) String() string {
+	return string(e)
+}
+
+func (e *StatusPageComponentStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = StatusPageComponentStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid StatusPageComponentStatus", str)
+	}
+	return nil
+}
+
+func (e StatusPageComponentStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *StatusPageComponentStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e StatusPageComponentStatus) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

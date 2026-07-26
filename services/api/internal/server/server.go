@@ -145,6 +145,7 @@ func New(deps Dependencies) http.Handler {
 			heartbeatCfg.TokenLimiter = deps.HeartbeatPing.TokenLimiter
 		}
 		heartbeatPing := handlers.NewHeartbeatPingHandler(deps.Pool, deps.Logger, heartbeatCfg)
+		publicStatusPage := handlers.NewPublicStatusPageHandler(deps.Pool, deps.Logger)
 
 		webhookCfg := handlers.InboundWebhookConfig{}
 		if deps.InboundWebhook != nil {
@@ -180,6 +181,9 @@ func New(deps Dependencies) http.Handler {
 			r.Get("/{token}", heartbeatPing.ServeHTTP)
 			r.Post("/{token}", heartbeatPing.ServeHTTP)
 		})
+
+		r.Get("/api/v1/public/status/{slug}", publicStatusPage.Get)
+		r.Post("/api/v1/public/status/{slug}/subscribe", publicStatusPage.Subscribe)
 
 		r.Post("/webhook/{plugin}/{token}", inboundWebhook.ServeHTTP)
 		r.Post("/api/v1/alerts", inboundAlerts.ServeHTTP)

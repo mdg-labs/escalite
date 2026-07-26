@@ -349,3 +349,63 @@ type IncidentRoleAssignment {
   assignedBy: User!
   createdAt: DateTime!
 }
+
+"""Organization public status page configuration (admin only)."""
+type StatusPage {
+  id: ID!
+  organizationId: ID!
+  slug: String!
+  title: String!
+  enabled: Boolean!
+  """Optional frame-ancestors CSP directive for status page embedding."""
+  frameAncestorsCsp: String
+  components: [StatusPageComponent!]!
+  incidents: [StatusPageIncident!]!
+  subscriptions: [StatusPageSubscription!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Component displayed on a public status page."""
+type StatusPageComponent {
+  id: ID!
+  statusPageId: ID!
+  name: String!
+  description: String
+  status: StatusPageComponentStatus!
+  position: Int!
+  """Optional linked internal service (admin only; never exposed on public API)."""
+  serviceId: ID
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Email subscription to status page incident updates."""
+type StatusPageSubscription {
+  id: ID!
+  email: String!
+  createdAt: DateTime!
+}
+
+"""Public incident published on a status page."""
+type StatusPageIncident {
+  id: ID!
+  statusPageId: ID!
+  """Linked internal incident when published from Escalite (admin only)."""
+  incidentId: ID
+  title: String!
+  status: IncidentStatus!
+  affectedComponentIds: [ID!]!
+  updates: [StatusPageIncidentUpdate!]!
+  resolvedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Public update posted to a status page incident."""
+type StatusPageIncidentUpdate {
+  id: ID!
+  body: String!
+  status: IncidentStatus!
+  createdAt: DateTime!
+}
