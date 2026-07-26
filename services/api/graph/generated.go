@@ -150,6 +150,13 @@ type ComplexityRoot struct {
 		UpdatedAt      func(childComplexity int) int
 	}
 
+	LoginOptions struct {
+		OidcEnabled  func(childComplexity int) int
+		OidcLoginURL func(childComplexity int) int
+		SamlEnabled  func(childComplexity int) int
+		SamlLoginURL func(childComplexity int) int
+	}
+
 	LoginPayload struct {
 		User func(childComplexity int) int
 	}
@@ -210,6 +217,7 @@ type ComplexityRoot struct {
 		RevokeMobileDevice           func(childComplexity int, id string) int
 		RotateIntegrationKey         func(childComplexity int, id string) int
 		SaveNotificationRule         func(childComplexity int, input model.SaveNotificationRuleInput) int
+		SaveSamlSettings             func(childComplexity int, input model.SaveSamlSettingsInput) int
 		SaveSlackSettings            func(childComplexity int, input model.SaveSlackSettingsInput) int
 		SaveUserContactMethod        func(childComplexity int, input model.SaveUserContactMethodInput) int
 		Setup                        func(childComplexity int, input model.SetupInput) int
@@ -286,6 +294,7 @@ type ComplexityRoot struct {
 		IncidentRoleDefinitions func(childComplexity int) int
 		Incidents               func(childComplexity int, status *model.IncidentStatus, teamID *string, limit *int) int
 		IntegrationKeys         func(childComplexity int, serviceID string) int
+		LoginOptions            func(childComplexity int) int
 		MaintenanceWindow       func(childComplexity int, id string) int
 		MaintenanceWindows      func(childComplexity int, serviceID string) int
 		Me                      func(childComplexity int) int
@@ -294,6 +303,7 @@ type ComplexityRoot struct {
 		NotificationRules       func(childComplexity int) int
 		OnCallNow               func(childComplexity int, scheduleID string, at *time.Time) int
 		Overrides               func(childComplexity int, scheduleID string) int
+		SamlSettings            func(childComplexity int) int
 		Schedule                func(childComplexity int, id string) int
 		Schedules               func(childComplexity int, teamID string) int
 		Service                 func(childComplexity int, id string) int
@@ -312,6 +322,14 @@ type ComplexityRoot struct {
 		Rrule          func(childComplexity int) int
 		ScheduleID     func(childComplexity int) int
 		UpdatedAt      func(childComplexity int) int
+	}
+
+	SamlSettings struct {
+		CertificateHint func(childComplexity int) int
+		Configured      func(childComplexity int) int
+		Enabled         func(childComplexity int) int
+		IdpEntityID     func(childComplexity int) int
+		SamlLoginURL    func(childComplexity int) int
 	}
 
 	Schedule struct {
@@ -457,6 +475,7 @@ type MutationResolver interface {
 	SaveNotificationRule(ctx context.Context, input model.SaveNotificationRuleInput) (*model.UserNotificationRule, error)
 	DeleteNotificationRule(ctx context.Context, priority model.AlertPriority) (bool, error)
 	SaveSlackSettings(ctx context.Context, input model.SaveSlackSettingsInput) (*model.SlackSettings, error)
+	SaveSamlSettings(ctx context.Context, input model.SaveSamlSettingsInput) (*model.SamlSettings, error)
 	CreateIntegrationKey(ctx context.Context, input model.CreateIntegrationKeyInput) (*model.IntegrationKey, error)
 	RevokeIntegrationKey(ctx context.Context, id string) (*model.IntegrationKey, error)
 	RotateIntegrationKey(ctx context.Context, id string) (*model.IntegrationKey, error)
@@ -476,6 +495,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
 	Health(ctx context.Context) (*model.Health, error)
+	LoginOptions(ctx context.Context) (*model.LoginOptions, error)
 	Alert(ctx context.Context, id string) (*model.Alert, error)
 	Alerts(ctx context.Context, status *model.AlertStatus, limit *int) ([]*model.Alert, error)
 	EscalationPolicy(ctx context.Context, id string) (*model.EscalationPolicy, error)
@@ -492,6 +512,7 @@ type QueryResolver interface {
 	NotificationRules(ctx context.Context) ([]*model.UserNotificationRule, error)
 	MobileDevices(ctx context.Context) ([]*model.MobileDevice, error)
 	SlackSettings(ctx context.Context) (*model.SlackSettings, error)
+	SamlSettings(ctx context.Context) (*model.SamlSettings, error)
 	IntegrationKeys(ctx context.Context, serviceID string) ([]*model.IntegrationKey, error)
 	Teams(ctx context.Context) ([]*model.Team, error)
 	Services(ctx context.Context) ([]*model.Service, error)
@@ -1019,6 +1040,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.IntegrationKey.UpdatedAt(childComplexity), true
 
+	case "LoginOptions.oidcEnabled":
+		if e.ComplexityRoot.LoginOptions.OidcEnabled == nil {
+			break
+		}
+
+		return e.ComplexityRoot.LoginOptions.OidcEnabled(childComplexity), true
+	case "LoginOptions.oidcLoginUrl":
+		if e.ComplexityRoot.LoginOptions.OidcLoginURL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.LoginOptions.OidcLoginURL(childComplexity), true
+	case "LoginOptions.samlEnabled":
+		if e.ComplexityRoot.LoginOptions.SamlEnabled == nil {
+			break
+		}
+
+		return e.ComplexityRoot.LoginOptions.SamlEnabled(childComplexity), true
+	case "LoginOptions.samlLoginUrl":
+		if e.ComplexityRoot.LoginOptions.SamlLoginURL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.LoginOptions.SamlLoginURL(childComplexity), true
+
 	case "LoginPayload.user":
 		if e.ComplexityRoot.LoginPayload.User == nil {
 			break
@@ -1477,6 +1523,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SaveNotificationRule(childComplexity, args["input"].(model.SaveNotificationRuleInput)), true
+	case "Mutation.saveSamlSettings":
+		if e.ComplexityRoot.Mutation.SaveSamlSettings == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveSamlSettings_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SaveSamlSettings(childComplexity, args["input"].(model.SaveSamlSettingsInput)), true
 	case "Mutation.saveSlackSettings":
 		if e.ComplexityRoot.Mutation.SaveSlackSettings == nil {
 			break
@@ -1908,6 +1965,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.IntegrationKeys(childComplexity, args["serviceId"].(string)), true
 
+	case "Query.loginOptions":
+		if e.ComplexityRoot.Query.LoginOptions == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.LoginOptions(childComplexity), true
 	case "Query.maintenanceWindow":
 		if e.ComplexityRoot.Query.MaintenanceWindow == nil {
 			break
@@ -1976,6 +2039,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Overrides(childComplexity, args["scheduleId"].(string)), true
+	case "Query.samlSettings":
+		if e.ComplexityRoot.Query.SamlSettings == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.SamlSettings(childComplexity), true
 	case "Query.schedule":
 		if e.ComplexityRoot.Query.Schedule == nil {
 			break
@@ -2082,6 +2151,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Rotation.UpdatedAt(childComplexity), true
+
+	case "SamlSettings.certificateHint":
+		if e.ComplexityRoot.SamlSettings.CertificateHint == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SamlSettings.CertificateHint(childComplexity), true
+	case "SamlSettings.configured":
+		if e.ComplexityRoot.SamlSettings.Configured == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SamlSettings.Configured(childComplexity), true
+	case "SamlSettings.enabled":
+		if e.ComplexityRoot.SamlSettings.Enabled == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SamlSettings.Enabled(childComplexity), true
+	case "SamlSettings.idpEntityId":
+		if e.ComplexityRoot.SamlSettings.IdpEntityID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SamlSettings.IdpEntityID(childComplexity), true
+	case "SamlSettings.samlLoginUrl":
+		if e.ComplexityRoot.SamlSettings.SamlLoginURL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SamlSettings.SamlLoginURL(childComplexity), true
 
 	case "Schedule.createdAt":
 		if e.ComplexityRoot.Schedule.CreatedAt == nil {
@@ -2496,6 +2596,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPromoteAlertToIncidentInput,
 		ec.unmarshalInputRegisterMobileDeviceInput,
 		ec.unmarshalInputSaveNotificationRuleInput,
+		ec.unmarshalInputSaveSamlSettingsInput,
 		ec.unmarshalInputSaveSlackSettingsInput,
 		ec.unmarshalInputSaveUserContactMethodInput,
 		ec.unmarshalInputSetupInput,
@@ -2761,6 +2862,11 @@ input SaveSlackSettingsInput {
   botToken: String!
 }
 
+input SaveSamlSettingsInput {
+  metadataXml: String!
+  enabled: Boolean!
+}
+
 input CreateIntegrationKeyInput {
   serviceId: ID!
   pluginName: String!
@@ -2876,6 +2982,11 @@ type Query {
   health: Health!
 
   """
+  Unauthenticated login method availability for the sign-in page.
+  """
+  loginOptions: LoginOptions!
+
+  """
   Fetch a single alert by ID (team access required).
   """
   alert(id: ID!): Alert
@@ -2956,6 +3067,11 @@ type Query {
   Organization Slack bot token status (org admin only).
   """
   slackSettings: SlackSettings!
+
+  """
+  Organization SAML SSO configuration (org admin only).
+  """
+  samlSettings: SamlSettings!
 
   """
   List integration keys for a service (org admin only).
@@ -3138,6 +3254,11 @@ type Mutation {
   Save the organization Slack bot token (org admin only). Returns last-4 hint only.
   """
   saveSlackSettings(input: SaveSlackSettingsInput!): SlackSettings!
+
+  """
+  Save organization SAML IdP metadata and enable/disable SAML SSO (org admin only).
+  """
+  saveSamlSettings(input: SaveSamlSettingsInput!): SamlSettings!
 
   """
   Create an inbound integration key for a service (org admin only).
@@ -3468,6 +3589,24 @@ type SlackSettings {
   oauthInstallUrl: String
 }
 
+"""Organization SAML SSO configuration (admin only)."""
+type SamlSettings {
+  configured: Boolean!
+  enabled: Boolean!
+  idpEntityId: String
+  certificateHint: String
+  """Absolute URL to start SAML login when enabled."""
+  samlLoginUrl: String
+}
+
+"""Unauthenticated login method availability for the web app."""
+type LoginOptions {
+  samlEnabled: Boolean!
+  samlLoginUrl: String
+  oidcEnabled: Boolean!
+  oidcLoginUrl: String
+}
+
 """Registered mobile device for Expo push delivery."""
 type MobileDevice {
   id: ID!
@@ -3769,6 +3908,20 @@ func (ec *executionContext) childFields_IntegrationKey(ctx context.Context, fiel
 	return nil, fmt.Errorf("no field named %q was found under type IntegrationKey", field.Name)
 }
 
+func (ec *executionContext) childFields_LoginOptions(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "samlEnabled":
+		return ec.fieldContext_LoginOptions_samlEnabled(ctx, field)
+	case "samlLoginUrl":
+		return ec.fieldContext_LoginOptions_samlLoginUrl(ctx, field)
+	case "oidcEnabled":
+		return ec.fieldContext_LoginOptions_oidcEnabled(ctx, field)
+	case "oidcLoginUrl":
+		return ec.fieldContext_LoginOptions_oidcLoginUrl(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type LoginOptions", field.Name)
+}
+
 func (ec *executionContext) childFields_LoginPayload(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "user":
@@ -3945,6 +4098,22 @@ func (ec *executionContext) childFields_Rotation(ctx context.Context, field grap
 		return ec.fieldContext_Rotation_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Rotation", field.Name)
+}
+
+func (ec *executionContext) childFields_SamlSettings(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "configured":
+		return ec.fieldContext_SamlSettings_configured(ctx, field)
+	case "enabled":
+		return ec.fieldContext_SamlSettings_enabled(ctx, field)
+	case "idpEntityId":
+		return ec.fieldContext_SamlSettings_idpEntityId(ctx, field)
+	case "certificateHint":
+		return ec.fieldContext_SamlSettings_certificateHint(ctx, field)
+	case "samlLoginUrl":
+		return ec.fieldContext_SamlSettings_samlLoginUrl(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type SamlSettings", field.Name)
 }
 
 func (ec *executionContext) childFields_Schedule(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -4663,6 +4832,20 @@ func (ec *executionContext) field_Mutation_saveNotificationRule_args(ctx context
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.SaveNotificationRuleInput, error) {
 			return ec.unmarshalNSaveNotificationRuleInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveNotificationRuleInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_saveSamlSettings_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.SaveSamlSettingsInput, error) {
+			return ec.unmarshalNSaveSamlSettingsInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveSamlSettingsInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -7163,6 +7346,98 @@ func (ec *executionContext) fieldContext_IntegrationKey_updatedAt(_ context.Cont
 	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
+func (ec *executionContext) _LoginOptions_samlEnabled(ctx context.Context, field graphql.CollectedField, obj *model.LoginOptions) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_LoginOptions_samlEnabled(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.SamlEnabled, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_LoginOptions_samlEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("LoginOptions", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _LoginOptions_samlLoginUrl(ctx context.Context, field graphql.CollectedField, obj *model.LoginOptions) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_LoginOptions_samlLoginUrl(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.SamlLoginURL, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_LoginOptions_samlLoginUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("LoginOptions", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _LoginOptions_oidcEnabled(ctx context.Context, field graphql.CollectedField, obj *model.LoginOptions) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_LoginOptions_oidcEnabled(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OidcEnabled, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_LoginOptions_oidcEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("LoginOptions", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _LoginOptions_oidcLoginUrl(ctx context.Context, field graphql.CollectedField, obj *model.LoginOptions) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_LoginOptions_oidcLoginUrl(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OidcLoginURL, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_LoginOptions_oidcLoginUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("LoginOptions", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _LoginPayload_user(ctx context.Context, field graphql.CollectedField, obj *model.LoginPayload) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -8885,6 +9160,50 @@ func (ec *executionContext) fieldContext_Mutation_saveSlackSettings(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_saveSamlSettings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_saveSamlSettings(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SaveSamlSettings(ctx, fc.Args["input"].(model.SaveSamlSettingsInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.SamlSettings) graphql.Marshaler {
+			return ec.marshalNSamlSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSamlSettings(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_saveSamlSettings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SamlSettings(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveSamlSettings_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createIntegrationKey(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10262,6 +10581,38 @@ func (ec *executionContext) fieldContext_Query_health(_ context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_loginOptions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_loginOptions(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().LoginOptions(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.LoginOptions) graphql.Marshaler {
+			return ec.marshalNLoginOptions2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐLoginOptions(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_loginOptions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_LoginOptions(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_alert(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10918,6 +11269,38 @@ func (ec *executionContext) fieldContext_Query_slackSettings(_ context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_samlSettings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_samlSettings(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().SamlSettings(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.SamlSettings) graphql.Marshaler {
+			return ec.marshalNSamlSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSamlSettings(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_samlSettings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SamlSettings(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_integrationKeys(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -11471,6 +11854,121 @@ func (ec *executionContext) _Rotation_updatedAt(ctx context.Context, field graph
 }
 func (ec *executionContext) fieldContext_Rotation_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Rotation", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _SamlSettings_configured(ctx context.Context, field graphql.CollectedField, obj *model.SamlSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SamlSettings_configured(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Configured, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SamlSettings_configured(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SamlSettings", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _SamlSettings_enabled(ctx context.Context, field graphql.CollectedField, obj *model.SamlSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SamlSettings_enabled(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Enabled, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SamlSettings_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SamlSettings", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _SamlSettings_idpEntityId(ctx context.Context, field graphql.CollectedField, obj *model.SamlSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SamlSettings_idpEntityId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IdpEntityID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_SamlSettings_idpEntityId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SamlSettings", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SamlSettings_certificateHint(ctx context.Context, field graphql.CollectedField, obj *model.SamlSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SamlSettings_certificateHint(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CertificateHint, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_SamlSettings_certificateHint(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SamlSettings", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SamlSettings_samlLoginUrl(ctx context.Context, field graphql.CollectedField, obj *model.SamlSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SamlSettings_samlLoginUrl(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.SamlLoginURL, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_SamlSettings_samlLoginUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SamlSettings", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Schedule_id(ctx context.Context, field graphql.CollectedField, obj *model.Schedule) (ret graphql.Marshaler) {
@@ -14917,6 +15415,43 @@ func (ec *executionContext) unmarshalInputSaveNotificationRuleInput(ctx context.
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputSaveSamlSettingsInput(ctx context.Context, obj any) (model.SaveSamlSettingsInput, error) {
+	var it model.SaveSamlSettingsInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"metadataXml", "enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "metadataXml":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metadataXml"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MetadataXML = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSaveSlackSettingsInput(ctx context.Context, obj any) (model.SaveSlackSettingsInput, error) {
 	var it model.SaveSlackSettingsInput
 	if obj == nil {
@@ -16412,6 +16947,59 @@ func (ec *executionContext) _IntegrationKey(ctx context.Context, sel ast.Selecti
 	return out
 }
 
+var loginOptionsImplementors = []string{"LoginOptions"}
+
+func (ec *executionContext) _LoginOptions(ctx context.Context, sel ast.SelectionSet, obj *model.LoginOptions) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, loginOptionsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LoginOptions")
+		case "samlEnabled":
+			out.Values[i] = ec._LoginOptions_samlEnabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "samlLoginUrl":
+			out.Values[i] = ec._LoginOptions_samlLoginUrl(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "oidcEnabled":
+			out.Values[i] = ec._LoginOptions_oidcEnabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "oidcLoginUrl":
+			out.Values[i] = ec._LoginOptions_oidcLoginUrl(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var loginPayloadImplementors = []string{"LoginPayload"}
 
 func (ec *executionContext) _LoginPayload(ctx context.Context, sel ast.SelectionSet, obj *model.LoginPayload) graphql.Marshaler {
@@ -16825,6 +17413,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "saveSlackSettings":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveSlackSettings(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "saveSamlSettings":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveSamlSettings(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -17390,6 +17985,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "loginOptions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_loginOptions(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "alert":
 			field := field
 
@@ -17742,6 +18359,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "samlSettings":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_samlSettings(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "integrationKeys":
 			field := field
 
@@ -17986,6 +18625,64 @@ func (ec *executionContext) _Rotation(ctx context.Context, sel ast.SelectionSet,
 		case "updatedAt":
 			out.Values[i] = ec._Rotation_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var samlSettingsImplementors = []string{"SamlSettings"}
+
+func (ec *executionContext) _SamlSettings(ctx context.Context, sel ast.SelectionSet, obj *model.SamlSettings) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, samlSettingsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SamlSettings")
+		case "configured":
+			out.Values[i] = ec._SamlSettings_configured(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "enabled":
+			out.Values[i] = ec._SamlSettings_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "idpEntityId":
+			out.Values[i] = ec._SamlSettings_idpEntityId(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "certificateHint":
+			out.Values[i] = ec._SamlSettings_certificateHint(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "samlLoginUrl":
+			out.Values[i] = ec._SamlSettings_samlLoginUrl(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
 		default:
@@ -19644,6 +20341,20 @@ func (ec *executionContext) unmarshalNLoginInput2githubᚗcomᚋmdgᚑlabsᚋesc
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNLoginOptions2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐLoginOptions(ctx context.Context, sel ast.SelectionSet, v model.LoginOptions) graphql.Marshaler {
+	return ec._LoginOptions(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLoginOptions2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐLoginOptions(ctx context.Context, sel ast.SelectionSet, v *model.LoginOptions) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LoginOptions(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNLoginPayload2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐLoginPayload(ctx context.Context, sel ast.SelectionSet, v model.LoginPayload) graphql.Marshaler {
 	return ec._LoginPayload(ctx, sel, &v)
 }
@@ -19909,8 +20620,27 @@ func (ec *executionContext) marshalNRotation2ᚖgithubᚗcomᚋmdgᚑlabsᚋesca
 	return ec._Rotation(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNSamlSettings2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSamlSettings(ctx context.Context, sel ast.SelectionSet, v model.SamlSettings) graphql.Marshaler {
+	return ec._SamlSettings(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSamlSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSamlSettings(ctx context.Context, sel ast.SelectionSet, v *model.SamlSettings) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SamlSettings(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNSaveNotificationRuleInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveNotificationRuleInput(ctx context.Context, v any) (model.SaveNotificationRuleInput, error) {
 	res, err := ec.unmarshalInputSaveNotificationRuleInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNSaveSamlSettingsInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveSamlSettingsInput(ctx context.Context, v any) (model.SaveSamlSettingsInput, error) {
+	res, err := ec.unmarshalInputSaveSamlSettingsInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

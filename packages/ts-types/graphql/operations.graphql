@@ -414,12 +414,41 @@ query SlackSettings {
   }
 }
 
+query LoginOptions {
+  loginOptions {
+    samlEnabled
+    samlLoginUrl
+    oidcEnabled
+    oidcLoginUrl
+  }
+}
+
+query SamlSettings {
+  samlSettings {
+    configured
+    enabled
+    idpEntityId
+    certificateHint
+    samlLoginUrl
+  }
+}
+
 mutation SaveSlackSettings($input: SaveSlackSettingsInput!) {
   saveSlackSettings(input: $input) {
     configured
     tokenHint
     workspaceName
     oauthInstallUrl
+  }
+}
+
+mutation SaveSamlSettings($input: SaveSamlSettingsInput!) {
+  saveSamlSettings(input: $input) {
+    configured
+    enabled
+    idpEntityId
+    certificateHint
+    samlLoginUrl
   }
 }
 

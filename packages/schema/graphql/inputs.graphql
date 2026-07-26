@@ -105,6 +105,11 @@ input SaveSlackSettingsInput {
   botToken: String!
 }
 
+input SaveSamlSettingsInput {
+  metadataXml: String!
+  enabled: Boolean!
+}
+
 input CreateIntegrationKeyInput {
   serviceId: ID!
   pluginName: String!

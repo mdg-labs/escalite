@@ -27,6 +27,11 @@ type Query {
   health: Health!
 
   """
+  Unauthenticated login method availability for the sign-in page.
+  """
+  loginOptions: LoginOptions!
+
+  """
   Fetch a single alert by ID (team access required).
   """
   alert(id: ID!): Alert
@@ -107,6 +112,11 @@ type Query {
   Organization Slack bot token status (org admin only).
   """
   slackSettings: SlackSettings!
+
+  """
+  Organization SAML SSO configuration (org admin only).
+  """
+  samlSettings: SamlSettings!
 
   """
   List integration keys for a service (org admin only).
@@ -289,6 +299,11 @@ type Mutation {
   Save the organization Slack bot token (org admin only). Returns last-4 hint only.
   """
   saveSlackSettings(input: SaveSlackSettingsInput!): SlackSettings!
+
+  """
+  Save organization SAML IdP metadata and enable/disable SAML SSO (org admin only).
+  """
+  saveSamlSettings(input: SaveSamlSettingsInput!): SamlSettings!
 
   """
   Create an inbound integration key for a service (org admin only).

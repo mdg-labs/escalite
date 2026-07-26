@@ -234,6 +234,24 @@ type SlackSettings {
   oauthInstallUrl: String
 }
 
+"""Organization SAML SSO configuration (admin only)."""
+type SamlSettings {
+  configured: Boolean!
+  enabled: Boolean!
+  idpEntityId: String
+  certificateHint: String
+  """Absolute URL to start SAML login when enabled."""
+  samlLoginUrl: String
+}
+
+"""Unauthenticated login method availability for the web app."""
+type LoginOptions {
+  samlEnabled: Boolean!
+  samlLoginUrl: String
+  oidcEnabled: Boolean!
+  oidcLoginUrl: String
+}
+
 """Registered mobile device for Expo push delivery."""
 type MobileDevice {
   id: ID!

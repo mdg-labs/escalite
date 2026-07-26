@@ -1,23 +1,42 @@
 import { useState, type FormEvent, type ReactElement } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { useLoginMutation } from '@escalite/ts-types'
+import { useLoginMutation, useLoginOptionsQuery } from '@escalite/ts-types'
 import { Button, Input } from '@escalite/ui'
 
 import { AuthLayout } from '../components/auth-layout'
+import { appConfig } from '../lib/config'
+import { t } from '../lib/i18n'
 
 function formatGraphQLError(message: string): string {
   return message.replace(/^(\[GraphQL\]\s*)+/, '')
+}
+
+function absoluteAuthUrl(pathOrUrl: string | null | undefined): string | null {
+  if (!pathOrUrl) {
+    return null
+  }
+  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
+    return pathOrUrl
+  }
+  const base = appConfig.apiPublicUrl.replace(/\/$/, '')
+  return `${base}${pathOrUrl}`
 }
 
 export function LoginPage(): ReactElement {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirect') ?? '/dashboard'
+  const [{ data: loginOptionsData }] = useLoginOptionsQuery()
   const [, login] = useLoginMutation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  const loginOptions = loginOptionsData?.loginOptions
+  const samlHref = absoluteAuthUrl(loginOptions?.samlLoginUrl)
+  const oidcHref = absoluteAuthUrl(loginOptions?.oidcLoginUrl)
+  const showAlternateSignIn = Boolean(samlHref || oidcHref)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
@@ -46,6 +65,21 @@ export function LoginPage(): ReactElement {
       title="Sign in"
       description="Use your organization email and password to access Escalite."
     >
+      {showAlternateSignIn ? (
+        <div className="space-y-3">
+          {samlHref ? (
+            <Button className="w-full" render={<a href={samlHref} />} type="button" variant="outline">
+              {t('login.saml.button')}
+            </Button>
+          ) : null}
+          {oidcHref ? (
+            <Button className="w-full" render={<a href={oidcHref} />} type="button" variant="outline">
+              {t('login.oidc.button')}
+            </Button>
+          ) : null}
+          <p className="text-center text-xs text-muted-foreground">{t('login.divider')}</p>
+        </div>
+      ) : null}
       <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)}>
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground" htmlFor="email">

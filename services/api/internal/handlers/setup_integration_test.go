@@ -23,6 +23,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/crypto"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/email"
+	"github.com/mdg-labs/escalite/services/api/internal/graphql"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
 	"github.com/mdg-labs/escalite/services/api/internal/queue"
@@ -106,19 +107,28 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 	realtimeBridge := realtime.NewBridge(databaseURL, slog.Default())
 	realtimeBridge.Start(ctx)
 
+	publicURL := opts.PublicURL
+	if publicURL == "" {
+		publicURL = "http://example.com"
+	}
+
 	handler := server.New(server.Dependencies{
-		Logger:         slog.Default(),
-		Pool:           pool,
-		Jobs:           jobs,
-		Secrets:        secrets,
-		Mail:           opts.Mail,
-		PublicURL:      opts.PublicURL,
-		PasswordReset:  opts.PasswordReset,
-		HeartbeatPing:  opts.HeartbeatPing,
-		InboundWebhook: opts.InboundWebhook,
-		InboundEmail:   opts.InboundEmail,
+		Logger:           slog.Default(),
+		Pool:             pool,
+		Jobs:             jobs,
+		Secrets:          secrets,
+		Mail:             opts.Mail,
+		PublicURL:        publicURL,
+		PasswordReset:    opts.PasswordReset,
+		HeartbeatPing:    opts.HeartbeatPing,
+		InboundWebhook:   opts.InboundWebhook,
+		InboundEmail:     opts.InboundEmail,
 		SlackInteractive: opts.SlackInteractive,
-		Realtime:       realtimeBridge.Hub,
+		SAML:             server.NewSAMLServices(pool, slog.Default(), secrets, publicURL, "http://localhost:3000"),
+		GraphQL: graphql.Options{
+			PublicURL: publicURL,
+		},
+		Realtime: realtimeBridge.Hub,
 	})
 
 	return handler, pool, func() {

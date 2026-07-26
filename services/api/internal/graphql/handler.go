@@ -31,6 +31,8 @@ type Options struct {
 	Production                       bool
 	MaxDepth                         int
 	MaxComplexity                    int
+	PublicURL                        string
+	OIDCEnabled                      bool
 	SlackOAuthInstallURL             string
 	SlackIncidentChannelNameTemplate string
 }
@@ -59,6 +61,8 @@ func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, s
 			jobs,
 			secrets,
 			hub,
+			opts.PublicURL,
+			opts.OIDCEnabled,
 			opts.SlackOAuthInstallURL,
 			channelNameTemplate,
 		),

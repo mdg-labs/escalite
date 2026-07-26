@@ -223,6 +223,14 @@ type LoginInput struct {
 	Password string `json:"password"`
 }
 
+// Unauthenticated login method availability for the web app.
+type LoginOptions struct {
+	SamlEnabled  bool    `json:"samlEnabled"`
+	SamlLoginURL *string `json:"samlLoginUrl,omitempty"`
+	OidcEnabled  bool    `json:"oidcEnabled"`
+	OidcLoginURL *string `json:"oidcLoginUrl,omitempty"`
+}
+
 type LoginPayload struct {
 	User *User `json:"user"`
 }
@@ -346,9 +354,24 @@ type Rotation struct {
 	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
+// Organization SAML SSO configuration (admin only).
+type SamlSettings struct {
+	Configured      bool    `json:"configured"`
+	Enabled         bool    `json:"enabled"`
+	IdpEntityID     *string `json:"idpEntityId,omitempty"`
+	CertificateHint *string `json:"certificateHint,omitempty"`
+	// Absolute URL to start SAML login when enabled.
+	SamlLoginURL *string `json:"samlLoginUrl,omitempty"`
+}
+
 type SaveNotificationRuleInput struct {
 	Priority AlertPriority                `json:"priority"`
 	Steps    []*NotificationRuleStepInput `json:"steps"`
+}
+
+type SaveSamlSettingsInput struct {
+	MetadataXML string `json:"metadataXml"`
+	Enabled     bool   `json:"enabled"`
 }
 
 type SaveSlackSettingsInput struct {

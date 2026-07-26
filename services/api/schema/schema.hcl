@@ -2003,6 +2003,68 @@ table "mobile_devices" {
   }
 }
 
+table "organization_saml_settings" {
+  schema = schema.public
+
+  column "organization_id" {
+    null = false
+    type = uuid
+  }
+  column "enabled" {
+    null    = false
+    type    = boolean
+    default = false
+  }
+  column "idp_entity_id" {
+    null = false
+    type = text
+  }
+  column "idp_sso_url" {
+    null = false
+    type = text
+  }
+  column "idp_certificate_pem" {
+    null = false
+    type = text
+  }
+  column "sp_certificate_pem" {
+    null = false
+    type = text
+  }
+  column "sp_private_key_ciphertext" {
+    null = false
+    type = bytea
+  }
+  column "sp_encryption_key_id" {
+    null = false
+    type = text
+  }
+  column "certificate_hint" {
+    null = false
+    type = text
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+  column "updated_at" {
+    null    = false
+    type    = timestamptz
+    default = sql("now()")
+  }
+
+  primary_key {
+    columns = [column.organization_id]
+  }
+
+  foreign_key "organization_saml_settings_organization_id_fkey" {
+    columns     = [column.organization_id]
+    ref_columns = [table.organizations.column.id]
+    on_delete   = CASCADE
+  }
+}
+
 table "organization_slack_settings" {
   schema = schema.public
 

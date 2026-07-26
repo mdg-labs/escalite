@@ -1660,6 +1660,69 @@ func (r *mutationResolver) SaveSlackSettings(ctx context.Context, input model.Sa
 	return slackSettingsFromDB(&settings, r.slackOAuthInstallURL), nil
 }
 
+// SaveSamlSettings is the resolver for the saveSamlSettings field.
+func (r *mutationResolver) SaveSamlSettings(ctx context.Context, input model.SaveSamlSettingsInput) (*model.SamlSettings, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if r.secrets == nil {
+		return nil, gqlerr.New(handlers.CodeInternal, "encryption is not configured")
+	}
+
+	metadataXML := strings.TrimSpace(input.MetadataXML)
+
+	queries := db.New(r.pool)
+	var existing *db.OrganizationSamlSetting
+	if settings, err := queries.GetOrganizationSamlSettings(ctx, sc.User.OrganizationID); err == nil {
+		existing = &settings
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		r.logger.Error("load saml settings failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	if metadataXML == "" {
+		if existing == nil {
+			return nil, gqlerr.New(handlers.CodeValidation, errSamlMetadataRequired.Error())
+		}
+		params := db.UpsertOrganizationSamlSettingsParams{
+			OrganizationID:         existing.OrganizationID,
+			Enabled:                input.Enabled,
+			IdpEntityID:            existing.IdpEntityID,
+			IdpSsoUrl:              existing.IdpSsoUrl,
+			IdpCertificatePem:      existing.IdpCertificatePem,
+			SpCertificatePem:       existing.SpCertificatePem,
+			SpPrivateKeyCiphertext: existing.SpPrivateKeyCiphertext,
+			SpEncryptionKeyID:      existing.SpEncryptionKeyID,
+			CertificateHint:        existing.CertificateHint,
+		}
+		settings, err := queries.UpsertOrganizationSamlSettings(ctx, params)
+		if err != nil {
+			r.logger.Error("update saml enabled flag failed", "error", err)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+		return samlSettingsFromDB(&settings, r.publicURL), nil
+	}
+
+	params, err := prepareSamlSettingsSave(r.secrets, existing, metadataXML, input.Enabled)
+	if err != nil {
+		if _, ok := err.(*validationErrorMessage); ok {
+			return nil, gqlerr.New(handlers.CodeValidation, err.Error())
+		}
+		r.logger.Error("prepare saml settings failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeValidation, "invalid saml idp metadata")
+	}
+	params.OrganizationID = sc.User.OrganizationID
+
+	settings, err := queries.UpsertOrganizationSamlSettings(ctx, params)
+	if err != nil {
+		r.logger.Error("save saml settings failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return samlSettingsFromDB(&settings, r.publicURL), nil
+}
+
 // CreateIntegrationKey is the resolver for the createIntegrationKey field.
 func (r *mutationResolver) CreateIntegrationKey(ctx context.Context, input model.CreateIntegrationKeyInput) (*model.IntegrationKey, error) {
 	sc, err := requireAdminSession(ctx)
@@ -2345,6 +2408,34 @@ func (r *queryResolver) Health(ctx context.Context) (*model.Health, error) {
 	return &model.Health{Status: "ok"}, nil
 }
 
+// LoginOptions is the resolver for the loginOptions field.
+func (r *queryResolver) LoginOptions(ctx context.Context) (*model.LoginOptions, error) {
+	result := &model.LoginOptions{
+		OidcEnabled: r.oidcEnabled,
+	}
+	if r.oidcEnabled {
+		oidcURL := strings.TrimSuffix(strings.TrimSpace(r.publicURL), "/") + "/api/v1/auth/oidc/login"
+		result.OidcLoginURL = &oidcURL
+	}
+
+	queries := db.New(r.pool)
+	settings, err := queries.GetEnabledOrganizationSamlSettings(ctx)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return result, nil
+		}
+		r.logger.Error("load enabled saml settings failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	result.SamlEnabled = settings.Enabled
+	if settings.Enabled {
+		samlURL := strings.TrimSuffix(strings.TrimSpace(r.publicURL), "/") + "/api/v1/auth/saml/login"
+		result.SamlLoginURL = &samlURL
+	}
+	return result, nil
+}
+
 // Alert is the resolver for the alert field.
 func (r *queryResolver) Alert(ctx context.Context, id string) (*model.Alert, error) {
 	return r.resolveAlert(ctx, id)
@@ -2877,6 +2968,26 @@ func (r *queryResolver) SlackSettings(ctx context.Context) (*model.SlackSettings
 	}
 
 	return slackSettingsFromDB(&settings, r.slackOAuthInstallURL), nil
+}
+
+// SamlSettings is the resolver for the samlSettings field.
+func (r *queryResolver) SamlSettings(ctx context.Context) (*model.SamlSettings, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	settings, err := queries.GetOrganizationSamlSettings(ctx, sc.User.OrganizationID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return samlSettingsFromDB(nil, r.publicURL), nil
+		}
+		r.logger.Error("load saml settings failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return samlSettingsFromDB(&settings, r.publicURL), nil
 }
 
 // IntegrationKeys is the resolver for the integrationKeys field.

@@ -36,6 +36,7 @@ type Dependencies struct {
 	Jobs           *queue.Producer
 	Secrets        *crypto.Box
 	OIDC           *OIDCServices
+	SAML           *SAMLServices
 	SlackOAuth     *SlackOAuthServices
 	Mail           email.Sender
 	PublicURL      string
@@ -71,6 +72,14 @@ type OIDCServices struct {
 	Handler  *handlers.OIDCHandler
 	Login    http.HandlerFunc
 	Callback http.HandlerFunc
+}
+
+// SAMLServices holds optional SAML SSO handlers when organization SAML is enabled.
+type SAMLServices struct {
+	Handler  *handlers.SAMLHandler
+	Login    http.HandlerFunc
+	ACS      http.HandlerFunc
+	Metadata http.HandlerFunc
 }
 
 // SlackOAuthServices holds optional Slack app OAuth install handlers when
@@ -189,6 +198,12 @@ func New(deps Dependencies) http.Handler {
 			r.Get("/api/v1/auth/oidc/callback", deps.OIDC.Callback)
 		}
 
+		if deps.SAML != nil {
+			r.Get("/api/v1/auth/saml/login", deps.SAML.Login)
+			r.Post("/api/v1/auth/saml/acs", deps.SAML.ACS)
+			r.Get("/api/v1/auth/saml/metadata", deps.SAML.Metadata)
+		}
+
 		r.Group(func(r chi.Router) {
 			r.Use(handlers.RequireSession(deps.Pool, deps.Logger))
 			r.Post("/api/v1/mobile/auth/code", mobileAuth.IssueCode)
@@ -222,6 +237,21 @@ func New(deps Dependencies) http.Handler {
 
 	deps.Logger.Info("router initialized")
 	return r
+}
+
+// NewSAMLServices builds SAML route handlers backed by organization settings.
+func NewSAMLServices(pool *pgxpool.Pool, logger *slog.Logger, secrets *crypto.Box, publicURL, successURL string) *SAMLServices {
+	if secrets == nil || publicURL == "" {
+		return nil
+	}
+
+	handler := handlers.NewSAMLHandler(pool, logger, secrets, publicURL, successURL)
+	return &SAMLServices{
+		Handler:  handler,
+		Login:    handler.Login,
+		ACS:      handler.ACS,
+		Metadata: handler.Metadata,
+	}
 }
 
 // NewOIDCServices builds OIDC route handlers when configuration is present.

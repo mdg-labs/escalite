@@ -19,6 +19,8 @@ type Resolver struct {
 	jobs                             *queue.Producer
 	secrets                          *crypto.Box
 	realtime                         *realtime.Hub
+	publicURL                        string
+	oidcEnabled                      bool
 	slackOAuthInstallURL             string
 	slackIncidentChannelNameTemplate string
 }
@@ -30,6 +32,8 @@ func NewResolver(
 	jobs *queue.Producer,
 	secrets *crypto.Box,
 	hub *realtime.Hub,
+	publicURL string,
+	oidcEnabled bool,
 	slackOAuthInstallURL string,
 	slackIncidentChannelNameTemplate string,
 ) *Resolver {
@@ -40,6 +44,8 @@ func NewResolver(
 		jobs:                             jobs,
 		secrets:                          secrets,
 		realtime:                         hub,
+		publicURL:                        publicURL,
+		oidcEnabled:                      oidcEnabled,
 		slackOAuthInstallURL:             slackOAuthInstallURL,
 		slackIncidentChannelNameTemplate: slackIncidentChannelNameTemplate,
 	}

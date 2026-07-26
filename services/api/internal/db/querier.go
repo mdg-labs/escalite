@@ -59,6 +59,7 @@ type Querier interface {
 	GetActiveIntegrationKeyByTokenHash(ctx context.Context, token string) (IntegrationKey, error)
 	GetActiveSessionByID(ctx context.Context, id uuid.UUID) (Session, error)
 	GetAlertByID(ctx context.Context, arg GetAlertByIDParams) (Alert, error)
+	GetEnabledOrganizationSamlSettings(ctx context.Context) (OrganizationSamlSetting, error)
 	GetEscalationPolicyByID(ctx context.Context, arg GetEscalationPolicyByIDParams) (EscalationPolicy, error)
 	GetEscalationStepByPolicyAndOrder(ctx context.Context, arg GetEscalationStepByPolicyAndOrderParams) (EscalationStep, error)
 	GetFirstAdminUserByOrganization(ctx context.Context, organizationID uuid.UUID) (User, error)
@@ -75,6 +76,7 @@ type Querier interface {
 	GetOpenIncidentForTeam(ctx context.Context, arg GetOpenIncidentForTeamParams) (Incident, error)
 	GetOpenIncidentForTeamWithServiceAlerts(ctx context.Context, arg GetOpenIncidentForTeamWithServiceAlertsParams) (Incident, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
+	GetOrganizationSamlSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSamlSetting, error)
 	GetOrganizationSlackSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSlackSetting, error)
 	GetOrganizationSlackSettingsByWorkspaceID(ctx context.Context, workspaceID pgtype.Text) (OrganizationSlackSetting, error)
 	GetOverrideByID(ctx context.Context, arg GetOverrideByIDParams) (Override, error)
@@ -150,6 +152,7 @@ type Querier interface {
 	UpdateService(ctx context.Context, arg UpdateServiceParams) (Service, error)
 	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
 	UpsertMobileDevice(ctx context.Context, arg UpsertMobileDeviceParams) (MobileDevice, error)
+	UpsertOrganizationSamlSettings(ctx context.Context, arg UpsertOrganizationSamlSettingsParams) (OrganizationSamlSetting, error)
 	// Reinstalling the Escalite Slack app (same organization) upserts this single row by
 	// organization_id, so re-authorizing never creates a duplicate workspace row.
 	UpsertOrganizationSlackOAuthInstall(ctx context.Context, arg UpsertOrganizationSlackOAuthInstallParams) (OrganizationSlackSetting, error)

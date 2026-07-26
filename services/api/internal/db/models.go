@@ -195,6 +195,20 @@ type Organization struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
+type OrganizationSamlSetting struct {
+	OrganizationID         uuid.UUID          `json:"organization_id"`
+	Enabled                bool               `json:"enabled"`
+	IdpEntityID            string             `json:"idp_entity_id"`
+	IdpSsoUrl              string             `json:"idp_sso_url"`
+	IdpCertificatePem      string             `json:"idp_certificate_pem"`
+	SpCertificatePem       string             `json:"sp_certificate_pem"`
+	SpPrivateKeyCiphertext []byte             `json:"sp_private_key_ciphertext"`
+	SpEncryptionKeyID      string             `json:"sp_encryption_key_id"`
+	CertificateHint        string             `json:"certificate_hint"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt              pgtype.Timestamptz `json:"updated_at"`
+}
+
 type OrganizationSlackSetting struct {
 	OrganizationID     uuid.UUID          `json:"organization_id"`
 	BotTokenCiphertext []byte             `json:"bot_token_ciphertext"`
