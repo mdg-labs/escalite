@@ -37,6 +37,67 @@ tasks:
       - sh: test -n "{{.DATABASE_URL}}"
         msg: "Set DATABASE_URL or ESCALITE_DATABASE_URL before running migrations"
 
+  schema:diff:
+    desc: Generate a goose migration from pg-schema-diff (edit schema/sql first)
+    vars:
+      MIGRATION_NAME: '{{index .CLI_ARGS 0}}'
+      SCHEMA_DIFF_FROM_EMPTY: '{{.SCHEMA_DIFF_FROM_EMPTY | default "0"}}'
+    cmds:
+      - |
+        set -euo pipefail
+        if [ -z "{{.MIGRATION_NAME}}" ]; then
+          echo "usage: task schema:diff -- <migration_name>" >&2
+          exit 1
+        fi
+
+        cleanup() {
+          if [ -n "${SCHEMA_DIFF_CONTAINER:-}" ]; then
+            docker rm -f "${SCHEMA_DIFF_CONTAINER}" >/dev/null 2>&1 || true
+          fi
+        }
+        trap cleanup EXIT
+
+        FROM_EMPTY_FLAG=""
+        DSN_ARGS=()
+        if [ "{{.SCHEMA_DIFF_FROM_EMPTY}}" = "1" ]; then
+          FROM_EMPTY_FLAG="--from-empty"
+          if [ -z "${DATABASE_URL:-}" ]; then
+            SCHEMA_DIFF_CONTAINER="escalite-schema-diff-$$"
+            SCHEMA_DIFF_PORT="${SCHEMA_DIFF_PORT:-5436}"
+            docker rm -f "${SCHEMA_DIFF_CONTAINER}" >/dev/null 2>&1 || true
+            docker run -d --name "${SCHEMA_DIFF_CONTAINER}" \
+              -e POSTGRES_USER=escalite \
+              -e POSTGRES_PASSWORD=escalite \
+              -e POSTGRES_DB=escalite \
+              -p "${SCHEMA_DIFF_PORT}:5432" \
+              postgres:16-alpine >/dev/null
+            for _ in $(seq 1 30); do
+              if docker exec "${SCHEMA_DIFF_CONTAINER}" pg_isready -U escalite -d escalite >/dev/null 2>&1; then
+                break
+              fi
+              sleep 1
+            done
+            export PGHOST=127.0.0.1
+            export PGPORT="${SCHEMA_DIFF_PORT}"
+            export PGUSER=escalite
+            export PGPASSWORD=escalite
+            export PGDATABASE=escalite
+          fi
+        elif [ -n "${DATABASE_URL:-}" ]; then
+          DSN_ARGS=(--dsn "${DATABASE_URL}")
+        else
+          echo "Set DATABASE_URL or ESCALITE_DATABASE_URL, or SCHEMA_DIFF_FROM_EMPTY=1 for baseline migrations" >&2
+          exit 1
+        fi
+
+        go run ./tools/schema-diff \
+          --name "{{.MIGRATION_NAME}}" \
+          ${FROM_EMPTY_FLAG} \
+          "${DSN_ARGS[@]}"
+    preconditions:
+      - sh: test -n "{{.MIGRATION_NAME}}"
+        msg: "usage: task schema:diff -- <migration_name>"
+
   compose:dev:
     desc: Start Docker Compose dev profile (postgres, api, engine, web)
     dir: deploy/docker-compose

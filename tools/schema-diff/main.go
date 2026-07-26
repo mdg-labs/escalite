@@ -1,0 +1,236 @@
+// schema-diff generates goose-format SQL migrations from pg-schema-diff plan output.
+//
+// Usage:
+//
+//	schema-diff --name add_foo_column --dsn "$DATABASE_URL"
+//	schema-diff --name bootstrap --from-empty --dsn "$DATABASE_URL"
+package main
+
+import (
+	"bytes"
+	"errors"
+	"flag"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
+)
+
+const pgSchemaDiffVersion = "v1.0.7"
+
+func main() {
+	name := flag.String("name", "", "migration name (snake_case, required)")
+	fromDSN := flag.String("dsn", "", "Postgres DSN for the current database state (--from-dsn)")
+	fromEmpty := flag.Bool("from-empty", false, "diff from an empty database (--from-empty-dsn); use for baseline migrations")
+	schemaDir := flag.String("schema-dir", "", "directory containing schema.sql and realtime_notify.sql")
+	migrationsDir := flag.String("migrations-dir", "", "directory to write the generated goose migration")
+	pgSchemaDiffBin := flag.String("pg-schema-diff", "", "path to pg-schema-diff binary (default: PATH or go run)")
+	flag.Parse()
+
+	if strings.TrimSpace(*name) == "" {
+		fatal("missing required --name")
+	}
+	if !validMigrationName(*name) {
+		fatal("invalid --name %q: use snake_case letters, digits, and underscores", *name)
+	}
+	if *fromEmpty && strings.TrimSpace(*fromDSN) != "" {
+		fatal("use either --from-empty or --dsn, not both")
+	}
+	if !*fromEmpty && strings.TrimSpace(*fromDSN) == "" {
+		fatal("missing required --dsn (or pass --from-empty for baseline migrations)")
+	}
+
+	root, err := repoRoot()
+	if err != nil {
+		fatal("%v", err)
+	}
+
+	if *schemaDir == "" {
+		*schemaDir = filepath.Join(root, "services", "api", "schema", "sql")
+	}
+	if *migrationsDir == "" {
+		*migrationsDir = filepath.Join(root, "services", "api", "migrations")
+	}
+
+	schemaSQL := filepath.Join(*schemaDir, "schema.sql")
+	notifySQL := filepath.Join(*schemaDir, "realtime_notify.sql")
+	for _, path := range []string{schemaSQL, notifySQL} {
+		if _, err := os.Stat(path); err != nil {
+			fatal("canonical schema file missing: %s", path)
+		}
+	}
+
+	tablesDir, triggersDir, cleanup, err := prepareSchemaDirs(schemaSQL, notifySQL)
+	if err != nil {
+		fatal("%v", err)
+	}
+	defer cleanup()
+
+	bin, err := resolvePgSchemaDiff(*pgSchemaDiffBin)
+	if err != nil {
+		fatal("%v", err)
+	}
+
+	planSQL, err := runPlan(bin, *fromEmpty, *fromDSN, tablesDir, triggersDir)
+	if err != nil {
+		fatal("%v", err)
+	}
+	if strings.TrimSpace(planSQL) == "" {
+		fatal("no schema changes detected; edit services/api/schema/sql/*.sql first")
+	}
+
+	filename := fmt.Sprintf("%s_%s.sql", time.Now().UTC().Format("20060102150405"), *name)
+	target := filepath.Join(*migrationsDir, filename)
+	body := formatGooseMigration(planSQL)
+
+	if err := os.WriteFile(target, []byte(body), 0o644); err != nil {
+		fatal("write migration: %v", err)
+	}
+
+	fmt.Printf("wrote migration %s\n", target)
+}
+
+func repoRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.work")); err == nil {
+			return dir, nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", errors.New("could not find repo root (go.work)")
+		}
+		dir = parent
+	}
+}
+
+func validMigrationName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for i, r := range name {
+		switch {
+		case r >= 'a' && r <= 'z':
+		case r >= '0' && r <= '9':
+		case r == '_':
+		default:
+			return false
+		}
+		if i == 0 && r >= '0' && r <= '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func prepareSchemaDirs(schemaSQL, notifySQL string) (tablesDir, triggersDir string, cleanup func(), err error) {
+	tablesDir, err = os.MkdirTemp("", "escalite-schema-tables-*")
+	if err != nil {
+		return "", "", nil, fmt.Errorf("create temp tables dir: %w", err)
+	}
+	triggersDir, err = os.MkdirTemp("", "escalite-schema-triggers-*")
+	if err != nil {
+		os.RemoveAll(tablesDir)
+		return "", "", nil, fmt.Errorf("create temp triggers dir: %w", err)
+	}
+
+	if err := copyFile(schemaSQL, filepath.Join(tablesDir, "schema.sql")); err != nil {
+		os.RemoveAll(tablesDir)
+		os.RemoveAll(triggersDir)
+		return "", "", nil, err
+	}
+	if err := copyFile(notifySQL, filepath.Join(triggersDir, "realtime_notify.sql")); err != nil {
+		os.RemoveAll(tablesDir)
+		os.RemoveAll(triggersDir)
+		return "", "", nil, err
+	}
+
+	cleanup = func() {
+		os.RemoveAll(tablesDir)
+		os.RemoveAll(triggersDir)
+	}
+	return tablesDir, triggersDir, cleanup, nil
+}
+
+func copyFile(src, dst string) error {
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return fmt.Errorf("read %s: %w", src, err)
+	}
+	if err := os.WriteFile(dst, data, 0o644); err != nil {
+		return fmt.Errorf("write %s: %w", dst, err)
+	}
+	return nil
+}
+
+func resolvePgSchemaDiff(explicit string) (string, error) {
+	if explicit != "" {
+		return explicit, nil
+	}
+	if path, err := exec.LookPath("pg-schema-diff"); err == nil {
+		return path, nil
+	}
+	// Fall back to pinned module install.
+	install := exec.Command("go", "install", "github.com/stripe/pg-schema-diff/cmd/pg-schema-diff@"+pgSchemaDiffVersion)
+	install.Stdout = os.Stderr
+	install.Stderr = os.Stderr
+	if err := install.Run(); err != nil {
+		return "", fmt.Errorf("pg-schema-diff not found and install failed: %w", err)
+	}
+	path, err := exec.LookPath("pg-schema-diff")
+	if err != nil {
+		return "", fmt.Errorf("pg-schema-diff not found after install: %w", err)
+	}
+	return path, nil
+}
+
+func runPlan(bin string, fromEmpty bool, fromDSN, tablesDir, triggersDir string) (string, error) {
+	args := []string{
+		"plan",
+		"--output-format", "sql",
+		"--no-concurrent-index-ops",
+		"--to-dir", tablesDir,
+		"--to-dir", triggersDir,
+	}
+	if fromEmpty {
+		args = append(args, "--from-empty-dsn")
+	} else {
+		args = append(args, "--from-dsn", fromDSN)
+	}
+
+	cmd := exec.Command(bin, args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		msg := strings.TrimSpace(stderr.String())
+		if msg == "" {
+			msg = strings.TrimSpace(stdout.String())
+		}
+		if msg == "" {
+			msg = err.Error()
+		}
+		return "", fmt.Errorf("pg-schema-diff plan failed: %s", msg)
+	}
+	return stdout.String(), nil
+}
+
+func formatGooseMigration(planSQL string) string {
+	var b strings.Builder
+	b.WriteString("-- Code generated by tools/schema-diff; DO NOT EDIT.\n")
+	b.WriteString("-- +goose Up\n")
+	b.WriteString(strings.TrimSpace(planSQL))
+	b.WriteString("\n\n-- +goose Down\n")
+	b.WriteString("-- generated migration; manual rollback required\n")
+	return b.String()
+}
+
+func fatal(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, "schema-diff: "+format+"\n", args...)
+	os.Exit(1)
+}

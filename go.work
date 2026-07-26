@@ -6,4 +6,5 @@ use (
 	./services/integrations
 	./tools/goalert-importer
 	./tools/pagerduty-importer
+	./tools/schema-diff
 )
