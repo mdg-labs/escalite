@@ -24,8 +24,8 @@ CMD ["pnpm", "dev"]
 
 FROM deps AS builder
 COPY . .
-WORKDIR /app/apps/web
-RUN pnpm build
+WORKDIR /app
+RUN pnpm turbo run build --filter=@escalite/web...
 
 # UID 101 (nginx) — listens on unprivileged ports only.
 FROM busybox:1.36.1-musl@sha256:3c6ae8008e2c2eedd141725c30b20d9c36b026eb796688f88205845ef17aa213 AS busybox

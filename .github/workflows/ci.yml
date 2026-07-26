@@ -45,7 +45,8 @@ jobs:
       - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.1.6
-          args: --timeout=5m ./services/...
+          install-mode: goinstall
+          args: --timeout=5m ./services/api/... ./services/engine/... ./services/integrations/...
 
       - name: Go tests
         env:

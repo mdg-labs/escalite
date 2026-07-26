@@ -236,7 +236,7 @@ func loadSlackOAuth() (*SlackOAuthConfig, error) {
 	if redirectURL == "" {
 		if publicURL == "" {
 			return nil, fmt.Errorf(
-				"Slack app install enabled but redirect URL unknown: set ESCALITE_SLACK_REDIRECT_URL or ESCALITE_PUBLIC_URL",
+				"slack app install enabled but redirect URL unknown: set ESCALITE_SLACK_REDIRECT_URL or ESCALITE_PUBLIC_URL",
 			)
 		}
 		redirectURL = strings.TrimSuffix(publicURL, "/") + "/api/v1/integrations/slack/callback"

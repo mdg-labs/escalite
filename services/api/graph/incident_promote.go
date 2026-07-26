@@ -39,7 +39,7 @@ func (r *mutationResolver) promoteAlertToNewIncident(
 		r.logger.Error("begin promote transaction failed", "error", err)
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	txQueries := queries.WithTx(tx)
 	incidentID := uuid.Must(uuid.NewV7())

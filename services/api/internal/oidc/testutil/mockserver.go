@@ -66,8 +66,8 @@ func NewMockServer(t *testing.T, clientID, clientSecret, redirectURL, email stri
 					"kid": "test-key",
 					"use": "sig",
 					"alg": "RS256",
-					"n":   base64.RawURLEncoding.EncodeToString(mock.key.PublicKey.N.Bytes()),
-					"e":   base64.RawURLEncoding.EncodeToString(big.NewInt(int64(mock.key.PublicKey.E)).Bytes()),
+					"n":   base64.RawURLEncoding.EncodeToString(mock.key.N.Bytes()),
+					"e":   base64.RawURLEncoding.EncodeToString(big.NewInt(int64(mock.key.E)).Bytes()),
 				},
 			},
 		})
