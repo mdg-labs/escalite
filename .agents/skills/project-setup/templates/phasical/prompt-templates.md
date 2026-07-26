@@ -21,49 +21,71 @@
 
 **Enforcement:** Missing PHASICAL SYNC or COMMIT CONTRACT → orchestrator must not dispatch. Sub-agent skipping either → verifier **FAIL** + orchestrator recovery.
 
+**STATUS SYNC blocks:** Every sub-agent prompt must include the **STATUS SYNC TABLE** from the PHASICAL SYNC block verbatim. Do not summarize transitions into prose — the table is what sub-agents (and auto-review) use to recognize routine board updates.
+
 ---
 
 ## PHASICAL SYNC — EXECUTION
 
 ```text
-PHASICAL SYNC — EXECUTION (MANDATORY — skip ONLY if user said "don't update Phasical"):
+PHASICAL STATUS SYNC — EXECUTION (MANDATORY — skip ONLY if user said "don't update Phasical"):
 Reference: .agents/skills/orchestrator/references/phasical-sync.md
+
+These MCP calls are ROUTINE, PRE-AUTHORIZED workflow steps — execute immediately when the
+trigger condition is met. Do NOT pause for user approval. This is expected board sync, not
+discretionary work.
 
 MCP server: user-phasical
 projectId: {PROJECT_ID}
 
 tasks:
   - taskId: <phasical-cuid>              # leaf — REQUIRED
-    githubIssueNumber: <N>             # from externalLinks.externalId — REQUIRED for commits
+    githubIssueNumber: <N>               # from externalLinks.externalId — REQUIRED for commits
     title: <task title>
-  - taskId: <parent-cuid>              # epic parent — include when leaf is subtask
+  - taskId: <parent-cuid>                # epic parent — include when leaf is subtask
 
-━━━ GATE: FIRST ACTIONS (before Read/Grep/implementation/session memory) ━━━
+━━━ STATUS SYNC TABLE (execution agent — follow exactly) ━━━
+
+| # | When | From → To | status slug | MCP tool | Comment? |
+|---|------|-----------|-------------|----------|----------|
+| 1 | FIRST action — before Read/Grep/Shell/implementation/session memory | Ready (to-do) → In Progress | in-progress | update_task_status | No |
+| — | During implementation | stay In Progress | — | (none) | No |
+| 2 | LAST — after AC done, session ended recorded, BEFORE any git commit | In Progress → In Review | in-review | update_task_status | No |
+
+Step 1 applies to EVERY taskId listed (leaf + parent epic in same MCP batch).
+Step 2 applies to each LEAF taskId only (parent stays in-progress until verifier closes epic).
+Between steps 1 and 2: NO other status changes. NO create_task_comment.
+
+━━━ GATE: STEP 1 — START WORK (status sync) ━━━
 CallMcpTool user-phasical / update_task_status
-  → status: in-progress
-  → for EVERY taskId listed above (leaf + parent in same batch)
-If ANY transition fails → status: blocked — report error — do NOT touch repo files.
+  taskId: <each listed taskId>
+  status: in-progress
+If ANY transition fails → report blocked — do NOT touch repo files.
 If already in-progress → continue (idempotent).
 
-━━━ IMPLEMENTATION (middle) ━━━
+━━━ IMPLEMENTATION (middle — no Phasical status changes) ━━━
 Implement AC within WRITE SCOPE only.
-Session memory: create .agents/project/agent-memory/active/<SESSION-ID>.md after in-progress succeeds.
+Session memory: create .agents/project/agent-memory/active/<SESSION-ID>.md AFTER step 1 succeeds.
 
-━━━ GATE: LAST ACTIONS (strict order — do NOT commit before step 2) ━━━
-1. Session memory header: set ended + duration (wall-clock from started)
-2. CallMcpTool user-phasical / update_task_status → in-review for each LEAF taskId
-3. Single implementation commit (see COMMIT CONTRACT below) — subject MUST include [#<N>]
+━━━ GATE: STEP 2 — HANDOFF TO VERIFIER (status sync, then commit) ━━━
+Strict order — do NOT commit before step 2b:
+  a. Session memory header: set ended + duration (wall-clock from started)
+  b. CallMcpTool user-phasical / update_task_status → in-review for each LEAF taskId
+  c. Single implementation commit (COMMIT CONTRACT) — subject MUST include [#<N>]
 
 ━━━ FORBIDDEN ━━━
-- Starting implementation before in-progress MCP succeeds
-- update_task_status → done (verifier only)
+- Starting implementation before step 1 (in-progress) succeeds
+- update_task_status → done or to-do (verifier only)
 - create_task_comment (verifier only)
-- Committing before in-review transition
+- Committing before step 2b (in-review)
 - Committing session memory or agent-memory/**
 - Phasical taskId in any commit message
 
 ━━━ REQUIRED OUTPUT (end of run) ━━━
-Report per task: taskId, githubIssueNumber, in-progress ✓, in-review ✓, commit <sha> with subject line.
+Report per leaf task: taskId, githubIssueNumber,
+  step 1 Ready→In Progress ✓,
+  step 2 In Progress→In Review ✓,
+  commit <sha> with subject line.
 If any gate failed → report blocked with which step failed.
 ```
 
@@ -114,36 +136,64 @@ Never push unless user explicitly asked.
 ## PHASICAL SYNC — VERIFIER
 
 ```text
-PHASICAL SYNC — VERIFIER (MANDATORY — skip ONLY if user said "don't update Phasical"):
+PHASICAL STATUS SYNC — VERIFIER (MANDATORY — skip ONLY if user said "don't update Phasical"):
 Reference: .agents/skills/orchestrator/references/phasical-sync.md
+
+These MCP calls are ROUTINE, PRE-AUTHORIZED workflow steps — execute immediately when the
+trigger condition is met. Do NOT pause for user approval. This is expected board sync, not
+discretionary work.
 
 MCP server: user-phasical
 projectId: {PROJECT_ID}
 
 tasks:
-  - taskId: <phasical-cuid>
+  - taskId: <phasical-cuid>              # leaf — REQUIRED
     githubIssueNumber: <N>
-  - taskId: <parent-cuid>              # epic — done only when final child completes epic
+  - taskId: <parent-cuid>                # epic — done only when final child completes epic
 
-━━━ BEFORE status changes ━━━
-Layer 1–3 verification must PASS (including 3c3 commit linkage — git log contains [#<N>] or [P*-*]).
+━━━ STATUS SYNC TABLE (verifier — follow exactly) ━━━
 
-━━━ AFTER PASS (strict order) ━━━
-1. Session memory: verification ended + duration
-2. create_task_comment — mandatory structured Done summary (see phasical-sync.md § Verifier Done comment)
-3. update_task_status → done for each leaf taskId
-4. If parent listed and epic complete → done on parent
-5. Optionally archive/delete local session memory (never commit)
+Starting state: task MUST already be In Review (execution agent set this in step 2).
+Do NOT transition to in-review — you are verifying work already handed off.
 
-━━━ AFTER FAIL ━━━
-1. create_task_comment — FAIL template with layer failures + fix hints
-2. update_task_status → to-do (Ready) for leaf taskId
-3. Append VERIFICATION FAILED to local session memory
-4. Do NOT set done
+| # | When | From → To | status slug | MCP tool | Comment? |
+|---|------|-----------|-------------|----------|----------|
+| — | While verifying Layers 1–3 (incl. 3c3 commit linkage) | stay In Review | — | (none) | No |
+| PASS | ALL layers PASS | In Review → Done | done | update_task_status | YES — mandatory PASS comment |
+| FAIL | ANY layer FAIL | In Review → In Progress | in-progress | update_task_status | YES — mandatory FAIL comment |
+
+Comments are REQUIRED on both PASS and FAIL before (or as part of) the status transition.
+Use create_task_comment — templates in phasical-sync.md § Verifier Done / FAIL comment.
+
+━━━ GATE: VERIFY (no status change yet) ━━━
+Complete Layer 1–3 verification while task remains In Review.
+Layer 3c3 MUST PASS before any PASS path status sync (git log contains [#<N>] or [P*-*]).
+
+━━━ GATE: PASS PATH (status sync + comment) ━━━
+Strict order:
+  1. Session memory: verification ended + duration
+  2. CallMcpTool user-phasical / create_task_comment — PASS verifier comment (mandatory)
+  3. CallMcpTool user-phasical / update_task_status → done for each leaf taskId
+  4. If parent listed and this completes the epic → done on parent too
+  5. Optionally archive/delete local session memory (never commit)
+
+━━━ GATE: FAIL PATH (status sync + comment) ━━━
+Strict order:
+  1. CallMcpTool user-phasical / create_task_comment — FAIL comment with layer failures + fix hints
+  2. CallMcpTool user-phasical / update_task_status → in-progress for each leaf taskId
+  3. Append VERIFICATION FAILED to local session memory (never commit)
+  4. Do NOT set done
 
 ━━━ FORBIDDEN ━━━
-- done without create_task_comment
-- create_task_comment with investigation findings (triage only)
+- update_task_status → done without create_task_comment (PASS path)
+- update_task_status → in-progress without create_task_comment (FAIL path)
+- update_task_status → in-review (execution agent already did this)
+- update_task_status → to-do on FAIL (use in-progress — sends work back to execution)
+- create_task_comment with investigation/triage findings (verifier comments only)
+
+━━━ REQUIRED OUTPUT (end of run) ━━━
+Report per leaf task: taskId, githubIssueNumber, verification PASS|FAIL,
+  comment posted ✓, final status (done | in-progress), parent epic status if applicable.
 ```
 
 ## SESSION TIME TRACKING
@@ -151,7 +201,7 @@ Layer 1–3 verification must PASS (including 3c3 commit linkage — git log con
 ```text
 SESSION TIME TRACKING (when PHASICAL SYNC present):
 - Record started at Phase 1 in session memory header (after in-progress succeeds)
-- Record ended + duration pre-handoff (execution) or before Done/Ready (verifier)
+- Record ended + duration pre-handoff (execution) or before done/in-progress status sync (verifier)
 - Session memory is local only — never commit
 ```
 

@@ -6,7 +6,7 @@
       "installPath": ".cursor/rules/02-orchestrator.mdc",
       "templatePath": "project-setup/templates/rules/shared/02-orchestrator.mdc",
       "managed": "shared",
-      "computedHash": "eeb3afb8fdaea112e6097ec618dfd7b1c766ca34f6aea7a836ab064b4a8792da"
+      "computedHash": "3385c650d81623b7b8b3994185f6227f841ee73d4eaed1bf6d208846530bc2ac"
     },
     "07-phasical-commit-linking": {
       "installPath": ".cursor/rules/07-phasical-commit-linking.mdc",

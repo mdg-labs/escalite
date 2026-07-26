@@ -87,7 +87,7 @@ Created/updated by **project-setup** (layer **phasical**).
 | **State**       | `- [ ]` / `- [~]` / `- [x]` / `- [!]` in plan file | `TodoWrite` + Phasical status              | `TodoWrite` in chat                |
 | **In progress** | `[~]` (Lane S agent or Lane P batch prep)          | Execution → **in-progress**             | todo `in_progress`                 |
 | **Done**        | Verifier → `[x]` on plan file                      | Verifier PASS → **done**                | todo `completed` after verify PASS |
-| **Failed**      | Verifier → `[!]` on plan file                      | Verifier → FAIL comment; stay in-review | todo `pending`                     |
+| **Failed**      | Verifier → `[!]` on plan file                      | Verifier → FAIL comment; **in-progress** (rework) | todo `pending`                     |
 
 Pick mode on first turn from user message. Default to **plan-file mode** only when user asks for roadmap work and did not name a Phasical/GitHub task.
 
@@ -186,7 +186,7 @@ When building a prompt:
 5. Session ID: `<TASK-ID>-<YYYYMMDD>-<4hex>` — same for execution + verifier
 6. **Lane** (`S` or `P`) and git context (branch, worktree, `STAGING_BASE_SHA` for Lane P)
 7. **Epic context** — parent key, sibling deps, `CLOSE_PARENTS` when final child
-8. **PHASICAL SYNC block** — execution or verifier variant (never `done` in execution prompt) — **copy verbatim** from prompt-templates; fill taskIds + `#N`
+8. **PHASICAL SYNC block** — execution or verifier variant (never `done` in execution prompt) — **copy verbatim** from prompt-templates, including the **STATUS SYNC TABLE**; fill taskIds + `#N`
 9. **COMMIT CONTRACT block** — **mandatory on every execution prompt** (even when Phasical sync off)
 10. **SESSION TIME TRACKING** — when PHASICAL SYNC present (from prompt-templates.md)
 11. **SCOPED CI GATE** — mandatory in every execution and verifier prompt (from prompt-templates.md)
@@ -352,7 +352,7 @@ Never reuse a verifier thread across batches.
 | Result | Plan-file mode | Phasical | Session memory |
 | ------ | -------------- | ----- | -------------- |
 | PASS   | `[x]` that row only | Done + mandatory comment | Delete or archive locally |
-| FAIL   | `[!]` that row only | to-do + FAIL comment | Append VERIFICATION FAILED |
+| FAIL   | `[!]` that row only | in-progress + FAIL comment | Append VERIFICATION FAILED |
 
 **Verifier Phasical duties:** see [references/phasical-sync.md](references/phasical-sync.md).
 
@@ -387,9 +387,9 @@ Path: `.agents/project/agent-memory/` — **never committed**. See `agent-memory
 | Before dispatch | Orchestrator | Generate SESSION ID |
 | Phase 1 | Execution | Create `active/<SESSION-ID>.md`; set `started` when PHASICAL SYNC |
 | Pre-handoff | Execution | `ended` + `duration`; in-review; one commit |
-| Verifier end | Verifier | Phasical comment + done/ready; verification timing |
-| PASS | Verifier | Mandatory Done comment |
-| FAIL | Verifier | FAIL comment; append VERIFICATION FAILED locally |
+| Verifier end | Verifier | Phasical comment + done/in-progress; verification timing |
+| PASS | Verifier | Mandatory Done comment → done |
+| FAIL | Verifier | FAIL comment → in-progress; append VERIFICATION FAILED locally |
 
 **Retry after FAIL:** same SESSION ID.
 
@@ -441,5 +441,5 @@ When `.agents/project/orchestrator/slack-session-end.md` exists, send **once** w
 - Blanket `git add .` / `-A`
 - Pushing without user request
 - **Omitting SCOPED CI GATE, DB MIGRATIONS, or PLAN FILE GUARD** from prompts when required
-- **Omitting PHASICAL SYNC or COMMIT CONTRACT** from execution prompts (or summarizing instead of verbatim copy)
+- **Omitting PHASICAL SYNC or COMMIT CONTRACT** from execution prompts (or summarizing STATUS SYNC TABLE instead of verbatim copy)
 - **Dispatching execution without filled `githubIssueNumber` / `[#N]`** in COMMIT CONTRACT

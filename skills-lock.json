@@ -29,7 +29,7 @@
       "source": "mdg-labs/skills",
       "sourceType": "github",
       "skillPath": "orchestrator/SKILL.md",
-      "computedHash": "e5e13875d2b467fa493cab0c177bd75d52c7e333bd20c526337b0641ce6e4498"
+      "computedHash": "ac6a9751c081954ace3e5429f9fa2551e6a169301e4abd37a871b0e5fef4c9aa"
     },
     "phasical-intake": {
       "source": "mdg-labs/skills",
@@ -47,7 +47,7 @@
       "source": "mdg-labs/skills",
       "sourceType": "github",
       "skillPath": "project-setup/SKILL.md",
-      "computedHash": "f3629fb67fdf7bb124fbfcf6acdb999492fdc0c65c65688344b93bff72f3fd5d"
+      "computedHash": "cc443e6810fd854562a9f806eea2d2e6300806c2ffd18c10755a4d543223d983"
     }
   }
 }

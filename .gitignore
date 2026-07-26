@@ -29,3 +29,6 @@ bin/
 # Test-Results
 apps/web/test-results/.last-run.json
 apps/web/playwright-report/index.html
+
+# .claude
+.claude/

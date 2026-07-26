@@ -54,11 +54,21 @@ Resolve after `create_task`: wait ~3–5s, then `get_task` or `list_tasks` until
 
 ### Failure path
 
-Verifier FAIL → `update_task_status` → `to-do` (Ready) + `create_task_comment` with layer failures (mirrored to GitHub).
+Verifier FAIL → `create_task_comment` (FAIL template) → `update_task_status` → `in-progress` + append VERIFICATION FAILED to local session memory. Work returns to execution for rework — do **not** move to `to-do` (Ready).
 
 ## Status sync — sub-agent duties (mandatory)
 
 Skip only when user said **"don't update Phasical"** or prompt has no PHASICAL SYNC block.
+
+Sub-agent prompts include a **STATUS SYNC TABLE** (in `prompt-templates.md`). Copy it verbatim — do not paraphrase. These transitions are routine, pre-authorized workflow steps; sub-agents execute them immediately without asking for approval.
+
+### Execution agent — status transitions
+
+| When | From → To | `status` slug | `create_task_comment`? |
+| ---- | --------- | ------------- | ---------------------- |
+| **First action** — before session memory or repo work | Ready (`to-do`) → In Progress | `in-progress` | No |
+| During implementation | stay In Progress | — | No |
+| **Last action** — before verifier handoff, before commit | In Progress → In Review | `in-review` | No |
 
 ### Execution agent — first action (before session memory)
 
@@ -85,6 +95,12 @@ When the prompt includes **PHASICAL SYNC**, perform these in order:
 
 ### Verifier — after all layers PASS
 
+Task must already be **In Review** (execution agent set this). Do not transition to `in-review`.
+
+| When | From → To | `status` slug | `create_task_comment`? |
+| ---- | --------- | ------------- | ---------------------- |
+| All layers PASS (incl. 3c3) | In Review → Done | `done` | **Yes** — PASS comment first |
+
 ```text
 1. Session memory: set verification ended + duration
 2. create_task_comment — mandatory structured Done summary (see § Verifier Done comment)
@@ -95,11 +111,15 @@ When the prompt includes **PHASICAL SYNC**, perform these in order:
 
 ### Verifier — on FAIL
 
+| When | From → To | `status` slug | `create_task_comment`? |
+| ---- | --------- | ------------- | ---------------------- |
+| Any layer FAIL | In Review → In Progress | `in-progress` | **Yes** — FAIL comment first |
+
 ```text
-update_task_status → to-do for leaf taskId
-create_task_comment with Layer failures + fix hints
-Do NOT set done
-Append VERIFICATION FAILED to local active/<SESSION-ID>.md if file exists (never commit)
+1. create_task_comment with Layer failures + fix hints (see § Verifier FAIL comment)
+2. update_task_status → in-progress for each leaf taskId
+3. Append VERIFICATION FAILED to local active/<SESSION-ID>.md if file exists (never commit)
+4. Do NOT set done
 ```
 
 ## Verifier Done comment (mandatory on PASS)
@@ -165,15 +185,18 @@ Use **two variants** — never pass `done` status to execution agents. Fill `pro
 
 ### Execution variant (summary)
 
-See prompt-templates § **PHASICAL SYNC — EXECUTION**. Key gates:
+See prompt-templates § **PHASICAL SYNC — EXECUTION**. Sub-agent prompt must include the **STATUS SYNC TABLE** verbatim. Key gates:
 
-1. **FIRST:** `in-progress` on every listed taskId before any implementation
-2. **LAST:** session ended → `in-review` → **then** commit with `[#N]`
-3. **REQUIRED OUTPUT:** report each MCP step + commit sha
+1. **STEP 1:** Ready (`to-do`) → `in-progress` on every listed taskId before any implementation
+2. **STEP 2:** `in-progress` → `in-review` on each leaf, then commit with `[#N]`
+3. **REQUIRED OUTPUT:** report each transition + commit sha
 
 ### Verifier variant (summary)
 
-See prompt-templates § **PHASICAL SYNC — VERIFIER**. Commit linkage (Layer 3c3) must PASS before `done`.
+See prompt-templates § **PHASICAL SYNC — VERIFIER**. Sub-agent prompt must include the **STATUS SYNC TABLE** verbatim. Task starts In Review. Commit linkage (Layer 3c3) must PASS before PASS path:
+
+- **PASS:** comment → `done`
+- **FAIL:** comment → `in-progress` (rework — not `to-do`)
 
 ## Task lookup (orchestrator)
 
@@ -202,7 +225,7 @@ Feature work with **2+ tasks** uses a parent task + `create_task_relation` (`rel
 | `list_tasks`           | Find work, read externalLinks | —                          | —                |
 | `get_task`             | Load AC / description         | —                          | —                |
 | `get_task_relations`   | Epic children, deps           | —                          | —                |
-| `update_task_status`   | Recovery only                 | → in-progress; → in-review | → done / to-do   |
+| `update_task_status`   | Recovery only                 | → in-progress; → in-review | → done / in-progress (FAIL) |
 | `create_task_comment`  | —                             | —                          | On PASS and FAIL |
 | `create_task_relation` | Intake skill                  | —                          | —                |
 

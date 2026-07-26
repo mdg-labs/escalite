@@ -52,6 +52,7 @@ If you're the orchestrator chat: do not edit checkboxes during normal flow excep
 | In Progress | **execution agent** (first action) |
 | In Review | **execution agent** (pre-verifier) |
 | Done | **verifier** after PASS |
+| In Progress (rework) | **verifier** after FAIL |
 
 See `.agents/skills/orchestrator/references/phasical-sync.md` and `07-phasical-commit-linking.mdc`.
 

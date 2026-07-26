@@ -153,7 +153,7 @@ Rendered to `.agents/project/orchestrator/prompt-templates.md`. Orchestrator cop
 
 **Never remove or shorten:**
 
-- **PHASICAL SYNC — EXECUTION** / **VERIFIER** — gate sections (`FIRST ACTIONS`, `LAST ACTIONS`, `FORBIDDEN`, `REQUIRED OUTPUT`)
+- **PHASICAL SYNC — EXECUTION** / **VERIFIER** — STATUS SYNC TABLE + gate sections (`STEP 1`/`STEP 2` or `PASS PATH`/`FAIL PATH`, `FORBIDDEN`, `REQUIRED OUTPUT`)
 - **COMMIT CONTRACT — EXECUTION** — subject format, staging rules, handoff order
 
 **On update:** merge user CI command tweaks; preserve custom examples. Full refresh only when user confirms — PHASICAL/COMMIT blocks must stay intact.
