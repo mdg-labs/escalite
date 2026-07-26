@@ -1,4 +1,4 @@
-import { mobileAuthConfig } from '@/auth/config'
+import { getServerEndpoints } from '@/server/endpoints'
 
 export type MobileAuthUser = {
   id: string
@@ -36,7 +36,8 @@ export async function exchangeMobileAuthCode(code: string): Promise<{
   refreshToken: string
   user: MobileAuthUser
 }> {
-  const response = await fetch(`${mobileAuthConfig.apiBaseUrl}/api/v1/mobile/auth/exchange`, {
+  const { apiBaseUrl } = getServerEndpoints()
+  const response = await fetch(`${apiBaseUrl}/api/v1/mobile/auth/exchange`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code }),
@@ -58,7 +59,8 @@ export async function exchangeMobileAuthCode(code: string): Promise<{
 }
 
 export async function refreshMobileSession(refreshToken: string): Promise<MobileAuthUser> {
-  const response = await fetch(`${mobileAuthConfig.apiBaseUrl}/api/v1/mobile/auth/refresh`, {
+  const { apiBaseUrl } = getServerEndpoints()
+  const response = await fetch(`${apiBaseUrl}/api/v1/mobile/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh_token: refreshToken }),

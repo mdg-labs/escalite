@@ -50,6 +50,8 @@ Open the web UI at the host port mapped by `ESCALITE_WEB_PORT` (default `5173`).
 
 For registry-based deploys instead of local builds, see [`deploy/docker-compose/README.md`](../../deploy/docker-compose/README.md#image-digest-pinning-release).
 
+Stable images are published when a core GitHub release (`vX.Y.Z`, from root `VERSION`) is **published** on `main`. Nightly images (`:nightly`, `:nightly-<short-sha>`) are published on every push to `dev`. Mobile APK releases use separate `mobile-v*` tags — see [`docs/deploy/mobile-releases.md`](mobile-releases.md).
+
 ## Resource limits
 
 `docker-compose.prod.yml` sets conservative per-service limits suitable for a small team on a single VPS:

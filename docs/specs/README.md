@@ -31,6 +31,8 @@ Every `NN-*.md` file contains:
 | [07-security-and-auth.md](./07-security-and-auth.md) | Security, AuthN/AuthZ & Hardening | Sessions, RBAC, webhook security, secrets, audit, CI hygiene |
 | [08-implementation-decisions-and-conventions.md](./08-implementation-decisions-and-conventions.md) | Implementation Decisions (agent-binding) | Pinned tools, conventions, Definition of Done, Phase 0 bootstrap order |
 
+Operator-only docs in Outline (not mirrored here): **09 — Mobile Android Release Setup (operator)** — Expo/EAS, `EXPO_TOKEN`, Android keystore, Obtainium. See [`../deploy/mobile-releases.md`](../deploy/mobile-releases.md).
+
 ## Machine-readable roadmap
 
 Implementation sequencing derived from doc 06 and doc 08 lives in [`../roadmap/roadmap.yaml`](../roadmap/roadmap.yaml). Human-readable rendering: [`../roadmap/ROADMAP.md`](../roadmap/ROADMAP.md).

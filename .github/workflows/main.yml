@@ -16,3 +16,13 @@ jobs:
   ci:
     uses: ./.github/workflows/ci.yml
     secrets: inherit
+
+  release-draft:
+    needs: ci
+    uses: ./.github/workflows/release-draft.yml
+    secrets: inherit
+
+  mobile-stable:
+    needs: ci
+    uses: ./.github/workflows/mobile-stable.yml
+    secrets: inherit

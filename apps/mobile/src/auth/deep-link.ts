@@ -1,11 +1,15 @@
 import * as Linking from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
 
-import { mobileAuthConfig, mobileAuthDeepLink, mobileLoginUrl } from '@/auth/config'
+import { mobileAuthConstants, mobileAuthDeepLink, mobileLoginUrl } from '@/auth/config'
+import { getServerEndpoints } from '@/server/endpoints'
 
 export function parseAuthCodeFromUrl(url: string): string | null {
   const parsed = Linking.parse(url)
-  if (parsed.hostname !== mobileAuthConfig.deepLinkAuthPath && parsed.path !== mobileAuthConfig.deepLinkAuthPath) {
+  if (
+    parsed.hostname !== mobileAuthConstants.deepLinkAuthPath &&
+    parsed.path !== mobileAuthConstants.deepLinkAuthPath
+  ) {
     return null
   }
 
@@ -22,7 +26,8 @@ export function parseAuthCodeFromUrl(url: string): string | null {
 export async function openMobileLoginSession(): Promise<string | null> {
   WebBrowser.maybeCompleteAuthSession()
 
-  const result = await WebBrowser.openAuthSessionAsync(mobileLoginUrl(), mobileAuthDeepLink())
+  const { webBaseUrl } = getServerEndpoints()
+  const result = await WebBrowser.openAuthSessionAsync(mobileLoginUrl(webBaseUrl), mobileAuthDeepLink())
   if (result.type !== 'success' || !result.url) {
     return null
   }

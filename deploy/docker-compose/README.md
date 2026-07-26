@@ -60,6 +60,27 @@ ghcr.io/mdg-labs/escalite-api@sha256:abc123…
 
 4. **Deploy** with the release override (step above). Compose pulls by digest; retagging upstream cannot change what runs.
 
+## Nightly container images (`dev` branch)
+
+Every push to `dev` publishes production-target images to GHCR after CI passes:
+
+```text
+ghcr.io/mdg-labs/escalite-api:nightly
+ghcr.io/mdg-labs/escalite-api:nightly-<short-sha>
+```
+
+The same tags exist for `escalite-engine`, `escalite-web`, and `escalite-status-page`.
+
+Use `:nightly` for dogfood environments. Pin `:nightly-<short-sha>` when you need a reproducible nightly build.
+
+## Stable container images (`main` + published release)
+
+1. Bump root [`VERSION`](../../VERSION) on `main` → CI creates a **draft** GitHub release `vX.Y.Z`.
+2. Review release notes and **publish** the draft.
+3. Publishing builds and pushes `ghcr.io/mdg-labs/escalite-*:vX.Y.Z` (and `:vX.Y.Z-<short-sha>`), attaches SBOMs, and appends digest-pinned image references to the release notes.
+
+See also [`docs/deploy/mobile-releases.md`](../../docs/deploy/mobile-releases.md) for Android APK releases (`mobile-v*` tags — independent of core `v*` container releases).
+
 ### Updating digests
 
 Re-run step 2 after each image rebuild. Update operator `.env` or your secrets store; verify with `docker compose … config` before `up`.

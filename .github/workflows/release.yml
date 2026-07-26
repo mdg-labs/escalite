@@ -7,8 +7,76 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
+  container-images:
+    if: >-
+      github.event_name == 'release' &&
+      startsWith(github.event.release.tag_name, 'v') &&
+      !startsWith(github.event.release.tag_name, 'mobile-v')
+    name: Stable container images
+    uses: ./.github/workflows/container-images.yml
+    with:
+      image_tag: ${{ github.event.release.tag_name }}
+      also_tag_sha: true
+
+  image-digests:
+    if: >-
+      github.event_name == 'release' &&
+      startsWith(github.event.release.tag_name, 'v') &&
+      !startsWith(github.event.release.tag_name, 'mobile-v')
+    name: Publish image digests
+    needs: container-images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve image digests
+        id: digests
+        run: |
+          tag='${{ github.event.release.tag_name }}'
+          short_sha="${GITHUB_SHA::7}"
+          images=(
+            ghcr.io/mdg-labs/escalite-api
+            ghcr.io/mdg-labs/escalite-engine
+            ghcr.io/mdg-labs/escalite-web
+            ghcr.io/mdg-labs/escalite-status-page
+          )
+
+          {
+            echo "## Container images (digest-pinned)"
+            echo
+            for image in "${images[@]}"; do
+              digest="$(docker buildx imagetools inspect "${image}:${tag}" --format '{{.Manifest.Digest}}')"
+              name="${image##*/}"
+              echo "- ${name}: ${image}@${digest}"
+            done
+            echo
+            echo "SHA-tagged builds are also available as \`${tag}-${short_sha}\`."
+          } >> "${RUNNER_TEMP}/release-notes.md"
+
+      - name: Append digest table to release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing="$(gh release view '${{ github.event.release.tag_name }}' --json body --jq .body)"
+          {
+            if [ -n "${existing}" ]; then
+              printf '%s\n\n' "${existing}"
+            fi
+            cat "${RUNNER_TEMP}/release-notes.md"
+          } > "${RUNNER_TEMP}/combined-release-notes.md"
+
+          gh release edit '${{ github.event.release.tag_name }}' \
+            --notes-file "${RUNNER_TEMP}/combined-release-notes.md"
+
   sbom:
     name: SBOM (syft)
     runs-on: ubuntu-latest
@@ -31,9 +99,13 @@ jobs:
           dependency-snapshot: true
 
       - name: Attach SBOMs to release
-        if: github.event_name == 'release'
+        if: >-
+          github.event_name == 'release' &&
+          startsWith(github.event.release.tag_name, 'v') &&
+          !startsWith(github.event.release.tag_name, 'mobile-v')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.release.tag_name }}
           files: |
             sbom-go.spdx.json
             sbom-js.spdx.json

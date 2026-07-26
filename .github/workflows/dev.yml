@@ -11,8 +11,22 @@ concurrency:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   ci:
     uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  container-images:
+    name: Nightly container images
+    needs: ci
+    uses: ./.github/workflows/container-images.yml
+    with:
+      image_tag: nightly
+      also_tag_sha: true
+
+  mobile-beta:
+    needs: ci
+    uses: ./.github/workflows/mobile-beta.yml
     secrets: inherit

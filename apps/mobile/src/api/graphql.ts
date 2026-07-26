@@ -1,5 +1,5 @@
-import { mobileAuthConfig } from '@/auth/config'
 import { getStoredRefreshToken } from '@/auth/secure-store'
+import { getServerEndpoints } from '@/server/endpoints'
 
 type GraphQLResponse<T> = {
   data?: T
@@ -15,7 +15,8 @@ export async function graphqlRequest<T>(
     throw new Error('not authenticated')
   }
 
-  const response = await fetch(`${mobileAuthConfig.apiBaseUrl}/graphql`, {
+  const { graphqlUrl } = getServerEndpoints()
+  const response = await fetch(graphqlUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

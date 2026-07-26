@@ -32,7 +32,10 @@ test('eas.json stub defines build profiles', () => {
   assert.ok(easJson.build)
   assert.ok(easJson.build.development)
   assert.ok(easJson.build.preview)
+  assert.ok(easJson.build.beta)
+  assert.equal(easJson.build.beta.android.buildType, 'apk')
   assert.ok(easJson.build.production)
+  assert.equal(easJson.build.production.android.buildType, 'apk')
 })
 
 test('tamagui config defaults to dark theme from tokens', () => {

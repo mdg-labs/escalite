@@ -2,7 +2,7 @@ import * as Device from 'expo-device'
 import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
 
-import { mobileAuthConfig } from '@/auth/config'
+import { getServerEndpoints } from '@/server/endpoints'
 
 type RegisterMobileDeviceResponse = {
   data?: {
@@ -47,7 +47,8 @@ export async function registerMobileDevicePushToken(
   const platform = Device.osName?.toLowerCase() ?? undefined
   const deviceLabel = Device.modelName ?? undefined
 
-  const response = await fetch(`${mobileAuthConfig.apiBaseUrl}/graphql`, {
+  const { graphqlUrl } = getServerEndpoints()
+  const response = await fetch(graphqlUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

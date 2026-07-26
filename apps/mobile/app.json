@@ -39,6 +39,15 @@
     "experiments": {
       "typedRoutes": true,
       "tsconfigPaths": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "d70f7b7a-55e8-42a0-8f1d-980f7b072bfa"
+      }
+    },
+    "owner": "mdg-labs"
   }
 }

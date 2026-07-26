@@ -1,0 +1,19 @@
+name: Mobile release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-publish:
+    name: Mobile release published
+    if: startsWith(github.event.release.tag_name, 'mobile-v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post-publish hook placeholder
+        run: |
+          echo "Mobile release ${{ github.event.release.tag_name }} published."
+          echo "APK was attached when the draft was created by mobile-stable.yml."
