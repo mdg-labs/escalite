@@ -4,6 +4,7 @@ use (
 	./services/api
 	./services/engine
 	./services/integrations
+	./services/outboundintegrations
 	./tools/goalert-importer
 	./tools/pagerduty-importer
 	./tools/schema-diff

@@ -19,6 +19,7 @@ import (
 	"github.com/mdg-labs/escalite/services/engine/internal/queue"
 	"github.com/mdg-labs/escalite/services/engine/internal/server"
 	"github.com/mdg-labs/escalite/services/engine/internal/smsprovider"
+	_ "github.com/mdg-labs/escalite/services/outboundintegrations/install"
 )
 
 const serviceName = "engine"
@@ -59,6 +60,10 @@ func run() int {
 		Template: cfg.SlackIncidentChannelNameTemplate,
 		Secrets:  secrets,
 		Logger:   logger,
+	})
+	incident.ConfigureTicketing(incident.TicketingConfig{
+		Secrets: secrets,
+		Logger:  logger,
 	})
 
 	ctx := context.Background()

@@ -68,6 +68,7 @@ CREATE TABLE "incidents" (
   "resolved_at" timestamptz NULL,
   "slack_channel_id" text NULL,
   "slack_thread_ts" text NULL,
+  "ticket_url" text NULL,
   "created_at" timestamptz NOT NULL DEFAULT now(),
   "updated_at" timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY ("id"),
@@ -482,6 +483,20 @@ CREATE TABLE "organization_slack_settings" (
   "updated_at" timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY ("organization_id"),
   CONSTRAINT "organization_slack_settings_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create "organization_ticketing_settings" table
+CREATE TABLE "organization_ticketing_settings" (
+  "organization_id" uuid NOT NULL,
+  "plugin_name" text NOT NULL,
+  "config" jsonb NOT NULL DEFAULT '{}',
+  "api_token_ciphertext" bytea NOT NULL,
+  "encryption_key_id" text NOT NULL,
+  "token_hint" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("organization_id"),
+  CONSTRAINT "organization_ticketing_settings_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "organization_ticketing_settings_plugin_name_check" CHECK (plugin_name = ANY (ARRAY['jira'::text, 'servicenow'::text]))
 );
 -- Create "organization_analytics_settings" table
 CREATE TABLE "organization_analytics_settings" (

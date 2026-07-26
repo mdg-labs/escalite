@@ -80,6 +80,31 @@ func (q *Queries) BootstrapOrganizationWithAdmin(ctx context.Context, arg Bootst
 	return i, err
 }
 
+const createAccount = `-- name: CreateAccount :one
+INSERT INTO accounts (id, email, password_hash)
+VALUES ($1, $2, $3)
+RETURNING id, email, password_hash, created_at, updated_at
+`
+
+type CreateAccountParams struct {
+	ID           uuid.UUID   `json:"id"`
+	Email        string      `json:"email"`
+	PasswordHash pgtype.Text `json:"password_hash"`
+}
+
+func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
+	row := q.db.QueryRow(ctx, createAccount, arg.ID, arg.Email, arg.PasswordHash)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createEscalationPolicy = `-- name: CreateEscalationPolicy :one
 INSERT INTO escalation_policies (id, organization_id, service_id, name)
 VALUES ($1, $2, $3, $4)

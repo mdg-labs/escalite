@@ -28,6 +28,11 @@ SELECT
     new_user.role AS user_role
 FROM new_org, new_user;
 
+-- name: CreateAccount :one
+INSERT INTO accounts (id, email, password_hash)
+VALUES ($1, $2, $3)
+RETURNING *;
+
 -- name: CreateUser :one
 INSERT INTO users (id, account_id, organization_id, email, role)
 VALUES ($1, $2, $3, $4, $5)

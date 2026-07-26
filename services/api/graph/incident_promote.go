@@ -88,6 +88,7 @@ func (r *mutationResolver) promoteAlertToNewIncident(
 		r.logger.Error("load incident after promote failed", "error", err)
 	} else {
 		r.tryCreateIncidentSlackChannel(ctx, queries, incident)
+		r.tryCreateIncidentTicket(ctx, queries, incident)
 	}
 
 	r.audit.IncidentCreated(ctx, queries, sc.User.OrganizationID, sc.User.ID, incidentID)

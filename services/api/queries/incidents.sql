@@ -39,6 +39,14 @@ WHERE id = $1
   AND organization_id = $2
 RETURNING *;
 
+-- name: UpdateIncidentTicketURL :one
+UPDATE incidents
+SET ticket_url = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+RETURNING *;
+
 -- name: ListIncidentsForOrgAdmin :many
 SELECT *
 FROM incidents

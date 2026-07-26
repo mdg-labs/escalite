@@ -108,6 +108,7 @@ type Incident struct {
 	ResolvedAt      pgtype.Timestamptz `json:"resolved_at"`
 	SlackChannelID  pgtype.Text        `json:"slack_channel_id"`
 	SlackThreadTs   pgtype.Text        `json:"slack_thread_ts"`
+	TicketUrl       pgtype.Text        `json:"ticket_url"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }
@@ -241,6 +242,17 @@ type OrganizationSlackSetting struct {
 	WorkspaceName      pgtype.Text        `json:"workspace_name"`
 	BotUserID          pgtype.Text        `json:"bot_user_id"`
 	Scope              pgtype.Text        `json:"scope"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+}
+
+type OrganizationTicketingSetting struct {
+	OrganizationID     uuid.UUID          `json:"organization_id"`
+	PluginName         string             `json:"plugin_name"`
+	Config             []byte             `json:"config"`
+	ApiTokenCiphertext []byte             `json:"api_token_ciphertext"`
+	EncryptionKeyID    string             `json:"encryption_key_id"`
+	TokenHint          string             `json:"token_hint"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }

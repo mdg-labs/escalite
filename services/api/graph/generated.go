@@ -148,6 +148,7 @@ type ComplexityRoot struct {
 		SlackChannelID  func(childComplexity int) int
 		Status          func(childComplexity int) int
 		TeamID          func(childComplexity int) int
+		TicketURL       func(childComplexity int) int
 		TimelineEvents  func(childComplexity int) int
 		Title           func(childComplexity int) int
 		UpdatedAt       func(childComplexity int) int
@@ -1141,6 +1142,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Incident.TeamID(childComplexity), true
+	case "Incident.ticketUrl":
+		if e.ComplexityRoot.Incident.TicketURL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Incident.TicketURL(childComplexity), true
 	case "Incident.timelineEvents":
 		if e.ComplexityRoot.Incident.TimelineEvents == nil {
 			break
@@ -4511,6 +4518,7 @@ type Incident {
   createdBy: User!
   resolvedAt: DateTime
   slackChannelId: String
+  ticketUrl: String
   alerts: [Alert!]!
   timelineEvents: [TimelineEvent!]!
   roleAssignments: [IncidentRoleAssignment!]!
@@ -4864,6 +4872,8 @@ func (ec *executionContext) childFields_Incident(ctx context.Context, field grap
 		return ec.fieldContext_Incident_resolvedAt(ctx, field)
 	case "slackChannelId":
 		return ec.fieldContext_Incident_slackChannelId(ctx, field)
+	case "ticketUrl":
+		return ec.fieldContext_Incident_ticketUrl(ctx, field)
 	case "alerts":
 		return ec.fieldContext_Incident_alerts(ctx, field)
 	case "timelineEvents":
@@ -8485,6 +8495,29 @@ func (ec *executionContext) _Incident_slackChannelId(ctx context.Context, field 
 	)
 }
 func (ec *executionContext) fieldContext_Incident_slackChannelId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Incident", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Incident_ticketUrl(ctx context.Context, field graphql.CollectedField, obj *model.Incident) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Incident_ticketUrl(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TicketURL, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Incident_ticketUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Incident", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
@@ -20651,6 +20684,11 @@ func (ec *executionContext) _Incident(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "slackChannelId":
 			out.Values[i] = ec._Incident_slackChannelId(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "ticketUrl":
+			out.Values[i] = ec._Incident_ticketUrl(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				atomic.AddUint32(&out.Invalids, 1)
 			}

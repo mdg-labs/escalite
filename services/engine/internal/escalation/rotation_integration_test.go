@@ -51,20 +51,31 @@ func TestTriggeredAlertNotifiesRotationScheduleOnCallUsers(t *testing.T) {
 	scheduleID := uuid.Must(uuid.NewV7())
 	rotationID := uuid.Must(uuid.NewV7())
 
+	adminAccountID := uuid.Must(uuid.NewV7())
+	oncallAccountID := uuid.Must(uuid.NewV7())
+
 	_, err = queries.BootstrapOrganizationWithAdmin(ctx, db.BootstrapOrganizationWithAdminParams{
 		OrgID:        orgID,
 		OrgName:      "Acme",
+		AccountID:    adminAccountID,
 		UserID:       adminID,
 		Email:        "admin@example.com",
 		PasswordHash: pgtype.Text{String: "hash", Valid: true},
 	})
 	require.NoError(t, err)
 
+	_, err = queries.CreateAccount(ctx, db.CreateAccountParams{
+		ID:           oncallAccountID,
+		Email:        "oncall@example.com",
+		PasswordHash: pgtype.Text{String: "hash", Valid: true},
+	})
+	require.NoError(t, err)
+
 	_, err = queries.CreateUser(ctx, db.CreateUserParams{
 		ID:             oncallID,
+		AccountID:      oncallAccountID,
 		OrganizationID: orgID,
 		Email:          "oncall@example.com",
-		PasswordHash:   pgtype.Text{String: "hash", Valid: true},
 		Role:           "member",
 	})
 	require.NoError(t, err)
@@ -215,6 +226,7 @@ func TestTriggeredAlertSkipsEmptyRotationTargetWithoutPanic(t *testing.T) {
 	_, err = queries.BootstrapOrganizationWithAdmin(ctx, db.BootstrapOrganizationWithAdminParams{
 		OrgID:        orgID,
 		OrgName:      "Acme",
+		AccountID:    uuid.Must(uuid.NewV7()),
 		UserID:       adminID,
 		Email:        "admin@example.com",
 		PasswordHash: pgtype.Text{String: "hash", Valid: true},

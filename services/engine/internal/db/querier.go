@@ -17,6 +17,7 @@ type Querier interface {
 	CloseAlert(ctx context.Context, arg CloseAlertParams) (Alert, error)
 	CountNotificationAttemptsByAlertID(ctx context.Context, arg CountNotificationAttemptsByAlertIDParams) (int64, error)
 	CountRecentOpenAlertsByService(ctx context.Context, arg CountRecentOpenAlertsByServiceParams) (int32, error)
+	CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error)
 	CreateEscalationPolicy(ctx context.Context, arg CreateEscalationPolicyParams) (EscalationPolicy, error)
 	CreateEscalationStep(ctx context.Context, arg CreateEscalationStepParams) (EscalationStep, error)
 	CreateEscalationStepTarget(ctx context.Context, arg CreateEscalationStepTargetParams) (EscalationStepTarget, error)
@@ -40,6 +41,7 @@ type Querier interface {
 	GetOpenIncidentForTeam(ctx context.Context, arg GetOpenIncidentForTeamParams) (Incident, error)
 	GetOpenIncidentForTeamWithServiceAlerts(ctx context.Context, arg GetOpenIncidentForTeamWithServiceAlertsParams) (Incident, error)
 	GetOrganizationSlackSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSlackSetting, error)
+	GetOrganizationTicketingSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationTicketingSetting, error)
 	GetScheduleByID(ctx context.Context, arg GetScheduleByIDParams) (Schedule, error)
 	GetServiceByID(ctx context.Context, arg GetServiceByIDParams) (Service, error)
 	GetUserByID(ctx context.Context, arg GetUserByIDParams) (User, error)
@@ -60,6 +62,7 @@ type Querier interface {
 	ServiceHasActiveNotificationSuppression(ctx context.Context, arg ServiceHasActiveNotificationSuppressionParams) (bool, error)
 	UpdateAlertEscalationState(ctx context.Context, arg UpdateAlertEscalationStateParams) (Alert, error)
 	UpdateIncidentSlackChannelID(ctx context.Context, arg UpdateIncidentSlackChannelIDParams) (Incident, error)
+	UpdateIncidentTicketURL(ctx context.Context, arg UpdateIncidentTicketURLParams) (Incident, error)
 	UpsertUserNotificationRule(ctx context.Context, arg UpsertUserNotificationRuleParams) (UserNotificationRule, error)
 }
 

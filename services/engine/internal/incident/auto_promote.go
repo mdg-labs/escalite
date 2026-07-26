@@ -85,6 +85,7 @@ func MaybeAutoPromote(ctx context.Context, q db.Querier, alert db.Alert) error {
 		}
 
 		maybeCreateSlackChannel(ctx, q, incident)
+		maybeCreateIncidentTicket(ctx, q, incident)
 	}
 
 	return nil

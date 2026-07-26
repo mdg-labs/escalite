@@ -2112,6 +2112,7 @@ func (r *mutationResolver) CreateIncident(ctx context.Context, input model.Creat
 	}
 
 	r.audit.IncidentCreated(ctx, queries, sc.User.OrganizationID, sc.User.ID, incidentID)
+	r.tryCreateIncidentTicket(ctx, queries, incident)
 	result := incidentFromDB(incident)
 	result.CreatedBy = userFromDB(sc.User)
 	return result, nil

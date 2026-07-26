@@ -25,6 +25,7 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/server"
 	_ "github.com/mdg-labs/escalite/services/engine/channelsinstall"
 	_ "github.com/mdg-labs/escalite/services/integrations/install"
+	_ "github.com/mdg-labs/escalite/services/outboundintegrations/install"
 )
 
 const serviceName = "api"

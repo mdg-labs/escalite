@@ -101,6 +101,7 @@ type Querier interface {
 	GetOrganizationScimSettingsByTokenHash(ctx context.Context, tokenHash string) (OrganizationScimSetting, error)
 	GetOrganizationSlackSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSlackSetting, error)
 	GetOrganizationSlackSettingsByWorkspaceID(ctx context.Context, workspaceID pgtype.Text) (OrganizationSlackSetting, error)
+	GetOrganizationTicketingSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationTicketingSetting, error)
 	GetOverrideByID(ctx context.Context, arg GetOverrideByIDParams) (Override, error)
 	GetPasswordResetTokenByHash(ctx context.Context, tokenHash string) (PasswordResetToken, error)
 	GetRefreshTokenByHash(ctx context.Context, tokenHash string) (RefreshToken, error)
@@ -199,6 +200,7 @@ type Querier interface {
 	UpdateIncidentSlackChannelID(ctx context.Context, arg UpdateIncidentSlackChannelIDParams) (Incident, error)
 	UpdateIncidentSlackThreadTS(ctx context.Context, arg UpdateIncidentSlackThreadTSParams) (Incident, error)
 	UpdateIncidentStatus(ctx context.Context, arg UpdateIncidentStatusParams) (Incident, error)
+	UpdateIncidentTicketURL(ctx context.Context, arg UpdateIncidentTicketURLParams) (Incident, error)
 	UpdateMaintenanceWindow(ctx context.Context, arg UpdateMaintenanceWindowParams) (MaintenanceWindow, error)
 	UpdateRotation(ctx context.Context, arg UpdateRotationParams) (Rotation, error)
 	UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Schedule, error)
@@ -217,6 +219,7 @@ type Querier interface {
 	// organization_id, so re-authorizing never creates a duplicate workspace row.
 	UpsertOrganizationSlackOAuthInstall(ctx context.Context, arg UpsertOrganizationSlackOAuthInstallParams) (OrganizationSlackSetting, error)
 	UpsertOrganizationSlackSettings(ctx context.Context, arg UpsertOrganizationSlackSettingsParams) (OrganizationSlackSetting, error)
+	UpsertOrganizationTicketingSettings(ctx context.Context, arg UpsertOrganizationTicketingSettingsParams) (OrganizationTicketingSetting, error)
 	UpsertUserContactMethod(ctx context.Context, arg UpsertUserContactMethodParams) (UserContactMethod, error)
 	UpsertUserNotificationRule(ctx context.Context, arg UpsertUserNotificationRuleParams) (UserNotificationRule, error)
 }
