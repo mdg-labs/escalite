@@ -18,6 +18,9 @@
   },
   "pnpm": {
     "overrides": {
+      "@escalite/mobile>@types/react": "~18.3.31",
+      "@escalite/mobile>react": "18.3.1",
+      "@escalite/mobile>react-dom": "18.3.1",
       "@xmldom/xmldom": "^0.8.13",
       "brace-expansion@<=5.0.7": "^5.0.8",
       "immutable": "^4.3.9",
