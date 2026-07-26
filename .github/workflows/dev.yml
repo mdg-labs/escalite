@@ -28,5 +28,7 @@ jobs:
 
   mobile-beta:
     needs: ci
+    permissions:
+      contents: write
     uses: ./.github/workflows/mobile-beta.yml
     secrets: inherit

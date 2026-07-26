@@ -19,10 +19,14 @@ jobs:
 
   release-draft:
     needs: ci
+    permissions:
+      contents: write
     uses: ./.github/workflows/release-draft.yml
     secrets: inherit
 
   mobile-stable:
     needs: ci
+    permissions:
+      contents: write
     uses: ./.github/workflows/mobile-stable.yml
     secrets: inherit
