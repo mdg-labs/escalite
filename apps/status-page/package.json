@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@escalite/runtime-config": "workspace:*",
     "@escalite/ui": "workspace:*",
     "lucide-react": "^0.555.0",
     "react": "^19.2.6",

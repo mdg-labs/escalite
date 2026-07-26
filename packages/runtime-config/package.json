@@ -1,0 +1,21 @@
+{
+  "name": "@escalite/runtime-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Runtime browser config injected via /runtime-config.js",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "node -e \"console.log('@escalite/runtime-config build noop')\"",
+    "lint": "eslint .",
+    "test:unit": "node --test test/*.test.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@escalite/config": "workspace:*",
+    "eslint": "^9.28.0",
+    "typescript": "^5.8.3"
+  }
+}

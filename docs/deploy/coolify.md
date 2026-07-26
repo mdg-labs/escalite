@@ -106,7 +106,56 @@ Variables consumed by the Compose stack. Set these in Coolify's environment UI (
 | `ESCALITE_ENCRYPTION_KEY` | `a1b2…` (64 hex chars) | api, engine | 32-byte AES-256-GCM key; API refuses to start if empty |
 | `POSTGRES_PASSWORD` | `<random>` | postgres | Change from placeholder |
 | `ESCALITE_DATABASE_URL` | `postgres://escalite:<pw>@postgres:5432/escalite?sslmode=disable` | api, engine | Password must match `POSTGRES_PASSWORD`; host must be `postgres` |
-| `ESCALITE_APP_ORIGIN` | `https://escalite.example.com` | api, web | Public URL users open; must match Coolify domain + `https` |
+| `ESCALITE_APP_ORIGIN` | `https://escalite.example.com` | api, engine | Public web UI URL for CORS, OAuth, and email links; must match Coolify domain + `https` |
+
+### Web / status-page runtime (optional)
+
+Set on **web** and/or **status-page** containers at deploy time (no image rebuild). Defaults match single-host compose (relative `/graphql`, nginx proxy to `http://api:8080`).
+
+| Variable | Default | Used by | Notes |
+| -------- | ------- | ------- | ----- |
+| `ESCALITE_GRAPHQL_URL` | `/graphql` | web | Browser GraphQL/WebSocket URL |
+| `ESCALITE_API_PUBLIC_URL` | *(empty → same origin)* | web, status-page | Public API origin for OAuth links, webhooks UI, status API fetches |
+| `ESCALITE_API_UPSTREAM` | `http://api:8080` | web, status-page | nginx `proxy_pass` target for `/api/` (and `/graphql` on web) |
+| `ESCALITE_STATUS_POLL_INTERVAL_MS` | `60000` | status-page | Incident poll interval in ms |
+
+`ESCALITE_APP_ORIGIN` on the **web** container is not used for API routing — set it on **api** and **engine** only.
+
+## Independent Coolify services (alternative to Compose)
+
+When each Escalite component is a separate Coolify **Application** (not one Compose stack), use the same GHCR images and runtime env vars above.
+
+### Same public host (path routing)
+
+1. **Web** app → `https://escalite.example.com` (port `5173`).
+2. Point **API** at an internal hostname only (no public domain), e.g. `http://escalite-api:8080` on the Coolify Docker network.
+3. On the **web** app, set `ESCALITE_API_UPSTREAM=http://<api-internal-host>:8080` so container nginx proxies `/graphql` and `/api/`.
+4. Leave `ESCALITE_GRAPHQL_URL` and `ESCALITE_API_PUBLIC_URL` unset (defaults: same-origin `/graphql`).
+5. On **API** and **engine**, set `ESCALITE_APP_ORIGIN=https://escalite.example.com`.
+
+Alternatively, configure Coolify/Traefik path rules on the web domain (`/graphql`, `/api/*` → API service) and leave `ESCALITE_API_UPSTREAM` at default if traffic never hits web nginx for those paths.
+
+### Split public hosts
+
+1. **Web** → `https://app.example.com`
+2. **API** → `https://api.example.com` (public)
+3. On **web**, set:
+   ```bash
+   ESCALITE_GRAPHQL_URL=https://api.example.com/graphql
+   ESCALITE_API_PUBLIC_URL=https://api.example.com
+   ```
+4. On **API** and **engine**, set `ESCALITE_APP_ORIGIN=https://app.example.com` (web UI origin for CORS).
+5. **Status page** (if separate): set `ESCALITE_API_PUBLIC_URL=https://api.example.com` (and optional `ESCALITE_API_UPSTREAM` if proxying `/api/` through the status-page container).
+
+### Per-service checklist
+
+| Service | Public domain | Required env |
+| ------- | ------------- | ------------ |
+| Postgres | No | `POSTGRES_PASSWORD`, etc. |
+| API | Optional (split-host) or internal only | `ESCALITE_DATABASE_URL`, `ESCALITE_ENCRYPTION_KEY`, `ESCALITE_APP_ORIGIN` |
+| Engine | No | Same DB + encryption key + `ESCALITE_APP_ORIGIN` |
+| Web | Yes | Runtime vars above; defaults for same-host |
+| Status page | Optional | `ESCALITE_API_PUBLIC_URL` when API is on another host |
 
 ### Recommended
 
@@ -144,7 +193,6 @@ Set only when enabling the feature. Full list in [`.env.example`](../../.env.exa
 | Variable | Reason |
 | -------- | ------ |
 | `ESCALITE_API_PORT`, `ESCALITE_ENGINE_PORT`, `ESCALITE_WEB_PORT`, `POSTGRES_PORT` | Host port mappings; Coolify routes to container ports directly. Leave unset so services use internal ports only. |
-| `ESCALITE_API_PROXY_TARGET` | Hard-coded in compose for `web` → `api` internal proxy |
 
 ## Manual test checklist
 
@@ -162,7 +210,7 @@ Recorded during task `p4-coolify-validation` (session `EL129-20260726-b5d2`). St
 | 8 | Web `/healthz` returns `ok` | **pass** | nginx `location = /healthz` returns 200 |
 | 9 | Web UI loads at `/` | **pass** | `curl` returns Escalite HTML shell (HTTP 200) |
 | 10 | API migrations run on first boot | **pass** | API log shows migration success when DB credentials match; fails fast with `password authentication failed` when mismatched (verified during smoke) |
-| 11 | `web` proxies `/api/` to internal API | **pass** | Verified via `deploy/docker-compose/nginx/web.conf` — `proxy_pass http://api:8080` |
+| 11 | `web` proxies `/api/` to internal API | **pass** | Verified via `deploy/docker-compose/nginx/web.conf.template` — `ESCALITE_API_UPSTREAM` defaults to `http://api:8080` |
 | 12 | Only `web` exposed publicly on Coolify | **pending** | **Operator:** confirm no public domain/port on `postgres`, `api`, or `engine` in Coolify service settings |
 | 13 | HTTPS certificate issued (Let's Encrypt) | **pending** | **Operator:** open `https://<domain>` — browser shows valid cert; Coolify proxy logs show ACME success |
 | 14 | `ESCALITE_APP_ORIGIN` matches public HTTPS URL | **pending** | **Operator:** set to `https://<domain>`; verify password-reset or auth redirect URLs use HTTPS (not `http://localhost`) |

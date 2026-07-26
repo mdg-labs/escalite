@@ -1,0 +1,5 @@
+window.__ESCALITE_RUNTIME__ = {
+  graphqlUrl: "${ESCALITE_GRAPHQL_URL}",
+  apiPublicUrl: "${ESCALITE_API_PUBLIC_URL}",
+  statusPollIntervalMs: "${ESCALITE_STATUS_POLL_INTERVAL_MS}"
+};

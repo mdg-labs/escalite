@@ -112,7 +112,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     environment:
-      ESCALITE_APP_ORIGIN: ${ESCALITE_APP_ORIGIN}
+      ESCALITE_GRAPHQL_URL: ${ESCALITE_GRAPHQL_URL:-/graphql}
+      ESCALITE_API_PUBLIC_URL: ${ESCALITE_API_PUBLIC_URL:-}
+      ESCALITE_API_UPSTREAM: ${ESCALITE_API_UPSTREAM:-http://api:8080}
     ports:
       - "${ESCALITE_WEB_PORT:-5173}:5173"
     depends_on:
@@ -140,6 +142,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     environment:
+      ESCALITE_API_PUBLIC_URL: ${ESCALITE_API_PUBLIC_URL:-}
+      ESCALITE_API_UPSTREAM: ${ESCALITE_API_UPSTREAM:-http://api:8080}
+      ESCALITE_STATUS_POLL_INTERVAL_MS: ${ESCALITE_STATUS_POLL_INTERVAL_MS:-60000}
       ESCALITE_STATUS_PAGE_FRAME_ANCESTORS: ${ESCALITE_STATUS_PAGE_FRAME_ANCESTORS:-*}
     ports:
       - "${ESCALITE_STATUS_PAGE_PORT:-5174}:5174"

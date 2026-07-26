@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+
+TEMPLATE_PATH="${RUNTIME_CONFIG_TEMPLATE:-/etc/nginx/runtime-config.js.template}"
+OUTPUT_PATH="${1:-/usr/share/nginx/html/runtime-config.js}"
+
+export ESCALITE_GRAPHQL_URL="${ESCALITE_GRAPHQL_URL:-/graphql}"
+export ESCALITE_API_PUBLIC_URL="${ESCALITE_API_PUBLIC_URL:-}"
+export ESCALITE_STATUS_POLL_INTERVAL_MS="${ESCALITE_STATUS_POLL_INTERVAL_MS:-60000}"
+
+envsubst '${ESCALITE_GRAPHQL_URL} ${ESCALITE_API_PUBLIC_URL} ${ESCALITE_STATUS_POLL_INTERVAL_MS}' \
+  < "${TEMPLATE_PATH}" \
+  > "${OUTPUT_PATH}"

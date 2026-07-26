@@ -58,14 +58,17 @@ status.example.com {
 }
 ```
 
-## Environment variables (static build)
+## Environment variables (runtime)
 
-| Variable | Purpose |
-| -------- | ------- |
-| `VITE_API_PUBLIC_URL` | Public API origin when the UI and API are on different hosts (defaults to `window.location.origin`) |
-| `VITE_STATUS_POLL_INTERVAL_MS` | Poll interval for incident updates (default `60000`) |
+Set on the **status-page** container at deploy time (no image rebuild). Defaults work when the status UI and API share a public origin (nginx proxies `/api/` to `ESCALITE_API_UPSTREAM`).
 
-Set these at **image build time** when API and status UI are on different public origins.
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `ESCALITE_API_PUBLIC_URL` | *(empty → same origin)* | Public API origin when the UI and API are on different hosts |
+| `ESCALITE_API_UPSTREAM` | `http://api:8080` | nginx `proxy_pass` target for `/api/` |
+| `ESCALITE_STATUS_POLL_INTERVAL_MS` | `60000` | Poll interval for incident updates |
+
+Build-time `VITE_*` variables remain supported as a fallback when `/runtime-config.js` is not injected.
 
 ## Email subscriptions
 
