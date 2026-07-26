@@ -8,7 +8,7 @@ Only these files define `on:` triggers:
 | ---- | -------- | ------- |
 | [`pr.yml`](pr.yml) | `pull_request` | CI + DCO |
 | [`main.yml`](main.yml) | `push` → `main` | CI, core release draft, mobile stable draft |
-| [`dev.yml`](dev.yml) | `push` → `dev` | CI, nightly container images, mobile beta |
+| [`dev.yml`](dev.yml) | `push` → `dev` | CI, nightly container images, Coolify staging deploy, mobile beta |
 | [`release.yml`](release.yml) | `release` → `published`; `workflow_dispatch` | Core `v*` publish — GHCR, digests, SBOMs |
 | [`mobile-release.yml`](mobile-release.yml) | `release` → `published` | Mobile `mobile-v*` publish hooks |
 
@@ -19,6 +19,7 @@ Only these files define `on:` triggers:
 | [`ci.yml`](ci.yml) | `pr.yml`, `main.yml`, `dev.yml` |
 | [`dco.yml`](dco.yml) | `pr.yml` |
 | [`container-images.yml`](container-images.yml) | `dev.yml` (nightly), `release.yml` (stable) |
+| [`deploy-staging.yml`](deploy-staging.yml) | `dev.yml` (after nightly GHCR push) |
 | [`release-draft.yml`](release-draft.yml) | `main.yml` |
 | [`mobile-beta.yml`](mobile-beta.yml) | `dev.yml` |
 | [`mobile-stable.yml`](mobile-stable.yml) | `main.yml` |

@@ -32,3 +32,9 @@ jobs:
       contents: write
     uses: ./.github/workflows/mobile-beta.yml
     secrets: inherit
+
+  deploy-staging:
+    name: Deploy staging (Coolify)
+    needs: container-images
+    uses: ./.github/workflows/deploy-staging.yml
+    secrets: inherit

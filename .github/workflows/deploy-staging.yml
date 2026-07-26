@@ -1,0 +1,58 @@
+name: Deploy staging
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  coolify:
+    name: Deploy ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    environment: staging
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [api, engine, web, status-page]
+    steps:
+      - name: Trigger Coolify redeploy
+        env:
+          COOLIFY_DEPLOY_TOKEN: ${{ secrets.COOLIFY_DEPLOY_TOKEN }}
+          COOLIFY_DEPLOY_WEBHOOK_API: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_API }}
+          COOLIFY_DEPLOY_WEBHOOK_ENGINE: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_ENGINE }}
+          COOLIFY_DEPLOY_WEBHOOK_STATUS_PAGE: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_STATUS_PAGE }}
+          COOLIFY_DEPLOY_WEBHOOK_WEB: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_WEB }}
+        run: |
+          case '${{ matrix.service }}' in
+            api)
+              webhook="${COOLIFY_DEPLOY_WEBHOOK_API}"
+              ;;
+            engine)
+              webhook="${COOLIFY_DEPLOY_WEBHOOK_ENGINE}"
+              ;;
+            web)
+              webhook="${COOLIFY_DEPLOY_WEBHOOK_WEB}"
+              ;;
+            status-page)
+              webhook="${COOLIFY_DEPLOY_WEBHOOK_STATUS_PAGE}"
+              ;;
+            *)
+              echo "Unknown service: ${{ matrix.service }}" >&2
+              exit 1
+              ;;
+          esac
+
+          if [ -z "${webhook}" ]; then
+            echo "Deploy webhook for ${{ matrix.service }} is not configured." >&2
+            exit 1
+          fi
+
+          if [ -z "${COOLIFY_DEPLOY_TOKEN}" ]; then
+            echo "COOLIFY_DEPLOY_TOKEN is not configured." >&2
+            exit 1
+          fi
+
+          curl --fail --show-error --silent \
+            --request GET "${webhook}" \
+            --header "Authorization: Bearer ${COOLIFY_DEPLOY_TOKEN}"
