@@ -3,11 +3,11 @@ package migrate
 import (
 	"context"
 	"log/slog"
-	"os"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/mdg-labs/escalite/services/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,10 +21,8 @@ func TestUpRejectsUnreachableDatabase(t *testing.T) {
 }
 
 func TestUpAppliesMigrationsIdempotently(t *testing.T) {
-	databaseURL := os.Getenv("ESCALITE_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("ESCALITE_DATABASE_URL not set")
-	}
+	databaseURL, cleanup := testutil.StartPostgres(t)
+	defer cleanup()
 
 	ctx := context.Background()
 	logger := slog.Default()
@@ -34,10 +32,8 @@ func TestUpAppliesMigrationsIdempotently(t *testing.T) {
 }
 
 func TestConcurrentUpUsesAdvisoryLock(t *testing.T) {
-	databaseURL := os.Getenv("ESCALITE_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("ESCALITE_DATABASE_URL not set")
-	}
+	databaseURL, cleanup := testutil.StartPostgres(t)
+	defer cleanup()
 
 	ctx := context.Background()
 	logger := slog.Default()

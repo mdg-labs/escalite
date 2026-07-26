@@ -13,48 +13,17 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
+	"github.com/mdg-labs/escalite/services/api/internal/testutil"
 	"github.com/mdg-labs/escalite/services/api/migrations"
 	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 const pgSchemaDiffVersion = "v1.0.7"
-
-func startPostgresContainer(t *testing.T) (databaseURL string, cleanup func()) {
-	t.Helper()
-
-	ctx := context.Background()
-
-	container, err := postgres.Run(ctx,
-		"postgres:16-alpine",
-		postgres.WithDatabase("escalite"),
-		postgres.WithUsername("escalite"),
-		postgres.WithPassword("escalite"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(60*time.Second),
-		),
-	)
-	require.NoError(t, err)
-
-	databaseURL, err = container.ConnectionString(ctx, "sslmode=disable")
-	require.NoError(t, err)
-
-	cleanup = func() {
-		require.NoError(t, testcontainers.TerminateContainer(container))
-	}
-
-	return databaseURL, cleanup
-}
 
 func repoRoot(t *testing.T) string {
 	t.Helper()
@@ -321,7 +290,7 @@ func runSchemaDiff(t *testing.T, databaseURL, migrationName, schemaDir, migratio
 }
 
 func TestIntegration_BaselineMigrationsApplyOnEmptyPostgres(t *testing.T) {
-	databaseURL, cleanup := startPostgresContainer(t)
+	databaseURL, cleanup := testutil.StartPostgres(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -338,7 +307,7 @@ func TestIntegration_BaselineMigrationsApplyOnEmptyPostgres(t *testing.T) {
 }
 
 func TestIntegration_SchemaSQLFingerprintMatchesDBAfterGooseUp(t *testing.T) {
-	databaseURL, cleanup := startPostgresContainer(t)
+	databaseURL, cleanup := testutil.StartPostgres(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -371,7 +340,7 @@ func TestIntegration_SchemaSQLFingerprintMatchesDBAfterGooseUp(t *testing.T) {
 }
 
 func TestIntegration_SchemaDiffGeneratesAndAppliesIncrementalMigration(t *testing.T) {
-	databaseURL, cleanup := startPostgresContainer(t)
+	databaseURL, cleanup := testutil.StartPostgres(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -413,7 +382,7 @@ func TestIntegration_SchemaDiffGeneratesAndAppliesIncrementalMigration(t *testin
 }
 
 func TestIntegration_DriftDetectionFailsWhenMigrationHandEdited(t *testing.T) {
-	databaseURL, cleanup := startPostgresContainer(t)
+	databaseURL, cleanup := testutil.StartPostgres(t)
 	defer cleanup()
 
 	migrationsDir := filepath.Join(t.TempDir(), "migrations")

@@ -5,21 +5,18 @@ import (
 	"encoding/json"
 	"log/slog"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/mdg-labs/escalite/services/api/internal/alerts"
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
 	"github.com/mdg-labs/escalite/services/api/internal/queue"
+	"github.com/mdg-labs/escalite/services/api/internal/testutil"
 	"github.com/mdg-labs/escalite/services/integrations"
 )
 
@@ -27,33 +24,16 @@ func startPostgres(t *testing.T) (*pgxpool.Pool, func()) {
 	t.Helper()
 
 	ctx := context.Background()
-
-	container, err := postgres.Run(ctx,
-		"postgres:16-alpine",
-		postgres.WithDatabase("escalite"),
-		postgres.WithUsername("escalite"),
-		postgres.WithPassword("escalite"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(60*time.Second),
-		),
-	)
-	require.NoError(t, err)
-
-	databaseURL, err := container.ConnectionString(ctx, "sslmode=disable")
-	require.NoError(t, err)
+	databaseURL, cleanup := testutil.StartPostgres(t)
 	require.NoError(t, migrate.Up(ctx, databaseURL, slog.Default()))
 
 	pool, err := pgxpool.New(ctx, databaseURL)
 	require.NoError(t, err)
 
-	cleanup := func() {
+	return pool, func() {
 		pool.Close()
-		require.NoError(t, testcontainers.TerminateContainer(container))
+		cleanup()
 	}
-
-	return pool, cleanup
 }
 
 type inboundFixture struct {

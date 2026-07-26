@@ -10,14 +10,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/crypto"
@@ -29,35 +25,8 @@ import (
 	"github.com/mdg-labs/escalite/services/api/internal/queue"
 	"github.com/mdg-labs/escalite/services/api/internal/realtime"
 	"github.com/mdg-labs/escalite/services/api/internal/server"
+	"github.com/mdg-labs/escalite/services/api/internal/testutil"
 )
-
-func startPostgres(t *testing.T) (string, func()) {
-	t.Helper()
-
-	ctx := context.Background()
-
-	container, err := postgres.Run(ctx,
-		"postgres:16-alpine",
-		postgres.WithDatabase("escalite"),
-		postgres.WithUsername("escalite"),
-		postgres.WithPassword("escalite"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(60*time.Second),
-		),
-	)
-	require.NoError(t, err)
-
-	databaseURL, err := container.ConnectionString(ctx, "sslmode=disable")
-	require.NoError(t, err)
-
-	cleanup := func() {
-		require.NoError(t, testcontainers.TerminateContainer(container))
-	}
-
-	return databaseURL, cleanup
-}
 
 type testServerOptions struct {
 	Mail             email.Sender
@@ -88,7 +57,7 @@ func newTestHandler(t *testing.T) (http.Handler, *pgxpool.Pool, func()) {
 func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handler, *pgxpool.Pool, func()) {
 	t.Helper()
 
-	databaseURL, cleanup := startPostgres(t)
+	databaseURL, cleanup := testutil.StartPostgres(t)
 
 	ctx := context.Background()
 	require.NoError(t, migrate.Up(ctx, databaseURL, slog.Default()))
