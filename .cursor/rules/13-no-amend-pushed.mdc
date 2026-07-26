@@ -17,7 +17,7 @@ Create a **new commit**:
 
 ```bash
 git add <path>...
-git commit -m "fix(api)[#12]: adjust validation"
+git commit -s -m "fix(api)[#12]: adjust validation"
 ```
 
 ## The only exception
@@ -27,6 +27,8 @@ git commit -m "fix(api)[#12]: adjust validation"
 1. The commit was created by **this agent** in **this conversation**
 2. The commit has **never been pushed**
 3. The user explicitly asked to amend
+
+When amending, preserve DCO sign-off: `git commit --amend -s --no-edit`.
 
 ## Anti-patterns
 

@@ -14,3 +14,6 @@ jobs:
   ci:
     uses: ./.github/workflows/ci.yml
     secrets: inherit
+  dco:
+    uses: ./.github/workflows/dco.yml
+    secrets: inherit

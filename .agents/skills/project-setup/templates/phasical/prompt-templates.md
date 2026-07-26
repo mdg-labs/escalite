@@ -118,9 +118,14 @@ Staging:
   - NEVER git add . / git add -A / git commit --all
   - NEVER stage .agents/project/agent-memory/**
 
+DCO sign-off (MANDATORY):
+  - ALWAYS git commit -s (never plain git commit -m without -s)
+  - Verifier FAIL if Signed-off-by trailer is missing
+  - SSH signing: automatic when repo commit.gpgsign=true — do not pass -S manually
+
 Examples:
-  feat({EXAMPLE_SCOPE})[#42]: add vehicle expiry check
-  fix({EXAMPLE_SCOPE})[#42]: correct timezone in expiry job
+  git commit -s -m "feat({EXAMPLE_SCOPE})[#42]: add vehicle expiry check"
+  git commit -s -m "fix({EXAMPLE_SCOPE})[#42]: correct timezone in expiry job"
 
 Pre-commit:
   - Run SCOPED CI GATE (below) — failure → blocked, no commit

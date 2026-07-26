@@ -41,6 +41,48 @@ CI rejects pull requests whose commits are missing a valid `Signed-off-by` line.
 sign-off name and email must match the commit author (case-insensitive for the email
 address).
 
+## SSH commit signing
+
+Escalite also uses **SSH cryptographic signing** so commits show as **Verified** on
+GitHub. This is separate from DCO sign-off:
+
+| | DCO (`git commit -s`) | SSH signing (`commit.gpgsign`) |
+| -- | -- | -- |
+| Purpose | Legal contribution statement | Cryptographic proof of authorship |
+| Required | Yes — CI enforces via DCO check | Recommended — GitHub Verified badge |
+
+### One-time repo setup
+
+Register your SSH public key on GitHub as a **Signing key**, then configure this repo
+(repo-local settings in `.git/config`, not committed):
+
+```bash
+bash scripts/setup-git-signing.sh
+```
+
+Or manually:
+
+```bash
+git config gpg.format ssh
+git config user.signingkey ~/.ssh/id_ed25519.pub
+git config commit.gpgsign true
+```
+
+If `~/.ssh/id_ed25519.pub` is missing but the private key exists:
+
+```bash
+ssh-keygen -y -f ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.pub
+```
+
+Optional local verification:
+
+```bash
+git config gpg.ssh.allowedSignersFile ~/.config/git/allowed_signers
+```
+
+When `commit.gpgsign=true`, signing is automatic — still use `-s` for DCO on every
+commit. Do not add auto-sign-off hooks.
+
 ## Commit messages
 
 Use [Conventional Commits](https://www.conventionalcommits.org/) with a scope and, when

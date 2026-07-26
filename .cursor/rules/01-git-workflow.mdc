@@ -32,6 +32,25 @@ Plan-file verifier commits: `chore(plan)[#123]: mark P8-07 verified`
 
 Session memory (`.agents/project/agent-memory/`) is **gitignored** — never commit session files.
 
+## DCO sign-off (required)
+
+Every commit must include a `Signed-off-by` trailer per [CONTRIBUTING.md](CONTRIBUTING.md). Use **`git commit -s`** (or `--signoff`) — never plain `git commit -m` without `-s`.
+
+```bash
+git commit -s -m "$(cat <<'EOF'
+feat(api)[#42]: add handler
+
+fixes #42
+EOF
+)"
+```
+
+Amend only unpushed commits: `git commit --amend -s --no-edit`. Verifier/orchestrator **FAIL** if a task commit lacks `Signed-off-by`.
+
+## SSH commit signing
+
+This repo expects repo-local `commit.gpgsign=true` with an SSH signing key (see CONTRIBUTING). Cryptographic signing is automatic when configured — agents still use `-s` for DCO. Do not pass `-S` manually when `gpgsign` is enabled.
+
 ## Staging
 
 Stage explicit paths only. Never `git add .` or `git add -A`.

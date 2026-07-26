@@ -118,9 +118,14 @@ Staging:
   - NEVER git add . / git add -A / git commit --all
   - NEVER stage .agents/project/agent-memory/**
 
+DCO sign-off (MANDATORY):
+  - ALWAYS git commit -s (never plain git commit -m without -s)
+  - Verifier FAIL if Signed-off-by trailer is missing
+  - SSH signing: automatic when repo commit.gpgsign=true — do not pass -S manually
+
 Examples:
-  feat(api)[#42]: add goose migration bootstrap
-  fix(web)[#42]: correct urql cache key for services
+  git commit -s -m "feat(api)[#42]: add goose migration bootstrap"
+  git commit -s -m "fix(web)[#42]: correct urql cache key for services"
 
 Pre-commit:
   - Run SCOPED CI GATE (below) — failure → blocked, no commit
