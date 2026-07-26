@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Spike: prove pg-schema-diff plan + apply on Escalite schema (task #142).
+# Self-contained: starts its own ephemeral Postgres and removes it on exit.
+# Day-to-day migration generation uses `task schema:diff` against compose Postgres instead.
 # Usage: ./services/api/scripts/pg-schema-diff-spike.sh
 set -euo pipefail
 

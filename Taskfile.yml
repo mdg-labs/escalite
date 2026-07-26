@@ -38,15 +38,21 @@ tasks:
         msg: "Set DATABASE_URL or ESCALITE_DATABASE_URL before running migrations"
 
   schema:diff:
-    desc: Generate a goose migration from pg-schema-diff (edit schema/sql first)
+    desc: Generate goose migration from schema/sql (uses existing Postgres; no new container by default)
     vars:
       MIGRATION_NAME: '{{index .CLI_ARGS 0}}'
       SCHEMA_DIFF_FROM_EMPTY: '{{.SCHEMA_DIFF_FROM_EMPTY | default "0"}}'
+      DATABASE_URL: '{{.DATABASE_URL | default .ESCALITE_DATABASE_URL | default "postgres://escalite:escalite@127.0.0.1:5432/escalite?sslmode=disable"}}'
+    env:
+      DATABASE_URL: "{{.DATABASE_URL}}"
     cmds:
       - |
         set -euo pipefail
         if [ -z "{{.MIGRATION_NAME}}" ]; then
           echo "usage: task schema:diff -- <migration_name>" >&2
+          echo "  incremental (default): DATABASE_URL must point at Postgres with migrations applied" >&2
+          echo "  baseline squash: SCHEMA_DIFF_FROM_EMPTY=1 task schema:diff -- bootstrap" >&2
+          echo "  no compose Postgres: SCHEMA_DIFF_EPHEMERAL_PG=1 task schema:diff -- <name>" >&2
           exit 1
         fi
 
@@ -55,45 +61,36 @@ tasks:
             docker rm -f "${SCHEMA_DIFF_CONTAINER}" >/dev/null 2>&1 || true
           fi
         }
-        trap cleanup EXIT
+        trap cleanup EXIT INT TERM
 
-        FROM_EMPTY_FLAG=""
-        DSN_ARGS=()
-        if [ "{{.SCHEMA_DIFF_FROM_EMPTY}}" = "1" ]; then
-          FROM_EMPTY_FLAG="--from-empty"
-          if [ -z "${DATABASE_URL:-}" ]; then
-            SCHEMA_DIFF_CONTAINER="escalite-schema-diff-$$"
-            SCHEMA_DIFF_PORT="${SCHEMA_DIFF_PORT:-5436}"
-            docker rm -f "${SCHEMA_DIFF_CONTAINER}" >/dev/null 2>&1 || true
-            docker run -d --name "${SCHEMA_DIFF_CONTAINER}" \
-              -e POSTGRES_USER=escalite \
-              -e POSTGRES_PASSWORD=escalite \
-              -e POSTGRES_DB=escalite \
-              -p "${SCHEMA_DIFF_PORT}:5432" \
-              postgres:16-alpine >/dev/null
-            for _ in $(seq 1 30); do
-              if docker exec "${SCHEMA_DIFF_CONTAINER}" pg_isready -U escalite -d escalite >/dev/null 2>&1; then
-                break
-              fi
-              sleep 1
-            done
-            export PGHOST=127.0.0.1
-            export PGPORT="${SCHEMA_DIFF_PORT}"
-            export PGUSER=escalite
-            export PGPASSWORD=escalite
-            export PGDATABASE=escalite
-          fi
-        elif [ -n "${DATABASE_URL:-}" ]; then
-          DSN_ARGS=(--dsn "${DATABASE_URL}")
-        else
-          echo "Set DATABASE_URL or ESCALITE_DATABASE_URL, or SCHEMA_DIFF_FROM_EMPTY=1 for baseline migrations" >&2
-          exit 1
+        if [ "${SCHEMA_DIFF_EPHEMERAL_PG:-0}" = "1" ]; then
+          SCHEMA_DIFF_CONTAINER="escalite-schema-diff-$$"
+          SCHEMA_DIFF_PORT="${SCHEMA_DIFF_PORT:-5436}"
+          docker rm -f "${SCHEMA_DIFF_CONTAINER}" >/dev/null 2>&1 || true
+          docker run -d --name "${SCHEMA_DIFF_CONTAINER}" \
+            -e POSTGRES_USER=escalite \
+            -e POSTGRES_PASSWORD=escalite \
+            -e POSTGRES_DB=escalite \
+            -p "${SCHEMA_DIFF_PORT}:5432" \
+            postgres:16-alpine >/dev/null
+          for _ in $(seq 1 30); do
+            if docker exec "${SCHEMA_DIFF_CONTAINER}" pg_isready -U escalite -d escalite >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          export DATABASE_URL="postgres://escalite:escalite@127.0.0.1:${SCHEMA_DIFF_PORT}/escalite?sslmode=disable"
         fi
 
-        go run ./tools/schema-diff \
-          --name "{{.MIGRATION_NAME}}" \
-          ${FROM_EMPTY_FLAG} \
-          "${DSN_ARGS[@]}"
+        ARGS=(--name "{{.MIGRATION_NAME}}" --dsn "${DATABASE_URL}")
+        if [ "{{.SCHEMA_DIFF_FROM_EMPTY}}" = "1" ]; then
+          ARGS+=(--from-empty)
+        fi
+        if [ "${SCHEMA_DIFF_SKIP_VALIDATION:-0}" = "1" ]; then
+          ARGS+=(--skip-validation)
+        fi
+
+        go run ./tools/schema-diff "${ARGS[@]}"
     preconditions:
       - sh: test -n "{{.MIGRATION_NAME}}"
         msg: "usage: task schema:diff -- <migration_name>"

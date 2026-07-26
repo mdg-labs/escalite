@@ -1,5 +1,9 @@
 // schema-diff generates goose-format SQL migrations from pg-schema-diff plan output.
 //
+// pg-schema-diff needs a running Postgres server to load canonical SQL and introspect
+// catalog metadata. It creates temporary databases on that server; it does not start
+// Docker containers itself.
+//
 // Usage:
 //
 //	schema-diff --name add_foo_column --dsn "$DATABASE_URL"
@@ -11,6 +15,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,8 +27,9 @@ const pgSchemaDiffVersion = "v1.0.7"
 
 func main() {
 	name := flag.String("name", "", "migration name (snake_case, required)")
-	fromDSN := flag.String("dsn", "", "Postgres DSN for the current database state (--from-dsn)")
-	fromEmpty := flag.Bool("from-empty", false, "diff from an empty database (--from-empty-dsn); use for baseline migrations")
+	serverDSN := flag.String("dsn", "", "Postgres server URL (default: DATABASE_URL, ESCALITE_DATABASE_URL, or compose localhost)")
+	fromEmpty := flag.Bool("from-empty", false, "diff from an empty database; use for rare baseline squashes")
+	skipValidation := flag.Bool("skip-validation", false, "skip pg-schema-diff plan validation (faster local runs)")
 	schemaDir := flag.String("schema-dir", "", "directory containing schema.sql and realtime_notify.sql")
 	migrationsDir := flag.String("migrations-dir", "", "directory to write the generated goose migration")
 	pgSchemaDiffBin := flag.String("pg-schema-diff", "", "path to pg-schema-diff binary (default: PATH or go run)")
@@ -35,11 +41,10 @@ func main() {
 	if !validMigrationName(*name) {
 		fatal("invalid --name %q: use snake_case letters, digits, and underscores", *name)
 	}
-	if *fromEmpty && strings.TrimSpace(*fromDSN) != "" {
-		fatal("use either --from-empty or --dsn, not both")
-	}
-	if !*fromEmpty && strings.TrimSpace(*fromDSN) == "" {
-		fatal("missing required --dsn (or pass --from-empty for baseline migrations)")
+
+	dsn, err := resolveServerDSN(*serverDSN)
+	if err != nil {
+		fatal("%v", err)
 	}
 
 	root, err := repoRoot()
@@ -73,7 +78,7 @@ func main() {
 		fatal("%v", err)
 	}
 
-	planSQL, err := runPlan(bin, *fromEmpty, *fromDSN, tablesDir, triggersDir)
+	planSQL, err := runPlan(bin, *fromEmpty, *skipValidation, dsn, tablesDir, triggersDir)
 	if err != nil {
 		fatal("%v", err)
 	}
@@ -168,6 +173,50 @@ func copyFile(src, dst string) error {
 	return nil
 }
 
+func resolveServerDSN(explicit string) (string, error) {
+	for _, candidate := range []string{explicit, os.Getenv("DATABASE_URL"), os.Getenv("ESCALITE_DATABASE_URL")} {
+		if strings.TrimSpace(candidate) != "" {
+			return strings.TrimSpace(candidate), nil
+		}
+	}
+	// Compose dev default when postgres is published on localhost:5432.
+	return "postgres://escalite:escalite@127.0.0.1:5432/escalite?sslmode=disable", nil
+}
+
+func pqEnvFromDSN(dsn string) ([]string, error) {
+	u, err := url.Parse(dsn)
+	if err != nil {
+		return nil, fmt.Errorf("parse dsn: %w", err)
+	}
+	if u.Scheme != "postgres" && u.Scheme != "postgresql" {
+		return nil, fmt.Errorf("unsupported dsn scheme %q", u.Scheme)
+	}
+
+	user := u.User.Username()
+	pass, _ := u.User.Password()
+	host := u.Hostname()
+	port := u.Port()
+	if port == "" {
+		port = "5432"
+	}
+	db := strings.TrimPrefix(u.Path, "/")
+	if db == "" {
+		return nil, errors.New("dsn missing database name")
+	}
+
+	env := []string{
+		"PGHOST=" + host,
+		"PGPORT=" + port,
+		"PGUSER=" + user,
+		"PGPASSWORD=" + pass,
+		"PGDATABASE=" + db,
+	}
+	if ssl := u.Query().Get("sslmode"); ssl != "" {
+		env = append(env, "PGSSLMODE="+ssl)
+	}
+	return env, nil
+}
+
 func resolvePgSchemaDiff(explicit string) (string, error) {
 	if explicit != "" {
 		return explicit, nil
@@ -189,21 +238,32 @@ func resolvePgSchemaDiff(explicit string) (string, error) {
 	return path, nil
 }
 
-func runPlan(bin string, fromEmpty bool, fromDSN, tablesDir, triggersDir string) (string, error) {
+func runPlan(bin string, fromEmpty, skipValidation bool, serverDSN, tablesDir, triggersDir string) (string, error) {
 	args := []string{
 		"plan",
 		"--output-format", "sql",
 		"--no-concurrent-index-ops",
+		"--temp-db-dsn", serverDSN,
 		"--to-dir", tablesDir,
 		"--to-dir", triggersDir,
+	}
+	if skipValidation {
+		args = append(args, "--disable-plan-validation")
 	}
 	if fromEmpty {
 		args = append(args, "--from-empty-dsn")
 	} else {
-		args = append(args, "--from-dsn", fromDSN)
+		args = append(args, "--from-dsn", serverDSN)
 	}
 
 	cmd := exec.Command(bin, args...)
+	if fromEmpty {
+		pqEnv, err := pqEnvFromDSN(serverDSN)
+		if err != nil {
+			return "", err
+		}
+		cmd.Env = append(os.Environ(), pqEnv...)
+	}
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

@@ -31,7 +31,20 @@ Adopt **pg-schema-diff** ([`github.com/stripe/pg-schema-diff`](https://github.co
 | Runtime apply | goose at API startup with Postgres advisory lock |
 | CI | Drift gate: diff live/empty schema against canonical SQL (task #147) |
 
-**Zero hand-written DDL migrations.** Agents and humans edit canonical SQL, then run `task schema:diff` (to be wired in #144) and commit SQL + generated migration together.
+**Zero hand-written DDL migrations.** Agents and humans edit canonical SQL, then run `task schema:diff` and commit SQL + generated migration together.
+
+### Migration generation workflow
+
+pg-schema-diff needs a **running Postgres server** to load canonical SQL and introspect catalog metadata (tables, functions, triggers). It creates temporary databases on that server; it does not diff `.sql` files as plain text.
+
+| Mode | Command | Postgres source |
+| ---- | ------- | --------------- |
+| **Incremental** (normal) | `task schema:diff -- add_column` | `DATABASE_URL` → compose/dev Postgres with migrations already applied |
+| **Baseline squash** (rare) | `SCHEMA_DIFF_FROM_EMPTY=1 task schema:diff -- bootstrap` | same server; diff from empty → canonical SQL |
+| **No local Postgres** | `SCHEMA_DIFF_EPHEMERAL_PG=1 task schema:diff -- <name>` | one-off Docker container; removed on exit via `trap` |
+| **Faster local runs** | `SCHEMA_DIFF_SKIP_VALIDATION=1 task schema:diff -- <name>` | skips pg-schema-diff plan replay validation |
+
+Default `DATABASE_URL` when unset: `postgres://escalite:escalite@127.0.0.1:5432/escalite?sslmode=disable` (compose dev port mapping).
 
 **DML-only exception:** one-off data backfills may use hand-written DML in a migration file when paired with an ADR note in the PR — never DDL.
 
