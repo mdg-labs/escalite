@@ -437,3 +437,22 @@ type AlertAnalytics {
   excludeMaintenanceWindowAlerts: Boolean!
   rollups: [AlertAnalyticsRollup!]!
 }
+
+"""Append-only organization audit event."""
+type AuditEvent {
+  id: ID!
+  organizationId: ID!
+  actorId: ID
+  actorEmail: String
+  action: String!
+  targetType: String
+  targetId: ID
+  metadata: JSON!
+  createdAt: DateTime!
+}
+
+"""Paginated audit event list."""
+type AuditEventConnection {
+  items: [AuditEvent!]!
+  totalCount: Int!
+}

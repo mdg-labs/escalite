@@ -12,6 +12,43 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countAuditEventsFiltered = `-- name: CountAuditEventsFiltered :one
+SELECT COUNT(*)::int AS total_count
+FROM audit_events
+WHERE organization_id = $1
+  AND (
+    $2::text IS NULL
+    OR action = $2
+  )
+  AND (
+    $3::timestamptz IS NULL
+    OR created_at >= $3
+  )
+  AND (
+    $4::timestamptz IS NULL
+    OR created_at <= $4
+  )
+`
+
+type CountAuditEventsFilteredParams struct {
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	ActionFilter   pgtype.Text        `json:"action_filter"`
+	FromTime       pgtype.Timestamptz `json:"from_time"`
+	ToTime         pgtype.Timestamptz `json:"to_time"`
+}
+
+func (q *Queries) CountAuditEventsFiltered(ctx context.Context, arg CountAuditEventsFilteredParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countAuditEventsFiltered,
+		arg.OrganizationID,
+		arg.ActionFilter,
+		arg.FromTime,
+		arg.ToTime,
+	)
+	var total_count int32
+	err := row.Scan(&total_count)
+	return total_count, err
+}
+
 const createAuditEvent = `-- name: CreateAuditEvent :one
 INSERT INTO audit_events (
     id,
@@ -67,6 +104,33 @@ func (q *Queries) CreateAuditEvent(ctx context.Context, arg CreateAuditEventPara
 	return i, err
 }
 
+const listAuditEventActionsByOrganization = `-- name: ListAuditEventActionsByOrganization :many
+SELECT DISTINCT action
+FROM audit_events
+WHERE organization_id = $1
+ORDER BY action ASC
+`
+
+func (q *Queries) ListAuditEventActionsByOrganization(ctx context.Context, organizationID uuid.UUID) ([]string, error) {
+	rows, err := q.db.Query(ctx, listAuditEventActionsByOrganization, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var action string
+		if err := rows.Scan(&action); err != nil {
+			return nil, err
+		}
+		items = append(items, action)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAuditEventsByOrganization = `-- name: ListAuditEventsByOrganization :many
 SELECT id, organization_id, actor_id, action, target_type, target_id, metadata, created_at
 FROM audit_events
@@ -76,6 +140,71 @@ ORDER BY created_at ASC
 
 func (q *Queries) ListAuditEventsByOrganization(ctx context.Context, organizationID uuid.UUID) ([]AuditEvent, error) {
 	rows, err := q.db.Query(ctx, listAuditEventsByOrganization, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AuditEvent{}
+	for rows.Next() {
+		var i AuditEvent
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.ActorID,
+			&i.Action,
+			&i.TargetType,
+			&i.TargetID,
+			&i.Metadata,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAuditEventsFiltered = `-- name: ListAuditEventsFiltered :many
+SELECT id, organization_id, actor_id, action, target_type, target_id, metadata, created_at
+FROM audit_events
+WHERE organization_id = $1
+  AND (
+    $2::text IS NULL
+    OR action = $2
+  )
+  AND (
+    $3::timestamptz IS NULL
+    OR created_at >= $3
+  )
+  AND (
+    $4::timestamptz IS NULL
+    OR created_at <= $4
+  )
+ORDER BY created_at DESC
+LIMIT $6 OFFSET $5
+`
+
+type ListAuditEventsFilteredParams struct {
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	ActionFilter   pgtype.Text        `json:"action_filter"`
+	FromTime       pgtype.Timestamptz `json:"from_time"`
+	ToTime         pgtype.Timestamptz `json:"to_time"`
+	PageOffset     int32              `json:"page_offset"`
+	PageLimit      int32              `json:"page_limit"`
+}
+
+func (q *Queries) ListAuditEventsFiltered(ctx context.Context, arg ListAuditEventsFilteredParams) ([]AuditEvent, error) {
+	rows, err := q.db.Query(ctx, listAuditEventsFiltered,
+		arg.OrganizationID,
+		arg.ActionFilter,
+		arg.FromTime,
+		arg.ToTime,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useSearchParams } from 'react-router'
 import { useMeQuery } from '@escalite/ts-types'
 
 import { AnalyticsPage } from './routes/analytics'
+import { AuditLogPage } from './routes/audit-log'
 import { AlertsPage } from './routes/alerts'
 import { DashboardPage } from './routes/dashboard'
 import { EscalationPolicyPage } from './routes/escalation-policy'
@@ -143,6 +144,14 @@ export function App(): ReactElement {
         element={
           <ProtectedRoute>
             <AnalyticsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/audit-log"
+        element={
+          <ProtectedRoute>
+            <AuditLogPage />
           </ProtectedRoute>
         }
       />

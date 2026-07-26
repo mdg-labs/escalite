@@ -610,3 +610,24 @@ query AlertAnalytics($teamId: ID, $serviceId: ID) {
     }
   }
 }
+
+query AuditEventActions {
+  auditEventActions
+}
+
+query AuditEvents($action: String, $from: DateTime, $to: DateTime, $limit: Int, $offset: Int) {
+  auditEvents(action: $action, from: $from, to: $to, limit: $limit, offset: $offset) {
+    totalCount
+    items {
+      id
+      organizationId
+      actorId
+      actorEmail
+      action
+      targetType
+      targetId
+      metadata
+      createdAt
+    }
+  }
+}

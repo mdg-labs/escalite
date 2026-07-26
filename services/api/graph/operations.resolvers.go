@@ -3721,6 +3721,45 @@ func (r *queryResolver) AnalyticsSettings(ctx context.Context) (*model.Analytics
 	return analyticsSettingsFromDB(settings), nil
 }
 
+// AuditEvents is the resolver for the auditEvents field.
+func (r *queryResolver) AuditEvents(ctx context.Context, action *string, from *time.Time, to *time.Time, limit *int, offset *int) (*model.AuditEventConnection, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filter, err := parseAuditEventFilter(action, from, to, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	result, err := listAuditEventsFiltered(ctx, queries, sc.User.OrganizationID, filter)
+	if err != nil {
+		r.logger.Error("list audit events failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return result, nil
+}
+
+// AuditEventActions is the resolver for the auditEventActions field.
+func (r *queryResolver) AuditEventActions(ctx context.Context) ([]string, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	actions, err := queries.ListAuditEventActionsByOrganization(ctx, sc.User.OrganizationID)
+	if err != nil {
+		r.logger.Error("list audit event actions failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return actions, nil
+}
+
 // AlertAnalytics is the resolver for the alertAnalytics field.
 func (r *queryResolver) AlertAnalytics(ctx context.Context, teamID *string, serviceID *string) (*model.AlertAnalytics, error) {
 	sc, err := requireAuthSession(ctx)

@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from 'react'
 import { Link } from 'react-router'
+import { UserRole, useMeQuery } from '@escalite/ts-types'
 
 import { t } from '../lib/i18n'
 import { OrgSwitcher } from './org-switcher'
@@ -10,6 +11,9 @@ type AppShellProps = {
 }
 
 export function AppShell({ title, children }: AppShellProps): ReactElement {
+  const [{ data: meData }] = useMeQuery({ requestPolicy: 'cache-first' })
+  const isAdmin = meData?.me?.role === UserRole.Admin
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
@@ -37,6 +41,11 @@ export function AppShell({ title, children }: AppShellProps): ReactElement {
               <Link className="hover:text-foreground" to="/analytics">
                 {t('nav.analytics')}
               </Link>
+              {isAdmin ? (
+                <Link className="hover:text-foreground" to="/audit-log">
+                  {t('nav.auditLog')}
+                </Link>
+              ) : null}
               <Link className="hover:text-foreground" to="/settings">
                 {t('nav.settings')}
               </Link>

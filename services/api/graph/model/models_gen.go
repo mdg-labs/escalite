@@ -62,6 +62,25 @@ type AssignIncidentRoleInput struct {
 	UserID           string `json:"userId"`
 }
 
+// Append-only organization audit event.
+type AuditEvent struct {
+	ID             string         `json:"id"`
+	OrganizationID string         `json:"organizationId"`
+	ActorID        *string        `json:"actorId,omitempty"`
+	ActorEmail     *string        `json:"actorEmail,omitempty"`
+	Action         string         `json:"action"`
+	TargetType     *string        `json:"targetType,omitempty"`
+	TargetID       *string        `json:"targetId,omitempty"`
+	Metadata       map[string]any `json:"metadata"`
+	CreatedAt      time.Time      `json:"createdAt"`
+}
+
+// Paginated audit event list.
+type AuditEventConnection struct {
+	Items      []*AuditEvent `json:"items"`
+	TotalCount int           `json:"totalCount"`
+}
+
 type CreateEscalationPolicyInput struct {
 	ServiceID string                 `json:"serviceId"`
 	Name      string                 `json:"name"`
