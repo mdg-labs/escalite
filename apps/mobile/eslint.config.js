@@ -6,4 +6,10 @@ export default [
   {
     ignores: ['dist', '.expo', 'babel.config.js', 'metro.config.js'],
   },
+  {
+    files: ['**/context.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ]
