@@ -467,6 +467,15 @@ CREATE TABLE "organization_slack_settings" (
   PRIMARY KEY ("organization_id"),
   CONSTRAINT "organization_slack_settings_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
+-- Create "organization_analytics_settings" table
+CREATE TABLE "organization_analytics_settings" (
+  "organization_id" uuid NOT NULL,
+  "exclude_maintenance_window_alerts" boolean NOT NULL DEFAULT false,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("organization_id"),
+  CONSTRAINT "organization_analytics_settings_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
 -- Create "rotations" table
 CREATE TABLE "rotations" (
   "id" uuid NOT NULL,

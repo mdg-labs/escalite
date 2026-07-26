@@ -34,6 +34,28 @@ type Alert struct {
 	UpdatedAt      time.Time     `json:"updatedAt"`
 }
 
+// Alert analytics with precomputed 7d and 30d rollups.
+type AlertAnalytics struct {
+	ExcludeMaintenanceWindowAlerts bool                    `json:"excludeMaintenanceWindowAlerts"`
+	Rollups                        []*AlertAnalyticsRollup `json:"rollups"`
+}
+
+// MTTA/MTTR rollup for a fixed lookback window.
+type AlertAnalyticsRollup struct {
+	WindowDays int `json:"windowDays"`
+	// Mean seconds from alert creation to acknowledgment; null when no samples.
+	MttaSeconds       *float64 `json:"mttaSeconds,omitempty"`
+	AcknowledgedCount int      `json:"acknowledgedCount"`
+	// Mean seconds from alert creation to resolve/close; null when no samples.
+	MttrSeconds   *float64 `json:"mttrSeconds,omitempty"`
+	ResolvedCount int      `json:"resolvedCount"`
+}
+
+// Organization analytics configuration (org admin only).
+type AnalyticsSettings struct {
+	ExcludeMaintenanceWindowAlerts bool `json:"excludeMaintenanceWindowAlerts"`
+}
+
 type AssignIncidentRoleInput struct {
 	IncidentID       string `json:"incidentId"`
 	RoleDefinitionID string `json:"roleDefinitionId"`
@@ -390,6 +412,10 @@ type SamlSettings struct {
 	CertificateHint *string `json:"certificateHint,omitempty"`
 	// Absolute URL to start SAML login when enabled.
 	SamlLoginURL *string `json:"samlLoginUrl,omitempty"`
+}
+
+type SaveAnalyticsSettingsInput struct {
+	ExcludeMaintenanceWindowAlerts bool `json:"excludeMaintenanceWindowAlerts"`
 }
 
 type SaveNotificationRuleInput struct {

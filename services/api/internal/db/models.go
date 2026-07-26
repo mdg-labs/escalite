@@ -195,6 +195,13 @@ type Organization struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
+type OrganizationAnalyticsSetting struct {
+	OrganizationID                 uuid.UUID          `json:"organization_id"`
+	ExcludeMaintenanceWindowAlerts bool               `json:"exclude_maintenance_window_alerts"`
+	CreatedAt                      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                      pgtype.Timestamptz `json:"updated_at"`
+}
+
 type OrganizationSamlSetting struct {
 	OrganizationID         uuid.UUID          `json:"organization_id"`
 	Enabled                bool               `json:"enabled"`

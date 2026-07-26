@@ -162,6 +162,16 @@ type Query {
   Organization status page configuration (org admin only). Null when not yet created.
   """
   statusPage: StatusPage
+
+  """
+  Organization analytics configuration (org admin only).
+  """
+  analyticsSettings: AnalyticsSettings!
+
+  """
+  MTTA/MTTR rollups for 7d and 30d windows. Team members may filter by teamId or serviceId.
+  """
+  alertAnalytics(teamId: ID, serviceId: ID): AlertAnalytics!
 }
 
 type Mutation {
@@ -429,4 +439,9 @@ type Mutation {
   Update a status page incident status (org admin only).
   """
   updateStatusPageIncidentStatus(input: UpdateStatusPageIncidentStatusInput!): StatusPageIncident!
+
+  """
+  Save organization analytics settings (org admin only).
+  """
+  saveAnalyticsSettings(input: SaveAnalyticsSettingsInput!): AnalyticsSettings!
 }

@@ -238,3 +238,7 @@ input UpdateStatusPageIncidentStatusInput {
   status: IncidentStatus!
   body: String
 }
+
+input SaveAnalyticsSettingsInput {
+  excludeMaintenanceWindowAlerts: Boolean!
+}

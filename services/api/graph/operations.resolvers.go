@@ -2841,6 +2841,26 @@ func (r *mutationResolver) UpdateStatusPageIncidentStatus(ctx context.Context, i
 	return incidents[0], nil
 }
 
+// SaveAnalyticsSettings is the resolver for the saveAnalyticsSettings field.
+func (r *mutationResolver) SaveAnalyticsSettings(ctx context.Context, input model.SaveAnalyticsSettingsInput) (*model.AnalyticsSettings, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	settings, err := queries.UpsertOrganizationAnalyticsSettings(ctx, db.UpsertOrganizationAnalyticsSettingsParams{
+		OrganizationID:                 sc.User.OrganizationID,
+		ExcludeMaintenanceWindowAlerts: input.ExcludeMaintenanceWindowAlerts,
+	})
+	if err != nil {
+		r.logger.Error("save analytics settings failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	return analyticsSettingsFromDB(&settings), nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	sc, ok := auth.SessionFromContext(ctx)
@@ -3604,6 +3624,80 @@ func (r *queryResolver) StatusPage(ctx context.Context) (*model.StatusPage, erro
 
 	queries := db.New(r.pool)
 	return r.loadStatusPageForOrg(ctx, queries, sc.User.OrganizationID)
+}
+
+// AnalyticsSettings is the resolver for the analyticsSettings field.
+func (r *queryResolver) AnalyticsSettings(ctx context.Context) (*model.AnalyticsSettings, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	settings, found, err := loadOrganizationAnalyticsSettings(ctx, queries, sc.User.OrganizationID)
+	if err != nil {
+		r.logger.Error("load analytics settings failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	if !found {
+		return analyticsSettingsFromDB(nil), nil
+	}
+	return analyticsSettingsFromDB(settings), nil
+}
+
+// AlertAnalytics is the resolver for the alertAnalytics field.
+func (r *queryResolver) AlertAnalytics(ctx context.Context, teamID *string, serviceID *string) (*model.AlertAnalytics, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	teamFilter, serviceFilter, err := r.resolveAlertAnalyticsScope(ctx, queries, sc, teamID, serviceID)
+	if err != nil {
+		return nil, err
+	}
+
+	settings, found, err := loadOrganizationAnalyticsSettings(ctx, queries, sc.User.OrganizationID)
+	if err != nil {
+		r.logger.Error("load analytics settings failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	excludeMaintenance := excludeMaintenanceWindowAlertsConfigured(settings, found)
+
+	rollup7, err := r.computeAnalyticsRollup(
+		ctx,
+		queries,
+		sc.User.OrganizationID,
+		analyticsWindow7Days,
+		teamFilter,
+		serviceFilter,
+		excludeMaintenance,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	rollup30, err := r.computeAnalyticsRollup(
+		ctx,
+		queries,
+		sc.User.OrganizationID,
+		analyticsWindow30Days,
+		teamFilter,
+		serviceFilter,
+		excludeMaintenance,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.AlertAnalytics{
+		ExcludeMaintenanceWindowAlerts: excludeMaintenance,
+		Rollups: []*model.AlertAnalyticsRollup{
+			rollup7,
+			rollup30,
+		},
+	}, nil
 }
 
 // AlertUpdated is the resolver for the alertUpdated field.

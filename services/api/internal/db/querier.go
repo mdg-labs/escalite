@@ -17,6 +17,7 @@ type Querier interface {
 	AssignAlertToIncident(ctx context.Context, arg AssignAlertToIncidentParams) (Alert, error)
 	BootstrapOrganizationWithAdmin(ctx context.Context, arg BootstrapOrganizationWithAdminParams) (BootstrapOrganizationWithAdminRow, error)
 	CloseAlert(ctx context.Context, arg CloseAlertParams) (Alert, error)
+	ComputeAlertAnalyticsRollup(ctx context.Context, arg ComputeAlertAnalyticsRollupParams) (ComputeAlertAnalyticsRollupRow, error)
 	CoreSchemaReady(ctx context.Context) (bool, error)
 	CountNotificationAttemptsByAlertID(ctx context.Context, arg CountNotificationAttemptsByAlertIDParams) (int64, error)
 	CountOrganizations(ctx context.Context) (int64, error)
@@ -87,6 +88,7 @@ type Querier interface {
 	GetOpenAlertByServiceDedupKeyForResolve(ctx context.Context, arg GetOpenAlertByServiceDedupKeyForResolveParams) (Alert, error)
 	GetOpenIncidentForTeam(ctx context.Context, arg GetOpenIncidentForTeamParams) (Incident, error)
 	GetOpenIncidentForTeamWithServiceAlerts(ctx context.Context, arg GetOpenIncidentForTeamWithServiceAlertsParams) (Incident, error)
+	GetOrganizationAnalyticsSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationAnalyticsSetting, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
 	GetOrganizationSamlSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationSamlSetting, error)
 	GetOrganizationScimSettings(ctx context.Context, organizationID uuid.UUID) (OrganizationScimSetting, error)
@@ -197,6 +199,7 @@ type Querier interface {
 	UpdateStatusPageIncidentStatus(ctx context.Context, arg UpdateStatusPageIncidentStatusParams) (StatusPageIncident, error)
 	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
 	UpsertMobileDevice(ctx context.Context, arg UpsertMobileDeviceParams) (MobileDevice, error)
+	UpsertOrganizationAnalyticsSettings(ctx context.Context, arg UpsertOrganizationAnalyticsSettingsParams) (OrganizationAnalyticsSetting, error)
 	UpsertOrganizationSamlSettings(ctx context.Context, arg UpsertOrganizationSamlSettingsParams) (OrganizationSamlSetting, error)
 	UpsertOrganizationScimSettings(ctx context.Context, arg UpsertOrganizationScimSettingsParams) (OrganizationScimSetting, error)
 	// Reinstalling the Escalite Slack app (same organization) upserts this single row by

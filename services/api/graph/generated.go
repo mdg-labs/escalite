@@ -62,6 +62,23 @@ type ComplexityRoot struct {
 		UpdatedAt      func(childComplexity int) int
 	}
 
+	AlertAnalytics struct {
+		ExcludeMaintenanceWindowAlerts func(childComplexity int) int
+		Rollups                        func(childComplexity int) int
+	}
+
+	AlertAnalyticsRollup struct {
+		AcknowledgedCount func(childComplexity int) int
+		MttaSeconds       func(childComplexity int) int
+		MttrSeconds       func(childComplexity int) int
+		ResolvedCount     func(childComplexity int) int
+		WindowDays        func(childComplexity int) int
+	}
+
+	AnalyticsSettings struct {
+		ExcludeMaintenanceWindowAlerts func(childComplexity int) int
+	}
+
 	EscalationPolicy struct {
 		CreatedAt      func(childComplexity int) int
 		ID             func(childComplexity int) int
@@ -221,6 +238,7 @@ type ComplexityRoot struct {
 		RevokeMobileDevice             func(childComplexity int, id string) int
 		RotateIntegrationKey           func(childComplexity int, id string) int
 		RotateScimToken                func(childComplexity int) int
+		SaveAnalyticsSettings          func(childComplexity int, input model.SaveAnalyticsSettingsInput) int
 		SaveNotificationRule           func(childComplexity int, input model.SaveNotificationRuleInput) int
 		SaveSamlSettings               func(childComplexity int, input model.SaveSamlSettingsInput) int
 		SaveSlackSettings              func(childComplexity int, input model.SaveSlackSettingsInput) int
@@ -292,7 +310,9 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Alert                   func(childComplexity int, id string) int
+		AlertAnalytics          func(childComplexity int, teamID *string, serviceID *string) int
 		Alerts                  func(childComplexity int, status *model.AlertStatus, limit *int) int
+		AnalyticsSettings       func(childComplexity int) int
 		EscalationPolicies      func(childComplexity int, serviceID string) int
 		EscalationPolicy        func(childComplexity int, id string) int
 		Health                  func(childComplexity int) int
@@ -572,6 +592,7 @@ type MutationResolver interface {
 	PublishIncidentToStatusPage(ctx context.Context, input model.PublishIncidentToStatusPageInput) (*model.StatusPageIncident, error)
 	CreateStatusPageIncidentUpdate(ctx context.Context, input model.CreateStatusPageIncidentUpdateInput) (*model.StatusPageIncidentUpdate, error)
 	UpdateStatusPageIncidentStatus(ctx context.Context, input model.UpdateStatusPageIncidentStatusInput) (*model.StatusPageIncident, error)
+	SaveAnalyticsSettings(ctx context.Context, input model.SaveAnalyticsSettingsInput) (*model.AnalyticsSettings, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
@@ -603,6 +624,8 @@ type QueryResolver interface {
 	Incidents(ctx context.Context, status *model.IncidentStatus, teamID *string, limit *int) ([]*model.Incident, error)
 	IncidentRoleDefinitions(ctx context.Context) ([]*model.IncidentRoleDefinition, error)
 	StatusPage(ctx context.Context) (*model.StatusPage, error)
+	AnalyticsSettings(ctx context.Context) (*model.AnalyticsSettings, error)
+	AlertAnalytics(ctx context.Context, teamID *string, serviceID *string) (*model.AlertAnalytics, error)
 }
 type ServiceResolver interface {
 	ActiveMaintenanceWindows(ctx context.Context, obj *model.Service) ([]*model.MaintenanceWindow, error)
@@ -730,6 +753,57 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Alert.UpdatedAt(childComplexity), true
+
+	case "AlertAnalytics.excludeMaintenanceWindowAlerts":
+		if e.ComplexityRoot.AlertAnalytics.ExcludeMaintenanceWindowAlerts == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AlertAnalytics.ExcludeMaintenanceWindowAlerts(childComplexity), true
+	case "AlertAnalytics.rollups":
+		if e.ComplexityRoot.AlertAnalytics.Rollups == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AlertAnalytics.Rollups(childComplexity), true
+
+	case "AlertAnalyticsRollup.acknowledgedCount":
+		if e.ComplexityRoot.AlertAnalyticsRollup.AcknowledgedCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AlertAnalyticsRollup.AcknowledgedCount(childComplexity), true
+	case "AlertAnalyticsRollup.mttaSeconds":
+		if e.ComplexityRoot.AlertAnalyticsRollup.MttaSeconds == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AlertAnalyticsRollup.MttaSeconds(childComplexity), true
+	case "AlertAnalyticsRollup.mttrSeconds":
+		if e.ComplexityRoot.AlertAnalyticsRollup.MttrSeconds == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AlertAnalyticsRollup.MttrSeconds(childComplexity), true
+	case "AlertAnalyticsRollup.resolvedCount":
+		if e.ComplexityRoot.AlertAnalyticsRollup.ResolvedCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AlertAnalyticsRollup.ResolvedCount(childComplexity), true
+	case "AlertAnalyticsRollup.windowDays":
+		if e.ComplexityRoot.AlertAnalyticsRollup.WindowDays == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AlertAnalyticsRollup.WindowDays(childComplexity), true
+
+	case "AnalyticsSettings.excludeMaintenanceWindowAlerts":
+		if e.ComplexityRoot.AnalyticsSettings.ExcludeMaintenanceWindowAlerts == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AnalyticsSettings.ExcludeMaintenanceWindowAlerts(childComplexity), true
 
 	case "EscalationPolicy.createdAt":
 		if e.ComplexityRoot.EscalationPolicy.CreatedAt == nil {
@@ -1645,6 +1719,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RotateScimToken(childComplexity), true
+	case "Mutation.saveAnalyticsSettings":
+		if e.ComplexityRoot.Mutation.SaveAnalyticsSettings == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveAnalyticsSettings_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SaveAnalyticsSettings(childComplexity, args["input"].(model.SaveAnalyticsSettingsInput)), true
 	case "Mutation.saveNotificationRule":
 		if e.ComplexityRoot.Mutation.SaveNotificationRule == nil {
 			break
@@ -2030,6 +2115,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Alert(childComplexity, args["id"].(string)), true
+	case "Query.alertAnalytics":
+		if e.ComplexityRoot.Query.AlertAnalytics == nil {
+			break
+		}
+
+		args, err := ec.field_Query_alertAnalytics_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.AlertAnalytics(childComplexity, args["teamId"].(*string), args["serviceId"].(*string)), true
 	case "Query.alerts":
 		if e.ComplexityRoot.Query.Alerts == nil {
 			break
@@ -2041,6 +2137,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Alerts(childComplexity, args["status"].(*model.AlertStatus), args["limit"].(*int)), true
+	case "Query.analyticsSettings":
+		if e.ComplexityRoot.Query.AnalyticsSettings == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.AnalyticsSettings(childComplexity), true
 	case "Query.escalationPolicies":
 		if e.ComplexityRoot.Query.EscalationPolicies == nil {
 			break
@@ -3035,6 +3137,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPromoteAlertToIncidentInput,
 		ec.unmarshalInputPublishIncidentToStatusPageInput,
 		ec.unmarshalInputRegisterMobileDeviceInput,
+		ec.unmarshalInputSaveAnalyticsSettingsInput,
 		ec.unmarshalInputSaveNotificationRuleInput,
 		ec.unmarshalInputSaveSamlSettingsInput,
 		ec.unmarshalInputSaveSlackSettingsInput,
@@ -3448,6 +3551,10 @@ input UpdateStatusPageIncidentStatusInput {
   status: IncidentStatus!
   body: String
 }
+
+input SaveAnalyticsSettingsInput {
+  excludeMaintenanceWindowAlerts: Boolean!
+}
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Subscription {
   """
@@ -3613,6 +3720,16 @@ type Query {
   Organization status page configuration (org admin only). Null when not yet created.
   """
   statusPage: StatusPage
+
+  """
+  Organization analytics configuration (org admin only).
+  """
+  analyticsSettings: AnalyticsSettings!
+
+  """
+  MTTA/MTTR rollups for 7d and 30d windows. Team members may filter by teamId or serviceId.
+  """
+  alertAnalytics(teamId: ID, serviceId: ID): AlertAnalytics!
 }
 
 type Mutation {
@@ -3880,6 +3997,11 @@ type Mutation {
   Update a status page incident status (org admin only).
   """
   updateStatusPageIncidentStatus(input: UpdateStatusPageIncidentStatusInput!): StatusPageIncident!
+
+  """
+  Save organization analytics settings (org admin only).
+  """
+  saveAnalyticsSettings(input: SaveAnalyticsSettingsInput!): AnalyticsSettings!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/scalars.graphql", Input: `"""
@@ -4310,6 +4432,28 @@ type StatusPageIncidentUpdate {
   status: IncidentStatus!
   createdAt: DateTime!
 }
+
+"""Organization analytics configuration (org admin only)."""
+type AnalyticsSettings {
+  excludeMaintenanceWindowAlerts: Boolean!
+}
+
+"""MTTA/MTTR rollup for a fixed lookback window."""
+type AlertAnalyticsRollup {
+  windowDays: Int!
+  """Mean seconds from alert creation to acknowledgment; null when no samples."""
+  mttaSeconds: Float
+  acknowledgedCount: Int!
+  """Mean seconds from alert creation to resolve/close; null when no samples."""
+  mttrSeconds: Float
+  resolvedCount: Int!
+}
+
+"""Alert analytics with precomputed 7d and 30d rollups."""
+type AlertAnalytics {
+  excludeMaintenanceWindowAlerts: Boolean!
+  rollups: [AlertAnalyticsRollup!]!
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -4354,6 +4498,40 @@ func (ec *executionContext) childFields_Alert(ctx context.Context, field graphql
 		return ec.fieldContext_Alert_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Alert", field.Name)
+}
+
+func (ec *executionContext) childFields_AlertAnalytics(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "excludeMaintenanceWindowAlerts":
+		return ec.fieldContext_AlertAnalytics_excludeMaintenanceWindowAlerts(ctx, field)
+	case "rollups":
+		return ec.fieldContext_AlertAnalytics_rollups(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type AlertAnalytics", field.Name)
+}
+
+func (ec *executionContext) childFields_AlertAnalyticsRollup(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "windowDays":
+		return ec.fieldContext_AlertAnalyticsRollup_windowDays(ctx, field)
+	case "mttaSeconds":
+		return ec.fieldContext_AlertAnalyticsRollup_mttaSeconds(ctx, field)
+	case "acknowledgedCount":
+		return ec.fieldContext_AlertAnalyticsRollup_acknowledgedCount(ctx, field)
+	case "mttrSeconds":
+		return ec.fieldContext_AlertAnalyticsRollup_mttrSeconds(ctx, field)
+	case "resolvedCount":
+		return ec.fieldContext_AlertAnalyticsRollup_resolvedCount(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type AlertAnalyticsRollup", field.Name)
+}
+
+func (ec *executionContext) childFields_AnalyticsSettings(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "excludeMaintenanceWindowAlerts":
+		return ec.fieldContext_AnalyticsSettings_excludeMaintenanceWindowAlerts(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type AnalyticsSettings", field.Name)
 }
 
 func (ec *executionContext) childFields_EscalationPolicy(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -5632,6 +5810,20 @@ func (ec *executionContext) field_Mutation_rotateIntegrationKey_args(ctx context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_saveAnalyticsSettings_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.SaveAnalyticsSettingsInput, error) {
+			return ec.unmarshalNSaveAnalyticsSettingsInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveAnalyticsSettingsInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_saveNotificationRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -5903,6 +6095,28 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_alertAnalytics_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "teamId",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOID2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["teamId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "serviceId",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOID2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["serviceId"] = arg1
 	return args, nil
 }
 
@@ -6648,6 +6862,199 @@ func (ec *executionContext) _Alert_updatedAt(ctx context.Context, field graphql.
 }
 func (ec *executionContext) fieldContext_Alert_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Alert", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _AlertAnalytics_excludeMaintenanceWindowAlerts(ctx context.Context, field graphql.CollectedField, obj *model.AlertAnalytics) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AlertAnalytics_excludeMaintenanceWindowAlerts(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ExcludeMaintenanceWindowAlerts, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_AlertAnalytics_excludeMaintenanceWindowAlerts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("AlertAnalytics", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _AlertAnalytics_rollups(ctx context.Context, field graphql.CollectedField, obj *model.AlertAnalytics) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AlertAnalytics_rollups(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Rollups, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.AlertAnalyticsRollup) graphql.Marshaler {
+			return ec.marshalNAlertAnalyticsRollup2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertAnalyticsRollupᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_AlertAnalytics_rollups(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AlertAnalytics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_AlertAnalyticsRollup(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AlertAnalyticsRollup_windowDays(ctx context.Context, field graphql.CollectedField, obj *model.AlertAnalyticsRollup) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AlertAnalyticsRollup_windowDays(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.WindowDays, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_AlertAnalyticsRollup_windowDays(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("AlertAnalyticsRollup", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _AlertAnalyticsRollup_mttaSeconds(ctx context.Context, field graphql.CollectedField, obj *model.AlertAnalyticsRollup) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AlertAnalyticsRollup_mttaSeconds(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MttaSeconds, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_AlertAnalyticsRollup_mttaSeconds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("AlertAnalyticsRollup", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _AlertAnalyticsRollup_acknowledgedCount(ctx context.Context, field graphql.CollectedField, obj *model.AlertAnalyticsRollup) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AlertAnalyticsRollup_acknowledgedCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AcknowledgedCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_AlertAnalyticsRollup_acknowledgedCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("AlertAnalyticsRollup", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _AlertAnalyticsRollup_mttrSeconds(ctx context.Context, field graphql.CollectedField, obj *model.AlertAnalyticsRollup) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AlertAnalyticsRollup_mttrSeconds(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MttrSeconds, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_AlertAnalyticsRollup_mttrSeconds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("AlertAnalyticsRollup", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _AlertAnalyticsRollup_resolvedCount(ctx context.Context, field graphql.CollectedField, obj *model.AlertAnalyticsRollup) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AlertAnalyticsRollup_resolvedCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ResolvedCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_AlertAnalyticsRollup_resolvedCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("AlertAnalyticsRollup", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _AnalyticsSettings_excludeMaintenanceWindowAlerts(ctx context.Context, field graphql.CollectedField, obj *model.AnalyticsSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AnalyticsSettings_excludeMaintenanceWindowAlerts(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ExcludeMaintenanceWindowAlerts, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_AnalyticsSettings_excludeMaintenanceWindowAlerts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("AnalyticsSettings", field, false, false, errors.New("field of type Boolean does not have child fields"))
 }
 
 func (ec *executionContext) _EscalationPolicy_id(ctx context.Context, field graphql.CollectedField, obj *model.EscalationPolicy) (ret graphql.Marshaler) {
@@ -11052,6 +11459,50 @@ func (ec *executionContext) fieldContext_Mutation_updateStatusPageIncidentStatus
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_saveAnalyticsSettings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_saveAnalyticsSettings(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SaveAnalyticsSettings(ctx, fc.Args["input"].(model.SaveAnalyticsSettingsInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.AnalyticsSettings) graphql.Marshaler {
+			return ec.marshalNAnalyticsSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAnalyticsSettings(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_saveAnalyticsSettings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_AnalyticsSettings(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveAnalyticsSettings_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NotificationChannelDefinition_name(ctx context.Context, field graphql.CollectedField, obj *model.NotificationChannelDefinition) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -12821,6 +13272,82 @@ func (ec *executionContext) fieldContext_Query_statusPage(_ context.Context, fie
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_StatusPage(ctx, field)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_analyticsSettings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_analyticsSettings(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().AnalyticsSettings(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.AnalyticsSettings) graphql.Marshaler {
+			return ec.marshalNAnalyticsSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAnalyticsSettings(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_analyticsSettings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_AnalyticsSettings(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_alertAnalytics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_alertAnalytics(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().AlertAnalytics(ctx, fc.Args["teamId"].(*string), fc.Args["serviceId"].(*string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.AlertAnalytics) graphql.Marshaler {
+			return ec.marshalNAlertAnalytics2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertAnalytics(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_alertAnalytics(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_AlertAnalytics(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_alertAnalytics_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -17801,6 +18328,36 @@ func (ec *executionContext) unmarshalInputRegisterMobileDeviceInput(ctx context.
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputSaveAnalyticsSettingsInput(ctx context.Context, obj any) (model.SaveAnalyticsSettingsInput, error) {
+	var it model.SaveAnalyticsSettingsInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"excludeMaintenanceWindowAlerts"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "excludeMaintenanceWindowAlerts":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("excludeMaintenanceWindowAlerts"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExcludeMaintenanceWindowAlerts = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSaveNotificationRuleInput(ctx context.Context, obj any) (model.SaveNotificationRuleInput, error) {
 	var it model.SaveNotificationRuleInput
 	if obj == nil {
@@ -18693,6 +19250,145 @@ func (ec *executionContext) _Alert(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = ec._Alert_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var alertAnalyticsImplementors = []string{"AlertAnalytics"}
+
+func (ec *executionContext) _AlertAnalytics(ctx context.Context, sel ast.SelectionSet, obj *model.AlertAnalytics) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, alertAnalyticsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AlertAnalytics")
+		case "excludeMaintenanceWindowAlerts":
+			out.Values[i] = ec._AlertAnalytics_excludeMaintenanceWindowAlerts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rollups":
+			out.Values[i] = ec._AlertAnalytics_rollups(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var alertAnalyticsRollupImplementors = []string{"AlertAnalyticsRollup"}
+
+func (ec *executionContext) _AlertAnalyticsRollup(ctx context.Context, sel ast.SelectionSet, obj *model.AlertAnalyticsRollup) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, alertAnalyticsRollupImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AlertAnalyticsRollup")
+		case "windowDays":
+			out.Values[i] = ec._AlertAnalyticsRollup_windowDays(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "mttaSeconds":
+			out.Values[i] = ec._AlertAnalyticsRollup_mttaSeconds(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "acknowledgedCount":
+			out.Values[i] = ec._AlertAnalyticsRollup_acknowledgedCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "mttrSeconds":
+			out.Values[i] = ec._AlertAnalyticsRollup_mttrSeconds(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "resolvedCount":
+			out.Values[i] = ec._AlertAnalyticsRollup_resolvedCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var analyticsSettingsImplementors = []string{"AnalyticsSettings"}
+
+func (ec *executionContext) _AnalyticsSettings(ctx context.Context, sel ast.SelectionSet, obj *model.AnalyticsSettings) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, analyticsSettingsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AnalyticsSettings")
+		case "excludeMaintenanceWindowAlerts":
+			out.Values[i] = ec._AnalyticsSettings_excludeMaintenanceWindowAlerts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -20168,6 +20864,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "saveAnalyticsSettings":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveAnalyticsSettings(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -21207,6 +21910,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}()
 				res = ec._Query_statusPage(ctx, field)
 				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "analyticsSettings":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_analyticsSettings(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "alertAnalytics":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_alertAnalytics(ctx, field)
+				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
 				return res
@@ -22962,6 +23709,46 @@ func (ec *executionContext) marshalNAlert2ᚖgithubᚗcomᚋmdgᚑlabsᚋescalit
 	return ec._Alert(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNAlertAnalytics2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertAnalytics(ctx context.Context, sel ast.SelectionSet, v model.AlertAnalytics) graphql.Marshaler {
+	return ec._AlertAnalytics(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAlertAnalytics2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertAnalytics(ctx context.Context, sel ast.SelectionSet, v *model.AlertAnalytics) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AlertAnalytics(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAlertAnalyticsRollup2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertAnalyticsRollupᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.AlertAnalyticsRollup) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNAlertAnalyticsRollup2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertAnalyticsRollup(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAlertAnalyticsRollup2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertAnalyticsRollup(ctx context.Context, sel ast.SelectionSet, v *model.AlertAnalyticsRollup) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AlertAnalyticsRollup(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNAlertPriority2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriority(ctx context.Context, v any) (model.AlertPriority, error) {
 	var res model.AlertPriority
 	err := res.UnmarshalGQL(v)
@@ -23010,6 +23797,20 @@ func (ec *executionContext) unmarshalNAlertStatus2githubᚗcomᚋmdgᚑlabsᚋes
 
 func (ec *executionContext) marshalNAlertStatus2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertStatus(ctx context.Context, sel ast.SelectionSet, v model.AlertStatus) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNAnalyticsSettings2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAnalyticsSettings(ctx context.Context, sel ast.SelectionSet, v model.AnalyticsSettings) graphql.Marshaler {
+	return ec._AnalyticsSettings(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAnalyticsSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAnalyticsSettings(ctx context.Context, sel ast.SelectionSet, v *model.AnalyticsSettings) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AnalyticsSettings(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNAssignIncidentRoleInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAssignIncidentRoleInput(ctx context.Context, v any) (model.AssignIncidentRoleInput, error) {
@@ -23787,6 +24588,11 @@ func (ec *executionContext) marshalNSamlSettings2ᚖgithubᚗcomᚋmdgᚑlabsᚋ
 	return ec._SamlSettings(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNSaveAnalyticsSettingsInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveAnalyticsSettingsInput(ctx context.Context, v any) (model.SaveAnalyticsSettingsInput, error) {
+	res, err := ec.unmarshalInputSaveAnalyticsSettingsInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNSaveNotificationRuleInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐSaveNotificationRuleInput(ctx context.Context, v any) (model.SaveNotificationRuleInput, error) {
 	res, err := ec.unmarshalInputSaveNotificationRuleInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -24521,6 +25327,23 @@ func (ec *executionContext) marshalOEscalationPolicy2ᚖgithubᚗcomᚋmdgᚑlab
 		return graphql.Null
 	}
 	return ec._EscalationPolicy(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v any) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	res := graphql.MarshalFloatContext(*v)
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) marshalOHeartbeatMonitor2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐHeartbeatMonitor(ctx context.Context, sel ast.SelectionSet, v *model.HeartbeatMonitor) graphql.Marshaler {
