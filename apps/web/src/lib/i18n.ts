@@ -31,6 +31,7 @@ const messages = {
   'alerts.priority.low': 'Low',
   'alerts.error.action': 'Action failed. Try again.',
   'nav.dashboard': 'Dashboard',
+  'nav.analytics': 'Analytics',
   'nav.alerts': 'Alerts',
   'nav.integrations': 'Integrations',
   'nav.settings': 'Settings',
@@ -242,6 +243,30 @@ const messages = {
   'incidents.status.updating': 'Updating…',
   'incidents.error.action': 'Action failed. Try again.',
   'alerts.detail.viewIncident': 'View incident',
+  'analytics.title': 'Analytics',
+  'analytics.description':
+    'MTTA, MTTR, and alert volume rollups for the last 7 and 30 days.',
+  'analytics.loading': 'Loading analytics…',
+  'analytics.maintenanceExcluded':
+    'Alerts during maintenance windows are excluded from these metrics.',
+  'analytics.filter.team': 'Team',
+  'analytics.filter.teamPlaceholder': 'All teams',
+  'analytics.filter.allTeams': 'All teams',
+  'analytics.filter.service': 'Service',
+  'analytics.filter.servicePlaceholder': 'All services',
+  'analytics.filter.allServices': 'All services',
+  'analytics.empty.noTeam': 'Join a team to view analytics for your services.',
+  'analytics.metric.mtta7d': 'MTTA (7 days)',
+  'analytics.metric.mttr7d': 'MTTR (7 days)',
+  'analytics.metric.mtta30d': 'MTTA (30 days)',
+  'analytics.metric.mttr30d': 'MTTR (30 days)',
+  'analytics.metric.acknowledgedCount': '{count} acknowledged alerts',
+  'analytics.metric.resolvedCount': '{count} resolved alerts',
+  'analytics.chart.responseTime': 'Response time by window',
+  'analytics.chart.responseTimeDescription':
+    'Mean time to acknowledge and resolve, shown in minutes.',
+  'analytics.chart.volume': 'Alert volume by window',
+  'analytics.chart.volumeDescription': 'Acknowledged and resolved alert counts.',
 } as const
 
 export type MessageKey = keyof typeof messages

@@ -4,5 +4,5 @@
     "rootDir": ".",
     "jsx": "react-jsx"
   },
-  "include": ["lib", "primitives", "domain", "src"]
+  "include": ["lib", "primitives", "domain", "charts", "src"]
 }

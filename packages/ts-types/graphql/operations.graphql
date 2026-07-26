@@ -576,3 +576,16 @@ mutation RotateScimToken {
     }
   }
 }
+
+query AlertAnalytics($teamId: ID, $serviceId: ID) {
+  alertAnalytics(teamId: $teamId, serviceId: $serviceId) {
+    excludeMaintenanceWindowAlerts
+    rollups {
+      windowDays
+      mttaSeconds
+      acknowledgedCount
+      mttrSeconds
+      resolvedCount
+    }
+  }
+}

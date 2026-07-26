@@ -31,7 +31,8 @@
     "./primitives/scroll-area": "./primitives/scroll-area.tsx",
     "./primitives/tabs": "./primitives/tabs.tsx",
     "./domain/EscalationPolicyEditor": "./domain/EscalationPolicyEditor/index.ts",
-    "./domain/ScheduleCalendar": "./domain/ScheduleCalendar/index.ts"
+    "./domain/ScheduleCalendar": "./domain/ScheduleCalendar/index.ts",
+    "./charts": "./charts/index.ts"
   },
   "scripts": {
     "build": "node -e \"console.log('@escalite/ui build noop')\"",
@@ -44,11 +45,13 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@tremor/react": "^3.18.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "lucide-react": "^0.555.0",
     "react-day-picker": "^10.0.1",
+    "recharts": "^3.10.1",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

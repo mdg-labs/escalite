@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { Navigate, Route, Routes, useSearchParams } from 'react-router'
 import { useMeQuery } from '@escalite/ts-types'
 
+import { AnalyticsPage } from './routes/analytics'
 import { AlertsPage } from './routes/alerts'
 import { DashboardPage } from './routes/dashboard'
 import { EscalationPolicyPage } from './routes/escalation-policy'
@@ -134,6 +135,14 @@ export function App(): ReactElement {
         element={
           <ProtectedRoute>
             <SettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <AnalyticsPage />
           </ProtectedRoute>
         }
       />

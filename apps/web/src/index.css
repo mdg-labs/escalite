@@ -1,3 +1,4 @@
 @import '@escalite/ui/tokens/globals.css';
 
 @source "../../packages/ui/**/*.{ts,tsx}";
+@source "../../../node_modules/@tremor/react/dist/**/*.{js,mjs}";
