@@ -19,7 +19,10 @@ Examples by stack (customize in project-setup):
 # pnpm + turbo monorepo (Escalite default)
 bash scripts/with-ci-env.sh pnpm turbo run lint typecheck test:unit --filter=@escalite/web
 
-# Go API only
+# Go API only (full monorepo Go gate)
+bash scripts/go-test.sh
+
+# Go API only (scoped package)
 cd services/api && go test ./...
 ```
 

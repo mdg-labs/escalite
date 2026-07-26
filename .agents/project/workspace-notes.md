@@ -11,7 +11,25 @@ Durable project learnings for the orchestrator. Not session-specific.
 
 ---
 
-<!-- Add sections as needed:
+## Atlas removed (use goose + pg-schema-diff only)
+
+Atlas was dropped in favor of [ADR 0002](../../docs/adr/0002-sql-schema-pg-schema-diff-goose.md). **Never** run `atlas migrate *`, `atlas migrate hash`, or create/edit `atlas.sum`.
+
+| Step | Command / module |
+| ---- | ---------------- |
+| Edit canonical schema | `services/api/schema/sql/schema.sql` (+ `realtime_notify.sql`) |
+| Generate migration | `task schema:diff -- <name>` |
+| Apply locally | `task migrate` |
+| Runtime / tests apply | `services/dbmigrate` (goose + advisory lock) |
+
+Integration tests use goose via `dbmigrate`, not the Atlas CLI.
+_added: 2026-07-26_
+
+---
+
+Verification agents must **never** run `task schema:diff`, `SCHEMA_DIFF_EPHEMERAL_PG=1`, or ad-hoc `docker run postgres` — those write migration files and/or leave orphaned containers (`escalite-vrf-*`, `escalite-schema-diff-*`). Verifiers use `go test` (unit), `git log`, and static review only. See `prompt-templates.md` § VERIFIER READ-ONLY GUARD.
+_added: 2026-07-26_
+
 
 ## <topic>
 

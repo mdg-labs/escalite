@@ -140,4 +140,4 @@ tasks:
   go:test:
     internal: true
     cmds:
-      - go test ./services/api/... ./services/engine/... ./services/integrations/...
+      - bash scripts/go-test.sh

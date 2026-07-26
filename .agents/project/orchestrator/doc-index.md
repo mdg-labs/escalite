@@ -21,7 +21,8 @@
 | Default lint | `pnpm turbo run lint --filter=...` (pending Phase 0 scaffold) |
 | Default typecheck | `pnpm turbo run typecheck --filter=...` |
 | Default test | `pnpm turbo run test:unit --filter=...` |
-| Go API | `cd services/api && go test ./...` (pending scaffold) |
+| Go (full) | `bash scripts/go-test.sh` |
+| Go (scoped) | `cd services/<svc> && go test ./...` |
 
 Map committed paths → package filters per `.cursor/rules/06-local-ci-before-commit.mdc`.
 

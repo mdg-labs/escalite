@@ -211,7 +211,8 @@ FORBIDDEN during verification:
 - Any command that writes to the working tree (except Phasical MCP + local session memory)
 
 ALLOWED Layer 2 checks (read-only / unit tests only):
-- `go test ./...` on packages that do NOT write migrations (e.g. tools/schema-diff unit tests with mocks)
+- Full Go gate: `bash scripts/go-test.sh`
+- Scoped packages: `go test ./...` in the affected service dir (e.g. `tools/schema-diff` unit tests with mocks)
 - `git log`, `git diff`, `git show` on committed SHAs
 - Static review of committed files vs AC
 

@@ -12,6 +12,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
+	github.com/mdg-labs/escalite/services/dbmigrate v0.0.0
 	github.com/mdg-labs/escalite/services/engine v0.0.0
 	github.com/mdg-labs/escalite/services/integrations v0.0.0
 	github.com/mdg-labs/escalite/services/outboundintegrations v0.0.0
@@ -27,6 +28,8 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.36
 	golang.org/x/oauth2 v0.34.0
 )
+
+replace github.com/mdg-labs/escalite/services/dbmigrate => ../dbmigrate
 
 replace github.com/mdg-labs/escalite/services/engine => ../engine
 

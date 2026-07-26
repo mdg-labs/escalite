@@ -49,6 +49,7 @@ task migrate   # needs DATABASE_URL or ESCALITE_DATABASE_URL
 | Paste DDL into `migrations/` | Edit `schema.sql` or `realtime_notify.sql` |
 | Migration without matching source change | Same commit: canonical SQL + generated migration |
 | Hand-edit goose version table | Let `task migrate` manage it |
+| `atlas migrate *` / `atlas migrate hash` / `atlas.sum` | Use `task schema:diff` + `task migrate`; apply via `services/dbmigrate` |
 
 ## Allowed exceptions
 
