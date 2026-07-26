@@ -4,18 +4,34 @@ Open-core, self-hostable on-call, alerting, and incident-response platform (AGPL
 
 ## Deployment
 
-Self-hosted production runs on a single-node Docker Compose stack (the only MVP-supported path):
+Production is a **standalone Docker Compose template** — pull GHCR images only. **No git clone.**
+
+### Docker Compose (VPS / bare metal)
 
 ```bash
-git clone https://github.com/mdg-labs/escalite.git
-cd escalite
+mkdir escalite && cd escalite
+curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/mdg-labs/escalite/main/docker-compose.yml
+curl -fsSL -o .env https://raw.githubusercontent.com/mdg-labs/escalite/main/docker-compose.env.example
+# Edit .env: ESCALITE_ENCRYPTION_KEY (openssl rand -hex 32), POSTGRES_PASSWORD, ESCALITE_DATABASE_URL, ESCALITE_APP_ORIGIN
+docker compose pull && docker compose up -d
+```
+
+### Coolify
+
+Create a **Docker Compose** resource, use the compose file from the [raw URL](https://raw.githubusercontent.com/mdg-labs/escalite/main/docker-compose.yml) or paste [`docker-compose.yml`](docker-compose.yml), set env vars in the Coolify UI — see [Coolify guide](docs/deploy/coolify.md).
+
+Expose only **web** (port 5173) publicly for TLS. Pin `ESCALITE_*_IMAGE` to a release tag instead of `:latest` for production — [production ops](docs/deploy/production.md).
+
+### Developers (build from source)
+
+```bash
 cp .env.example deploy/docker-compose/.env
-# Set ESCALITE_ENCRYPTION_KEY in deploy/docker-compose/.env (openssl rand -hex 32)
+# Set ESCALITE_ENCRYPTION_KEY in deploy/docker-compose/.env
 cd deploy/docker-compose
 docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod up -d --build
 ```
 
-From the repo root you can also use `task compose:prod:build` then `task compose:prod -- -d`.
+From the repo root: `task compose:prod:build` then `task compose:prod -- -d`.
 
 Operator guides:
 

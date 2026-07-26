@@ -1,22 +1,19 @@
 # Deploy Escalite on Coolify
 
-Escalite Community Edition is a **single-org, single-tenant** instance per deployment (see `docs/specs/04-licensing-and-editions.md` — tenant isolation). Coolify is a supported PaaS path for operators who want managed TLS, git-based deploys, and a web UI without maintaining their own reverse proxy.
-
-This guide covers environment variables, TLS via the Coolify proxy, and a manual validation checklist. For backups, upgrades, and resource tuning, see [production.md](production.md).
+Escalite ships as a **standalone Docker Compose template** — pre-built GHCR images, all configuration via environment variables. Operators do **not** clone the repository.
 
 ## Prerequisites
 
 | Requirement | Notes |
 | ----------- | ----- |
-| Coolify **4.x** server | Tested against Coolify 4.1.2; any 4.x instance with Docker Compose support should work |
+| Coolify **4.x** server | Docker Compose resource support |
 | Target server | ≥ 2 CPU cores, ≥ 4 GB RAM (see [resource limits](production.md#resource-limits)) |
-| Git source | Public or Coolify-connected private repo (`mdg-labs/escalite`) |
 | DNS | `A`/`AAAA` record pointing your domain at the Coolify server |
-| Encryption key | `openssl rand -hex 32` — generate once, store in Coolify secrets |
+| Encryption key | `openssl rand -hex 32` — store in Coolify secrets |
 
 ## Architecture
 
-Coolify runs the same Compose stack as bare-metal Docker Compose. Only the **web** service should receive a public domain; `postgres`, `api`, and `engine` stay on the internal Docker network.
+Only the **web** service gets a public domain; `postgres`, `api`, and `engine` stay on the internal Docker network.
 
 ```text
 Internet ──► Coolify proxy (Traefik, TLS) ──► web:5173
@@ -26,48 +23,49 @@ Internet ──► Coolify proxy (Traefik, TLS) ──► web:5173
 postgres:5432 ◄── api, engine (internal only)
 ```
 
-The `web` container (nginx) proxies `/api/` and `/graphql` to the API service. Coolify terminates TLS and forwards `X-Forwarded-Proto: https` so the app sees the correct public origin when `ESCALITE_APP_ORIGIN` is set.
-
 ## Deployment procedure
 
-### 1. Create a Coolify project
+### 1. Create a Docker Compose resource
 
 1. In Coolify, create a new **Project** (e.g. `Escalite`).
-2. Add a **Docker Compose** resource connected to the Escalite git repository.
-3. Set the **base directory** to `deploy/docker-compose`.
+2. Add a **Docker Compose** resource (not “Application from Git” with a build).
+3. Provide the compose file using **one** of:
+   - **Raw URL (recommended):** `https://raw.githubusercontent.com/mdg-labs/escalite/main/docker-compose.yml`
+   - **Paste:** copy the contents of [`docker-compose.yml`](../../docker-compose.yml) from the repo into Coolify’s compose editor
+   - **Git (optional):** repo `mdg-labs/escalite`, base directory `/`, compose file `docker-compose.yml` — Coolify pulls on deploy; you still do not clone locally
 
-### 2. Configure compose files
+No build step. No `ESCALITE_DOCKER_TARGET`. Images default to `ghcr.io/mdg-labs/escalite-*:latest`.
 
-| Setting | Value |
-| ------- | ----- |
-| Compose file(s) | `docker-compose.yml`, `docker-compose.prod.yml` |
-| Profile | `prod` |
-| Build target | Set `ESCALITE_DOCKER_TARGET=prod` (see env vars below) |
+### 2. Set environment variables
 
-For **registry-based** deploys (digest-pinned images from GHCR), add `docker-compose.release.yml` as a third file and set the `ESCALITE_*_IMAGE` variables. See [compose README](../../deploy/docker-compose/README.md#image-digest-pinning-release).
-
-### 3. Set environment variables
-
-Copy the [required variables](#environment-variable-matrix) into Coolify's environment editor. At minimum:
+In Coolify’s environment editor, set at minimum (see [`docker-compose.env.example`](../../docker-compose.env.example) for the full list):
 
 ```bash
-ESCALITE_DOCKER_TARGET=prod
 ESCALITE_ENCRYPTION_KEY=<openssl rand -hex 32>
 POSTGRES_PASSWORD=<strong-random-password>
 ESCALITE_DATABASE_URL=postgres://escalite:<same-password>@postgres:5432/escalite?sslmode=disable
 ESCALITE_APP_ORIGIN=https://escalite.example.com
 ```
 
-`ESCALITE_DATABASE_URL` **must** use the same password as `POSTGRES_PASSWORD` and the internal hostname `postgres` (not `localhost`).
+Optional — pin images to a release instead of `:latest`:
 
-### 4. Expose only the web service
+```bash
+ESCALITE_API_IMAGE=ghcr.io/mdg-labs/escalite-api:v0.1.0
+ESCALITE_ENGINE_IMAGE=ghcr.io/mdg-labs/escalite-engine:v0.1.0
+ESCALITE_WEB_IMAGE=ghcr.io/mdg-labs/escalite-web:v0.1.0
+ESCALITE_STATUS_PAGE_IMAGE=ghcr.io/mdg-labs/escalite-status-page:v0.1.0
+```
+
+`ESCALITE_DATABASE_URL` **must** use the same password as `POSTGRES_PASSWORD` and hostname `postgres` (not `localhost`).
+
+### 3. Expose only the web service
 
 1. In Coolify, assign your FQDN (e.g. `escalite.example.com`) to the **web** service.
 2. Set the container port to **5173**.
 3. Enable **HTTPS** (Let's Encrypt) — Coolify handles certificate issuance and renewal.
 4. Do **not** assign public domains or published ports to `postgres`, `api`, or `engine`.
 
-### 5. Deploy
+### 4. Deploy
 
 Trigger a deploy from Coolify. On first boot:
 
@@ -77,7 +75,7 @@ Trigger a deploy from Coolify. On first boot:
 
 Monitor logs in Coolify until all four services report healthy.
 
-### 6. Post-deploy verification
+### 5. Post-deploy verification
 
 Open `https://escalite.example.com` and complete the [manual test checklist](#manual-test-checklist) below.
 
@@ -105,9 +103,8 @@ Variables consumed by the Compose stack. Set these in Coolify's environment UI (
 
 | Variable | Example | Used by | Notes |
 | -------- | ------- | ------- | ----- |
-| `ESCALITE_DOCKER_TARGET` | `prod` | api, engine, web | Selects prod Dockerfile stage (distroless / unprivileged nginx) |
 | `ESCALITE_ENCRYPTION_KEY` | `a1b2…` (64 hex chars) | api, engine | 32-byte AES-256-GCM key; API refuses to start if empty |
-| `POSTGRES_PASSWORD` | `<random>` | postgres | Change from default `escalite` |
+| `POSTGRES_PASSWORD` | `<random>` | postgres | Change from placeholder |
 | `ESCALITE_DATABASE_URL` | `postgres://escalite:<pw>@postgres:5432/escalite?sslmode=disable` | api, engine | Password must match `POSTGRES_PASSWORD`; host must be `postgres` |
 | `ESCALITE_APP_ORIGIN` | `https://escalite.example.com` | api, web | Public URL users open; must match Coolify domain + `https` |
 
@@ -119,14 +116,15 @@ Variables consumed by the Compose stack. Set these in Coolify's environment UI (
 | `POSTGRES_DB` | `escalite` | postgres | |
 | `ESCALITE_LOG_LEVEL` | `info` | api, engine | `debug` for troubleshooting only |
 
-### Release deploy only (with `docker-compose.release.yml`)
+### Image pins (optional — defaults to `:latest`)
 
 | Variable | Used by | Notes |
 | -------- | ------- | ----- |
-| `ESCALITE_API_IMAGE` | api | Digest-pinned GHCR reference (`@sha256:…`) |
-| `ESCALITE_ENGINE_IMAGE` | engine | Digest-pinned GHCR reference |
-| `ESCALITE_WEB_IMAGE` | web | Digest-pinned GHCR reference |
-| `ESCALITE_POSTGRES_IMAGE` | postgres | Optional; default pinned in release compose |
+| `ESCALITE_API_IMAGE` | api | e.g. `ghcr.io/mdg-labs/escalite-api:v0.1.0` or `@sha256:…` |
+| `ESCALITE_ENGINE_IMAGE` | engine | |
+| `ESCALITE_WEB_IMAGE` | web | |
+| `ESCALITE_STATUS_PAGE_IMAGE` | status-page | |
+| `ESCALITE_POSTGRES_IMAGE` | postgres | Optional; default `postgres:16-alpine` |
 
 ### Optional integrations
 

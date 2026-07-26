@@ -1,6 +1,6 @@
 {
   "name": "@escalite/mobile",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -8,7 +8,9 @@
     "dev": "expo start",
     "lint": "eslint .",
     "test:unit": "node --test test/*.test.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@babel/runtime": "^7.26.10",

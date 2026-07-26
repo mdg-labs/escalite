@@ -10,38 +10,33 @@ Escalite's MVP deployment path is a single-node Docker Compose stack. TLS termin
 
 ## Initial deploy
 
-From a clean checkout:
+**Recommended:** download the compose template (no git clone):
 
 ```bash
-git clone https://github.com/mdg-labs/escalite.git
-cd escalite
-cp .env.example deploy/docker-compose/.env
+mkdir escalite && cd escalite
+curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/mdg-labs/escalite/main/docker-compose.yml
+curl -fsSL -o .env https://raw.githubusercontent.com/mdg-labs/escalite/main/docker-compose.env.example
 ```
 
-Edit `deploy/docker-compose/.env` and set at minimum:
+Edit `.env` and set at minimum:
 
-- `ESCALITE_ENCRYPTION_KEY` — required; the API refuses to start without it
-- `POSTGRES_PASSWORD` — change from the example default
-- `ESCALITE_APP_ORIGIN` — public URL users will open (e.g. `https://escalite.example.com`)
-
-Build and start the production profile:
+- `ESCALITE_ENCRYPTION_KEY` — required (`openssl rand -hex 32`)
+- `POSTGRES_PASSWORD` — change from the placeholder
+- `ESCALITE_DATABASE_URL` — same password, hostname `postgres`
+- `ESCALITE_APP_ORIGIN` — public URL (e.g. `https://escalite.example.com`)
 
 ```bash
-cd deploy/docker-compose
-docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod up -d --build
+docker compose pull && docker compose up -d
 ```
 
-Or from the repo root:
+**Coolify:** [coolify.md](coolify.md) — compose template + env vars in the UI (no local clone).
 
-```bash
-task compose:prod:build
-task compose:prod -- -d
-```
+**Build from source (developers):** [compose README](../../deploy/docker-compose/README.md).
 
 Wait until all services are healthy:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod ps
+docker compose ps
 ```
 
 Open the web UI at the host port mapped by `ESCALITE_WEB_PORT` (default `5173`). Place a reverse proxy (Caddy, Traefik, nginx, or a PaaS such as Coolify) in front for TLS — see `docs/specs/07-security-and-auth.md`. For Coolify-specific env vars, TLS, and validation checklist, see [coolify.md](coolify.md).

@@ -2,6 +2,8 @@
 
 Local development and production-style stacks for Escalite (MVP path).
 
+**Production install (GHCR images, no clone):** download [`docker-compose.yml`](../../docker-compose.yml) and [`docker-compose.env.example`](../../docker-compose.env.example) — see the [README](../../README.md#deployment) or [Coolify guide](../../docs/deploy/coolify.md).
+
 ## Quick start
 
 ```bash
