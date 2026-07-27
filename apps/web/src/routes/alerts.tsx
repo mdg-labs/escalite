@@ -11,6 +11,8 @@ import {
   useCloseAlertMutation,
   useMeQuery,
   usePromoteAlertToIncidentMutation,
+  useReEscalateAlertMutation,
+  useSnoozeAlertMutation,
 } from '@escalite/ts-types'
 import {
   Alert,
@@ -19,6 +21,15 @@ import {
   AlertTitle,
   Badge,
   Button,
+  Dialog,
+  DialogClose,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogPanel,
+  DialogPopup,
+  DialogTitle,
+  DialogTrigger,
   Group,
   GroupSeparator,
   ScrollArea,
@@ -32,6 +43,7 @@ import {
   TabsList,
   TabsPanel,
   TabsTab,
+  toastManager,
 } from '@escalite/ui'
 import { AlertCircleIcon } from 'lucide-react'
 
@@ -39,10 +51,16 @@ import { AlertPriorityBadge } from '../components/alert-priority-badge'
 import { AlertStatusBadge } from '../components/alert-status-badge'
 import { AppShell } from '../components/app-shell'
 import {
+  canReEscalateAlert,
+  canSnoozeAlert,
+  SNOOZE_PRESETS,
+} from '../lib/alert-escalation'
+import {
   formatAlertTimestamp,
   mergeAlertUpdate,
   sortAlertsByUpdatedAt,
 } from '../lib/alerts'
+import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
 
 type StatusFilter = 'ALL' | AlertStatus
@@ -98,9 +116,14 @@ export function AlertsPage(): ReactElement {
   const [, acknowledgeAlert] = useAcknowledgeAlertMutation()
   const [, closeAlert] = useCloseAlertMutation()
   const [, promoteAlertToIncident] = usePromoteAlertToIncidentMutation()
+  const [, snoozeAlert] = useSnoozeAlertMutation()
+  const [, reEscalateAlert] = useReEscalateAlertMutation()
   const [ackLoading, setAckLoading] = useState(false)
   const [closeLoading, setCloseLoading] = useState(false)
   const [promoteLoading, setPromoteLoading] = useState(false)
+  const [snoozeLoading, setSnoozeLoading] = useState(false)
+  const [reEscalateLoading, setReEscalateLoading] = useState(false)
+  const [snoozeOpen, setSnoozeOpen] = useState(false)
 
   useEffect(() => {
     if (data?.alerts) {
@@ -205,6 +228,60 @@ export function AlertsPage(): ReactElement {
     }
     if (result.data?.promoteAlertToIncident) {
       applyAlertUpdate(result.data.promoteAlertToIncident)
+    }
+  }
+
+  async function handleSnooze(durationMinutes: number): Promise<void> {
+    if (!selectedAlert || !canSnoozeAlert(selectedAlert.status)) {
+      return
+    }
+    setActionError(null)
+    setSnoozeLoading(true)
+    const result = await snoozeAlert({
+      id: selectedAlert.id,
+      durationMinutes,
+    })
+    setSnoozeLoading(false)
+    if (result.error) {
+      toastManager.add({
+        type: 'error',
+        title: t('alerts.error.action'),
+        description: formatGraphQLError(result.error.message),
+      })
+      return
+    }
+    if (result.data?.snoozeAlert) {
+      applyAlertUpdate(result.data.snoozeAlert)
+      setSnoozeOpen(false)
+      toastManager.add({
+        type: 'success',
+        title: t('alerts.toast.snooze.success'),
+      })
+    }
+  }
+
+  async function handleReEscalate(): Promise<void> {
+    if (!selectedAlert || !canReEscalateAlert(selectedAlert.status)) {
+      return
+    }
+    setActionError(null)
+    setReEscalateLoading(true)
+    const result = await reEscalateAlert({ id: selectedAlert.id })
+    setReEscalateLoading(false)
+    if (result.error) {
+      toastManager.add({
+        type: 'error',
+        title: t('alerts.error.action'),
+        description: formatGraphQLError(result.error.message),
+      })
+      return
+    }
+    if (result.data?.reEscalateAlert) {
+      applyAlertUpdate(result.data.reEscalateAlert)
+      toastManager.add({
+        type: 'success',
+        title: t('alerts.toast.reEscalate.success'),
+      })
     }
   }
 
@@ -337,6 +414,71 @@ export function AlertsPage(): ReactElement {
                   {ackLoading ? t('alerts.action.acknowledge.loading') : t('alerts.action.acknowledge')}
                 </Button>
                 <GroupSeparator />
+                {canSnoozeAlert(selectedAlert.status) ? (
+                  <>
+                    <Dialog
+                      onOpenChange={(open) => {
+                        setSnoozeOpen(open)
+                        if (!open) {
+                          setActionError(null)
+                        }
+                      }}
+                      open={snoozeOpen}
+                    >
+                      <DialogTrigger
+                        disabled={snoozeLoading}
+                        render={<Button type="button" variant="outline" />}
+                      >
+                        {snoozeLoading ? t('alerts.action.snooze.loading') : t('alerts.action.snooze')}
+                      </DialogTrigger>
+                      <DialogPopup>
+                        <DialogHeader>
+                          <DialogTitle>{t('alerts.snooze.title')}</DialogTitle>
+                          <DialogDescription>{t('alerts.snooze.description')}</DialogDescription>
+                        </DialogHeader>
+                        <DialogPanel className="grid gap-2">
+                          {SNOOZE_PRESETS.map((preset) => (
+                            <Button
+                              key={preset.id}
+                              disabled={snoozeLoading}
+                              loading={snoozeLoading}
+                              onClick={() => {
+                                void handleSnooze(preset.durationMinutes)
+                              }}
+                              type="button"
+                              variant="outline"
+                            >
+                              {t(preset.labelKey)}
+                            </Button>
+                          ))}
+                        </DialogPanel>
+                        <DialogFooter>
+                          <DialogClose render={<Button type="button" variant="ghost" />}>
+                            {t('alerts.action.cancel')}
+                          </DialogClose>
+                        </DialogFooter>
+                      </DialogPopup>
+                    </Dialog>
+                    <GroupSeparator />
+                  </>
+                ) : null}
+                {canReEscalateAlert(selectedAlert.status) ? (
+                  <>
+                    <Button
+                      disabled={reEscalateLoading}
+                      loading={reEscalateLoading}
+                      onClick={() => {
+                        void handleReEscalate()
+                      }}
+                      variant="outline"
+                    >
+                      {reEscalateLoading
+                        ? t('alerts.action.reEscalate.loading')
+                        : t('alerts.action.reEscalate')}
+                    </Button>
+                    <GroupSeparator />
+                  </>
+                ) : null}
                 <Button
                   disabled={Boolean(selectedAlert.incidentId) || selectedAlert.status === AlertStatus.Closed}
                   loading={promoteLoading}
