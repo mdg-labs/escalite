@@ -15,6 +15,7 @@ import { SchedulePage } from './routes/schedule'
 import { ServicePage } from './routes/service'
 import { ServicesPage } from './routes/services'
 import { SettingsPage } from './routes/settings'
+import { NotFoundPage } from './routes/not-found'
 import { SetupPage } from './routes/setup'
 
 function AuthLoading(): ReactElement {
@@ -164,7 +165,14 @@ export function App(): ReactElement {
         }
       />
       <Route path="/" element={<Navigate replace to="/dashboard" />} />
-      <Route path="*" element={<Navigate replace to="/dashboard" />} />
+      <Route
+        path="*"
+        element={
+          <ProtectedRoute>
+            <NotFoundPage />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   )
 }
