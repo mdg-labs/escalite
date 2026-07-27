@@ -81,7 +81,8 @@ git config gpg.ssh.allowedSignersFile ~/.config/git/allowed_signers
 ```
 
 When `commit.gpgsign=true`, signing is automatic — still use `-s` for DCO on every
-commit. Do not add auto-sign-off hooks.
+commit. Do not add hooks that silently append sign-off; the repo enforces DCO via the
+`commit-msg` hook (`scripts/git-hooks/check-dco.sh`).
 
 ## Commit messages
 
