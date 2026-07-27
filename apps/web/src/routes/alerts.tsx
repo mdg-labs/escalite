@@ -530,8 +530,15 @@ export function AlertsPage(): ReactElement {
                     <dd className="font-mono text-xs">{selectedAlert.dedupKey}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="text-muted-foreground">{t('alerts.detail.serviceId')}</dt>
-                    <dd className="font-mono text-xs">{selectedAlert.serviceId}</dd>
+                    <dt className="text-muted-foreground">{t('alerts.detail.service')}</dt>
+                    <dd>
+                      <Link
+                        className="text-primary hover:underline"
+                        to={`/services/${selectedAlert.service.id}`}
+                      >
+                        {selectedAlert.service.name}
+                      </Link>
+                    </dd>
                   </div>
                   {selectedAlert.incidentId ? (
                     <div className="flex justify-between gap-4">
@@ -548,6 +555,56 @@ export function AlertsPage(): ReactElement {
                   ) : null}
                 </dl>
               </div>
+
+              {selectedAlert.escalationState ? (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-foreground">{t('alerts.detail.escalation')}</h3>
+                  <dl className="space-y-2 text-sm">
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted-foreground">{t('alerts.detail.currentStep')}</dt>
+                      <dd>{selectedAlert.escalationState.currentStep}</dd>
+                    </div>
+                    {selectedAlert.escalationState.nextEscalationAt ? (
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-muted-foreground">{t('alerts.detail.nextEscalationAt')}</dt>
+                        <dd>{formatAlertTimestamp(selectedAlert.escalationState.nextEscalationAt)}</dd>
+                      </div>
+                    ) : null}
+                    {selectedAlert.escalationState.escalatedExhausted ? (
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-muted-foreground">{t('alerts.detail.escalationExhausted')}</dt>
+                        <dd>Yes</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                </div>
+              ) : null}
+
+              {selectedAlert.notificationAttempts.length > 0 ? (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-foreground">{t('alerts.detail.notifications')}</h3>
+                  <Table variant="card">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('alerts.detail.notificationChannel')}</TableHead>
+                        <TableHead>{t('alerts.detail.notificationStatus')}</TableHead>
+                        <TableHead>{t('alerts.detail.notificationSent')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedAlert.notificationAttempts.map((attempt) => (
+                        <TableRow key={attempt.id}>
+                          <TableCell>{attempt.channel}</TableCell>
+                          <TableCell>{attempt.status}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {formatAlertTimestamp(attempt.sentAt ?? attempt.createdAt)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : null}
 
               {selectedAlert.status === AlertStatus.Triggered ? (
                 <Alert variant="warning">

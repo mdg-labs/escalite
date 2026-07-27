@@ -195,6 +195,10 @@ fragment AlertFields on Alert {
   id
   organizationId
   serviceId
+  service {
+    id
+    name
+  }
   status
   dedupKey
   summary
@@ -208,6 +212,18 @@ fragment AlertFields on Alert {
   }
   closedAt
   incidentId
+  escalationState {
+    currentStep
+    nextEscalationAt
+    escalatedExhausted
+  }
+  notificationAttempts {
+    id
+    channel
+    status
+    sentAt
+    createdAt
+  }
   createdAt
   updatedAt
 }

@@ -44,22 +44,25 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Alert struct {
-		AcknowledgedAt func(childComplexity int) int
-		AcknowledgedBy func(childComplexity int) int
-		ClosedAt       func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		DedupKey       func(childComplexity int) int
-		Description    func(childComplexity int) int
-		EventCount     func(childComplexity int) int
-		ID             func(childComplexity int) int
-		Incident       func(childComplexity int) int
-		IncidentID     func(childComplexity int) int
-		OrganizationID func(childComplexity int) int
-		Priority       func(childComplexity int) int
-		ServiceID      func(childComplexity int) int
-		Status         func(childComplexity int) int
-		Summary        func(childComplexity int) int
-		UpdatedAt      func(childComplexity int) int
+		AcknowledgedAt       func(childComplexity int) int
+		AcknowledgedBy       func(childComplexity int) int
+		ClosedAt             func(childComplexity int) int
+		CreatedAt            func(childComplexity int) int
+		DedupKey             func(childComplexity int) int
+		Description          func(childComplexity int) int
+		EscalationState      func(childComplexity int) int
+		EventCount           func(childComplexity int) int
+		ID                   func(childComplexity int) int
+		Incident             func(childComplexity int) int
+		IncidentID           func(childComplexity int) int
+		NotificationAttempts func(childComplexity int) int
+		OrganizationID       func(childComplexity int) int
+		Priority             func(childComplexity int) int
+		Service              func(childComplexity int) int
+		ServiceID            func(childComplexity int) int
+		Status               func(childComplexity int) int
+		Summary              func(childComplexity int) int
+		UpdatedAt            func(childComplexity int) int
 	}
 
 	AlertAnalytics struct {
@@ -73,6 +76,12 @@ type ComplexityRoot struct {
 		MttrSeconds       func(childComplexity int) int
 		ResolvedCount     func(childComplexity int) int
 		WindowDays        func(childComplexity int) int
+	}
+
+	AlertEscalationState struct {
+		CurrentStep        func(childComplexity int) int
+		EscalatedExhausted func(childComplexity int) int
+		NextEscalationAt   func(childComplexity int) int
 	}
 
 	AnalyticsSettings struct {
@@ -295,6 +304,14 @@ type ComplexityRoot struct {
 		UpdateStatusPageIncidentStatus func(childComplexity int, input model.UpdateStatusPageIncidentStatusInput) int
 		UpdateTeam                     func(childComplexity int, input model.UpdateTeamInput) int
 		UpdateUserRole                 func(childComplexity int, input model.UpdateUserRoleInput) int
+	}
+
+	NotificationAttempt struct {
+		Channel   func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		SentAt    func(childComplexity int) int
+		Status    func(childComplexity int) int
 	}
 
 	NotificationChannelDefinition struct {
@@ -775,6 +792,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Alert.Description(childComplexity), true
+	case "Alert.escalationState":
+		if e.ComplexityRoot.Alert.EscalationState == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Alert.EscalationState(childComplexity), true
 	case "Alert.eventCount":
 		if e.ComplexityRoot.Alert.EventCount == nil {
 			break
@@ -799,6 +822,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Alert.IncidentID(childComplexity), true
+	case "Alert.notificationAttempts":
+		if e.ComplexityRoot.Alert.NotificationAttempts == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Alert.NotificationAttempts(childComplexity), true
 	case "Alert.organizationId":
 		if e.ComplexityRoot.Alert.OrganizationID == nil {
 			break
@@ -811,6 +840,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Alert.Priority(childComplexity), true
+	case "Alert.service":
+		if e.ComplexityRoot.Alert.Service == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Alert.Service(childComplexity), true
 	case "Alert.serviceId":
 		if e.ComplexityRoot.Alert.ServiceID == nil {
 			break
@@ -879,6 +914,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.AlertAnalyticsRollup.WindowDays(childComplexity), true
+
+	case "AlertEscalationState.currentStep":
+		if e.ComplexityRoot.AlertEscalationState.CurrentStep == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AlertEscalationState.CurrentStep(childComplexity), true
+	case "AlertEscalationState.escalatedExhausted":
+		if e.ComplexityRoot.AlertEscalationState.EscalatedExhausted == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AlertEscalationState.EscalatedExhausted(childComplexity), true
+	case "AlertEscalationState.nextEscalationAt":
+		if e.ComplexityRoot.AlertEscalationState.NextEscalationAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AlertEscalationState.NextEscalationAt(childComplexity), true
 
 	case "AnalyticsSettings.excludeMaintenanceWindowAlerts":
 		if e.ComplexityRoot.AnalyticsSettings.ExcludeMaintenanceWindowAlerts == nil {
@@ -2242,6 +2296,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateUserRole(childComplexity, args["input"].(model.UpdateUserRoleInput)), true
+
+	case "NotificationAttempt.channel":
+		if e.ComplexityRoot.NotificationAttempt.Channel == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationAttempt.Channel(childComplexity), true
+	case "NotificationAttempt.createdAt":
+		if e.ComplexityRoot.NotificationAttempt.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationAttempt.CreatedAt(childComplexity), true
+	case "NotificationAttempt.id":
+		if e.ComplexityRoot.NotificationAttempt.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationAttempt.ID(childComplexity), true
+	case "NotificationAttempt.sentAt":
+		if e.ComplexityRoot.NotificationAttempt.SentAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationAttempt.SentAt(childComplexity), true
+	case "NotificationAttempt.status":
+		if e.ComplexityRoot.NotificationAttempt.Status == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationAttempt.Status(childComplexity), true
 
 	case "NotificationChannelDefinition.configSchema":
 		if e.ComplexityRoot.NotificationChannelDefinition.ConfigSchema == nil {
@@ -4739,10 +4824,27 @@ type PasswordResetPayload {
   message: String!
 }
 
+"""Per-alert escalation progress (from alerts.escalation_state)."""
+type AlertEscalationState {
+  currentStep: Int!
+  nextEscalationAt: DateTime
+  escalatedExhausted: Boolean!
+}
+
+"""Read-only notification delivery attempt for an alert."""
+type NotificationAttempt {
+  id: ID!
+  channel: String!
+  status: String!
+  sentAt: DateTime
+  createdAt: DateTime!
+}
+
 type Alert {
   id: ID!
   organizationId: ID!
   serviceId: ID!
+  service: Service!
   status: AlertStatus!
   dedupKey: String!
   summary: String!
@@ -4754,6 +4856,8 @@ type Alert {
   closedAt: DateTime
   incidentId: ID
   incident: Incident
+  escalationState: AlertEscalationState
+  notificationAttempts: [NotificationAttempt!]!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -5093,6 +5197,8 @@ func (ec *executionContext) childFields_Alert(ctx context.Context, field graphql
 		return ec.fieldContext_Alert_organizationId(ctx, field)
 	case "serviceId":
 		return ec.fieldContext_Alert_serviceId(ctx, field)
+	case "service":
+		return ec.fieldContext_Alert_service(ctx, field)
 	case "status":
 		return ec.fieldContext_Alert_status(ctx, field)
 	case "dedupKey":
@@ -5115,6 +5221,10 @@ func (ec *executionContext) childFields_Alert(ctx context.Context, field graphql
 		return ec.fieldContext_Alert_incidentId(ctx, field)
 	case "incident":
 		return ec.fieldContext_Alert_incident(ctx, field)
+	case "escalationState":
+		return ec.fieldContext_Alert_escalationState(ctx, field)
+	case "notificationAttempts":
+		return ec.fieldContext_Alert_notificationAttempts(ctx, field)
 	case "createdAt":
 		return ec.fieldContext_Alert_createdAt(ctx, field)
 	case "updatedAt":
@@ -5147,6 +5257,18 @@ func (ec *executionContext) childFields_AlertAnalyticsRollup(ctx context.Context
 		return ec.fieldContext_AlertAnalyticsRollup_resolvedCount(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type AlertAnalyticsRollup", field.Name)
+}
+
+func (ec *executionContext) childFields_AlertEscalationState(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "currentStep":
+		return ec.fieldContext_AlertEscalationState_currentStep(ctx, field)
+	case "nextEscalationAt":
+		return ec.fieldContext_AlertEscalationState_nextEscalationAt(ctx, field)
+	case "escalatedExhausted":
+		return ec.fieldContext_AlertEscalationState_escalatedExhausted(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type AlertEscalationState", field.Name)
 }
 
 func (ec *executionContext) childFields_AnalyticsSettings(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -5455,6 +5577,22 @@ func (ec *executionContext) childFields_MobileDevice(ctx context.Context, field 
 		return ec.fieldContext_MobileDevice_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type MobileDevice", field.Name)
+}
+
+func (ec *executionContext) childFields_NotificationAttempt(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_NotificationAttempt_id(ctx, field)
+	case "channel":
+		return ec.fieldContext_NotificationAttempt_channel(ctx, field)
+	case "status":
+		return ec.fieldContext_NotificationAttempt_status(ctx, field)
+	case "sentAt":
+		return ec.fieldContext_NotificationAttempt_sentAt(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_NotificationAttempt_createdAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type NotificationAttempt", field.Name)
 }
 
 func (ec *executionContext) childFields_NotificationChannelDefinition(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -7504,6 +7642,38 @@ func (ec *executionContext) fieldContext_Alert_serviceId(_ context.Context, fiel
 	return graphql.NewScalarFieldContext("Alert", field, false, false, errors.New("field of type ID does not have child fields"))
 }
 
+func (ec *executionContext) _Alert_service(ctx context.Context, field graphql.CollectedField, obj *model.Alert) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Alert_service(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Service, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Service) graphql.Marshaler {
+			return ec.marshalNService2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐService(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Alert_service(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Alert",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Service(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Alert_status(ctx context.Context, field graphql.CollectedField, obj *model.Alert) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -7775,6 +7945,70 @@ func (ec *executionContext) fieldContext_Alert_incident(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Alert_escalationState(ctx context.Context, field graphql.CollectedField, obj *model.Alert) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Alert_escalationState(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EscalationState, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.AlertEscalationState) graphql.Marshaler {
+			return ec.marshalOAlertEscalationState2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertEscalationState(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Alert_escalationState(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Alert",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_AlertEscalationState(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Alert_notificationAttempts(ctx context.Context, field graphql.CollectedField, obj *model.Alert) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Alert_notificationAttempts(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.NotificationAttempts, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.NotificationAttempt) graphql.Marshaler {
+			return ec.marshalNNotificationAttempt2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationAttemptᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Alert_notificationAttempts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Alert",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_NotificationAttempt(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Alert_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Alert) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -7989,6 +8223,75 @@ func (ec *executionContext) _AlertAnalyticsRollup_resolvedCount(ctx context.Cont
 }
 func (ec *executionContext) fieldContext_AlertAnalyticsRollup_resolvedCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("AlertAnalyticsRollup", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _AlertEscalationState_currentStep(ctx context.Context, field graphql.CollectedField, obj *model.AlertEscalationState) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AlertEscalationState_currentStep(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CurrentStep, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_AlertEscalationState_currentStep(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("AlertEscalationState", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _AlertEscalationState_nextEscalationAt(ctx context.Context, field graphql.CollectedField, obj *model.AlertEscalationState) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AlertEscalationState_nextEscalationAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.NextEscalationAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalODateTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_AlertEscalationState_nextEscalationAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("AlertEscalationState", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _AlertEscalationState_escalatedExhausted(ctx context.Context, field graphql.CollectedField, obj *model.AlertEscalationState) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_AlertEscalationState_escalatedExhausted(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EscalatedExhausted, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_AlertEscalationState_escalatedExhausted(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("AlertEscalationState", field, false, false, errors.New("field of type Boolean does not have child fields"))
 }
 
 func (ec *executionContext) _AnalyticsSettings_excludeMaintenanceWindowAlerts(ctx context.Context, field graphql.CollectedField, obj *model.AnalyticsSettings) (ret graphql.Marshaler) {
@@ -13374,6 +13677,121 @@ func (ec *executionContext) fieldContext_Mutation_updateUserRole(ctx context.Con
 		return fc, err
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _NotificationAttempt_id(ctx context.Context, field graphql.CollectedField, obj *model.NotificationAttempt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_NotificationAttempt_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_NotificationAttempt_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("NotificationAttempt", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _NotificationAttempt_channel(ctx context.Context, field graphql.CollectedField, obj *model.NotificationAttempt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_NotificationAttempt_channel(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Channel, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_NotificationAttempt_channel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("NotificationAttempt", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _NotificationAttempt_status(ctx context.Context, field graphql.CollectedField, obj *model.NotificationAttempt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_NotificationAttempt_status(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_NotificationAttempt_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("NotificationAttempt", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _NotificationAttempt_sentAt(ctx context.Context, field graphql.CollectedField, obj *model.NotificationAttempt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_NotificationAttempt_sentAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.SentAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalODateTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_NotificationAttempt_sentAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("NotificationAttempt", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _NotificationAttempt_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.NotificationAttempt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_NotificationAttempt_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_NotificationAttempt_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("NotificationAttempt", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
 func (ec *executionContext) _NotificationChannelDefinition_name(ctx context.Context, field graphql.CollectedField, obj *model.NotificationChannelDefinition) (ret graphql.Marshaler) {
@@ -21724,6 +22142,11 @@ func (ec *executionContext) _Alert(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "service":
+			out.Values[i] = ec._Alert_service(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "status":
 			out.Values[i] = ec._Alert_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -21812,6 +22235,16 @@ func (ec *executionContext) _Alert(ctx context.Context, sel ast.SelectionSet, ob
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "escalationState":
+			out.Values[i] = ec._Alert_escalationState(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "notificationAttempts":
+			out.Values[i] = ec._Alert_notificationAttempts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "createdAt":
 			out.Values[i] = ec._Alert_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -21920,6 +22353,54 @@ func (ec *executionContext) _AlertAnalyticsRollup(ctx context.Context, sel ast.S
 			}
 		case "resolvedCount":
 			out.Values[i] = ec._AlertAnalyticsRollup_resolvedCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var alertEscalationStateImplementors = []string{"AlertEscalationState"}
+
+func (ec *executionContext) _AlertEscalationState(ctx context.Context, sel ast.SelectionSet, obj *model.AlertEscalationState) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, alertEscalationStateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AlertEscalationState")
+		case "currentStep":
+			out.Values[i] = ec._AlertEscalationState_currentStep(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nextEscalationAt":
+			out.Values[i] = ec._AlertEscalationState_nextEscalationAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "escalatedExhausted":
+			out.Values[i] = ec._AlertEscalationState_escalatedExhausted(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -23705,6 +24186,64 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateUserRole(ctx, field)
 			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var notificationAttemptImplementors = []string{"NotificationAttempt"}
+
+func (ec *executionContext) _NotificationAttempt(ctx context.Context, sel ast.SelectionSet, obj *model.NotificationAttempt) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, notificationAttemptImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NotificationAttempt")
+		case "id":
+			out.Values[i] = ec._NotificationAttempt_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "channel":
+			out.Values[i] = ec._NotificationAttempt_channel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._NotificationAttempt_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sentAt":
+			out.Values[i] = ec._NotificationAttempt_sentAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._NotificationAttempt_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -27562,6 +28101,32 @@ func (ec *executionContext) marshalNMobileDevice2ᚖgithubᚗcomᚋmdgᚑlabsᚋ
 	return ec._MobileDevice(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNNotificationAttempt2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationAttemptᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.NotificationAttempt) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNNotificationAttempt2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationAttempt(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNNotificationAttempt2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationAttempt(ctx context.Context, sel ast.SelectionSet, v *model.NotificationAttempt) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._NotificationAttempt(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNNotificationChannelDefinition2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationChannelDefinitionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.NotificationChannelDefinition) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -28580,6 +29145,13 @@ func (ec *executionContext) marshalOAlert2ᚖgithubᚗcomᚋmdgᚑlabsᚋescalit
 		return graphql.Null
 	}
 	return ec._Alert(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOAlertEscalationState2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertEscalationState(ctx context.Context, sel ast.SelectionSet, v *model.AlertEscalationState) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AlertEscalationState(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOAlertPriority2ᚕgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐAlertPriorityᚄ(ctx context.Context, v any) ([]model.AlertPriority, error) {

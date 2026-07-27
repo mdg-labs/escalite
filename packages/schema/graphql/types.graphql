@@ -151,10 +151,27 @@ type PasswordResetPayload {
   message: String!
 }
 
+"""Per-alert escalation progress (from alerts.escalation_state)."""
+type AlertEscalationState {
+  currentStep: Int!
+  nextEscalationAt: DateTime
+  escalatedExhausted: Boolean!
+}
+
+"""Read-only notification delivery attempt for an alert."""
+type NotificationAttempt {
+  id: ID!
+  channel: String!
+  status: String!
+  sentAt: DateTime
+  createdAt: DateTime!
+}
+
 type Alert {
   id: ID!
   organizationId: ID!
   serviceId: ID!
+  service: Service!
   status: AlertStatus!
   dedupKey: String!
   summary: String!
@@ -166,6 +183,8 @@ type Alert {
   closedAt: DateTime
   incidentId: ID
   incident: Incident
+  escalationState: AlertEscalationState
+  notificationAttempts: [NotificationAttempt!]!
   createdAt: DateTime!
   updatedAt: DateTime!
 }

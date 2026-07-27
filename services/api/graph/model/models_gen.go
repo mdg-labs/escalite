@@ -16,22 +16,25 @@ type AddIncidentTimelineNoteInput struct {
 }
 
 type Alert struct {
-	ID             string        `json:"id"`
-	OrganizationID string        `json:"organizationId"`
-	ServiceID      string        `json:"serviceId"`
-	Status         AlertStatus   `json:"status"`
-	DedupKey       string        `json:"dedupKey"`
-	Summary        string        `json:"summary"`
-	Description    *string       `json:"description,omitempty"`
-	Priority       AlertPriority `json:"priority"`
-	EventCount     int           `json:"eventCount"`
-	AcknowledgedAt *time.Time    `json:"acknowledgedAt,omitempty"`
-	AcknowledgedBy *User         `json:"acknowledgedBy,omitempty"`
-	ClosedAt       *time.Time    `json:"closedAt,omitempty"`
-	IncidentID     *string       `json:"incidentId,omitempty"`
-	Incident       *Incident     `json:"incident,omitempty"`
-	CreatedAt      time.Time     `json:"createdAt"`
-	UpdatedAt      time.Time     `json:"updatedAt"`
+	ID                   string                 `json:"id"`
+	OrganizationID       string                 `json:"organizationId"`
+	ServiceID            string                 `json:"serviceId"`
+	Service              *Service               `json:"service"`
+	Status               AlertStatus            `json:"status"`
+	DedupKey             string                 `json:"dedupKey"`
+	Summary              string                 `json:"summary"`
+	Description          *string                `json:"description,omitempty"`
+	Priority             AlertPriority          `json:"priority"`
+	EventCount           int                    `json:"eventCount"`
+	AcknowledgedAt       *time.Time             `json:"acknowledgedAt,omitempty"`
+	AcknowledgedBy       *User                  `json:"acknowledgedBy,omitempty"`
+	ClosedAt             *time.Time             `json:"closedAt,omitempty"`
+	IncidentID           *string                `json:"incidentId,omitempty"`
+	Incident             *Incident              `json:"incident,omitempty"`
+	EscalationState      *AlertEscalationState  `json:"escalationState,omitempty"`
+	NotificationAttempts []*NotificationAttempt `json:"notificationAttempts"`
+	CreatedAt            time.Time              `json:"createdAt"`
+	UpdatedAt            time.Time              `json:"updatedAt"`
 }
 
 // Alert analytics with precomputed 7d and 30d rollups.
@@ -49,6 +52,13 @@ type AlertAnalyticsRollup struct {
 	// Mean seconds from alert creation to resolve/close; null when no samples.
 	MttrSeconds   *float64 `json:"mttrSeconds,omitempty"`
 	ResolvedCount int      `json:"resolvedCount"`
+}
+
+// Per-alert escalation progress (from alerts.escalation_state).
+type AlertEscalationState struct {
+	CurrentStep        int        `json:"currentStep"`
+	NextEscalationAt   *time.Time `json:"nextEscalationAt,omitempty"`
+	EscalatedExhausted bool       `json:"escalatedExhausted"`
 }
 
 // Organization analytics configuration (org admin only).
@@ -337,6 +347,15 @@ type MobileDevice struct {
 }
 
 type Mutation struct {
+}
+
+// Read-only notification delivery attempt for an alert.
+type NotificationAttempt struct {
+	ID        string     `json:"id"`
+	Channel   string     `json:"channel"`
+	Status    string     `json:"status"`
+	SentAt    *time.Time `json:"sentAt,omitempty"`
+	CreatedAt time.Time  `json:"createdAt"`
 }
 
 // Registered outbound notification channel and its JSON Schema config form.
