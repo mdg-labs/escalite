@@ -19,6 +19,7 @@ import {
   isNavItemActive,
 } from '../lib/nav-config'
 import { OrgSwitcher } from './org-switcher'
+import { UserMenu } from './user-menu'
 
 type SidebarNavProps = {
   /** EL-166: mobile drawer will pass onNavigate to close drawer after route change. */
@@ -86,13 +87,14 @@ export function SidebarNav({
         </nav>
       </ScrollArea>
 
-      {!hideOrgSwitcher ? (
-        <footer className="shrink-0 border-t border-sidebar-border p-3">
+      <footer className="shrink-0 space-y-3 border-t border-sidebar-border p-3">
+        {!hideOrgSwitcher ? (
           <div className="[&>div]:items-stretch [&>div]:gap-2">
             <OrgSwitcher />
           </div>
-        </footer>
-      ) : null}
+        ) : null}
+        <UserMenu onNavigate={onNavigate} />
+      </footer>
     </div>
   )
 }

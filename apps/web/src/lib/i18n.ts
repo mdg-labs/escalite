@@ -51,6 +51,8 @@ const messages = {
   'org.switcher.error': 'Failed to switch organization',
   'org.switcher.role.admin': 'Admin',
   'org.switcher.role.member': 'Member',
+  'user.menu.logout': 'Log out',
+  'user.menu.logoutError': 'Sign out failed. Try again.',
   'settings.org.description': 'Settings apply to {organization}. Switch organization from the header.',
   'nav.services': 'Services',
   'services.title': 'Services',
