@@ -953,3 +953,84 @@ mutation SaveAnalyticsSettings($input: SaveAnalyticsSettingsInput!) {
     ...AnalyticsSettingsFields
   }
 }
+
+fragment TeamMembershipFields on TeamMembership {
+  id
+  teamId
+  userId
+  organizationId
+  createdAt
+  updatedAt
+}
+
+fragment OrganizationUserFields on OrganizationUser {
+  id
+  email
+  role
+  teamMemberships {
+    ...TeamMembershipFields
+  }
+}
+
+query OrganizationUsers($limit: Int) {
+  organizationUsers(limit: $limit) {
+    ...OrganizationUserFields
+  }
+}
+
+mutation CreateTeam($input: CreateTeamInput!) {
+  createTeam(input: $input) {
+    ...TeamFields
+  }
+}
+
+mutation UpdateTeam($input: UpdateTeamInput!) {
+  updateTeam(input: $input) {
+    ...TeamFields
+  }
+}
+
+mutation DeleteTeam($id: ID!) {
+  deleteTeam(id: $id)
+}
+
+mutation AddTeamMember($teamId: ID!, $userId: ID!) {
+  addTeamMember(teamId: $teamId, userId: $userId) {
+    ...TeamMembershipFields
+  }
+}
+
+mutation RemoveTeamMember($teamId: ID!, $userId: ID!) {
+  removeTeamMember(teamId: $teamId, userId: $userId)
+}
+
+mutation InviteUser($input: InviteUserInput!) {
+  inviteUser(input: $input) {
+    ...OrganizationUserFields
+  }
+}
+
+mutation UpdateUserRole($input: UpdateUserRoleInput!) {
+  updateUserRole(input: $input) {
+    ...OrganizationUserFields
+  }
+}
+
+mutation UpdateOrganization($input: UpdateOrganizationInput!) {
+  updateOrganization(input: $input) {
+    id
+    name
+    createdAt
+    updatedAt
+  }
+}
+
+mutation RequestPasswordReset($input: RequestPasswordResetInput!) {
+  requestPasswordReset(input: $input) {
+    message
+  }
+}
+
+mutation ResetPassword($input: ResetPasswordInput!) {
+  resetPassword(input: $input)
+}
