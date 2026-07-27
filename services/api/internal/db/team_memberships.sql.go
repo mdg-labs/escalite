@@ -70,6 +70,35 @@ func (q *Queries) DeleteTeamMembership(ctx context.Context, arg DeleteTeamMember
 	return err
 }
 
+const getTeamMembership = `-- name: GetTeamMembership :one
+SELECT id, team_id, user_id, organization_id, created_at, updated_at
+FROM team_memberships
+WHERE team_id = $1
+  AND user_id = $2
+  AND organization_id = $3
+LIMIT 1
+`
+
+type GetTeamMembershipParams struct {
+	TeamID         uuid.UUID `json:"team_id"`
+	UserID         uuid.UUID `json:"user_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+func (q *Queries) GetTeamMembership(ctx context.Context, arg GetTeamMembershipParams) (TeamMembership, error) {
+	row := q.db.QueryRow(ctx, getTeamMembership, arg.TeamID, arg.UserID, arg.OrganizationID)
+	var i TeamMembership
+	err := row.Scan(
+		&i.ID,
+		&i.TeamID,
+		&i.UserID,
+		&i.OrganizationID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const hasTeamMembership = `-- name: HasTeamMembership :one
 SELECT EXISTS(
     SELECT 1

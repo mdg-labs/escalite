@@ -250,6 +250,17 @@ func teamFromDB(team db.Team) *model.Team {
 	}
 }
 
+func teamMembershipFromDB(membership db.TeamMembership) *model.TeamMembership {
+	return &model.TeamMembership{
+		ID:             membership.ID.String(),
+		TeamID:         membership.TeamID.String(),
+		UserID:         membership.UserID.String(),
+		OrganizationID: membership.OrganizationID.String(),
+		CreatedAt:      timeFromDB(membership.CreatedAt),
+		UpdatedAt:      timeFromDB(membership.UpdatedAt),
+	}
+}
+
 func integrationKeyFromDB(key db.IntegrationKey, token *string) *model.IntegrationKey {
 	var config map[string]any
 	if len(key.Config) > 0 {

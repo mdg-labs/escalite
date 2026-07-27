@@ -65,6 +65,13 @@ WHERE organization_id = $1
 ORDER BY created_at ASC
 LIMIT 1;
 
+-- name: CountOrgAdmins :one
+SELECT count(*)::bigint AS count
+FROM users
+WHERE organization_id = $1
+  AND role = 'admin'
+  AND deprovisioned_at IS NULL;
+
 -- name: CreateUser :one
 INSERT INTO users (
     id,

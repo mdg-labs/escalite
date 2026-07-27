@@ -608,6 +608,16 @@ type Team struct {
 	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
+// Membership linking an organization user to a team.
+type TeamMembership struct {
+	ID             string    `json:"id"`
+	TeamID         string    `json:"teamId"`
+	UserID         string    `json:"userId"`
+	OrganizationID string    `json:"organizationId"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
+}
+
 // Append-only incident timeline entry with actor and body.
 type TimelineEvent struct {
 	ID             string            `json:"id"`

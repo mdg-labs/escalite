@@ -12,6 +12,21 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countOrgAdmins = `-- name: CountOrgAdmins :one
+SELECT count(*)::bigint AS count
+FROM users
+WHERE organization_id = $1
+  AND role = 'admin'
+  AND deprovisioned_at IS NULL
+`
+
+func (q *Queries) CountOrgAdmins(ctx context.Context, organizationID uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countOrgAdmins, organizationID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countUsers = `-- name: CountUsers :one
 SELECT count(*)::bigint AS count
 FROM users

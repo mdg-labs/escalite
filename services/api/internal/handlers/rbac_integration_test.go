@@ -183,3 +183,167 @@ func TestRBACMemberCannotAccessUnknownTeam(t *testing.T) {
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &errResp))
 	require.Equal(t, handlers.CodeNotFound, errResp.Code)
 }
+
+func TestRBACAdminCanAddAndRemoveTeamMember(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	adminCookie := bootstrapAdmin(t, handler)
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+	orgID := admin.OrganizationID
+
+	team := seedTeam(t, pool, orgID, "Platform")
+	member := seedMemberUser(t, pool, orgID, "member@example.com", "member-password-123")
+
+	addRec := postGraphQL(t, handler, `mutation {
+		addTeamMember(teamId: "`+team.ID.String()+`", userId: "`+member.ID.String()+`") {
+			id
+			teamId
+			userId
+		}
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, addRec.Code, addRec.Body.String())
+
+	var addResp struct {
+		Data struct {
+			AddTeamMember struct {
+				ID     string `json:"id"`
+				TeamID string `json:"teamId"`
+				UserID string `json:"userId"`
+			} `json:"addTeamMember"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(addRec.Body.Bytes(), &addResp))
+	require.Equal(t, team.ID.String(), addResp.Data.AddTeamMember.TeamID)
+	require.Equal(t, member.ID.String(), addResp.Data.AddTeamMember.UserID)
+
+	memberCookie := loginUser(t, handler, member.Email, "member-password-123")
+	allowed := getTeam(t, handler, memberCookie, team.ID)
+	require.Equal(t, http.StatusOK, allowed.Code, allowed.Body.String())
+
+	removeRec := postGraphQL(t, handler, `mutation {
+		removeTeamMember(teamId: "`+team.ID.String()+`", userId: "`+member.ID.String()+`")
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, removeRec.Code, removeRec.Body.String())
+
+	var removeResp struct {
+		Data struct {
+			RemoveTeamMember bool `json:"removeTeamMember"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(removeRec.Body.Bytes(), &removeResp))
+	require.True(t, removeResp.Data.RemoveTeamMember)
+
+	denied := getTeam(t, handler, memberCookie, team.ID)
+	require.Equal(t, http.StatusForbidden, denied.Code, denied.Body.String())
+}
+
+func TestRBACRemoveTeamMemberRejectsLastOrgAdmin(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	adminCookie := bootstrapAdmin(t, handler)
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+	seedTeamMembership(t, pool, admin.OrganizationID, team.ID, admin.ID)
+
+	removeRec := postGraphQL(t, handler, `mutation {
+		removeTeamMember(teamId: "`+team.ID.String()+`", userId: "`+admin.ID.String()+`")
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, removeRec.Code, removeRec.Body.String())
+
+	var resp struct {
+		Errors []struct {
+			Message    string                 `json:"message"`
+			Extensions map[string]interface{} `json:"extensions"`
+		} `json:"errors"`
+	}
+	require.NoError(t, json.Unmarshal(removeRec.Body.Bytes(), &resp))
+	require.NotEmpty(t, resp.Errors)
+	require.Equal(t, handlers.CodeValidation, resp.Errors[0].Extensions["code"])
+	require.Equal(t, "cannot remove last admin from org", resp.Errors[0].Message)
+}
+
+func TestRBACRemoveTeamMemberAllowsWhenSecondAdminExists(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	adminCookie := bootstrapAdmin(t, handler)
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	secondAdminAccount, err := queries.CreateAccount(context.Background(), db.CreateAccountParams{
+		ID:           uuid.Must(uuid.NewV7()),
+		Email:        "admin2@example.com",
+		PasswordHash: pgtype.Text{},
+	})
+	require.NoError(t, err)
+
+	secondAdmin, err := queries.CreateUser(context.Background(), db.CreateUserParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		AccountID:      secondAdminAccount.ID,
+		OrganizationID: admin.OrganizationID,
+		Email:          secondAdminAccount.Email,
+		Role:           authz.RoleAdmin,
+	})
+	require.NoError(t, err)
+
+	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+	seedTeamMembership(t, pool, admin.OrganizationID, team.ID, admin.ID)
+
+	removeRec := postGraphQL(t, handler, `mutation {
+		removeTeamMember(teamId: "`+team.ID.String()+`", userId: "`+admin.ID.String()+`")
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, removeRec.Code, removeRec.Body.String())
+
+	var removeResp struct {
+		Data struct {
+			RemoveTeamMember bool `json:"removeTeamMember"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(removeRec.Body.Bytes(), &removeResp))
+	require.True(t, removeResp.Data.RemoveTeamMember)
+	_ = secondAdmin
+}
+
+func TestRBACMemberCannotManageTeamMembership(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	_ = bootstrapAdmin(t, handler)
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+	member := seedMemberUser(t, pool, admin.OrganizationID, "member@example.com", "member-password-123")
+	otherMember := seedMemberUser(t, pool, admin.OrganizationID, "member2@example.com", "member-password-123")
+	memberCookie := loginUser(t, handler, member.Email, "member-password-123")
+
+	addRec := postGraphQL(t, handler, `mutation {
+		addTeamMember(teamId: "`+team.ID.String()+`", userId: "`+otherMember.ID.String()+`") {
+			id
+		}
+	}`, memberCookie)
+	require.Equal(t, http.StatusOK, addRec.Code)
+
+	var addResp struct {
+		Errors []struct {
+			Extensions map[string]interface{} `json:"extensions"`
+		} `json:"errors"`
+	}
+	require.NoError(t, json.Unmarshal(addRec.Body.Bytes(), &addResp))
+	require.NotEmpty(t, addResp.Errors)
+	require.Equal(t, handlers.CodeForbidden, addResp.Errors[0].Extensions["code"])
+	_ = otherMember
+}

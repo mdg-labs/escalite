@@ -7,6 +7,14 @@ SELECT EXISTS(
       AND organization_id = $3
 ) AS has_membership;
 
+-- name: GetTeamMembership :one
+SELECT *
+FROM team_memberships
+WHERE team_id = $1
+  AND user_id = $2
+  AND organization_id = $3
+LIMIT 1;
+
 -- name: CreateTeamMembership :one
 INSERT INTO team_memberships (
     id,

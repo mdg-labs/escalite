@@ -223,6 +223,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AcknowledgeAlert               func(childComplexity int, id string) int
 		AddIncidentTimelineNote        func(childComplexity int, input model.AddIncidentTimelineNoteInput) int
+		AddTeamMember                  func(childComplexity int, teamID string, userID string) int
 		AssignIncidentRole             func(childComplexity int, input model.AssignIncidentRoleInput) int
 		CloseAlert                     func(childComplexity int, id string) int
 		CreateEscalationPolicy         func(childComplexity int, input model.CreateEscalationPolicyInput) int
@@ -254,6 +255,7 @@ type ComplexityRoot struct {
 		PublishIncidentToStatusPage    func(childComplexity int, input model.PublishIncidentToStatusPageInput) int
 		ReEscalateAlert                func(childComplexity int, id string) int
 		RegisterMobileDevice           func(childComplexity int, input model.RegisterMobileDeviceInput) int
+		RemoveTeamMember               func(childComplexity int, teamID string, userID string) int
 		RevokeIntegrationKey           func(childComplexity int, id string) int
 		RevokeMobileDevice             func(childComplexity int, id string) int
 		RotateIntegrationKey           func(childComplexity int, id string) int
@@ -510,6 +512,15 @@ type ComplexityRoot struct {
 		UpdatedAt      func(childComplexity int) int
 	}
 
+	TeamMembership struct {
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		OrganizationID func(childComplexity int) int
+		TeamID         func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
+		UserID         func(childComplexity int) int
+	}
+
 	TimelineEvent struct {
 		Actor          func(childComplexity int) int
 		Body           func(childComplexity int) int
@@ -607,6 +618,8 @@ type MutationResolver interface {
 	CreateTeam(ctx context.Context, input model.CreateTeamInput) (*model.Team, error)
 	UpdateTeam(ctx context.Context, input model.UpdateTeamInput) (*model.Team, error)
 	DeleteTeam(ctx context.Context, id string) (bool, error)
+	AddTeamMember(ctx context.Context, teamID string, userID string) (*model.TeamMembership, error)
+	RemoveTeamMember(ctx context.Context, teamID string, userID string) (bool, error)
 	CreateService(ctx context.Context, input model.CreateServiceInput) (*model.Service, error)
 	UpdateService(ctx context.Context, input model.UpdateServiceInput) (*model.Service, error)
 	DeleteService(ctx context.Context, id string) (bool, error)
@@ -1472,6 +1485,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.AddIncidentTimelineNote(childComplexity, args["input"].(model.AddIncidentTimelineNoteInput)), true
+	case "Mutation.addTeamMember":
+		if e.ComplexityRoot.Mutation.AddTeamMember == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addTeamMember_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.AddTeamMember(childComplexity, args["teamId"].(string), args["userId"].(string)), true
 	case "Mutation.assignIncidentRole":
 		if e.ComplexityRoot.Mutation.AssignIncidentRole == nil {
 			break
@@ -1813,6 +1837,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RegisterMobileDevice(childComplexity, args["input"].(model.RegisterMobileDeviceInput)), true
+	case "Mutation.removeTeamMember":
+		if e.ComplexityRoot.Mutation.RemoveTeamMember == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_removeTeamMember_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RemoveTeamMember(childComplexity, args["teamId"].(string), args["userId"].(string)), true
 	case "Mutation.revokeIntegrationKey":
 		if e.ComplexityRoot.Mutation.RevokeIntegrationKey == nil {
 			break
@@ -3139,6 +3174,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Team.UpdatedAt(childComplexity), true
 
+	case "TeamMembership.createdAt":
+		if e.ComplexityRoot.TeamMembership.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TeamMembership.CreatedAt(childComplexity), true
+	case "TeamMembership.id":
+		if e.ComplexityRoot.TeamMembership.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TeamMembership.ID(childComplexity), true
+	case "TeamMembership.organizationId":
+		if e.ComplexityRoot.TeamMembership.OrganizationID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TeamMembership.OrganizationID(childComplexity), true
+	case "TeamMembership.teamId":
+		if e.ComplexityRoot.TeamMembership.TeamID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TeamMembership.TeamID(childComplexity), true
+	case "TeamMembership.updatedAt":
+		if e.ComplexityRoot.TeamMembership.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TeamMembership.UpdatedAt(childComplexity), true
+	case "TeamMembership.userId":
+		if e.ComplexityRoot.TeamMembership.UserID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TeamMembership.UserID(childComplexity), true
+
 	case "TimelineEvent.actor":
 		if e.ComplexityRoot.TimelineEvent.Actor == nil {
 			break
@@ -4147,6 +4219,18 @@ type Mutation {
   deleteTeam(id: ID!): Boolean!
 
   """
+  Add an organization user to a team (org admin only).
+  Org role (admin vs member) is separate from team membership; see resolver docs.
+  """
+  addTeamMember(teamId: ID!, userId: ID!): TeamMembership!
+
+  """
+  Remove an organization user from a team (org admin only).
+  Rejected when the user is the last org admin.
+  """
+  removeTeamMember(teamId: ID!, userId: ID!): Boolean!
+
+  """
   Create a service (org admin only).
   """
   createService(input: CreateServiceInput!): Service!
@@ -4290,6 +4374,16 @@ type Team {
   id: ID!
   organizationId: ID!
   name: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Membership linking an organization user to a team."""
+type TeamMembership {
+  id: ID!
+  teamId: ID!
+  userId: ID!
+  organizationId: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -5457,6 +5551,24 @@ func (ec *executionContext) childFields_Team(ctx context.Context, field graphql.
 	return nil, fmt.Errorf("no field named %q was found under type Team", field.Name)
 }
 
+func (ec *executionContext) childFields_TeamMembership(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_TeamMembership_id(ctx, field)
+	case "teamId":
+		return ec.fieldContext_TeamMembership_teamId(ctx, field)
+	case "userId":
+		return ec.fieldContext_TeamMembership_userId(ctx, field)
+	case "organizationId":
+		return ec.fieldContext_TeamMembership_organizationId(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_TeamMembership_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_TeamMembership_updatedAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type TeamMembership", field.Name)
+}
+
 func (ec *executionContext) childFields_TimelineEvent(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "id":
@@ -5674,6 +5786,28 @@ func (ec *executionContext) field_Mutation_addIncidentTimelineNote_args(ctx cont
 		return nil, err
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_addTeamMember_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "teamId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["teamId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "userId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["userId"] = arg1
 	return args, nil
 }
 
@@ -6108,6 +6242,28 @@ func (ec *executionContext) field_Mutation_registerMobileDevice_args(ctx context
 		return nil, err
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_removeTeamMember_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "teamId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["teamId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "userId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["userId"] = arg1
 	return args, nil
 }
 
@@ -11501,6 +11657,94 @@ func (ec *executionContext) fieldContext_Mutation_deleteTeam(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_addTeamMember(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_addTeamMember(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().AddTeamMember(ctx, fc.Args["teamId"].(string), fc.Args["userId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.TeamMembership) graphql.Marshaler {
+			return ec.marshalNTeamMembership2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTeamMembership(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_addTeamMember(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_TeamMembership(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_addTeamMember_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_removeTeamMember(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_removeTeamMember(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RemoveTeamMember(ctx, fc.Args["teamId"].(string), fc.Args["userId"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_removeTeamMember(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_removeTeamMember_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createService(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -16681,6 +16925,144 @@ func (ec *executionContext) _Team_updatedAt(ctx context.Context, field graphql.C
 }
 func (ec *executionContext) fieldContext_Team_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Team", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _TeamMembership_id(ctx context.Context, field graphql.CollectedField, obj *model.TeamMembership) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TeamMembership_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TeamMembership_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TeamMembership", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _TeamMembership_teamId(ctx context.Context, field graphql.CollectedField, obj *model.TeamMembership) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TeamMembership_teamId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TeamID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TeamMembership_teamId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TeamMembership", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _TeamMembership_userId(ctx context.Context, field graphql.CollectedField, obj *model.TeamMembership) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TeamMembership_userId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TeamMembership_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TeamMembership", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _TeamMembership_organizationId(ctx context.Context, field graphql.CollectedField, obj *model.TeamMembership) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TeamMembership_organizationId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrganizationID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TeamMembership_organizationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TeamMembership", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _TeamMembership_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.TeamMembership) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TeamMembership_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TeamMembership_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TeamMembership", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _TeamMembership_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.TeamMembership) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TeamMembership_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TeamMembership_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TeamMembership", field, false, false, errors.New("field of type DateTime does not have child fields"))
 }
 
 func (ec *executionContext) _TimelineEvent_id(ctx context.Context, field graphql.CollectedField, obj *model.TimelineEvent) (ret graphql.Marshaler) {
@@ -21984,6 +22366,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "addTeamMember":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_addTeamMember(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "removeTeamMember":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_removeTeamMember(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createService":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createService(ctx, field)
@@ -24349,6 +24745,69 @@ func (ec *executionContext) _Team(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
+var teamMembershipImplementors = []string{"TeamMembership"}
+
+func (ec *executionContext) _TeamMembership(ctx context.Context, sel ast.SelectionSet, obj *model.TeamMembership) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, teamMembershipImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TeamMembership")
+		case "id":
+			out.Values[i] = ec._TeamMembership_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "teamId":
+			out.Values[i] = ec._TeamMembership_teamId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userId":
+			out.Values[i] = ec._TeamMembership_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "organizationId":
+			out.Values[i] = ec._TeamMembership_organizationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._TeamMembership_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._TeamMembership_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var timelineEventImplementors = []string{"TimelineEvent"}
 
 func (ec *executionContext) _TimelineEvent(ctx context.Context, sel ast.SelectionSet, obj *model.TimelineEvent) graphql.Marshaler {
@@ -26381,6 +26840,20 @@ func (ec *executionContext) marshalNTeam2ᚖgithubᚗcomᚋmdgᚑlabsᚋescalite
 		return graphql.Null
 	}
 	return ec._Team(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTeamMembership2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTeamMembership(ctx context.Context, sel ast.SelectionSet, v model.TeamMembership) graphql.Marshaler {
+	return ec._TeamMembership(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTeamMembership2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTeamMembership(ctx context.Context, sel ast.SelectionSet, v *model.TeamMembership) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TeamMembership(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNTimelineEvent2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTimelineEvent(ctx context.Context, sel ast.SelectionSet, v model.TimelineEvent) graphql.Marshaler {

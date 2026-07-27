@@ -28,6 +28,16 @@ type Team {
   updatedAt: DateTime!
 }
 
+"""Membership linking an organization user to a team."""
+type TeamMembership {
+  id: ID!
+  teamId: ID!
+  userId: ID!
+  organizationId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type Service {
   id: ID!
   organizationId: ID!

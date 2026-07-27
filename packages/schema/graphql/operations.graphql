@@ -387,6 +387,18 @@ type Mutation {
   deleteTeam(id: ID!): Boolean!
 
   """
+  Add an organization user to a team (org admin only).
+  Org role (admin vs member) is separate from team membership; see resolver docs.
+  """
+  addTeamMember(teamId: ID!, userId: ID!): TeamMembership!
+
+  """
+  Remove an organization user from a team (org admin only).
+  Rejected when the user is the last org admin.
+  """
+  removeTeamMember(teamId: ID!, userId: ID!): Boolean!
+
+  """
   Create a service (org admin only).
   """
   createService(input: CreateServiceInput!): Service!
