@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactElement } from 'react'
+import { useMemo, useState, useEffect, type ReactElement } from 'react'
 import { Link, useLocation } from 'react-router'
 import { UserRole, useMeQuery } from '@escalite/ts-types'
 import {
@@ -12,60 +12,13 @@ import {
 } from '@escalite/ui'
 import { MenuIcon } from 'lucide-react'
 
-import { type MessageKey, t } from '../lib/i18n'
+import { t } from '../lib/i18n'
+import {
+  SECTION_LABEL_KEYS,
+  filterNavGroupsForRole,
+  isNavItemActive,
+} from '../lib/nav-config'
 import { OrgSwitcher } from './org-switcher'
-
-export type NavSection = 'operations' | 'configuration' | 'admin'
-
-export type SidebarNavItem = {
-  path: string
-  labelKey: MessageKey
-  adminOnly?: boolean
-}
-
-export type SidebarNavGroup = {
-  section: NavSection
-  items: SidebarNavItem[]
-}
-
-/** Section labels — move to i18n in fe-shell-nav-config-routes. */
-const SECTION_LABELS: Record<NavSection, string> = {
-  operations: 'Operations',
-  configuration: 'Configuration',
-  admin: 'Admin',
-}
-
-const SIDEBAR_NAV_CONFIG: SidebarNavGroup[] = [
-  {
-    section: 'operations',
-    items: [
-      { path: '/dashboard', labelKey: 'nav.dashboard' },
-      { path: '/alerts', labelKey: 'nav.alerts' },
-      { path: '/incidents', labelKey: 'nav.incidents' },
-    ],
-  },
-  {
-    section: 'configuration',
-    items: [
-      { path: '/services', labelKey: 'nav.services' },
-      { path: '/integrations', labelKey: 'nav.integrations' },
-      { path: '/analytics', labelKey: 'nav.analytics' },
-      { path: '/settings', labelKey: 'nav.settings' },
-    ],
-  },
-  {
-    section: 'admin',
-    items: [{ path: '/audit-log', labelKey: 'nav.auditLog', adminOnly: true }],
-  },
-]
-
-function isNavItemActive(pathname: string, path: string): boolean {
-  if (path === '/dashboard') {
-    return pathname === '/dashboard'
-  }
-
-  return pathname === path || pathname.startsWith(`${path}/`)
-}
 
 type SidebarNavProps = {
   /** EL-166: mobile drawer will pass onNavigate to close drawer after route change. */
@@ -84,14 +37,7 @@ export function SidebarNav({
   const [{ data: meData }] = useMeQuery({ requestPolicy: 'cache-first' })
   const isAdmin = meData?.me?.role === UserRole.Admin
 
-  const visibleGroups = useMemo(
-    () =>
-      SIDEBAR_NAV_CONFIG.map((group) => ({
-        ...group,
-        items: group.items.filter((item) => !item.adminOnly || isAdmin),
-      })).filter((group) => group.items.length > 0),
-    [isAdmin],
-  )
+  const visibleGroups = useMemo(() => filterNavGroupsForRole(isAdmin), [isAdmin])
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col', className)} data-slot="sidebar-nav">
@@ -110,11 +56,11 @@ export function SidebarNav({
           {visibleGroups.map((group) => (
             <div key={group.section}>
               <p className="px-2 text-xs font-medium text-sidebar-foreground/70">
-                {SECTION_LABELS[group.section]}
+                {t(SECTION_LABEL_KEYS[group.section])}
               </p>
               <ul className="mt-1 flex flex-col gap-0.5">
                 {group.items.map((item) => {
-                  const active = isNavItemActive(location.pathname, item.path)
+                  const active = isNavItemActive(location.pathname, item)
 
                   return (
                     <li key={item.path}>
