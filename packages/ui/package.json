@@ -32,6 +32,7 @@
     "./primitives/tabs": "./primitives/tabs.tsx",
     "./domain/EscalationPolicyEditor": "./domain/EscalationPolicyEditor/index.ts",
     "./domain/ScheduleCalendar": "./domain/ScheduleCalendar/index.ts",
+    "./domain/OnCallWidget": "./domain/OnCallWidget/index.ts",
     "./charts": "./charts/index.ts"
   },
   "scripts": {
