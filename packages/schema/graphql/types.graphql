@@ -7,6 +7,14 @@ type User {
   updatedAt: DateTime!
 }
 
+"""Organization user entry for directory and picker UIs."""
+type OrganizationUser {
+  id: ID!
+  email: String!
+  role: UserRole!
+  teamMemberships: [TeamMembership!]!
+}
+
 type Organization {
   id: ID!
   name: String!

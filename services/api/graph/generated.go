@@ -322,6 +322,13 @@ type ComplexityRoot struct {
 		Role         func(childComplexity int) int
 	}
 
+	OrganizationUser struct {
+		Email           func(childComplexity int) int
+		ID              func(childComplexity int) int
+		Role            func(childComplexity int) int
+		TeamMemberships func(childComplexity int) int
+	}
+
 	Override struct {
 		ApprovedByUserID func(childComplexity int) int
 		CreatedAt        func(childComplexity int) int
@@ -362,6 +369,7 @@ type ComplexityRoot struct {
 		NotificationChannels    func(childComplexity int) int
 		NotificationRules       func(childComplexity int) int
 		OnCallNow               func(childComplexity int, scheduleID string, at *time.Time) int
+		OrganizationUsers       func(childComplexity int, limit *int) int
 		Overrides               func(childComplexity int, scheduleID string) int
 		SamlSettings            func(childComplexity int) int
 		Schedule                func(childComplexity int, id string) int
@@ -666,6 +674,7 @@ type QueryResolver interface {
 	ScimSettings(ctx context.Context) (*model.ScimSettings, error)
 	IntegrationKeys(ctx context.Context, serviceID string) ([]*model.IntegrationKey, error)
 	Teams(ctx context.Context) ([]*model.Team, error)
+	OrganizationUsers(ctx context.Context, limit *int) ([]*model.OrganizationUser, error)
 	Services(ctx context.Context) ([]*model.Service, error)
 	Service(ctx context.Context, id string) (*model.Service, error)
 	Incident(ctx context.Context, id string) (*model.Incident, error)
@@ -2234,6 +2243,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.OrganizationMembership.Role(childComplexity), true
 
+	case "OrganizationUser.email":
+		if e.ComplexityRoot.OrganizationUser.Email == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OrganizationUser.Email(childComplexity), true
+	case "OrganizationUser.id":
+		if e.ComplexityRoot.OrganizationUser.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OrganizationUser.ID(childComplexity), true
+	case "OrganizationUser.role":
+		if e.ComplexityRoot.OrganizationUser.Role == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OrganizationUser.Role(childComplexity), true
+	case "OrganizationUser.teamMemberships":
+		if e.ComplexityRoot.OrganizationUser.TeamMemberships == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OrganizationUser.TeamMemberships(childComplexity), true
+
 	case "Override.approvedByUserId":
 		if e.ComplexityRoot.Override.ApprovedByUserID == nil {
 			break
@@ -2522,6 +2556,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.OnCallNow(childComplexity, args["scheduleId"].(string), args["at"].(*time.Time)), true
+	case "Query.organizationUsers":
+		if e.ComplexityRoot.Query.OrganizationUsers == nil {
+			break
+		}
+
+		args, err := ec.field_Query_organizationUsers_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.OrganizationUsers(childComplexity, args["limit"].(*int)), true
 	case "Query.overrides":
 		if e.ComplexityRoot.Query.Overrides == nil {
 			break
@@ -3971,6 +4016,12 @@ type Query {
   teams: [Team!]!
 
   """
+  List organization users for pickers (capped at 500).
+  Org admins see all active users; members see users who share at least one team.
+  """
+  organizationUsers(limit: Int = 500): [OrganizationUser!]!
+
+  """
   List services in the organization (org admin only).
   """
   services: [Service!]!
@@ -4355,6 +4406,14 @@ scalar JSON
   organizationId: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+"""Organization user entry for directory and picker UIs."""
+type OrganizationUser {
+  id: ID!
+  email: String!
+  role: UserRole!
+  teamMemberships: [TeamMembership!]!
 }
 
 type Organization {
@@ -5255,6 +5314,20 @@ func (ec *executionContext) childFields_OrganizationMembership(ctx context.Conte
 		return ec.fieldContext_OrganizationMembership_role(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type OrganizationMembership", field.Name)
+}
+
+func (ec *executionContext) childFields_OrganizationUser(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_OrganizationUser_id(ctx, field)
+	case "email":
+		return ec.fieldContext_OrganizationUser_email(ctx, field)
+	case "role":
+		return ec.fieldContext_OrganizationUser_role(ctx, field)
+	case "teamMemberships":
+		return ec.fieldContext_OrganizationUser_teamMemberships(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type OrganizationUser", field.Name)
 }
 
 func (ec *executionContext) childFields_Override(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -6890,6 +6963,20 @@ func (ec *executionContext) field_Query_onCallNow_args(ctx context.Context, rawA
 		return nil, err
 	}
 	args["at"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_organizationUsers_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg0
 	return args, nil
 }
 
@@ -13057,6 +13144,107 @@ func (ec *executionContext) fieldContext_OrganizationMembership_role(_ context.C
 	return graphql.NewScalarFieldContext("OrganizationMembership", field, false, false, errors.New("field of type UserRole does not have child fields"))
 }
 
+func (ec *executionContext) _OrganizationUser_id(ctx context.Context, field graphql.CollectedField, obj *model.OrganizationUser) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_OrganizationUser_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_OrganizationUser_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("OrganizationUser", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _OrganizationUser_email(ctx context.Context, field graphql.CollectedField, obj *model.OrganizationUser) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_OrganizationUser_email(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Email, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_OrganizationUser_email(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("OrganizationUser", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _OrganizationUser_role(ctx context.Context, field graphql.CollectedField, obj *model.OrganizationUser) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_OrganizationUser_role(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Role, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.UserRole) graphql.Marshaler {
+			return ec.marshalNUserRole2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUserRole(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_OrganizationUser_role(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("OrganizationUser", field, false, false, errors.New("field of type UserRole does not have child fields"))
+}
+
+func (ec *executionContext) _OrganizationUser_teamMemberships(ctx context.Context, field graphql.CollectedField, obj *model.OrganizationUser) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_OrganizationUser_teamMemberships(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TeamMemberships, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.TeamMembership) graphql.Marshaler {
+			return ec.marshalNTeamMembership2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTeamMembershipᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_OrganizationUser_teamMemberships(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OrganizationUser",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_TeamMembership(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Override_id(ctx context.Context, field graphql.CollectedField, obj *model.Override) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -14253,6 +14441,50 @@ func (ec *executionContext) fieldContext_Query_teams(_ context.Context, field gr
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_Team(ctx, field)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_organizationUsers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_organizationUsers(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().OrganizationUsers(ctx, fc.Args["limit"].(*int))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.OrganizationUser) graphql.Marshaler {
+			return ec.marshalNOrganizationUser2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganizationUserᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_organizationUsers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_OrganizationUser(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_organizationUsers_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -22862,6 +23094,59 @@ func (ec *executionContext) _OrganizationMembership(ctx context.Context, sel ast
 	return out
 }
 
+var organizationUserImplementors = []string{"OrganizationUser"}
+
+func (ec *executionContext) _OrganizationUser(ctx context.Context, sel ast.SelectionSet, obj *model.OrganizationUser) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, organizationUserImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OrganizationUser")
+		case "id":
+			out.Values[i] = ec._OrganizationUser_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "email":
+			out.Values[i] = ec._OrganizationUser_email(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "role":
+			out.Values[i] = ec._OrganizationUser_role(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "teamMemberships":
+			out.Values[i] = ec._OrganizationUser_teamMemberships(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var overrideImplementors = []string{"Override"}
 
 func (ec *executionContext) _Override(ctx context.Context, sel ast.SelectionSet, obj *model.Override) graphql.Marshaler {
@@ -23491,6 +23776,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_teams(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "organizationUsers":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_organizationUsers(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -26377,6 +26684,32 @@ func (ec *executionContext) marshalNOrganizationMembership2ᚖgithubᚗcomᚋmdg
 	return ec._OrganizationMembership(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNOrganizationUser2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganizationUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.OrganizationUser) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNOrganizationUser2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganizationUser(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNOrganizationUser2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganizationUser(ctx context.Context, sel ast.SelectionSet, v *model.OrganizationUser) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._OrganizationUser(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNOverride2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOverride(ctx context.Context, sel ast.SelectionSet, v model.Override) graphql.Marshaler {
 	return ec._Override(ctx, sel, &v)
 }
@@ -26844,6 +27177,22 @@ func (ec *executionContext) marshalNTeam2ᚖgithubᚗcomᚋmdgᚑlabsᚋescalite
 
 func (ec *executionContext) marshalNTeamMembership2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTeamMembership(ctx context.Context, sel ast.SelectionSet, v model.TeamMembership) graphql.Marshaler {
 	return ec._TeamMembership(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTeamMembership2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTeamMembershipᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TeamMembership) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNTeamMembership2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTeamMembership(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNTeamMembership2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTeamMembership(ctx context.Context, sel ast.SelectionSet, v *model.TeamMembership) graphql.Marshaler {

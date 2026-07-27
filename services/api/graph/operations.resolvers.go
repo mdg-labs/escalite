@@ -3740,6 +3740,11 @@ func (r *queryResolver) Teams(ctx context.Context) ([]*model.Team, error) {
 	return result, nil
 }
 
+// OrganizationUsers is the resolver for the organizationUsers field.
+func (r *queryResolver) OrganizationUsers(ctx context.Context, limit *int) ([]*model.OrganizationUser, error) {
+	return r.resolveOrganizationUsers(ctx, limit)
+}
+
 // Services is the resolver for the services field.
 func (r *queryResolver) Services(ctx context.Context) ([]*model.Service, error) {
 	sc, err := requireAdminSession(ctx)

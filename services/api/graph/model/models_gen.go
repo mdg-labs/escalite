@@ -374,6 +374,14 @@ type OrganizationMembership struct {
 	Role         UserRole      `json:"role"`
 }
 
+// Organization user entry for directory and picker UIs.
+type OrganizationUser struct {
+	ID              string            `json:"id"`
+	Email           string            `json:"email"`
+	Role            UserRole          `json:"role"`
+	TeamMemberships []*TeamMembership `json:"teamMemberships"`
+}
+
 // One-off on-call swap that takes precedence over rotation for a time window.
 type Override struct {
 	ID              string    `json:"id"`

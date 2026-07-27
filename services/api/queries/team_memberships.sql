@@ -34,3 +34,10 @@ DELETE FROM team_memberships
 WHERE team_id = $1
   AND user_id = $2
   AND organization_id = $3;
+
+-- name: ListTeamMembershipsByUserIDs :many
+SELECT *
+FROM team_memberships
+WHERE organization_id = $1
+  AND user_id = ANY(sqlc.arg(user_ids)::uuid[])
+ORDER BY user_id ASC, team_id ASC;

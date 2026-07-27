@@ -347,3 +347,122 @@ func TestRBACMemberCannotManageTeamMembership(t *testing.T) {
 	require.Equal(t, handlers.CodeForbidden, addResp.Errors[0].Extensions["code"])
 	_ = otherMember
 }
+
+func TestRBACOrganizationUsersAdminSeesAll(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	adminCookie := bootstrapAdmin(t, handler)
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+	memberA := seedMemberUser(t, pool, admin.OrganizationID, "member-a@example.com", "member-password-123")
+	memberB := seedMemberUser(t, pool, admin.OrganizationID, "member-b@example.com", "member-password-123")
+	seedTeamMembership(t, pool, admin.OrganizationID, team.ID, memberA.ID)
+
+	rec := postGraphQL(t, handler, `{
+		organizationUsers {
+			id
+			email
+			role
+			teamMemberships { teamId userId }
+		}
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+
+	var resp struct {
+		Data struct {
+			OrganizationUsers []struct {
+				ID              string `json:"id"`
+				Email           string `json:"email"`
+				Role            string `json:"role"`
+				TeamMemberships []struct {
+					TeamID string `json:"teamId"`
+					UserID string `json:"userId"`
+				} `json:"teamMemberships"`
+			} `json:"organizationUsers"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+
+	emails := make([]string, 0, len(resp.Data.OrganizationUsers))
+	for _, user := range resp.Data.OrganizationUsers {
+		emails = append(emails, user.Email)
+	}
+	require.Contains(t, emails, "admin@example.com")
+	require.Contains(t, emails, memberA.Email)
+	require.Contains(t, emails, memberB.Email)
+
+	var memberAEntry *struct {
+		ID              string `json:"id"`
+		Email           string `json:"email"`
+		Role            string `json:"role"`
+		TeamMemberships []struct {
+			TeamID string `json:"teamId"`
+			UserID string `json:"userId"`
+		} `json:"teamMemberships"`
+	}
+	for i := range resp.Data.OrganizationUsers {
+		if resp.Data.OrganizationUsers[i].Email == memberA.Email {
+			memberAEntry = &resp.Data.OrganizationUsers[i]
+			break
+		}
+	}
+	require.NotNil(t, memberAEntry)
+	require.Equal(t, "MEMBER", memberAEntry.Role)
+	require.Len(t, memberAEntry.TeamMemberships, 1)
+	require.Equal(t, team.ID.String(), memberAEntry.TeamMemberships[0].TeamID)
+	require.Equal(t, memberA.ID.String(), memberAEntry.TeamMemberships[0].UserID)
+}
+
+func TestRBACOrganizationUsersMemberSeesSharedTeamsOnly(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	_ = bootstrapAdmin(t, handler)
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	teamShared := seedTeam(t, pool, admin.OrganizationID, "Platform")
+	teamOther := seedTeam(t, pool, admin.OrganizationID, "Payments")
+
+	memberA := seedMemberUser(t, pool, admin.OrganizationID, "member-a@example.com", "member-password-123")
+	memberB := seedMemberUser(t, pool, admin.OrganizationID, "member-b@example.com", "member-password-123")
+	memberC := seedMemberUser(t, pool, admin.OrganizationID, "member-c@example.com", "member-password-123")
+
+	seedTeamMembership(t, pool, admin.OrganizationID, teamShared.ID, memberA.ID)
+	seedTeamMembership(t, pool, admin.OrganizationID, teamShared.ID, memberB.ID)
+	seedTeamMembership(t, pool, admin.OrganizationID, teamOther.ID, memberC.ID)
+
+	memberACookie := loginUser(t, handler, memberA.Email, "member-password-123")
+
+	rec := postGraphQL(t, handler, `{
+		organizationUsers {
+			email
+		}
+	}`, memberACookie)
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+
+	var resp struct {
+		Data struct {
+			OrganizationUsers []struct {
+				Email string `json:"email"`
+			} `json:"organizationUsers"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+
+	emails := make([]string, 0, len(resp.Data.OrganizationUsers))
+	for _, user := range resp.Data.OrganizationUsers {
+		emails = append(emails, user.Email)
+	}
+	require.Contains(t, emails, memberA.Email)
+	require.Contains(t, emails, memberB.Email)
+	require.NotContains(t, emails, memberC.Email)
+	require.NotContains(t, emails, admin.Email)
+}

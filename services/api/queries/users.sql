@@ -72,6 +72,29 @@ WHERE organization_id = $1
   AND role = 'admin'
   AND deprovisioned_at IS NULL;
 
+-- name: ListOrganizationUsersForOrgAdmin :many
+SELECT *
+FROM users
+WHERE organization_id = $1
+  AND deprovisioned_at IS NULL
+ORDER BY email ASC
+LIMIT $2;
+
+-- name: ListOrganizationUsersForTeamMember :many
+SELECT DISTINCT u.*
+FROM users u
+INNER JOIN team_memberships tm_viewer
+  ON tm_viewer.user_id = $2
+ AND tm_viewer.organization_id = u.organization_id
+INNER JOIN team_memberships tm_target
+  ON tm_target.team_id = tm_viewer.team_id
+ AND tm_target.user_id = u.id
+ AND tm_target.organization_id = u.organization_id
+WHERE u.organization_id = $1
+  AND u.deprovisioned_at IS NULL
+ORDER BY u.email ASC
+LIMIT $3;
+
 -- name: CreateUser :one
 INSERT INTO users (
     id,

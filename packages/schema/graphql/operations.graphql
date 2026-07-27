@@ -139,6 +139,12 @@ type Query {
   teams: [Team!]!
 
   """
+  List organization users for pickers (capped at 500).
+  Org admins see all active users; members see users who share at least one team.
+  """
+  organizationUsers(limit: Int = 500): [OrganizationUser!]!
+
+  """
   List services in the organization (org admin only).
   """
   services: [Service!]!

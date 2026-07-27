@@ -121,3 +121,43 @@ func (q *Queries) HasTeamMembership(ctx context.Context, arg HasTeamMembershipPa
 	err := row.Scan(&has_membership)
 	return has_membership, err
 }
+
+const listTeamMembershipsByUserIDs = `-- name: ListTeamMembershipsByUserIDs :many
+SELECT id, team_id, user_id, organization_id, created_at, updated_at
+FROM team_memberships
+WHERE organization_id = $1
+  AND user_id = ANY($2::uuid[])
+ORDER BY user_id ASC, team_id ASC
+`
+
+type ListTeamMembershipsByUserIDsParams struct {
+	OrganizationID uuid.UUID   `json:"organization_id"`
+	UserIds        []uuid.UUID `json:"user_ids"`
+}
+
+func (q *Queries) ListTeamMembershipsByUserIDs(ctx context.Context, arg ListTeamMembershipsByUserIDsParams) ([]TeamMembership, error) {
+	rows, err := q.db.Query(ctx, listTeamMembershipsByUserIDs, arg.OrganizationID, arg.UserIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []TeamMembership{}
+	for rows.Next() {
+		var i TeamMembership
+		if err := rows.Scan(
+			&i.ID,
+			&i.TeamID,
+			&i.UserID,
+			&i.OrganizationID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

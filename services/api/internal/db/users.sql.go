@@ -457,6 +457,102 @@ func (q *Queries) ListOrganizationMembershipsByAccountID(ctx context.Context, ac
 	return items, nil
 }
 
+const listOrganizationUsersForOrgAdmin = `-- name: ListOrganizationUsersForOrgAdmin :many
+SELECT id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
+FROM users
+WHERE organization_id = $1
+  AND deprovisioned_at IS NULL
+ORDER BY email ASC
+LIMIT $2
+`
+
+type ListOrganizationUsersForOrgAdminParams struct {
+	OrganizationID uuid.UUID `json:"organization_id"`
+	Limit          int32     `json:"limit"`
+}
+
+func (q *Queries) ListOrganizationUsersForOrgAdmin(ctx context.Context, arg ListOrganizationUsersForOrgAdminParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, listOrganizationUsersForOrgAdmin, arg.OrganizationID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []User{}
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.OrganizationID,
+			&i.Email,
+			&i.Role,
+			&i.ScimExternalID,
+			&i.DeprovisionedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOrganizationUsersForTeamMember = `-- name: ListOrganizationUsersForTeamMember :many
+SELECT DISTINCT u.id, u.account_id, u.organization_id, u.email, u.role, u.scim_external_id, u.deprovisioned_at, u.created_at, u.updated_at
+FROM users u
+INNER JOIN team_memberships tm_viewer
+  ON tm_viewer.user_id = $2
+ AND tm_viewer.organization_id = u.organization_id
+INNER JOIN team_memberships tm_target
+  ON tm_target.team_id = tm_viewer.team_id
+ AND tm_target.user_id = u.id
+ AND tm_target.organization_id = u.organization_id
+WHERE u.organization_id = $1
+  AND u.deprovisioned_at IS NULL
+ORDER BY u.email ASC
+LIMIT $3
+`
+
+type ListOrganizationUsersForTeamMemberParams struct {
+	OrganizationID uuid.UUID `json:"organization_id"`
+	UserID         uuid.UUID `json:"user_id"`
+	Limit          int32     `json:"limit"`
+}
+
+func (q *Queries) ListOrganizationUsersForTeamMember(ctx context.Context, arg ListOrganizationUsersForTeamMemberParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, listOrganizationUsersForTeamMember, arg.OrganizationID, arg.UserID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []User{}
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.OrganizationID,
+			&i.Email,
+			&i.Role,
+			&i.ScimExternalID,
+			&i.DeprovisionedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listScimUsersByOrganizationID = `-- name: ListScimUsersByOrganizationID :many
 SELECT id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
 FROM users
