@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { useClient } from 'urql'
 import {
@@ -9,6 +9,7 @@ import {
   UserRole,
   useAlertsQuery,
   useMeQuery,
+  useOnCallUpdatedSubscription,
   useOrganizationUsersQuery,
   useTeamsQuery,
   type OnCallNowQuery,
@@ -28,6 +29,7 @@ import { BellIcon } from 'lucide-react'
 
 import { AppShell } from '../components/app-shell'
 import { formatAlertTimestamp } from '../lib/alerts'
+import { mapOnCallSchedules, updateOnCallSchedule } from '../lib/dashboard-oncall'
 import { t } from '../lib/i18n'
 
 function onCallWidgetLabels(): OnCallWidgetLabels {
@@ -42,37 +44,13 @@ function onCallWidgetLabels(): OnCallWidgetLabels {
   }
 }
 
-function mapOnCallSchedules(
-  schedulesByTeam: Array<{
-    schedule: SchedulesQuery['schedules'][number]
-    onCall: NonNullable<OnCallNowQuery['onCallNow']>
-  }>,
-): OnCallWidgetSchedule[] {
-  return schedulesByTeam.map(({ schedule, onCall }) => {
-    const rotationNameById = new Map(
-      schedule.rotations.map((rotation) => [rotation.id, rotation.name]),
-    )
-
-    return {
-      id: schedule.id,
-      name: schedule.name,
-      computedAt: formatAlertTimestamp(onCall.computedAt),
-      layers: onCall.layers.map((layer) => ({
-        layer: layer.layer,
-        rotationId: layer.rotationId,
-        rotationName: rotationNameById.get(layer.rotationId),
-        userId: layer.userId,
-      })),
-    }
-  })
-}
-
 export function DashboardPage(): ReactElement {
   const client = useClient()
   const onCallLabels = useMemo(() => onCallWidgetLabels(), [])
 
   const [{ data: meData }] = useMeQuery({ requestPolicy: 'cache-first' })
   const currentUser = meData?.me
+  const organizationId = currentUser?.organizationId ?? ''
   const isAdmin = currentUser?.role === UserRole.Admin
 
   const [{ data: alertsData, fetching: alertsFetching }] = useAlertsQuery({
@@ -131,9 +109,53 @@ export function DashboardPage(): ReactElement {
 
   const [onCallSchedules, setOnCallSchedules] = useState<OnCallWidgetSchedule[]>([])
   const [onCallLoading, setOnCallLoading] = useState(false)
+  const scheduleByIdRef = useRef(new Map<string, SchedulesQuery['schedules'][number]>())
+
+  const refreshScheduleOnCall = useCallback(
+    async (scheduleId: string): Promise<void> => {
+      const schedule = scheduleByIdRef.current.get(scheduleId)
+      if (!schedule) {
+        return
+      }
+
+      const onCallResult = await client
+        .query(OnCallNowDocument, { scheduleId }, { requestPolicy: 'network-only' })
+        .toPromise()
+
+      if (onCallResult.error || !onCallResult.data?.onCallNow) {
+        return
+      }
+
+      const [updated] = mapOnCallSchedules(
+        [{ schedule, onCall: onCallResult.data.onCallNow }],
+        formatAlertTimestamp,
+      )
+      if (!updated) {
+        return
+      }
+
+      setOnCallSchedules((current) => updateOnCallSchedule(current, updated))
+    },
+    [client],
+  )
+
+  useOnCallUpdatedSubscription(
+    {
+      variables: { orgId: organizationId },
+      pause: !organizationId,
+    },
+    (_previous, response) => {
+      const scheduleId = response.onCallUpdated?.scheduleId
+      if (scheduleId) {
+        void refreshScheduleOnCall(scheduleId)
+      }
+      return response
+    },
+  )
 
   useEffect(() => {
     if (teamIds.length === 0) {
+      scheduleByIdRef.current.clear()
       setOnCallSchedules([])
       setOnCallLoading(false)
       return
@@ -174,7 +196,10 @@ export function DashboardPage(): ReactElement {
       }
 
       if (!cancelled) {
-        setOnCallSchedules(mapOnCallSchedules(loaded))
+        scheduleByIdRef.current = new Map(
+          loaded.map((entry) => [entry.schedule.id, entry.schedule]),
+        )
+        setOnCallSchedules(mapOnCallSchedules(loaded, formatAlertTimestamp))
         setOnCallLoading(false)
       }
     }
