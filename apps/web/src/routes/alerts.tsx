@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import {
   AlertStatus,
   type AlertFieldsFragment,
+  type AlertPriority,
   useAcknowledgeAlertMutation,
   useAlertQuery,
   useAlertUpdatedSubscription,
@@ -17,6 +18,7 @@ import {
 import {
   Alert,
   AlertAction,
+  AlertCard,
   AlertDescription,
   AlertTitle,
   Badge,
@@ -56,6 +58,8 @@ import {
   SNOOZE_PRESETS,
 } from '../lib/alert-escalation'
 import {
+  alertPriorityLabel,
+  alertStatusLabel,
   formatAlertTimestamp,
   mergeAlertUpdate,
   sortAlertsByUpdatedAt,
@@ -64,6 +68,11 @@ import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
 
 type StatusFilter = 'ALL' | AlertStatus
+
+const ALERT_CARD_LABELS = {
+  statusLabel: (status: string) => alertStatusLabel(status as AlertStatus),
+  priorityLabel: (priority: string) => alertPriorityLabel(priority as AlertPriority),
+} as const
 
 const STATUS_FILTERS: StatusFilter[] = [
   'ALL',
@@ -312,6 +321,7 @@ export function AlertsPage(): ReactElement {
             </Tabs>
           </div>
 
+          {/* Alert list rows use @escalite/ui AlertCard (spec 05 / p-table-8) inside card-variant Table. */}
           <ScrollArea className="h-[32rem]">
             <Table variant="card">
               <TableHeader>
@@ -339,34 +349,15 @@ export function AlertsPage(): ReactElement {
                   </TableRow>
                 ) : null}
                 {visibleAlerts.map((alert) => (
-                  <TableRow
+                  <AlertCard
                     key={alert.id}
-                    className="cursor-pointer"
-                    data-state={alert.id === alertId ? 'selected' : undefined}
-                    onClick={() => {
+                    alert={alert}
+                    labels={ALERT_CARD_LABELS}
+                    onSelect={() => {
                       navigate(`/alerts/${alert.id}`)
                     }}
-                  >
-                    <TableCell className="max-w-xs truncate font-medium text-foreground">
-                      {alert.summary}
-                    </TableCell>
-                    <TableCell>
-                      <AlertStatusBadge status={alert.status} />
-                    </TableCell>
-                    <TableCell>
-                      <AlertPriorityBadge priority={alert.priority} />
-                    </TableCell>
-                    <TableCell>
-                      {alert.eventCount > 1 ? (
-                        <Badge variant="outline">{alert.eventCount}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">1</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatAlertTimestamp(alert.updatedAt)}
-                    </TableCell>
-                  </TableRow>
+                    selected={alert.id === alertId}
+                  />
                 ))}
               </TableBody>
             </Table>
