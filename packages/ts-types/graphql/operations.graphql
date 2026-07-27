@@ -809,3 +809,29 @@ mutation ReEscalateAlert($id: ID!) {
 mutation DeleteEscalationPolicy($id: ID!) {
   deleteEscalationPolicy(id: $id)
 }
+
+mutation CreateIncident($input: CreateIncidentInput!) {
+  createIncident(input: $input) {
+    ...IncidentFields
+  }
+}
+
+mutation CreateIncidentRoleDefinition($input: CreateIncidentRoleDefinitionInput!) {
+  createIncidentRoleDefinition(input: $input) {
+    ...IncidentRoleDefinitionFields
+  }
+}
+
+mutation UpdateIncidentRoleDefinition($input: UpdateIncidentRoleDefinitionInput!) {
+  updateIncidentRoleDefinition(input: $input) {
+    ...IncidentRoleDefinitionFields
+  }
+}
+
+mutation DeleteIncidentRoleDefinition($id: ID!) {
+  deleteIncidentRoleDefinition(id: $id)
+}
+
+mutation UnassignIncidentRole($id: ID!) {
+  unassignIncidentRole(id: $id)
+}
