@@ -84,8 +84,15 @@ jobs:
             echo "EAS build did not return a build id" >&2
             exit 1
           fi
-          eas build:download --platform android --id "${build_id}" --output "../../escalite-mobile-${{ steps.version.outputs.version }}.apk"
-          echo "apk=escalite-mobile-${{ steps.version.outputs.version }}.apk" >> "${GITHUB_OUTPUT}"
+          download_json="$(eas build:download --build-id "${build_id}" --non-interactive --json)"
+          apk_path="$(node -e 'const result=JSON.parse(process.argv[1]); console.log(result.path ?? "")' "${download_json}")"
+          if [ -z "${apk_path}" ] || [ ! -f "${apk_path}" ]; then
+            echo "EAS build download did not return a valid APK path" >&2
+            exit 1
+          fi
+          apk_name="escalite-mobile-${{ steps.version.outputs.version }}.apk"
+          mv "${apk_path}" "../../${apk_name}"
+          echo "apk=${apk_name}" >> "${GITHUB_OUTPUT}"
 
       - name: Publish Android APK to draft or new draft release
         if: steps.version.outputs.skip != 'true' && steps.tag.outputs.exists == 'false'
