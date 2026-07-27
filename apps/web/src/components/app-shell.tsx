@@ -1,9 +1,14 @@
-import type { ReactElement, ReactNode } from 'react'
-import { Link } from 'react-router'
-import { UserRole, useMeQuery } from '@escalite/ts-types'
+import { useEffect, type ReactElement, type ReactNode } from 'react'
+import {
+  Frame,
+  FramePanel,
+  FrameTitle,
+  ScrollArea,
+  initTheme,
+} from '@escalite/ui'
 
-import { t } from '../lib/i18n'
 import { OrgSwitcher } from './org-switcher'
+import { SidebarNav } from './sidebar-nav'
 
 type AppShellProps = {
   title: string
@@ -11,53 +16,36 @@ type AppShellProps = {
 }
 
 export function AppShell({ title, children }: AppShellProps): ReactElement {
-  const [{ data: meData }] = useMeQuery({ requestPolicy: 'cache-first' })
-  const isAdmin = meData?.me?.role === UserRole.Admin
+  useEffect(() => {
+    initTheme()
+  }, [])
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4">
-          <div className="flex items-center gap-4">
-            <Link className="text-sm font-semibold tracking-wide text-foreground" to="/dashboard">
-              Escalite
-            </Link>
-            <nav className="flex items-center gap-3 text-sm text-muted-foreground">
-              <Link className="hover:text-foreground" to="/dashboard">
-                {t('nav.dashboard')}
-              </Link>
-              <Link className="hover:text-foreground" to="/alerts">
-                {t('nav.alerts')}
-              </Link>
-              <Link className="hover:text-foreground" to="/incidents">
-                {t('nav.incidents')}
-              </Link>
-              <Link className="hover:text-foreground" to="/services">
-                {t('nav.services')}
-              </Link>
-              <Link className="hover:text-foreground" to="/integrations">
-                {t('nav.integrations')}
-              </Link>
-              <Link className="hover:text-foreground" to="/analytics">
-                {t('nav.analytics')}
-              </Link>
-              {isAdmin ? (
-                <Link className="hover:text-foreground" to="/audit-log">
-                  {t('nav.auditLog')}
-                </Link>
-              ) : null}
-              <Link className="hover:text-foreground" to="/settings">
-                {t('nav.settings')}
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-muted-foreground sm:inline">{title}</span>
-            <OrgSwitcher />
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
+    <div className="flex h-svh bg-background">
+      {/* Desktop sidebar — mobile drawer wired in EL-166 (p-drawer-11). */}
+      <aside
+        className="hidden w-56 shrink-0 border-e border-sidebar-border bg-sidebar md:flex md:flex-col"
+        data-mobile-drawer-target
+        data-slot="app-sidebar"
+      >
+        <SidebarNav />
+      </aside>
+
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col p-2">
+        <Frame className="flex min-h-0 flex-1 flex-col">
+          <FramePanel className="flex shrink-0 items-center justify-between gap-4 px-5 py-3">
+            <FrameTitle className="text-base">{title}</FrameTitle>
+            <div className="md:hidden">
+              <OrgSwitcher />
+            </div>
+          </FramePanel>
+          <FramePanel className="flex min-h-0 flex-1 flex-col p-0">
+            <ScrollArea className="min-h-0 flex-1" fill>
+              <div className="p-5">{children}</div>
+            </ScrollArea>
+          </FramePanel>
+        </Frame>
+      </div>
     </div>
   )
 }
