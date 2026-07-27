@@ -42,6 +42,7 @@ export const SIDEBAR_NAV_CONFIG: NavGroup[] = [
   {
     section: 'admin',
     items: [
+      { path: '/users', labelKey: 'nav.users', adminOnly: true },
       { path: '/audit-log', labelKey: 'nav.auditLog', adminOnly: true },
       { path: '/status-pages', labelKey: 'nav.statusPages', adminOnly: true },
       { path: '/settings/incident-roles', labelKey: 'nav.roleDefinitions', adminOnly: true },

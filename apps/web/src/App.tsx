@@ -17,6 +17,7 @@ import { ServicesPage } from './routes/services'
 import { SettingsPage } from './routes/settings'
 import { TeamPage } from './routes/team'
 import { TeamsPage } from './routes/teams'
+import { UsersPage } from './routes/users'
 import { NotFoundPage } from './routes/not-found'
 import { SetupPage } from './routes/setup'
 
@@ -171,6 +172,14 @@ export function App(): ReactElement {
         element={
           <ProtectedRoute>
             <AuditLogPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute>
+            <UsersPage />
           </ProtectedRoute>
         }
       />

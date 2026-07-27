@@ -21,6 +21,7 @@ describe('nav-config', () => {
     const memberGroups = filterNavGroupsForRole(false)
     const memberPaths = memberGroups.flatMap((group) => group.items.map((item) => item.path))
 
+    assert.ok(!memberPaths.includes('/users'))
     assert.ok(!memberPaths.includes('/audit-log'))
     assert.ok(!memberPaths.includes('/status-pages'))
     assert.ok(!memberPaths.includes('/settings/incident-roles'))
@@ -32,6 +33,7 @@ describe('nav-config', () => {
     const adminGroups = filterNavGroupsForRole(true)
     const adminPaths = adminGroups.flatMap((group) => group.items.map((item) => item.path))
 
+    assert.ok(adminPaths.includes('/users'))
     assert.ok(adminPaths.includes('/audit-log'))
     assert.ok(adminPaths.includes('/status-pages'))
     assert.ok(adminPaths.includes('/settings/incident-roles'))
