@@ -41,6 +41,9 @@ const (
 	ActionServiceCreated           = "service.created"
 	ActionServiceUpdated           = "service.updated"
 	ActionServiceDeleted           = "service.deleted"
+	ActionTeamCreated              = "team.created"
+	ActionTeamUpdated              = "team.updated"
+	ActionTeamDeleted              = "team.deleted"
 	ActionSlackWorkspaceConnected  = "slack_workspace.connected"
 	ActionScimUserProvisioned      = "scim.user_provisioned"
 	ActionScimUserDeprovisioned    = "scim.user_deprovisioned"
@@ -57,6 +60,7 @@ const (
 	targetTypeOverride          = "override"
 	targetTypeAlert             = "alert"
 	targetTypeService           = "service"
+	targetTypeTeam              = "team"
 )
 
 // RequestMeta captures HTTP request context stored in audit metadata.
@@ -408,6 +412,45 @@ func (r *Recorder) ServiceDeleted(ctx context.Context, q db.Querier, orgID, acto
 		Action:         ActionServiceDeleted,
 		TargetType:     pgtype.Text{String: targetTypeService, Valid: true},
 		TargetID:       pgtype.UUID{Bytes: serviceID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// TeamCreated records team creation.
+func (r *Recorder) TeamCreated(ctx context.Context, q db.Querier, orgID, actorID, teamID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionTeamCreated,
+		TargetType:     pgtype.Text{String: targetTypeTeam, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: teamID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// TeamUpdated records team updates.
+func (r *Recorder) TeamUpdated(ctx context.Context, q db.Querier, orgID, actorID, teamID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionTeamUpdated,
+		TargetType:     pgtype.Text{String: targetTypeTeam, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: teamID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// TeamDeleted records team deletion.
+func (r *Recorder) TeamDeleted(ctx context.Context, q db.Querier, orgID, actorID, teamID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionTeamDeleted,
+		TargetType:     pgtype.Text{String: targetTypeTeam, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: teamID, Valid: true},
 		Metadata:       []byte("{}"),
 	})
 }

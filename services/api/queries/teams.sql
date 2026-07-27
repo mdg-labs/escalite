@@ -29,3 +29,24 @@ FROM teams
 WHERE organization_id = $1
   AND name = $2
 LIMIT 1;
+
+-- name: UpdateTeam :one
+UPDATE teams
+SET name = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+RETURNING *;
+
+-- name: DeleteTeam :one
+DELETE FROM teams
+WHERE id = $1
+  AND organization_id = $2
+RETURNING *;
+
+-- name: CountServicesByTeamID :one
+SELECT COUNT(*)::bigint AS count
+FROM services
+WHERE team_id = $1
+  AND organization_id = $2
+  AND deleted_at IS NULL;

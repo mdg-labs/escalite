@@ -11,6 +11,26 @@ import (
 	"github.com/google/uuid"
 )
 
+const countServicesByTeamID = `-- name: CountServicesByTeamID :one
+SELECT COUNT(*)::bigint AS count
+FROM services
+WHERE team_id = $1
+  AND organization_id = $2
+  AND deleted_at IS NULL
+`
+
+type CountServicesByTeamIDParams struct {
+	TeamID         uuid.UUID `json:"team_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+func (q *Queries) CountServicesByTeamID(ctx context.Context, arg CountServicesByTeamIDParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countServicesByTeamID, arg.TeamID, arg.OrganizationID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createTeam = `-- name: CreateTeam :one
 INSERT INTO teams (
     id,
@@ -32,6 +52,31 @@ type CreateTeamParams struct {
 
 func (q *Queries) CreateTeam(ctx context.Context, arg CreateTeamParams) (Team, error) {
 	row := q.db.QueryRow(ctx, createTeam, arg.ID, arg.OrganizationID, arg.Name)
+	var i Team
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const deleteTeam = `-- name: DeleteTeam :one
+DELETE FROM teams
+WHERE id = $1
+  AND organization_id = $2
+RETURNING id, organization_id, name, created_at, updated_at
+`
+
+type DeleteTeamParams struct {
+	ID             uuid.UUID `json:"id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+func (q *Queries) DeleteTeam(ctx context.Context, arg DeleteTeamParams) (Team, error) {
+	row := q.db.QueryRow(ctx, deleteTeam, arg.ID, arg.OrganizationID)
 	var i Team
 	err := row.Scan(
 		&i.ID,
@@ -126,4 +171,32 @@ func (q *Queries) ListTeamsByOrganizationID(ctx context.Context, organizationID 
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateTeam = `-- name: UpdateTeam :one
+UPDATE teams
+SET name = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+RETURNING id, organization_id, name, created_at, updated_at
+`
+
+type UpdateTeamParams struct {
+	ID             uuid.UUID `json:"id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	Name           string    `json:"name"`
+}
+
+func (q *Queries) UpdateTeam(ctx context.Context, arg UpdateTeamParams) (Team, error) {
+	row := q.db.QueryRow(ctx, updateTeam, arg.ID, arg.OrganizationID, arg.Name)
+	var i Team
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

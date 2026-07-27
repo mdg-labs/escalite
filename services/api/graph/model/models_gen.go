@@ -160,6 +160,10 @@ type CreateStatusPageIncidentUpdateInput struct {
 	Status               IncidentStatus `json:"status"`
 }
 
+type CreateTeamInput struct {
+	Name string `json:"name"`
+}
+
 type EscalationPolicy struct {
 	ID             string            `json:"id"`
 	OrganizationID string            `json:"organizationId"`
@@ -687,6 +691,11 @@ type UpdateStatusPageIncidentStatusInput struct {
 	ID     string         `json:"id"`
 	Status IncidentStatus `json:"status"`
 	Body   *string        `json:"body,omitempty"`
+}
+
+type UpdateTeamInput struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type User struct {

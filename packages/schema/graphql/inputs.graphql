@@ -122,6 +122,15 @@ input RegisterMobileDeviceInput {
   deviceLabel: String
 }
 
+input CreateTeamInput {
+  name: String!
+}
+
+input UpdateTeamInput {
+  id: ID!
+  name: String!
+}
+
 input CreateServiceInput {
   teamId: ID!
   name: String!

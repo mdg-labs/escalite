@@ -237,6 +237,7 @@ type ComplexityRoot struct {
 		CreateService                  func(childComplexity int, input model.CreateServiceInput) int
 		CreateStatusPageComponent      func(childComplexity int, input model.CreateStatusPageComponentInput) int
 		CreateStatusPageIncidentUpdate func(childComplexity int, input model.CreateStatusPageIncidentUpdateInput) int
+		CreateTeam                     func(childComplexity int, input model.CreateTeamInput) int
 		DeleteEscalationPolicy         func(childComplexity int, id string) int
 		DeleteHeartbeatMonitor         func(childComplexity int, id string) int
 		DeleteIncidentRoleDefinition   func(childComplexity int, id string) int
@@ -247,6 +248,7 @@ type ComplexityRoot struct {
 		DeleteSchedule                 func(childComplexity int, id string) int
 		DeleteService                  func(childComplexity int, id string) int
 		DeleteStatusPageComponent      func(childComplexity int, id string) int
+		DeleteTeam                     func(childComplexity int, id string) int
 		Login                          func(childComplexity int, input model.LoginInput) int
 		PromoteAlertToIncident         func(childComplexity int, input model.PromoteAlertToIncidentInput) int
 		PublishIncidentToStatusPage    func(childComplexity int, input model.PublishIncidentToStatusPageInput) int
@@ -276,6 +278,7 @@ type ComplexityRoot struct {
 		UpdateService                  func(childComplexity int, input model.UpdateServiceInput) int
 		UpdateStatusPageComponent      func(childComplexity int, input model.UpdateStatusPageComponentInput) int
 		UpdateStatusPageIncidentStatus func(childComplexity int, input model.UpdateStatusPageIncidentStatusInput) int
+		UpdateTeam                     func(childComplexity int, input model.UpdateTeamInput) int
 	}
 
 	NotificationChannelDefinition struct {
@@ -601,6 +604,9 @@ type MutationResolver interface {
 	CreateIntegrationKey(ctx context.Context, input model.CreateIntegrationKeyInput) (*model.IntegrationKey, error)
 	RevokeIntegrationKey(ctx context.Context, id string) (*model.IntegrationKey, error)
 	RotateIntegrationKey(ctx context.Context, id string) (*model.IntegrationKey, error)
+	CreateTeam(ctx context.Context, input model.CreateTeamInput) (*model.Team, error)
+	UpdateTeam(ctx context.Context, input model.UpdateTeamInput) (*model.Team, error)
+	DeleteTeam(ctx context.Context, id string) (bool, error)
 	CreateService(ctx context.Context, input model.CreateServiceInput) (*model.Service, error)
 	UpdateService(ctx context.Context, input model.UpdateServiceInput) (*model.Service, error)
 	DeleteService(ctx context.Context, id string) (bool, error)
@@ -1620,6 +1626,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateStatusPageIncidentUpdate(childComplexity, args["input"].(model.CreateStatusPageIncidentUpdateInput)), true
+	case "Mutation.createTeam":
+		if e.ComplexityRoot.Mutation.CreateTeam == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createTeam_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateTeam(childComplexity, args["input"].(model.CreateTeamInput)), true
 	case "Mutation.deleteEscalationPolicy":
 		if e.ComplexityRoot.Mutation.DeleteEscalationPolicy == nil {
 			break
@@ -1730,6 +1747,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteStatusPageComponent(childComplexity, args["id"].(string)), true
+	case "Mutation.deleteTeam":
+		if e.ComplexityRoot.Mutation.DeleteTeam == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteTeam_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteTeam(childComplexity, args["id"].(string)), true
 	case "Mutation.login":
 		if e.ComplexityRoot.Mutation.Login == nil {
 			break
@@ -2044,6 +2072,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateStatusPageIncidentStatus(childComplexity, args["input"].(model.UpdateStatusPageIncidentStatusInput)), true
+	case "Mutation.updateTeam":
+		if e.ComplexityRoot.Mutation.UpdateTeam == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateTeam_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateTeam(childComplexity, args["input"].(model.UpdateTeamInput)), true
 
 	case "NotificationChannelDefinition.configSchema":
 		if e.ComplexityRoot.NotificationChannelDefinition.ConfigSchema == nil {
@@ -3282,6 +3321,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateServiceInput,
 		ec.unmarshalInputCreateStatusPageComponentInput,
 		ec.unmarshalInputCreateStatusPageIncidentUpdateInput,
+		ec.unmarshalInputCreateTeamInput,
 		ec.unmarshalInputEscalationStepInput,
 		ec.unmarshalInputEscalationStepTargetInput,
 		ec.unmarshalInputLoginInput,
@@ -3306,6 +3346,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateServiceInput,
 		ec.unmarshalInputUpdateStatusPageComponentInput,
 		ec.unmarshalInputUpdateStatusPageIncidentStatusInput,
+		ec.unmarshalInputUpdateTeamInput,
 	)
 	first := true
 
@@ -3388,7 +3429,7 @@ func newExecutionContext(
 	deferredResults chan graphql.DeferredResult,
 ) *executionContext {
 	return &executionContext{
-		ExecutionContextState: graphql.NewExecutionContextState(
+		ExecutionContextState: graphql.NewExecutionContextState[ResolverRoot, DirectiveRoot, ComplexityRoot](
 			opCtx,
 			(*graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot])(execSchema),
 			parsedSchema,
@@ -3585,6 +3626,15 @@ input RegisterMobileDeviceInput {
   expoPushToken: String!
   platform: String
   deviceLabel: String
+}
+
+input CreateTeamInput {
+  name: String!
+}
+
+input UpdateTeamInput {
+  id: ID!
+  name: String!
 }
 
 input CreateServiceInput {
@@ -4080,6 +4130,21 @@ type Mutation {
   Rotate an integration key: revoke the existing key and return a new one with the same config (org admin only).
   """
   rotateIntegrationKey(id: ID!): IntegrationKey!
+
+  """
+  Create a team (org admin only).
+  """
+  createTeam(input: CreateTeamInput!): Team!
+
+  """
+  Update a team (org admin only).
+  """
+  updateTeam(input: UpdateTeamInput!): Team!
+
+  """
+  Delete a team (org admin only). Rejected when the team has services.
+  """
+  deleteTeam(id: ID!): Boolean!
 
   """
   Create a service (org admin only).
@@ -5808,6 +5873,20 @@ func (ec *executionContext) field_Mutation_createStatusPageIncidentUpdate_args(c
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createTeam_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateTeamInput, error) {
+			return ec.unmarshalNCreateTeamInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateTeamInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteEscalationPolicy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -5935,6 +6014,20 @@ func (ec *executionContext) field_Mutation_deleteService_args(ctx context.Contex
 }
 
 func (ec *executionContext) field_Mutation_deleteStatusPageComponent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteTeam_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
@@ -6340,6 +6433,20 @@ func (ec *executionContext) field_Mutation_updateStatusPageIncidentStatus_args(c
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.UpdateStatusPageIncidentStatusInput, error) {
 			return ec.unmarshalNUpdateStatusPageIncidentStatusInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateStatusPageIncidentStatusInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateTeam_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateTeamInput, error) {
+			return ec.unmarshalNUpdateTeamInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateTeamInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -11256,6 +11363,138 @@ func (ec *executionContext) fieldContext_Mutation_rotateIntegrationKey(ctx conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_rotateIntegrationKey_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createTeam(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createTeam(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateTeam(ctx, fc.Args["input"].(model.CreateTeamInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Team) graphql.Marshaler {
+			return ec.marshalNTeam2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTeam(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createTeam(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Team(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createTeam_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateTeam(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateTeam(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateTeam(ctx, fc.Args["input"].(model.UpdateTeamInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Team) graphql.Marshaler {
+			return ec.marshalNTeam2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTeam(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateTeam(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Team(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateTeam_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteTeam(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteTeam(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteTeam(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteTeam(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteTeam_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -18795,6 +19034,36 @@ func (ec *executionContext) unmarshalInputCreateStatusPageIncidentUpdateInput(ct
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateTeamInput(ctx context.Context, obj any) (model.CreateTeamInput, error) {
+	var it model.CreateTeamInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputEscalationStepInput(ctx context.Context, obj any) (model.EscalationStepInput, error) {
 	var it model.EscalationStepInput
 	if obj == nil {
@@ -19906,6 +20175,43 @@ func (ec *executionContext) unmarshalInputUpdateStatusPageIncidentStatusInput(ct
 				return it, err
 			}
 			it.Body = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateTeamInput(ctx context.Context, obj any) (model.UpdateTeamInput, error) {
+	var it model.UpdateTeamInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
 		}
 	}
 	return it, nil
@@ -21653,6 +21959,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "rotateIntegrationKey":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_rotateIntegrationKey(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createTeam":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createTeam(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateTeam":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateTeam(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteTeam":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteTeam(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -24969,6 +25296,11 @@ func (ec *executionContext) unmarshalNCreateStatusPageIncidentUpdateInput2github
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateTeamInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐCreateTeamInput(ctx context.Context, v any) (model.CreateTeamInput, error) {
+	res, err := ec.unmarshalInputCreateTeamInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNDateTime2timeᚐTime(ctx context.Context, v any) (time.Time, error) {
 	res, err := graphql.UnmarshalTime(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -26021,6 +26353,10 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	return ret
 }
 
+func (ec *executionContext) marshalNTeam2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTeam(ctx context.Context, sel ast.SelectionSet, v model.Team) graphql.Marshaler {
+	return ec._Team(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNTeam2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐTeamᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Team) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -26134,6 +26470,11 @@ func (ec *executionContext) unmarshalNUpdateStatusPageComponentInput2githubᚗco
 
 func (ec *executionContext) unmarshalNUpdateStatusPageIncidentStatusInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateStatusPageIncidentStatusInput(ctx context.Context, v any) (model.UpdateStatusPageIncidentStatusInput, error) {
 	res, err := ec.unmarshalInputUpdateStatusPageIncidentStatusInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateTeamInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateTeamInput(ctx context.Context, v any) (model.UpdateTeamInput, error) {
+	res, err := ec.unmarshalInputUpdateTeamInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

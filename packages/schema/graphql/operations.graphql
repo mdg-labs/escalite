@@ -372,6 +372,21 @@ type Mutation {
   rotateIntegrationKey(id: ID!): IntegrationKey!
 
   """
+  Create a team (org admin only).
+  """
+  createTeam(input: CreateTeamInput!): Team!
+
+  """
+  Update a team (org admin only).
+  """
+  updateTeam(input: UpdateTeamInput!): Team!
+
+  """
+  Delete a team (org admin only). Rejected when the team has services.
+  """
+  deleteTeam(id: ID!): Boolean!
+
+  """
   Create a service (org admin only).
   """
   createService(input: CreateServiceInput!): Service!

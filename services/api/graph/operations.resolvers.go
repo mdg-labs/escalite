@@ -1959,6 +1959,130 @@ func (r *mutationResolver) RotateIntegrationKey(ctx context.Context, id string) 
 	return integrationKeyFromDB(newKey, &plaintext), nil
 }
 
+// CreateTeam is the resolver for the createTeam field.
+func (r *mutationResolver) CreateTeam(ctx context.Context, input model.CreateTeamInput) (*model.Team, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+
+	queries := db.New(r.pool)
+	if _, err := queries.GetTeamByName(ctx, db.GetTeamByNameParams{
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+	}); err == nil {
+		return nil, gqlerr.New(handlers.CodeValidation, "team name already exists")
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		r.logger.Error("check team name failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	teamID := uuid.Must(uuid.NewV7())
+	team, err := queries.CreateTeam(ctx, db.CreateTeamParams{
+		ID:             teamID,
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+	})
+	if err != nil {
+		r.logger.Error("create team failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.TeamCreated(ctx, queries, sc.User.OrganizationID, sc.User.ID, teamID)
+	return teamFromDB(team), nil
+}
+
+// UpdateTeam is the resolver for the updateTeam field.
+func (r *mutationResolver) UpdateTeam(ctx context.Context, input model.UpdateTeamInput) (*model.Team, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.New(handlers.CodeValidation, "name is required")
+	}
+
+	teamID, err := parseUUIDField(input.ID, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	existing, err := queries.GetTeamByName(ctx, db.GetTeamByNameParams{
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+	})
+	if err == nil && existing.ID != teamID {
+		return nil, gqlerr.New(handlers.CodeValidation, "team name already exists")
+	} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		r.logger.Error("check team name failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	team, err := queries.UpdateTeam(ctx, db.UpdateTeamParams{
+		ID:             teamID,
+		OrganizationID: sc.User.OrganizationID,
+		Name:           name,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gqlerr.New(handlers.CodeNotFound, "team not found")
+		}
+		r.logger.Error("update team failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.TeamUpdated(ctx, queries, sc.User.OrganizationID, sc.User.ID, teamID)
+	return teamFromDB(team), nil
+}
+
+// DeleteTeam is the resolver for the deleteTeam field.
+func (r *mutationResolver) DeleteTeam(ctx context.Context, id string) (bool, error) {
+	sc, err := requireAdminSession(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	teamID, err := parseUUIDField(id, "id")
+	if err != nil {
+		return false, err
+	}
+
+	queries := db.New(r.pool)
+	count, err := queries.CountServicesByTeamID(ctx, db.CountServicesByTeamIDParams{
+		TeamID:         teamID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("count team services failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	if count > 0 {
+		return false, gqlerr.New(handlers.CodeValidation, "team has services")
+	}
+
+	if _, err := queries.DeleteTeam(ctx, db.DeleteTeamParams{
+		ID:             teamID,
+		OrganizationID: sc.User.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, gqlerr.New(handlers.CodeNotFound, "team not found")
+		}
+		r.logger.Error("delete team failed", "error", err)
+		return false, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	r.audit.TeamDeleted(ctx, queries, sc.User.OrganizationID, sc.User.ID, teamID)
+	return true, nil
+}
+
 // CreateService is the resolver for the createService field.
 func (r *mutationResolver) CreateService(ctx context.Context, input model.CreateServiceInput) (*model.Service, error) {
 	sc, err := requireAdminSession(ctx)

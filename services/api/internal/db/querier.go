@@ -24,6 +24,7 @@ type Querier interface {
 	CountNotificationAttemptsByAlertID(ctx context.Context, arg CountNotificationAttemptsByAlertIDParams) (int64, error)
 	CountOrganizations(ctx context.Context) (int64, error)
 	CountRecentOpenAlertsByService(ctx context.Context, arg CountRecentOpenAlertsByServiceParams) (int32, error)
+	CountServicesByTeamID(ctx context.Context, arg CountServicesByTeamIDParams) (int64, error)
 	CountUsers(ctx context.Context) (int64, error)
 	CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error)
 	CreateAuditEvent(ctx context.Context, arg CreateAuditEventParams) (AuditEvent, error)
@@ -69,6 +70,7 @@ type Querier interface {
 	DeleteScimGroup(ctx context.Context, arg DeleteScimGroupParams) error
 	DeleteSession(ctx context.Context, arg DeleteSessionParams) error
 	DeleteStatusPageComponent(ctx context.Context, arg DeleteStatusPageComponentParams) error
+	DeleteTeam(ctx context.Context, arg DeleteTeamParams) (Team, error)
 	DeleteTeamMembership(ctx context.Context, arg DeleteTeamMembershipParams) error
 	DeleteUserNotificationRule(ctx context.Context, arg DeleteUserNotificationRuleParams) error
 	DeprovisionUser(ctx context.Context, arg DeprovisionUserParams) (User, error)
@@ -211,6 +213,7 @@ type Querier interface {
 	UpdateStatusPage(ctx context.Context, arg UpdateStatusPageParams) (StatusPage, error)
 	UpdateStatusPageComponent(ctx context.Context, arg UpdateStatusPageComponentParams) (StatusPageComponent, error)
 	UpdateStatusPageIncidentStatus(ctx context.Context, arg UpdateStatusPageIncidentStatusParams) (StatusPageIncident, error)
+	UpdateTeam(ctx context.Context, arg UpdateTeamParams) (Team, error)
 	UpsertMobileDevice(ctx context.Context, arg UpsertMobileDeviceParams) (MobileDevice, error)
 	UpsertOrganizationAnalyticsSettings(ctx context.Context, arg UpsertOrganizationAnalyticsSettingsParams) (OrganizationAnalyticsSetting, error)
 	UpsertOrganizationSamlSettings(ctx context.Context, arg UpsertOrganizationSamlSettingsParams) (OrganizationSamlSetting, error)
