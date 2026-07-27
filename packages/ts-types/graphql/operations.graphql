@@ -793,3 +793,19 @@ mutation SaveNotificationRule($input: SaveNotificationRuleInput!) {
 mutation DeleteNotificationRule($priority: AlertPriority!) {
   deleteNotificationRule(priority: $priority)
 }
+
+mutation SnoozeAlert($id: ID!, $durationMinutes: Int!) {
+  snoozeAlert(id: $id, durationMinutes: $durationMinutes) {
+    ...AlertFields
+  }
+}
+
+mutation ReEscalateAlert($id: ID!) {
+  reEscalateAlert(id: $id) {
+    ...AlertFields
+  }
+}
+
+mutation DeleteEscalationPolicy($id: ID!) {
+  deleteEscalationPolicy(id: $id)
+}
