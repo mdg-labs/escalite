@@ -137,6 +137,10 @@ type SetupPayload {
   user: User!
 }
 
+type PasswordResetPayload {
+  message: String!
+}
+
 type Alert {
   id: ID!
   organizationId: ID!

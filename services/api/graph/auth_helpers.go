@@ -2,11 +2,14 @@ package graph
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 
 	"github.com/mdg-labs/escalite/services/api/internal/audit"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
+	"github.com/mdg-labs/escalite/services/api/internal/gqlerr"
+	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 )
 
 const (
@@ -32,4 +35,12 @@ func (r *mutationResolver) recordFailedLogin(
 		}
 	}
 	r.audit.LoginFailed(ctx, queries, orgID, targetUserID, meta)
+}
+
+func passwordResetGraphQLError(err error) error {
+	var resetErr *handlers.PasswordResetError
+	if errors.As(err, &resetErr) {
+		return gqlerr.New(resetErr.Code, resetErr.Message)
+	}
+	return gqlerr.New(handlers.CodeInternal, "internal error")
 }

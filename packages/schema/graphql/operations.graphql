@@ -218,6 +218,16 @@ type Mutation {
   switchOrganization(organizationId: ID!): LoginPayload!
 
   """
+  Request a password reset email. Returns the same payload whether or not the email exists.
+  """
+  requestPasswordReset(input: RequestPasswordResetInput!): PasswordResetPayload!
+
+  """
+  Set a new password using a single-use reset token.
+  """
+  resetPassword(input: ResetPasswordInput!): Boolean!
+
+  """
   Create a heartbeat monitor for a service (org admin only).
   """
   createHeartbeatMonitor(input: CreateHeartbeatMonitorInput!): HeartbeatMonitor!

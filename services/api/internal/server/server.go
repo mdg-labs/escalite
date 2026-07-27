@@ -260,6 +260,8 @@ func New(deps Dependencies) http.Handler {
 			if deps.SlackOAuth != nil {
 				graphqlOpts.SlackOAuthInstallURL = SlackOAuthInstallURL(deps.PublicURL)
 			}
+			graphqlOpts.Mail = mail
+			graphqlOpts.PasswordReset = resetCfg
 			r.Handle("/graphql", graphql.NewHandler(deps.Pool, deps.Logger, deps.Jobs, deps.Secrets, deps.Realtime, graphqlOpts))
 		})
 	}

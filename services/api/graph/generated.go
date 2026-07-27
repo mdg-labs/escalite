@@ -256,6 +256,8 @@ type ComplexityRoot struct {
 		ReEscalateAlert                func(childComplexity int, id string) int
 		RegisterMobileDevice           func(childComplexity int, input model.RegisterMobileDeviceInput) int
 		RemoveTeamMember               func(childComplexity int, teamID string, userID string) int
+		RequestPasswordReset           func(childComplexity int, input model.RequestPasswordResetInput) int
+		ResetPassword                  func(childComplexity int, input model.ResetPasswordInput) int
 		RevokeIntegrationKey           func(childComplexity int, id string) int
 		RevokeMobileDevice             func(childComplexity int, id string) int
 		RotateIntegrationKey           func(childComplexity int, id string) int
@@ -343,6 +345,10 @@ type ComplexityRoot struct {
 		StartsAt         func(childComplexity int) int
 		UpdatedAt        func(childComplexity int) int
 		UserID           func(childComplexity int) int
+	}
+
+	PasswordResetPayload struct {
+		Message func(childComplexity int) int
 	}
 
 	Query struct {
@@ -592,6 +598,8 @@ type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (*model.LoginPayload, error)
 	Setup(ctx context.Context, input model.SetupInput) (*model.SetupPayload, error)
 	SwitchOrganization(ctx context.Context, organizationID string) (*model.LoginPayload, error)
+	RequestPasswordReset(ctx context.Context, input model.RequestPasswordResetInput) (*model.PasswordResetPayload, error)
+	ResetPassword(ctx context.Context, input model.ResetPasswordInput) (bool, error)
 	CreateHeartbeatMonitor(ctx context.Context, input model.CreateHeartbeatMonitorInput) (*model.HeartbeatMonitor, error)
 	UpdateHeartbeatMonitor(ctx context.Context, input model.UpdateHeartbeatMonitorInput) (*model.HeartbeatMonitor, error)
 	DeleteHeartbeatMonitor(ctx context.Context, id string) (bool, error)
@@ -1859,6 +1867,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RemoveTeamMember(childComplexity, args["teamId"].(string), args["userId"].(string)), true
+	case "Mutation.requestPasswordReset":
+		if e.ComplexityRoot.Mutation.RequestPasswordReset == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestPasswordReset_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RequestPasswordReset(childComplexity, args["input"].(model.RequestPasswordResetInput)), true
+	case "Mutation.resetPassword":
+		if e.ComplexityRoot.Mutation.ResetPassword == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_resetPassword_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.ResetPassword(childComplexity, args["input"].(model.ResetPasswordInput)), true
 	case "Mutation.revokeIntegrationKey":
 		if e.ComplexityRoot.Mutation.RevokeIntegrationKey == nil {
 			break
@@ -2353,6 +2383,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Override.UserID(childComplexity), true
+
+	case "PasswordResetPayload.message":
+		if e.ComplexityRoot.PasswordResetPayload.Message == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PasswordResetPayload.Message(childComplexity), true
 
 	case "Query.alert":
 		if e.ComplexityRoot.Query.Alert == nil {
@@ -3459,6 +3496,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPromoteAlertToIncidentInput,
 		ec.unmarshalInputPublishIncidentToStatusPageInput,
 		ec.unmarshalInputRegisterMobileDeviceInput,
+		ec.unmarshalInputRequestPasswordResetInput,
+		ec.unmarshalInputResetPasswordInput,
 		ec.unmarshalInputSaveAnalyticsSettingsInput,
 		ec.unmarshalInputSaveNotificationRuleInput,
 		ec.unmarshalInputSaveSamlSettingsInput,
@@ -3643,6 +3682,15 @@ enum StatusPageComponentStatus {
 input SetupInput {
   organizationName: String!
   email: String!
+  password: String!
+}
+
+input RequestPasswordResetInput {
+  email: String!
+}
+
+input ResetPasswordInput {
+  token: String!
   password: String!
 }
 
@@ -4113,6 +4161,16 @@ type Mutation {
   switchOrganization(organizationId: ID!): LoginPayload!
 
   """
+  Request a password reset email. Returns the same payload whether or not the email exists.
+  """
+  requestPasswordReset(input: RequestPasswordResetInput!): PasswordResetPayload!
+
+  """
+  Set a new password using a single-use reset token.
+  """
+  resetPassword(input: ResetPasswordInput!): Boolean!
+
+  """
   Create a heartbeat monitor for a service (org admin only).
   """
   createHeartbeatMonitor(input: CreateHeartbeatMonitorInput!): HeartbeatMonitor!
@@ -4559,6 +4617,10 @@ type LoginPayload {
 type SetupPayload {
   organization: Organization!
   user: User!
+}
+
+type PasswordResetPayload {
+  message: String!
 }
 
 type Alert {
@@ -5381,6 +5443,14 @@ func (ec *executionContext) childFields_Override(ctx context.Context, field grap
 		return ec.fieldContext_Override_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Override", field.Name)
+}
+
+func (ec *executionContext) childFields_PasswordResetPayload(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "message":
+		return ec.fieldContext_PasswordResetPayload_message(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type PasswordResetPayload", field.Name)
 }
 
 func (ec *executionContext) childFields_RotateScimTokenPayload(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -6360,6 +6430,34 @@ func (ec *executionContext) field_Mutation_removeTeamMember_args(ctx context.Con
 		return nil, err
 	}
 	args["userId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestPasswordReset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.RequestPasswordResetInput, error) {
+			return ec.unmarshalNRequestPasswordResetInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRequestPasswordResetInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_resetPassword_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.ResetPasswordInput, error) {
+			return ec.unmarshalNResetPasswordInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐResetPasswordInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -10253,6 +10351,94 @@ func (ec *executionContext) fieldContext_Mutation_switchOrganization(ctx context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_requestPasswordReset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_requestPasswordReset(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RequestPasswordReset(ctx, fc.Args["input"].(model.RequestPasswordResetInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.PasswordResetPayload) graphql.Marshaler {
+			return ec.marshalNPasswordResetPayload2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐPasswordResetPayload(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_requestPasswordReset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_PasswordResetPayload(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_requestPasswordReset_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_resetPassword(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_resetPassword(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().ResetPassword(ctx, fc.Args["input"].(model.ResetPasswordInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_resetPassword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_resetPassword_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createHeartbeatMonitor(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -13600,6 +13786,29 @@ func (ec *executionContext) _Override_updatedAt(ctx context.Context, field graph
 }
 func (ec *executionContext) fieldContext_Override_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Override", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _PasswordResetPayload_message(ctx context.Context, field graphql.CollectedField, obj *model.PasswordResetPayload) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PasswordResetPayload_message(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Message, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PasswordResetPayload_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PasswordResetPayload", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -20085,6 +20294,73 @@ func (ec *executionContext) unmarshalInputRegisterMobileDeviceInput(ctx context.
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputRequestPasswordResetInput(ctx context.Context, obj any) (model.RequestPasswordResetInput, error) {
+	var it model.RequestPasswordResetInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"email"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "email":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Email = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputResetPasswordInput(ctx context.Context, obj any) (model.ResetPasswordInput, error) {
+	var it model.ResetPasswordInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"token", "password"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "token":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("token"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Token = data
+		case "password":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Password = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSaveAnalyticsSettingsInput(ctx context.Context, obj any) (model.SaveAnalyticsSettingsInput, error) {
 	var it model.SaveAnalyticsSettingsInput
 	if obj == nil {
@@ -22464,6 +22740,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "requestPasswordReset":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_requestPasswordReset(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "resetPassword":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_resetPassword(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createHeartbeatMonitor":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createHeartbeatMonitor(ctx, field)
@@ -23334,6 +23624,44 @@ func (ec *executionContext) _Override(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Override_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var passwordResetPayloadImplementors = []string{"PasswordResetPayload"}
+
+func (ec *executionContext) _PasswordResetPayload(ctx context.Context, sel ast.SelectionSet, obj *model.PasswordResetPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, passwordResetPayloadImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PasswordResetPayload")
+		case "message":
+			out.Values[i] = ec._PasswordResetPayload_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -26862,6 +27190,20 @@ func (ec *executionContext) marshalNOverride2ᚖgithubᚗcomᚋmdgᚑlabsᚋesca
 	return ec._Override(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNPasswordResetPayload2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐPasswordResetPayload(ctx context.Context, sel ast.SelectionSet, v model.PasswordResetPayload) graphql.Marshaler {
+	return ec._PasswordResetPayload(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPasswordResetPayload2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐPasswordResetPayload(ctx context.Context, sel ast.SelectionSet, v *model.PasswordResetPayload) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PasswordResetPayload(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNPromoteAlertToIncidentInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐPromoteAlertToIncidentInput(ctx context.Context, v any) (model.PromoteAlertToIncidentInput, error) {
 	res, err := ec.unmarshalInputPromoteAlertToIncidentInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -26874,6 +27216,16 @@ func (ec *executionContext) unmarshalNPublishIncidentToStatusPageInput2githubᚗ
 
 func (ec *executionContext) unmarshalNRegisterMobileDeviceInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRegisterMobileDeviceInput(ctx context.Context, v any) (model.RegisterMobileDeviceInput, error) {
 	res, err := ec.unmarshalInputRegisterMobileDeviceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNRequestPasswordResetInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐRequestPasswordResetInput(ctx context.Context, v any) (model.RequestPasswordResetInput, error) {
+	res, err := ec.unmarshalInputRequestPasswordResetInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNResetPasswordInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐResetPasswordInput(ctx context.Context, v any) (model.ResetPasswordInput, error) {
+	res, err := ec.unmarshalInputResetPasswordInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

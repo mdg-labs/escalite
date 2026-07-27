@@ -285,6 +285,29 @@ func (r *mutationResolver) SwitchOrganization(ctx context.Context, organizationI
 	return &model.LoginPayload{User: userFromDB(user)}, nil
 }
 
+// RequestPasswordReset is the resolver for the requestPasswordReset field.
+func (r *mutationResolver) RequestPasswordReset(ctx context.Context, input model.RequestPasswordResetInput) (*model.PasswordResetPayload, error) {
+	clientIP := ""
+	if req, ok := handlers.GraphQLRequestFromContext(ctx); ok {
+		clientIP = handlers.ClientIPFromRequest(req)
+	}
+
+	message, err := r.passwordResetService().RequestReset(ctx, input.Email, clientIP)
+	if err != nil {
+		return nil, passwordResetGraphQLError(err)
+	}
+
+	return &model.PasswordResetPayload{Message: message}, nil
+}
+
+// ResetPassword is the resolver for the resetPassword field.
+func (r *mutationResolver) ResetPassword(ctx context.Context, input model.ResetPasswordInput) (bool, error) {
+	if err := r.passwordResetService().ConfirmReset(ctx, input.Token, input.Password); err != nil {
+		return false, passwordResetGraphQLError(err)
+	}
+	return true, nil
+}
+
 // CreateHeartbeatMonitor is the resolver for the createHeartbeatMonitor field.
 func (r *mutationResolver) CreateHeartbeatMonitor(ctx context.Context, input model.CreateHeartbeatMonitorInput) (*model.HeartbeatMonitor, error) {
 	sc, err := requireAdminSession(ctx)

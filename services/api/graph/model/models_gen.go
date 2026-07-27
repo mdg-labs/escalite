@@ -399,6 +399,10 @@ type Override struct {
 	UpdatedAt        time.Time `json:"updatedAt"`
 }
 
+type PasswordResetPayload struct {
+	Message string `json:"message"`
+}
+
 type PromoteAlertToIncidentInput struct {
 	AlertID string `json:"alertId"`
 	// Attach to an existing incident instead of creating one.
@@ -421,6 +425,15 @@ type RegisterMobileDeviceInput struct {
 	ExpoPushToken string  `json:"expoPushToken"`
 	Platform      *string `json:"platform,omitempty"`
 	DeviceLabel   *string `json:"deviceLabel,omitempty"`
+}
+
+type RequestPasswordResetInput struct {
+	Email string `json:"email"`
+}
+
+type ResetPasswordInput struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
 }
 
 // Result of rotating the organization SCIM bearer token.

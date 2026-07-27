@@ -9,6 +9,15 @@ input SetupInput {
   password: String!
 }
 
+input RequestPasswordResetInput {
+  email: String!
+}
+
+input ResetPasswordInput {
+  token: String!
+  password: String!
+}
+
 input EscalationStepTargetInput {
   targetType: String!
   userId: ID

@@ -2,11 +2,15 @@ package graph
 
 import (
 	"log/slog"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/mdg-labs/escalite/services/api/internal/audit"
 	"github.com/mdg-labs/escalite/services/api/internal/crypto"
+	"github.com/mdg-labs/escalite/services/api/internal/db"
+	"github.com/mdg-labs/escalite/services/api/internal/email"
+	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/api/internal/queue"
 	"github.com/mdg-labs/escalite/services/api/internal/realtime"
 )
@@ -23,6 +27,8 @@ type Resolver struct {
 	oidcEnabled                      bool
 	slackOAuthInstallURL             string
 	slackIncidentChannelNameTemplate string
+	mail                             email.Sender
+	passwordReset                    handlers.PasswordResetConfig
 }
 
 // NewResolver returns a resolver wired with database and logging dependencies.
@@ -36,6 +42,8 @@ func NewResolver(
 	oidcEnabled bool,
 	slackOAuthInstallURL string,
 	slackIncidentChannelNameTemplate string,
+	mail email.Sender,
+	passwordReset handlers.PasswordResetConfig,
 ) *Resolver {
 	return &Resolver{
 		pool:                             pool,
@@ -48,5 +56,22 @@ func NewResolver(
 		oidcEnabled:                      oidcEnabled,
 		slackOAuthInstallURL:             slackOAuthInstallURL,
 		slackIncidentChannelNameTemplate: slackIncidentChannelNameTemplate,
+		mail:                             mail,
+		passwordReset:                    passwordReset,
 	}
+}
+
+func (r *Resolver) passwordResetService() *handlers.PasswordResetService {
+	cfg := r.passwordReset
+	if cfg.PublicURL == "" {
+		cfg.PublicURL = r.publicURL
+	}
+	if cfg.ResetTokenTTL <= 0 {
+		cfg.ResetTokenTTL = time.Hour
+	}
+	mail := r.mail
+	if mail == nil {
+		mail = email.NoopSender{}
+	}
+	return handlers.NewPasswordResetService(r.pool, db.New(r.pool), mail, cfg, r.logger)
 }

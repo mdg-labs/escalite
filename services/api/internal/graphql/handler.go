@@ -14,6 +14,7 @@ import (
 
 	"github.com/mdg-labs/escalite/services/api/graph"
 	"github.com/mdg-labs/escalite/services/api/internal/crypto"
+	"github.com/mdg-labs/escalite/services/api/internal/email"
 	"github.com/mdg-labs/escalite/services/api/internal/gqlerr"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 	"github.com/mdg-labs/escalite/services/api/internal/queue"
@@ -35,6 +36,8 @@ type Options struct {
 	OIDCEnabled                      bool
 	SlackOAuthInstallURL             string
 	SlackIncidentChannelNameTemplate string
+	Mail                             email.Sender
+	PasswordReset                    handlers.PasswordResetConfig
 }
 
 // NewHandler returns a gqlgen server configured with transport hardening and error codes.
@@ -65,6 +68,8 @@ func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, s
 			opts.OIDCEnabled,
 			opts.SlackOAuthInstallURL,
 			channelNameTemplate,
+			opts.Mail,
+			opts.PasswordReset,
 		),
 	}))
 
