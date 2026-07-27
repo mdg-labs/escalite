@@ -35,6 +35,8 @@ Beta builds are gated by **tag / pre-release existence**, not by whether `packag
 
 Do **not** set `NODE_ENV=production` in `eas.json` build profiles. EAS already bundles release builds in production mode; setting `NODE_ENV` during `pnpm install` skips devDependencies (Babel, Tamagui plugin, Husky) and breaks monorepo installs on the EAS builder.
 
+The repo root `.npmrc` hoists `expo-modules-core`, `expo-modules-autolinking`, and `babel-preset-expo` so Expo/RN native autolinking resolves `expo.modules.ExpoModulesPackage` during EAS Android builds (pnpm’s default isolated layout otherwise fails with `expo.core.ExpoModulesPackage` compile errors). `eas.json` pins the same pnpm version as root `package.json` (`9.15.4`).
+
 A security patch can bump only `VERSION` on `main` (new `v*` release, no mobile build). Likewise, a mobile-only fix can bump only `apps/mobile/package.json`.
 
 ## Workflows
