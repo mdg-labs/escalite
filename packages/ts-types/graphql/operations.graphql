@@ -739,3 +739,57 @@ mutation UpdateRotation($input: UpdateRotationInput!) {
 mutation DeleteRotation($id: ID!) {
   deleteRotation(id: $id)
 }
+
+fragment NotificationRuleStepFields on NotificationRuleStep {
+  channel
+  delayMinutes
+}
+
+fragment UserNotificationRuleFields on UserNotificationRule {
+  id
+  userId
+  priority
+  steps {
+    ...NotificationRuleStepFields
+  }
+  createdAt
+  updatedAt
+}
+
+fragment UserContactMethodFields on UserContactMethod {
+  id
+  userId
+  channel
+  config
+  createdAt
+  updatedAt
+}
+
+query NotificationChannels {
+  notificationChannels {
+    name
+    configSchema
+  }
+}
+
+query NotificationRules {
+  notificationRules {
+    ...UserNotificationRuleFields
+  }
+}
+
+mutation SaveUserContactMethod($input: SaveUserContactMethodInput!) {
+  saveUserContactMethod(input: $input) {
+    ...UserContactMethodFields
+  }
+}
+
+mutation SaveNotificationRule($input: SaveNotificationRuleInput!) {
+  saveNotificationRule(input: $input) {
+    ...UserNotificationRuleFields
+  }
+}
+
+mutation DeleteNotificationRule($priority: AlertPriority!) {
+  deleteNotificationRule(priority: $priority)
+}
