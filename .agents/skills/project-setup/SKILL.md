@@ -153,12 +153,14 @@ Rendered to `.agents/project/orchestrator/prompt-templates.md`. Orchestrator cop
 
 **Never remove or shorten:**
 
-- **PHASICAL SYNC — EXECUTION** / **VERIFIER** — STATUS SYNC TABLE + gate sections (`STEP 1`/`STEP 2` or `PASS PATH`/`FAIL PATH`, `FORBIDDEN`, `REQUIRED OUTPUT`)
+- **PHASICAL SYNC — EXECUTION** / **VERIFIER** — STATUS SYNC TABLE + gate sections
+- **PHASICAL COMMENT CONTRACT** — verifier comment timing + PASS/FAIL templates
 - **COMMIT CONTRACT — EXECUTION** — subject format, staging rules, handoff order
+- **Pre-dispatch gate** — required marker table
 
 **On update:** merge user CI command tweaks; preserve custom examples. Full refresh only when user confirms — PHASICAL/COMMIT blocks must stay intact.
 
-**Validate after render:** execution prompt template includes both PHASICAL SYNC and COMMIT CONTRACT; verifier template includes PHASICAL SYNC with Layer 3c3 reference.
+**Validate after render:** execution template has PHASICAL SYNC + COMMIT CONTRACT; verifier template has PHASICAL SYNC + PHASICAL COMMENT CONTRACT + SCOPED CI GATE. Rule `09-sub-agent-prompt-contract.mdc` installed.
 
 ---
 
@@ -174,6 +176,7 @@ Rendered to `.agents/project/orchestrator/prompt-templates.md`. Orchestrator cop
 | `06-local-ci-before-commit` | Scoped vs full CI gate | generated |
 | `07-phasical-commit-linking` | `[#N]` commit subjects | shared |
 | `08-dependabot-alerts` | Never dismiss | shared |
+| `09-sub-agent-prompt-contract` | Verbatim sub-agent prompt blocks | shared |
 | `13-no-amend-pushed` | No amend after push | shared |
 
 Optional **stack profile** adds glob rules (not in default manifest — user/project adds):

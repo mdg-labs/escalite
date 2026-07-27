@@ -173,9 +173,20 @@ Post via `create_task_comment` on each **leaf** taskId before transitioning to d
 ### Orchestrator role
 
 - Resolve Phasical taskIds + GitHub issue numbers; include in every execution + verifier prompt.
+- Run **pre-dispatch gate** (prompt-templates.md + `09-sub-agent-prompt-contract.mdc`) before every Task call.
 - Confirm sub-agents report sync in REQUIRED OUTPUT.
 - **Recovery only** if sub-agent skipped sync.
 - After verifier PASS: optionally **re-query** `get_task` to confirm `done` (Pipewatch pattern — orchestrator is source of truth).
+
+### Comment rules (precise)
+
+| Role | `create_task_comment` | When | Then `update_task_status` |
+| ---- | --------------------- | ---- | ------------------------- |
+| Execution | **Never** | — | — |
+| Verifier PASS | **Mandatory** — PASS template on each leaf | After all layers PASS, before done | `done` (parent if epic complete) |
+| Verifier FAIL | **Mandatory** — FAIL template on each leaf | Before rework transition | `in-progress` (not `to-do`) |
+
+Comment body templates: prompt-templates § **PHASICAL COMMENT CONTRACT** (copy into verifier prompts).
 
 ## PHASICAL SYNC blocks (orchestrator copies from prompt-templates.md)
 

@@ -8,7 +8,7 @@
 
 **Required block order** (orchestrator — do not reorder):
 
-1. Task ID, AC, doc refs, READ/WRITE scope, SESSION ID, lane/git context
+1. **Header** — SESSION-ID, TASK ID, lane/git context, verbatim AC, READ/WRITE scope (absolute paths)
 2. **PHASICAL SYNC — EXECUTION** (unless user opted out)
 3. **COMMIT CONTRACT — EXECUTION** (always — even when Phasical sync off)
 4. SESSION TIME TRACKING (when PHASICAL SYNC present)
@@ -17,9 +17,33 @@
 7. PLAN FILE GUARD (when plan file in WRITE SCOPE)
 8. WORKTREE ISOLATION (Lane P only)
 
-**Verifier prompts:** PHASICAL SYNC — VERIFIER + SCOPED CI GATE (+ PLAN FILE GUARD when applicable).
+## How to assemble a verifier prompt
 
-**Enforcement:** Missing PHASICAL SYNC or COMMIT CONTRACT → orchestrator must not dispatch. Sub-agent skipping either → verifier **FAIL** + orchestrator recovery.
+**Required block order** (orchestrator — do not reorder):
+
+1. **Header** — same SESSION-ID as execution, TASK ID, lane/git context, verbatim AC, READ/WRITE scope
+2. **PHASICAL SYNC — VERIFIER** (unless user opted out)
+3. **PHASICAL COMMENT CONTRACT** (when PHASICAL SYNC present)
+4. SCOPED CI GATE
+5. PLAN FILE GUARD (when plan file in verifier WRITE SCOPE)
+6. **Three-layer verification** — scope audit, Layer 2 (SCOPED CI GATE), Layer 3 checklist from orchestrator skill
+
+**Verifier WRITE SCOPE** typically: Phasical MCP only + plan file row (Lane S) or plan file read-only (Lane P branch verifier). Never label verifier `READ-ONLY` when Phasical sync is on.
+
+## Pre-dispatch gate (orchestrator — check before every Task call)
+
+Search the assembled prompt string for these **required markers**. If any are missing → **do not dispatch**; rebuild from blocks below.
+
+| Role | Required markers (all must be present) |
+| ---- | -------------------------------------- |
+| **Execution** | `PHASICAL STATUS SYNC — EXECUTION`, `━━━ STATUS SYNC TABLE`, `COMMIT CONTRACT — EXECUTION`, `SCOPED CI GATE`, `DB MIGRATIONS`, `SESSION-ID:`, filled `taskId:` + `githubIssueNumber:` |
+| **Verifier** | `PHASICAL STATUS SYNC — VERIFIER`, `━━━ STATUS SYNC TABLE`, `━━━ GATE: PASS PATH`, `━━━ GATE: FAIL PATH`, `PHASICAL COMMENT CONTRACT`, `SCOPED CI GATE`, `SESSION-ID:`, filled `taskId:` + `githubIssueNumber:` |
+
+**Forbidden** (prompt is invalid if present): `Phasical PASS`, `Phasical FAIL`, `leaf done`, `VERIFIER READ-ONLY`, `readonly: true` (verifier + Phasical on), one-line `CI --filter=…` without SCOPED CI GATE block.
+
+See `.cursor/rules/09-sub-agent-prompt-contract.mdc` for full contract.
+
+**Enforcement:** Missing required marker → orchestrator must not dispatch. Sub-agent skipping a mandatory block → verifier **FAIL** + orchestrator recovery.
 
 **STATUS SYNC blocks:** Every sub-agent prompt must include the **STATUS SYNC TABLE** from the PHASICAL SYNC block verbatim. Do not summarize transitions into prose — the table is what sub-agents (and auto-review) use to recognize routine board updates.
 
@@ -118,14 +142,9 @@ Staging:
   - NEVER git add . / git add -A / git commit --all
   - NEVER stage .agents/project/agent-memory/**
 
-DCO sign-off (MANDATORY):
-  - ALWAYS git commit -s (never plain git commit -m without -s)
-  - Verifier FAIL if Signed-off-by trailer is missing
-  - SSH signing: automatic when repo commit.gpgsign=true — do not pass -S manually
-
 Examples:
-  git commit -s -m "feat({EXAMPLE_SCOPE})[#42]: add vehicle expiry check"
-  git commit -s -m "fix({EXAMPLE_SCOPE})[#42]: correct timezone in expiry job"
+  feat({EXAMPLE_SCOPE})[#42]: add vehicle expiry check
+  fix({EXAMPLE_SCOPE})[#42]: correct timezone in expiry job
 
 Pre-commit:
   - Run SCOPED CI GATE (below) — failure → blocked, no commit
@@ -167,8 +186,8 @@ Do NOT transition to in-review — you are verifying work already handed off.
 | PASS | ALL layers PASS | In Review → Done | done | update_task_status | YES — mandatory PASS comment |
 | FAIL | ANY layer FAIL | In Review → In Progress | in-progress | update_task_status | YES — mandatory FAIL comment |
 
-Comments are REQUIRED on both PASS and FAIL before (or as part of) the status transition.
-Use create_task_comment — templates in phasical-sync.md § Verifier Done / FAIL comment.
+Comments are REQUIRED on both PASS and FAIL — **before** the matching status transition.
+Copy PHASICAL COMMENT CONTRACT block (below) into this prompt — use those templates for create_task_comment.
 
 ━━━ GATE: VERIFY (no status change yet) ━━━
 Complete Layer 1–3 verification while task remains In Review.
@@ -199,6 +218,50 @@ Strict order:
 ━━━ REQUIRED OUTPUT (end of run) ━━━
 Report per leaf task: taskId, githubIssueNumber, verification PASS|FAIL,
   comment posted ✓, final status (done | in-progress), parent epic status if applicable.
+```
+
+## PHASICAL COMMENT CONTRACT
+
+```text
+PHASICAL COMMENT CONTRACT (verifier only — copy with PHASICAL SYNC — VERIFIER):
+
+Who may comment:
+  - Verifier: YES — mandatory on PASS and FAIL
+  - Execution: NO — never call create_task_comment
+
+When to comment (strict):
+  | Outcome | Call create_task_comment | Then update_task_status |
+  |---------|--------------------------|-------------------------|
+  | PASS    | YES — PASS template below  | done (leaf; parent if epic complete) |
+  | FAIL    | YES — FAIL template below  | in-progress (rework — NOT to-do) |
+
+PASS comment — post to EACH leaf taskId BEFORE done:
+  Title line: ## Verified — <SESSION-ID>
+  Required sections:
+    - **Commit:** `<sha>` — <subject one line>  (from git log Layer 3c3)
+    - ### Summary — 1–3 bullets what shipped
+    - ### Scope — key paths touched
+    - ### Automated checks — lint/typecheck/task-specific: PASS|FAIL|n/a
+    - ### Operator follow-ups — items or "None"
+    - ### Deviations / open questions — items or "None"
+
+FAIL comment — post to EACH leaf taskId BEFORE in-progress:
+  Title line: ## Verification failed — <SESSION-ID>
+  Required sections:
+    - ### Layers failed — Layer 1/2/3 each PASS|FAIL with detail
+    - ### Fix hints — <file>:<line> — <expected per AC/doc>
+
+MCP: CallMcpTool user-phasical / create_task_comment
+  taskId: <leaf taskId>
+  content: <markdown body above>
+
+Comments mirror to GitHub via Phasical sync — write for operators reading the issue.
+
+━━━ FORBIDDEN ━━━
+- done or in-progress without create_task_comment first
+- Execution agent calling create_task_comment
+- Triage/investigation prose in verifier comments (use PASS/FAIL templates only)
+- Pre-deciding PASS/FAIL in orchestrator prompt (verifier decides after layers)
 ```
 
 ## SESSION TIME TRACKING

@@ -6,7 +6,7 @@
       "installPath": ".cursor/rules/02-orchestrator.mdc",
       "templatePath": "project-setup/templates/rules/shared/02-orchestrator.mdc",
       "managed": "shared",
-      "computedHash": "3385c650d81623b7b8b3994185f6227f841ee73d4eaed1bf6d208846530bc2ac"
+      "computedHash": "74725daa54e600bfa5a36792160f07e3faafbfd10d1b621f905ca6c37295dc76"
     },
     "07-phasical-commit-linking": {
       "installPath": ".cursor/rules/07-phasical-commit-linking.mdc",
@@ -19,6 +19,12 @@
       "templatePath": "project-setup/templates/rules/shared/08-dependabot-alerts.mdc",
       "managed": "shared",
       "computedHash": "96b1c1cb18bc46e37fd6378101417dcf295531a6d86956beecb23a950ab4042f"
+    },
+    "09-sub-agent-prompt-contract": {
+      "installPath": ".cursor/rules/09-sub-agent-prompt-contract.mdc",
+      "templatePath": "project-setup/templates/rules/shared/09-sub-agent-prompt-contract.mdc",
+      "managed": "shared",
+      "computedHash": "2bf422c9ca22c8a0c40493ff01dbfdd9b75055a9e5b94f090dfa9f6e4c47929a"
     },
     "13-no-amend-pushed": {
       "installPath": ".cursor/rules/13-no-amend-pushed.mdc",

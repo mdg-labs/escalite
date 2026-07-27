@@ -17,7 +17,7 @@
 7. PLAN FILE GUARD (when plan file in WRITE SCOPE)
 8. WORKTREE ISOLATION (Lane P only)
 
-**Verifier prompts:** PHASICAL SYNC — VERIFIER + **VERIFIER READ-ONLY GUARD** + SCOPED CI GATE (+ PLAN FILE GUARD when applicable). Never include `task schema:diff`, Docker, or migration-generation smoke in verifier prompts.
+**Verifier prompts:** PHASICAL SYNC — VERIFIER + **PHASICAL COMMENT CONTRACT** + **VERIFIER READ-ONLY GUARD** + SCOPED CI GATE (+ PLAN FILE GUARD when applicable). Never include `task schema:diff`, Docker, or migration-generation smoke in verifier prompts.
 
 **Enforcement:** Missing PHASICAL SYNC or COMMIT CONTRACT → orchestrator must not dispatch. Sub-agent skipping either → verifier **FAIL** + orchestrator recovery.
 
@@ -167,8 +167,8 @@ Do NOT transition to in-review — you are verifying work already handed off.
 | PASS | ALL layers PASS | In Review → Done | done | update_task_status | YES — mandatory PASS comment |
 | FAIL | ANY layer FAIL | In Review → In Progress | in-progress | update_task_status | YES — mandatory FAIL comment |
 
-Comments are REQUIRED on both PASS and FAIL before (or as part of) the status transition.
-Use create_task_comment — templates in phasical-sync.md § Verifier Done / FAIL comment.
+Comments are REQUIRED on both PASS and FAIL — **before** the matching status transition.
+Copy PHASICAL COMMENT CONTRACT block (below) into this prompt — use those templates for create_task_comment.
 
 ━━━ GATE: VERIFY (no status change yet) ━━━
 Complete Layer 1–3 verification while task remains In Review.
@@ -199,6 +199,50 @@ Strict order:
 ━━━ REQUIRED OUTPUT (end of run) ━━━
 Report per leaf task: taskId, githubIssueNumber, verification PASS|FAIL,
   comment posted ✓, final status (done | in-progress), parent epic status if applicable.
+```
+
+## PHASICAL COMMENT CONTRACT
+
+```text
+PHASICAL COMMENT CONTRACT (verifier only — copy with PHASICAL SYNC — VERIFIER):
+
+Who may comment:
+  - Verifier: YES — mandatory on PASS and FAIL
+  - Execution: NO — never call create_task_comment
+
+When to comment (strict):
+  | Outcome | Call create_task_comment | Then update_task_status |
+  |---------|--------------------------|-------------------------|
+  | PASS    | YES — PASS template below  | done (leaf; parent if epic complete) |
+  | FAIL    | YES — FAIL template below  | in-progress (rework — NOT ready) |
+
+PASS comment — post to EACH leaf taskId BEFORE done:
+  Title line: ## Verified — <SESSION-ID>
+  Required sections:
+    - **Commit:** `<sha>` — <subject one line>  (from git log Layer 3c3)
+    - ### Summary — 1–3 bullets what shipped
+    - ### Scope — key paths touched
+    - ### Automated checks — lint/typecheck/task-specific: PASS|FAIL|n/a
+    - ### Operator follow-ups — items or "None"
+    - ### Deviations / open questions — items or "None"
+
+FAIL comment — post to EACH leaf taskId BEFORE in-progress:
+  Title line: ## Verification failed — <SESSION-ID>
+  Required sections:
+    - ### Layers failed — Layer 1/2/3 each PASS|FAIL with detail
+    - ### Fix hints — <file>:<line> — <expected per AC/doc>
+
+MCP: CallMcpTool user-phasical / create_task_comment
+  taskId: <leaf taskId>
+  content: <markdown body above>
+
+Comments mirror to GitHub via Phasical sync — write for operators reading the issue.
+
+━━━ FORBIDDEN ━━━
+- done or in-progress without create_task_comment first
+- Execution agent calling create_task_comment
+- Triage/investigation prose in verifier comments (use PASS/FAIL templates only)
+- Pre-deciding PASS/FAIL in orchestrator prompt (verifier decides after layers)
 ```
 
 ## VERIFIER READ-ONLY GUARD

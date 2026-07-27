@@ -20,6 +20,12 @@
       "managed": "shared",
       "computedHash": ""
     },
+    "09-sub-agent-prompt-contract": {
+      "installPath": ".cursor/rules/09-sub-agent-prompt-contract.mdc",
+      "templatePath": "project-setup/templates/rules/shared/09-sub-agent-prompt-contract.mdc",
+      "managed": "shared",
+      "computedHash": ""
+    },
     "13-no-amend-pushed": {
       "installPath": ".cursor/rules/13-no-amend-pushed.mdc",
       "templatePath": "project-setup/templates/rules/shared/13-no-amend-pushed.mdc",

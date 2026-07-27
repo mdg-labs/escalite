@@ -14,6 +14,10 @@ This project is built **task-by-task** from the plan file (see `project.config.m
 
 Follow `.agents/skills/orchestrator/SKILL.md` (installed from `mdg-labs/skills`). Do not improvise.
 
+## Sub-agent prompts (orchestrator dispatch)
+
+Before every **Task** call: `.cursor/rules/09-sub-agent-prompt-contract.mdc` — copy verbatim blocks from `.agents/project/orchestrator/prompt-templates.md`. No shorthand. Verifier is not read-only when Phasical sync is on.
+
 ## Sub-agents (any Task dispatch)
 
 When waiting on a sub-agent: follow `.agents/skills/orchestrator/references/sub-agent-monitoring.md`.

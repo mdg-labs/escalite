@@ -5,7 +5,7 @@
       "source": "cosscom/coss",
       "sourceType": "github",
       "skillPath": "apps/ui/skills/coss/SKILL.md",
-      "computedHash": "b49756caf38599acce96b54faa58c887a9e4dcfc5433ea36b7ab469157e35d17"
+      "computedHash": "644d1ec076e884d7d01f114b25cb9ae9c99486423a8d7f46e99ee4c55e54a9fa"
     },
     "coss-particles": {
       "source": "cosscom/coss",
@@ -29,7 +29,7 @@
       "source": "mdg-labs/skills",
       "sourceType": "github",
       "skillPath": "orchestrator/SKILL.md",
-      "computedHash": "ac6a9751c081954ace3e5429f9fa2551e6a169301e4abd37a871b0e5fef4c9aa"
+      "computedHash": "16133146418149875777e08c0bade4a03bb6b756ce4037238799ed8de451fd7d"
     },
     "phasical-intake": {
       "source": "mdg-labs/skills",
@@ -47,7 +47,7 @@
       "source": "mdg-labs/skills",
       "sourceType": "github",
       "skillPath": "project-setup/SKILL.md",
-      "computedHash": "cc443e6810fd854562a9f806eea2d2e6300806c2ffd18c10755a4d543223d983"
+      "computedHash": "38a5ec0181c50bb2d2479dc1f590a746270151fe69d2d5861712981b3d9f065b"
     }
   }
 }

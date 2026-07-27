@@ -177,25 +177,31 @@ git log <base>..HEAD --grep='\[P6-T03\]'
 
 ## Dispatching sub-agents
 
+**Before every Task call:** run the **pre-dispatch gate** in `.agents/project/orchestrator/prompt-templates.md` and `.cursor/rules/09-sub-agent-prompt-contract.mdc`. Search the prompt for required markers. **Do not dispatch** if any marker is missing or forbidden shorthand is present.
+
 When building a prompt:
 
-1. **Task ID** — roadmap `P*-*` or GitHub `#N`
+1. **Header** — `SESSION-ID:`, task ID (roadmap `P*-*` or GitHub `#N`), lane/git context
 2. **Acceptance criteria** — verbatim bullets from plan row or Phasical description
 3. **Doc references** — plan Doc Ref or `§` citations (`.agents/project/orchestrator/doc-index.md`)
-4. Explicit READ / WRITE scope with absolute paths
-5. Session ID: `<TASK-ID>-<YYYYMMDD>-<4hex>` — same for execution + verifier
+4. **READ SCOPE** / **WRITE SCOPE** — absolute paths; verifier scope is Phasical MCP + authorized plan edits only
+5. Session ID: `<TASK-ID>-<YYYYMMDD>-<4hex>` — **same** for execution + verifier
 6. **Lane** (`S` or `P`) and git context (branch, worktree, `STAGING_BASE_SHA` for Lane P)
 7. **Epic context** — parent key, sibling deps, `CLOSE_PARENTS` when final child
-8. **PHASICAL SYNC block** — execution or verifier variant (never `done` in execution prompt) — **copy verbatim** from prompt-templates, including the **STATUS SYNC TABLE**; fill taskIds + `#N`
-9. **COMMIT CONTRACT block** — **mandatory on every execution prompt** (even when Phasical sync off)
-10. **SESSION TIME TRACKING** — when PHASICAL SYNC present (from prompt-templates.md)
-11. **SCOPED CI GATE** — mandatory in every execution and verifier prompt (from prompt-templates.md)
-12. **DB MIGRATIONS** — mandatory in every execution prompt (from prompt-templates.md)
-13. **PLAN FILE GUARD** — mandatory when plan file in WRITE SCOPE (SlugBase pattern)
+8. **PHASICAL SYNC block** — execution or verifier variant — **copy verbatim** from prompt-templates, including **STATUS SYNC TABLE**; fill taskIds + `#N`
+9. **PHASICAL COMMENT CONTRACT** — **mandatory on every verifier prompt** when Phasical sync on
+10. **COMMIT CONTRACT block** — **mandatory on every execution prompt** (even when Phasical sync off)
+11. **SESSION TIME TRACKING** — when PHASICAL SYNC present (from prompt-templates.md)
+12. **SCOPED CI GATE** — mandatory in every execution and verifier prompt (full block — not a one-line filter)
+13. **DB MIGRATIONS** — mandatory in every execution prompt (from prompt-templates.md)
+14. **PLAN FILE GUARD** — mandatory when plan file in WRITE SCOPE (SlugBase pattern)
+15. **WORKTREE ISOLATION** — Lane P execution only
 
-Use `.agents/project/orchestrator/prompt-templates.md`. Copy template blocks **verbatim** — do not summarize PHASICAL SYNC or COMMIT CONTRACT into prose. One prompt = one **leaf** task unless user requested batching or shared-file serialization.
+Use `.agents/project/orchestrator/prompt-templates.md`. Copy template blocks **verbatim** — do not summarize PHASICAL SYNC, COMMENT CONTRACT, or COMMIT CONTRACT into prose. One prompt = one **leaf** task unless user requested batching or shared-file serialization.
 
-**Do not dispatch** execution agents if PHASICAL SYNC (when enabled) or COMMIT CONTRACT blocks are missing from the prompt.
+**Do not dispatch** if pre-dispatch gate fails. Execution: missing PHASICAL SYNC (when enabled) or COMMIT CONTRACT. Verifier: missing PHASICAL SYNC, COMMENT CONTRACT, or SCOPED CI GATE block.
+
+**Never** pre-decide verification outcome in the prompt (`Phasical PASS`, `leaf done`, etc.). **Never** mark verifier `READ-ONLY` or `readonly: true` when Phasical sync requires MCP writes.
 
 ### Phasical parent epic batches
 
@@ -436,7 +442,10 @@ When `.agents/project/orchestrator/slack-session-end.md` exists, send **once** w
 - **Marking Done without `fixes #N` / `[#N]` in git history**
 - **Lane P without `best-of-n-runner`**
 - **Dispatching before batch plan** (unless user gave explicit single-task command)
-- **Verifier `readonly: true`** when Phasical sync requires MCP writes
+- **Verifier `readonly: true`** when Phasical sync requires MCP writes (see `09-sub-agent-prompt-contract.mdc`)
+- **Pre-deciding verification outcome** in sub-agent prompt (`Phasical PASS`, `leaf done`)
+- **Dispatching with shorthand prompts** — one-line Phasical/CI instead of verbatim template blocks
+- **Omitting PHASICAL COMMENT CONTRACT** from verifier prompts when Phasical sync is on
 - Committing session memory
 - Blanket `git add .` / `-A`
 - Pushing without user request
