@@ -1,39 +1,257 @@
 import type { ReactElement } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { useMeQuery } from '@escalite/ts-types'
+import { useClient } from 'urql'
+import {
+  AlertStatus,
+  OnCallNowDocument,
+  SchedulesDocument,
+  UserRole,
+  useAlertsQuery,
+  useMeQuery,
+  useOrganizationUsersQuery,
+  useTeamsQuery,
+  type OnCallNowQuery,
+  type SchedulesQuery,
+} from '@escalite/ts-types'
+import {
+  Frame,
+  FrameDescription,
+  FrameHeader,
+  FramePanel,
+  FrameTitle,
+} from '@escalite/ui'
+import { Metric } from '@escalite/ui/charts'
+import { OnCallWidget } from '@escalite/ui/domain/OnCallWidget'
+import type { OnCallWidgetLabels, OnCallWidgetSchedule, OnCallWidgetUser } from '@escalite/ui/domain/OnCallWidget'
+import { BellIcon } from 'lucide-react'
 
 import { AppShell } from '../components/app-shell'
+import { formatAlertTimestamp } from '../lib/alerts'
 import { t } from '../lib/i18n'
 
+function onCallWidgetLabels(): OnCallWidgetLabels {
+  return {
+    title: t('dashboard.onCall.title'),
+    loading: t('dashboard.onCall.loading'),
+    empty: t('dashboard.onCall.empty'),
+    layerLabel: (layer) => t('schedule.layer', { layer: String(layer) }),
+    primaryLayer: t('dashboard.onCall.primaryLayer'),
+    secondaryLayer: t('dashboard.onCall.secondaryLayer'),
+    computedAt: t('schedule.computedAt'),
+  }
+}
+
+function mapOnCallSchedules(
+  schedulesByTeam: Array<{
+    schedule: SchedulesQuery['schedules'][number]
+    onCall: NonNullable<OnCallNowQuery['onCallNow']>
+  }>,
+): OnCallWidgetSchedule[] {
+  return schedulesByTeam.map(({ schedule, onCall }) => {
+    const rotationNameById = new Map(
+      schedule.rotations.map((rotation) => [rotation.id, rotation.name]),
+    )
+
+    return {
+      id: schedule.id,
+      name: schedule.name,
+      computedAt: formatAlertTimestamp(onCall.computedAt),
+      layers: onCall.layers.map((layer) => ({
+        layer: layer.layer,
+        rotationId: layer.rotationId,
+        rotationName: rotationNameById.get(layer.rotationId),
+        userId: layer.userId,
+      })),
+    }
+  })
+}
+
 export function DashboardPage(): ReactElement {
-  const [{ data }] = useMeQuery({ requestPolicy: 'cache-first' })
-  const userEmail = data?.me?.email ?? ''
+  const client = useClient()
+  const onCallLabels = useMemo(() => onCallWidgetLabels(), [])
+
+  const [{ data: meData }] = useMeQuery({ requestPolicy: 'cache-first' })
+  const currentUser = meData?.me
+  const isAdmin = currentUser?.role === UserRole.Admin
+
+  const [{ data: alertsData, fetching: alertsFetching }] = useAlertsQuery({
+    variables: { limit: 500 },
+    requestPolicy: 'network-only',
+  })
+
+  const [{ data: teamsData }] = useTeamsQuery({
+    pause: !isAdmin,
+    requestPolicy: 'cache-first',
+  })
+
+  const [{ data: usersData }] = useOrganizationUsersQuery({
+    requestPolicy: 'cache-first',
+  })
+
+  const alertCounts = useMemo(() => {
+    const counts = {
+      triggered: 0,
+      acknowledged: 0,
+    }
+
+    for (const alert of alertsData?.alerts ?? []) {
+      if (alert.status === AlertStatus.Triggered) {
+        counts.triggered += 1
+      } else if (alert.status === AlertStatus.Acknowledged) {
+        counts.acknowledged += 1
+      }
+    }
+
+    return counts
+  }, [alertsData?.alerts])
+
+  const memberTeamIds = useMemo(() => {
+    if (!currentUser?.id) {
+      return []
+    }
+
+    const viewer = usersData?.organizationUsers.find((user) => user.id === currentUser.id)
+    return viewer?.teamMemberships.map((membership) => membership.teamId) ?? []
+  }, [currentUser?.id, usersData?.organizationUsers])
+
+  const teamIds = useMemo(() => {
+    if (isAdmin) {
+      return (teamsData?.teams ?? []).map((team) => team.id)
+    }
+    return memberTeamIds
+  }, [isAdmin, memberTeamIds, teamsData?.teams])
+
+  const onCallUsers = useMemo((): OnCallWidgetUser[] => {
+    return (usersData?.organizationUsers ?? []).map((user) => ({
+      id: user.id,
+      label: user.email,
+    }))
+  }, [usersData?.organizationUsers])
+
+  const [onCallSchedules, setOnCallSchedules] = useState<OnCallWidgetSchedule[]>([])
+  const [onCallLoading, setOnCallLoading] = useState(false)
+
+  useEffect(() => {
+    if (teamIds.length === 0) {
+      setOnCallSchedules([])
+      setOnCallLoading(false)
+      return
+    }
+
+    let cancelled = false
+
+    async function loadOnCall(): Promise<void> {
+      setOnCallLoading(true)
+      const loaded: Array<{
+        schedule: SchedulesQuery['schedules'][number]
+        onCall: NonNullable<OnCallNowQuery['onCallNow']>
+      }> = []
+
+      for (const teamId of teamIds) {
+        const schedulesResult = await client
+          .query(SchedulesDocument, { teamId }, { requestPolicy: 'network-only' })
+          .toPromise()
+
+        if (cancelled || schedulesResult.error || !schedulesResult.data?.schedules) {
+          continue
+        }
+
+        for (const schedule of schedulesResult.data.schedules) {
+          const onCallResult = await client
+            .query(OnCallNowDocument, { scheduleId: schedule.id }, { requestPolicy: 'network-only' })
+            .toPromise()
+
+          if (cancelled || onCallResult.error || !onCallResult.data?.onCallNow) {
+            continue
+          }
+
+          loaded.push({
+            schedule,
+            onCall: onCallResult.data.onCallNow,
+          })
+        }
+      }
+
+      if (!cancelled) {
+        setOnCallSchedules(mapOnCallSchedules(loaded))
+        setOnCallLoading(false)
+      }
+    }
+
+    void loadOnCall()
+
+    return () => {
+      cancelled = true
+    }
+  }, [client, teamIds])
 
   return (
     <AppShell title={t('nav.dashboard')}>
-      <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
-        <h1 className="text-xl font-semibold text-foreground">Welcome back</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Your on-call workspace shell is ready. Incident and alerting features arrive in later
-          phases.
-        </p>
-        {userEmail ? (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Signed in as <span className="font-medium text-foreground">{userEmail}</span>
-          </p>
-        ) : null}
-        <p className="mt-4 flex flex-wrap gap-4 text-sm">
-          <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/alerts">
-            View alerts
-          </Link>
-          <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/services">
-            Configure services
-          </Link>
-          <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/integrations">
-            Add an integration
-          </Link>
-        </p>
-      </section>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">{t('dashboard.title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t('dashboard.description')}</p>
+          {currentUser?.email ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t('dashboard.signedInAs', { email: currentUser.email })}
+            </p>
+          ) : null}
+        </div>
+
+        <section aria-labelledby="dashboard-open-alerts-heading" className="space-y-3">
+          <h2 className="text-sm font-medium text-foreground" id="dashboard-open-alerts-heading">
+            {t('dashboard.alerts.title')}
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Link
+              className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              to="/alerts"
+            >
+              <Frame className="transition-colors hover:bg-muted/30">
+                <FramePanel className="space-y-2">
+                  <FrameHeader className="px-0 py-0">
+                    <FrameTitle className="flex items-center gap-2 text-muted-foreground">
+                      <BellIcon aria-hidden className="size-4" />
+                      {t('dashboard.alerts.triggered')}
+                    </FrameTitle>
+                  </FrameHeader>
+                  <Metric>{alertsFetching ? '—' : String(alertCounts.triggered)}</Metric>
+                  <FrameDescription className="px-0">
+                    {t('dashboard.alerts.viewTriggered')}
+                  </FrameDescription>
+                </FramePanel>
+              </Frame>
+            </Link>
+            <Link
+              className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              to="/alerts"
+            >
+              <Frame className="transition-colors hover:bg-muted/30">
+                <FramePanel className="space-y-2">
+                  <FrameHeader className="px-0 py-0">
+                    <FrameTitle className="flex items-center gap-2 text-muted-foreground">
+                      <BellIcon aria-hidden className="size-4" />
+                      {t('dashboard.alerts.acknowledged')}
+                    </FrameTitle>
+                  </FrameHeader>
+                  <Metric>{alertsFetching ? '—' : String(alertCounts.acknowledged)}</Metric>
+                  <FrameDescription className="px-0">
+                    {t('dashboard.alerts.viewAcknowledged')}
+                  </FrameDescription>
+                </FramePanel>
+              </Frame>
+            </Link>
+          </div>
+        </section>
+
+        <OnCallWidget
+          labels={onCallLabels}
+          loading={onCallLoading}
+          schedules={onCallSchedules}
+          users={onCallUsers}
+        />
+      </div>
     </AppShell>
   )
 }

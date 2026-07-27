@@ -16,8 +16,9 @@ test.describe('first-admin bootstrap', () => {
     await page.getByRole('button', { name: 'Create organization' }).click()
 
     await expect(page).toHaveURL('/dashboard')
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible()
     await expect(page.getByText(`Signed in as ${e2eAdminEmail}`)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Open alerts', level: 2 })).toBeVisible()
 
     const logoutResponse = await page.request.post('/api/v1/logout')
     expect(logoutResponse.status()).toBe(204)
@@ -30,6 +31,7 @@ test.describe('first-admin bootstrap', () => {
     await page.getByRole('button', { name: 'Sign in' }).click()
 
     await expect(page).toHaveURL('/dashboard')
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible()
+    await expect(page.getByText('On call now')).toBeVisible()
   })
 })
