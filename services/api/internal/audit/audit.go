@@ -44,6 +44,7 @@ const (
 	ActionTeamCreated              = "team.created"
 	ActionTeamUpdated              = "team.updated"
 	ActionTeamDeleted              = "team.deleted"
+	ActionOrganizationUpdated      = "organization.updated"
 	ActionSlackWorkspaceConnected  = "slack_workspace.connected"
 	ActionScimUserProvisioned      = "scim.user_provisioned"
 	ActionScimUserDeprovisioned    = "scim.user_deprovisioned"
@@ -61,6 +62,7 @@ const (
 	targetTypeAlert             = "alert"
 	targetTypeService           = "service"
 	targetTypeTeam              = "team"
+	targetTypeOrganization      = "organization"
 )
 
 // RequestMeta captures HTTP request context stored in audit metadata.
@@ -438,6 +440,19 @@ func (r *Recorder) TeamUpdated(ctx context.Context, q db.Querier, orgID, actorID
 		Action:         ActionTeamUpdated,
 		TargetType:     pgtype.Text{String: targetTypeTeam, Valid: true},
 		TargetID:       pgtype.UUID{Bytes: teamID, Valid: true},
+		Metadata:       []byte("{}"),
+	})
+}
+
+// OrganizationUpdated records organization profile updates.
+func (r *Recorder) OrganizationUpdated(ctx context.Context, q db.Querier, orgID, actorID uuid.UUID) {
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionOrganizationUpdated,
+		TargetType:     pgtype.Text{String: targetTypeOrganization, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: orgID, Valid: true},
 		Metadata:       []byte("{}"),
 	})
 }

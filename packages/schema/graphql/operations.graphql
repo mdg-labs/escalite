@@ -503,4 +503,9 @@ type Mutation {
   Save organization analytics settings (org admin only).
   """
   saveAnalyticsSettings(input: SaveAnalyticsSettingsInput!): AnalyticsSettings!
+
+  """
+  Update the organization display name (org admin only).
+  """
+  updateOrganization(input: UpdateOrganizationInput!): Organization!
 }

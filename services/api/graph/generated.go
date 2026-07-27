@@ -275,6 +275,7 @@ type ComplexityRoot struct {
 		UpdateIncidentRoleDefinition   func(childComplexity int, input model.UpdateIncidentRoleDefinitionInput) int
 		UpdateIncidentStatus           func(childComplexity int, input model.UpdateIncidentStatusInput) int
 		UpdateMaintenanceWindow        func(childComplexity int, input model.UpdateMaintenanceWindowInput) int
+		UpdateOrganization             func(childComplexity int, input model.UpdateOrganizationInput) int
 		UpdateRotation                 func(childComplexity int, input model.UpdateRotationInput) int
 		UpdateSchedule                 func(childComplexity int, input model.UpdateScheduleInput) int
 		UpdateService                  func(childComplexity int, input model.UpdateServiceInput) int
@@ -648,6 +649,7 @@ type MutationResolver interface {
 	CreateStatusPageIncidentUpdate(ctx context.Context, input model.CreateStatusPageIncidentUpdateInput) (*model.StatusPageIncidentUpdate, error)
 	UpdateStatusPageIncidentStatus(ctx context.Context, input model.UpdateStatusPageIncidentStatusInput) (*model.StatusPageIncident, error)
 	SaveAnalyticsSettings(ctx context.Context, input model.SaveAnalyticsSettingsInput) (*model.AnalyticsSettings, error)
+	UpdateOrganization(ctx context.Context, input model.UpdateOrganizationInput) (*model.Organization, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
@@ -2061,6 +2063,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateMaintenanceWindow(childComplexity, args["input"].(model.UpdateMaintenanceWindowInput)), true
+	case "Mutation.updateOrganization":
+		if e.ComplexityRoot.Mutation.UpdateOrganization == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateOrganization_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateOrganization(childComplexity, args["input"].(model.UpdateOrganizationInput)), true
 	case "Mutation.updateRotation":
 		if e.ComplexityRoot.Mutation.UpdateRotation == nil {
 			break
@@ -3458,6 +3471,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateIncidentRoleDefinitionInput,
 		ec.unmarshalInputUpdateIncidentStatusInput,
 		ec.unmarshalInputUpdateMaintenanceWindowInput,
+		ec.unmarshalInputUpdateOrganizationInput,
 		ec.unmarshalInputUpdateRotationInput,
 		ec.unmarshalInputUpdateScheduleInput,
 		ec.unmarshalInputUpdateServiceInput,
@@ -3873,6 +3887,10 @@ input UpdateStatusPageIncidentStatusInput {
 
 input SaveAnalyticsSettingsInput {
   excludeMaintenanceWindowAlerts: Boolean!
+}
+
+input UpdateOrganizationInput {
+  name: String!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Subscription {
@@ -4380,6 +4398,11 @@ type Mutation {
   Save organization analytics settings (org admin only).
   """
   saveAnalyticsSettings(input: SaveAnalyticsSettingsInput!): AnalyticsSettings!
+
+  """
+  Update the organization display name (org admin only).
+  """
+  updateOrganization(input: UpdateOrganizationInput!): Organization!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/scalars.graphql", Input: `"""
@@ -6592,6 +6615,20 @@ func (ec *executionContext) field_Mutation_updateMaintenanceWindow_args(ctx cont
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.UpdateMaintenanceWindowInput, error) {
 			return ec.unmarshalNUpdateMaintenanceWindowInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateMaintenanceWindowInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateOrganization_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateOrganizationInput, error) {
+			return ec.unmarshalNUpdateOrganizationInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateOrganizationInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -12706,6 +12743,50 @@ func (ec *executionContext) fieldContext_Mutation_saveAnalyticsSettings(ctx cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_saveAnalyticsSettings_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateOrganization(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateOrganization(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateOrganization(ctx, fc.Args["input"].(model.UpdateOrganizationInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Organization) graphql.Marshaler {
+			return ec.marshalNOrganization2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganization(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateOrganization(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Organization(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateOrganization_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -20518,6 +20599,36 @@ func (ec *executionContext) unmarshalInputUpdateMaintenanceWindowInput(ctx conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateOrganizationInput(ctx context.Context, obj any) (model.UpdateOrganizationInput, error) {
+	var it model.UpdateOrganizationInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUpdateRotationInput(ctx context.Context, obj any) (model.UpdateRotationInput, error) {
 	var it model.UpdateRotationInput
 	if obj == nil {
@@ -22748,6 +22859,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "saveAnalyticsSettings":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveAnalyticsSettings(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateOrganization":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateOrganization(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -26648,6 +26766,10 @@ func (ec *executionContext) marshalNOnCallUpdatedEvent2ᚖgithubᚗcomᚋmdgᚑl
 	return ec._OnCallUpdatedEvent(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNOrganization2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganization(ctx context.Context, sel ast.SelectionSet, v model.Organization) graphql.Marshaler {
+	return ec._Organization(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNOrganization2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganization(ctx context.Context, sel ast.SelectionSet, v *model.Organization) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -27267,6 +27389,11 @@ func (ec *executionContext) unmarshalNUpdateIncidentStatusInput2githubᚗcomᚋm
 
 func (ec *executionContext) unmarshalNUpdateMaintenanceWindowInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateMaintenanceWindowInput(ctx context.Context, v any) (model.UpdateMaintenanceWindowInput, error) {
 	res, err := ec.unmarshalInputUpdateMaintenanceWindowInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateOrganizationInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateOrganizationInput(ctx context.Context, v any) (model.UpdateOrganizationInput, error) {
+	res, err := ec.unmarshalInputUpdateOrganizationInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

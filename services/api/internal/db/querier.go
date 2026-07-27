@@ -209,6 +209,7 @@ type Querier interface {
 	UpdateIncidentStatus(ctx context.Context, arg UpdateIncidentStatusParams) (Incident, error)
 	UpdateIncidentTicketURL(ctx context.Context, arg UpdateIncidentTicketURLParams) (Incident, error)
 	UpdateMaintenanceWindow(ctx context.Context, arg UpdateMaintenanceWindowParams) (MaintenanceWindow, error)
+	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Organization, error)
 	UpdateRotation(ctx context.Context, arg UpdateRotationParams) (Rotation, error)
 	UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Schedule, error)
 	UpdateScimGroupDisplayName(ctx context.Context, arg UpdateScimGroupDisplayNameParams) (ScimGroup, error)

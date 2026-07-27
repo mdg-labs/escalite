@@ -24,6 +24,13 @@ INSERT INTO organizations (
 )
 RETURNING *;
 
+-- name: UpdateOrganization :one
+UPDATE organizations
+SET name = $2,
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
+
 -- name: BootstrapOrganizationWithAdmin :one
 WITH new_org AS (
     INSERT INTO organizations (id, name)
