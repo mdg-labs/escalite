@@ -835,3 +835,105 @@ mutation DeleteIncidentRoleDefinition($id: ID!) {
 mutation UnassignIncidentRole($id: ID!) {
   unassignIncidentRole(id: $id)
 }
+
+fragment StatusPageIncidentUpdateFields on StatusPageIncidentUpdate {
+  id
+  body
+  status
+  createdAt
+}
+
+fragment StatusPageComponentFields on StatusPageComponent {
+  id
+  statusPageId
+  name
+  description
+  status
+  position
+  serviceId
+  createdAt
+  updatedAt
+}
+
+fragment StatusPageIncidentFields on StatusPageIncident {
+  id
+  statusPageId
+  incidentId
+  title
+  status
+  affectedComponentIds
+  updates {
+    ...StatusPageIncidentUpdateFields
+  }
+  resolvedAt
+  createdAt
+  updatedAt
+}
+
+fragment StatusPageFields on StatusPage {
+  id
+  organizationId
+  slug
+  title
+  enabled
+  frameAncestorsCsp
+  components {
+    ...StatusPageComponentFields
+  }
+  incidents {
+    ...StatusPageIncidentFields
+  }
+  subscriptions {
+    id
+    email
+    createdAt
+  }
+  createdAt
+  updatedAt
+}
+
+query StatusPage {
+  statusPage {
+    ...StatusPageFields
+  }
+}
+
+mutation SaveStatusPage($input: SaveStatusPageInput!) {
+  saveStatusPage(input: $input) {
+    ...StatusPageFields
+  }
+}
+
+mutation CreateStatusPageComponent($input: CreateStatusPageComponentInput!) {
+  createStatusPageComponent(input: $input) {
+    ...StatusPageComponentFields
+  }
+}
+
+mutation UpdateStatusPageComponent($input: UpdateStatusPageComponentInput!) {
+  updateStatusPageComponent(input: $input) {
+    ...StatusPageComponentFields
+  }
+}
+
+mutation DeleteStatusPageComponent($id: ID!) {
+  deleteStatusPageComponent(id: $id)
+}
+
+mutation PublishIncidentToStatusPage($input: PublishIncidentToStatusPageInput!) {
+  publishIncidentToStatusPage(input: $input) {
+    ...StatusPageIncidentFields
+  }
+}
+
+mutation CreateStatusPageIncidentUpdate($input: CreateStatusPageIncidentUpdateInput!) {
+  createStatusPageIncidentUpdate(input: $input) {
+    ...StatusPageIncidentUpdateFields
+  }
+}
+
+mutation UpdateStatusPageIncidentStatus($input: UpdateStatusPageIncidentStatusInput!) {
+  updateStatusPageIncidentStatus(input: $input) {
+    ...StatusPageIncidentFields
+  }
+}
