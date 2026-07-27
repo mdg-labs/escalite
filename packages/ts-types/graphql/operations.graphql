@@ -695,3 +695,47 @@ mutation UpdateHeartbeatMonitor($input: UpdateHeartbeatMonitorInput!) {
 mutation DeleteHeartbeatMonitor($id: ID!) {
   deleteHeartbeatMonitor(id: $id)
 }
+
+fragment RotationFields on Rotation {
+  id
+  scheduleId
+  organizationId
+  name
+  layer
+  rrule
+  participantIds
+  createdAt
+  updatedAt
+}
+
+mutation CreateSchedule($input: CreateScheduleInput!) {
+  createSchedule(input: $input) {
+    ...ScheduleFields
+  }
+}
+
+mutation UpdateSchedule($input: UpdateScheduleInput!) {
+  updateSchedule(input: $input) {
+    ...ScheduleFields
+  }
+}
+
+mutation DeleteSchedule($id: ID!) {
+  deleteSchedule(id: $id)
+}
+
+mutation CreateRotation($input: CreateRotationInput!) {
+  createRotation(input: $input) {
+    ...RotationFields
+  }
+}
+
+mutation UpdateRotation($input: UpdateRotationInput!) {
+  updateRotation(input: $input) {
+    ...RotationFields
+  }
+}
+
+mutation DeleteRotation($id: ID!) {
+  deleteRotation(id: $id)
+}
