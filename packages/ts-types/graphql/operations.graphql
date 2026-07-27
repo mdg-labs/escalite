@@ -937,3 +937,19 @@ mutation UpdateStatusPageIncidentStatus($input: UpdateStatusPageIncidentStatusIn
     ...StatusPageIncidentFields
   }
 }
+
+fragment AnalyticsSettingsFields on AnalyticsSettings {
+  excludeMaintenanceWindowAlerts
+}
+
+query AnalyticsSettings {
+  analyticsSettings {
+    ...AnalyticsSettingsFields
+  }
+}
+
+mutation SaveAnalyticsSettings($input: SaveAnalyticsSettingsInput!) {
+  saveAnalyticsSettings(input: $input) {
+    ...AnalyticsSettingsFields
+  }
+}
