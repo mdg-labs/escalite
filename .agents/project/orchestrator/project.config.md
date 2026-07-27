@@ -13,7 +13,9 @@
 | Production branch | `main` — agents must not push here |
 | Task branch (Lane P) | `orchestrator/<TASK-ID>` |
 | Worktree (Lane P) | `../escalite-worktrees/orchestrator-<TASK-ID>` |
-| Plan file | `docs/roadmap/ROADMAP.md` |
+| Plan file | `docs/frontend-refactor-plan.md` |
+| Plan file (machine) | `docs/frontend-refactor-plan.yaml` |
+| Archived MVP roadmap | Phasical + GitHub issues; see `docs/roadmap/README.md` |
 | Spec doc glob | `docs/specs/*.md` |
 
 ## Phasical
@@ -38,15 +40,12 @@
 | `phase-3` | Incident response |
 | `phase-4` | Integrations & importers |
 | `phase-5` | Status pages & polish |
+| `frontend-refactor` | Frontend operator console refactor (see `docs/frontend-refactor-plan.yaml`) |
 
 ## Area prefixes (titles)
 
-- `p0-` — Phase 0 (Foundations)
-- `p1-` — Phase 1 (Core alerting)
-- `p2-` — Phase 2 (Scheduling & notifications)
-- `p3-` — Phase 3 (Incident response)
-- `p4-` — Phase 4 (Integrations)
-- `p5-` — Phase 5 (Status pages)
+- `fe-` — Frontend refactor plan (`docs/frontend-refactor-plan.yaml`)
+- `p0-` … `p5-` — **Archived** MVP roadmap (Phasical/GitHub only; do not use for new work)
 
 ## Commit conventions
 

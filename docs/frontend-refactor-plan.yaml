@@ -1,0 +1,1376 @@
+version: 1
+project: escalite
+plan_id: frontend-refactor
+title: Frontend refactor — operator console & status pages
+source_docs:
+  - docs/frontend-gap-analysis.md
+  - docs/specs/README.md
+outline:
+  collection: Escalite
+  collection_id: 699e1fff-a593-4767-9f29-0a9a96bf48cc
+  instruction: |
+    Outline is the authoritative spec. Fetch the live document via Outline MCP (`fetch` with document id)
+    before implementing or reviewing behaviour. Files under `docs/specs/` are pointers only — not mirrors.
+  docs:
+    "02":
+      title: Core Domain & Features
+      pointer: docs/specs/02-core-domain-and-features.md
+      outline_id: 3aba6e39-b5eb-4e89-b444-fdd59c38215c
+    "05":
+      title: UI / Design System
+      pointer: docs/specs/05-ui-design-system.md
+      outline_id: 56839d7c-268d-4003-91c3-f25245a2e4af
+    "06":
+      title: Roadmap / MVP Phasing
+      pointer: docs/specs/06-roadmap-mvp-phasing.md
+      outline_id: 4b5b2710-5ceb-489a-9bc5-65e1033d9f0f
+    "07":
+      title: Security, AuthN/AuthZ & Hardening
+      pointer: docs/specs/07-security-and-auth.md
+      outline_id: f88f431b-874d-46cb-880d-3091734ca36c
+    "08":
+      title: Implementation Decisions & Conventions
+      pointer: docs/specs/08-implementation-decisions-and-conventions.md
+      outline_id: 19d87fc5-7bbd-45ba-be42-f40eeb253783
+epic_outline_refs:
+  fe-epic-shell: ["05"]
+  fe-epic-org-api: ["02", "07"]
+  fe-epic-codegen: ["08"]
+  fe-epic-org-ui: ["02", "05", "07"]
+  fe-epic-dashboard: ["02", "05"]
+  fe-epic-alerts: ["02", "05"]
+  fe-epic-escalation: ["02", "05"]
+  fe-epic-schedules: ["02", "05"]
+  fe-epic-services: ["02", "05"]
+  fe-epic-integrations: ["02", "05"]
+  fe-epic-notifications: ["02", "05"]
+  fe-epic-incidents: ["02", "05"]
+  fe-epic-status-admin: ["02", "05", "06"]
+  fe-epic-status-public: ["02", "05", "06"]
+  fe-epic-settings-analytics: ["02", "05", "07"]
+  fe-epic-polish: ["05"]
+  fe-epic-e2e: ["08"]
+epic_gap_sections:
+  fe-epic-shell: "Design system & UX polish — sidebar nav, breadcrumbs, 404"
+  fe-epic-org-api: "Teams & organization; Users & access; API matrix — missing GraphQL"
+  fe-epic-codegen: "API vs UI matrix — ops without frontend codegen"
+  fe-epic-org-ui: "Teams & organization; Users & access"
+  fe-epic-dashboard: "Dashboard — placeholder; onCallUpdated unused"
+  fe-epic-alerts: "Alerts ~60%"
+  fe-epic-escalation: "Escalation policies — partial / not product-ready"
+  fe-epic-schedules: "Schedules & on-call ~35%"
+  fe-epic-services: "Services ~70%"
+  fe-epic-integrations: "Integrations ~40%"
+  fe-epic-notifications: "Notifications ~10%"
+  fe-epic-incidents: "Incidents ~55%"
+  fe-epic-status-admin: "Status page admin 0%"
+  fe-epic-status-public: "Public status page gaps (email, unsubscribe, history)"
+  fe-epic-settings-analytics: "Settings & enterprise ~60%; Auth ~70%; Analytics ~50%"
+  fe-epic-polish: "Design system & UX polish"
+  fe-epic-e2e: "E2E beyond alert flow"
+phasical:
+  project_id: bkbnmftqdr54r9gcgrgtndbw
+  workspace_id: X3VbytvC7pKgazK2dAsOQIFtdGYRzdGH
+  api_base_url: https://phasical.mdg-labs.dev/api
+  epic_label: epic
+  plan_label: frontend-refactor
+  ready_status: ready
+import:
+  idempotency_marker: "**Plan ID: {task_id}**"
+  relation_types:
+    parent_child: subtask
+    dependency: blocks
+epics:
+  - id: fe-epic-shell
+    title: App shell — sidebar navigation
+    description: |
+      Replace the horizontal header nav with a dense COSS sidebar layout (desktop persistent,
+      mobile drawer). Centralize nav config, user menu (logout), breadcrumbs, and 404 handling.
+      Prerequisite for all new admin routes (teams, schedules index, status pages).
+    labels: [frontend-refactor, web]
+    suggested_order: 1
+    tasks:
+      - id: fe-shell-sidebar-layout
+        title: Replace header nav with sidebar app shell
+        scope: web
+        estimated_size: L
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: []
+        acceptance_criteria:
+          - Desktop shows persistent left sidebar with section groups (Operations, Configuration, Admin)
+          - Main content area uses Frame/ScrollArea per COSS p-frame-3
+          - Header nav removed from app-shell.tsx; all routes render inside new shell
+          - Org switcher remains accessible from sidebar footer or top bar
+          - Playwright smoke still passes login → dashboard
+        files:
+          - apps/web/src/components/app-shell.tsx
+          - apps/web/src/components/sidebar-nav.tsx
+          - packages/ui/primitives/scroll-area.tsx
+        tests:
+          - bash scripts/with-ci-env.sh pnpm turbo run lint typecheck test:unit --filter=@escalite/web
+          - apps/web/e2e/smoke.spec.ts
+        implementation_notes: |
+          Use COSS particles p-frame-3, p-drawer-11 (mobile), p-breadcrumb-3. Sidebar nav items
+          must be data-driven from a single config array (path, i18n key, adminOnly flag).
+          Dark mode default on html element per spec 05.
+
+      - id: fe-shell-sidebar-mobile-drawer
+        title: Mobile sidebar drawer for navigation
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-shell-sidebar-layout]
+        acceptance_criteria:
+          - Viewports below md use hamburger → left Drawer (p-drawer-11) for nav
+          - Drawer closes on route change
+          - Focus trap and escape key dismiss drawer
+        files:
+          - apps/web/src/components/sidebar-nav.tsx
+          - packages/ui/primitives/drawer.tsx
+        tests:
+          - apps/web/e2e/smoke.spec.ts (optional mobile viewport)
+
+      - id: fe-shell-nav-config-routes
+        title: Centralize sidebar nav config and register new routes
+        scope: web
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-shell-sidebar-layout]
+        acceptance_criteria:
+          - nav-config.ts defines all sidebar entries including placeholders for Teams, Schedules, Status pages
+          - Admin-only items hidden for non-admin (audit log, status page admin, role definitions)
+          - Active route highlighted; nested routes highlight parent section
+        files:
+          - apps/web/src/lib/nav-config.ts
+          - apps/web/src/components/sidebar-nav.tsx
+        tests:
+          - Unit test for nav-config admin filtering
+
+      - id: fe-shell-user-menu-logout
+        title: Add user menu with logout action
+        scope: web
+        estimated_size: S
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-shell-sidebar-layout]
+        acceptance_criteria:
+          - Sidebar footer shows signed-in email and logout control
+          - Logout clears session and redirects to /login
+          - Logout mutation or REST endpoint wired (match existing API pattern)
+        files:
+          - apps/web/src/components/user-menu.tsx
+          - apps/web/src/components/app-shell.tsx
+        tests:
+          - Manual or e2e logout flow
+
+      - id: fe-shell-breadcrumbs
+        title: Breadcrumbs on nested configuration screens
+        scope: web
+        estimated_size: S
+        priority: low
+        labels: [frontend-refactor, web]
+        depends_on: [fe-shell-sidebar-layout]
+        acceptance_criteria:
+          - Service detail, schedule detail, escalation editor show p-breadcrumb-3 trail
+          - Breadcrumb labels use i18n keys, not raw UUIDs
+        files:
+          - apps/web/src/components/page-breadcrumbs.tsx
+          - apps/web/src/routes/service.tsx
+          - apps/web/src/routes/schedule.tsx
+          - apps/web/src/routes/escalation-policy.tsx
+        tests:
+          - Visual/manual
+
+      - id: fe-shell-not-found-page
+        title: Dedicated 404 page instead of dashboard redirect
+        scope: web
+        estimated_size: S
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-shell-sidebar-layout]
+        acceptance_criteria:
+          - Unknown paths render NotFound route inside AppShell
+          - Wildcard route no longer silently redirects to /dashboard
+        files:
+          - apps/web/src/routes/not-found.tsx
+          - apps/web/src/App.tsx
+        tests:
+          - e2e navigate to /does-not-exist shows 404 copy
+
+  - id: fe-epic-org-api
+    title: Org structure GraphQL API (teams & users)
+    description: |
+      GraphQL mutations and queries required before teams/users admin UI and user pickers
+      (escalation, schedules, incident roles). Blocks multiple frontend epics.
+    labels: [frontend-refactor, api]
+    suggested_order: 2
+    tasks:
+      - id: fe-api-teams-crud
+        title: GraphQL team CRUD mutations
+        scope: api
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, api]
+        depends_on: []
+        acceptance_criteria:
+          - createTeam, updateTeam, deleteTeam mutations (org admin only)
+          - deleteTeam rejected when team has services (VALIDATION)
+          - Audit events on create/update/delete
+          - Schema SDL + sqlc queries + gqlgen resolvers
+        files:
+          - packages/schema/graphql/operations.graphql
+          - packages/schema/graphql/inputs.graphql
+          - services/api/queries/teams.sql
+          - services/api/graph/
+        tests:
+          - cd services/api && go test ./graph/... ./internal/...
+
+      - id: fe-api-team-memberships
+        title: GraphQL team membership mutations
+        scope: api
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, api]
+        depends_on: [fe-api-teams-crud]
+        acceptance_criteria:
+          - addTeamMember, removeTeamMember mutations (org admin)
+          - Cannot remove last admin from org
+          - Member role vs admin on membership documented in resolver
+        files:
+          - packages/schema/graphql/operations.graphql
+          - services/api/queries/team_memberships.sql
+        tests:
+          - go test RBAC integration tests
+
+      - id: fe-api-users-directory
+        title: Organization users directory query
+        scope: api
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, api]
+        depends_on: []
+        acceptance_criteria:
+          - organizationUsers query returns id, email, role, team memberships
+          - Paginated or capped list (limit 500) for picker use
+          - Team members may see users in shared teams; admin sees all
+        files:
+          - packages/schema/graphql/operations.graphql
+          - packages/schema/graphql/types.graphql
+        tests:
+          - go test graph resolvers
+
+      - id: fe-api-user-invite-role
+        title: Invite user and assign org role
+        scope: api
+        estimated_size: L
+        priority: medium
+        labels: [frontend-refactor, api]
+        depends_on: [fe-api-team-memberships, fe-api-users-directory]
+        acceptance_criteria:
+          - inviteUser mutation creates pending user or sends invite email (document behaviour)
+          - updateUserRole mutation for org admin
+          - No secrets in GraphQL responses
+        files:
+          - packages/schema/graphql/operations.graphql
+          - services/api/graph/
+        tests:
+          - Integration test invite + login path
+
+      - id: fe-api-organization-update
+        title: Organization profile update mutation
+        scope: api
+        estimated_size: S
+        priority: low
+        labels: [frontend-refactor, api]
+        depends_on: []
+        acceptance_criteria:
+          - updateOrganization mutation (org admin) for display name
+          - Audit event on update
+          - Validation on empty name
+        files:
+          - packages/schema/graphql/operations.graphql
+          - services/api/graph/
+        tests:
+          - go test graph resolvers
+
+      - id: fe-api-password-reset
+        title: Password reset request and confirm API
+        scope: api
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, api]
+        depends_on: []
+        acceptance_criteria:
+          - requestPasswordReset and resetPassword mutations (same response whether email exists)
+          - Rate limited per IP/email
+          - Tokens single-use and expire
+        files:
+          - packages/schema/graphql/operations.graphql
+          - services/api/graph/
+        tests:
+          - go test auth handlers
+
+      - id: fe-api-escalation-policy-targets
+        title: Include escalation step targets in escalationPolicy query
+        scope: api
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, api]
+        depends_on: []
+        acceptance_criteria:
+          - escalationPolicy query returns steps with targets (user, rotation, webhook)
+          - EscalationPolicyEditor loads existing targets without empty warning
+        files:
+          - packages/schema/graphql/types.graphql
+          - packages/ts-types/graphql/operations.graphql
+          - services/api/graph/
+        tests:
+          - GraphQL integration test round-trip policy with targets
+
+  - id: fe-epic-codegen
+    title: GraphQL codegen catch-up (ts-types)
+    description: |
+      Add missing operations to packages/ts-types so web can consume schema fields that already
+      exist server-side. Split by domain for parallel execution.
+    labels: [frontend-refactor, shared]
+    suggested_order: 3
+    tasks:
+      - id: fe-codegen-heartbeat
+        title: Codegen heartbeat monitor operations
+        scope: shared
+        estimated_size: S
+        priority: high
+        labels: [frontend-refactor, shared]
+        depends_on: []
+        acceptance_criteria:
+          - heartbeatMonitors query + create/update/delete mutations in ts-types
+          - pnpm graphql-codegen succeeds
+        files:
+          - packages/ts-types/graphql/operations.graphql
+        tests:
+          - pnpm --filter @escalite/ts-types build
+
+      - id: fe-codegen-schedules-rotations
+        title: Codegen schedule and rotation CRUD operations
+        scope: shared
+        estimated_size: S
+        priority: high
+        labels: [frontend-refactor, shared]
+        depends_on: []
+        acceptance_criteria:
+          - createSchedule, updateSchedule, deleteSchedule, createRotation, updateRotation, deleteRotation in ts-types
+        files:
+          - packages/ts-types/graphql/operations.graphql
+        tests:
+          - pnpm --filter @escalite/ts-types build
+
+      - id: fe-codegen-notifications
+        title: Codegen notification channels and user rules
+        scope: shared
+        estimated_size: S
+        priority: high
+        labels: [frontend-refactor, shared]
+        depends_on: []
+        acceptance_criteria:
+          - notificationChannels, notificationRules, saveUserContactMethod, saveNotificationRule, deleteNotificationRule in ts-types
+        files:
+          - packages/ts-types/graphql/operations.graphql
+        tests:
+          - pnpm --filter @escalite/ts-types build
+
+      - id: fe-codegen-alerts-escalation
+        title: Codegen snooze, re-escalate, delete escalation policy
+        scope: shared
+        estimated_size: S
+        priority: medium
+        labels: [frontend-refactor, shared]
+        depends_on: []
+        acceptance_criteria:
+          - snoozeAlert, reEscalateAlert, deleteEscalationPolicy in ts-types
+        files:
+          - packages/ts-types/graphql/operations.graphql
+        tests:
+          - pnpm --filter @escalite/ts-types build
+
+      - id: fe-codegen-incidents-admin
+        title: Codegen incident admin operations
+        scope: shared
+        estimated_size: S
+        priority: medium
+        labels: [frontend-refactor, shared]
+        depends_on: []
+        acceptance_criteria:
+          - createIncident, create/update/deleteIncidentRoleDefinition, unassignIncidentRole in ts-types
+        files:
+          - packages/ts-types/graphql/operations.graphql
+        tests:
+          - pnpm --filter @escalite/ts-types build
+
+      - id: fe-codegen-status-page
+        title: Codegen status page admin operations
+        scope: shared
+        estimated_size: S
+        priority: high
+        labels: [frontend-refactor, shared]
+        depends_on: []
+        acceptance_criteria:
+          - statusPage query + all 7 status page mutations in ts-types
+        files:
+          - packages/ts-types/graphql/operations.graphql
+        tests:
+          - pnpm --filter @escalite/ts-types build
+
+      - id: fe-codegen-analytics-settings
+        title: Codegen analytics settings operations
+        scope: shared
+        estimated_size: S
+        priority: low
+        labels: [frontend-refactor, shared]
+        depends_on: []
+        acceptance_criteria:
+          - analyticsSettings query + saveAnalyticsSettings mutation in ts-types
+        files:
+          - packages/ts-types/graphql/operations.graphql
+        tests:
+          - pnpm --filter @escalite/ts-types build
+
+      - id: fe-codegen-org-teams-users
+        title: Codegen new org structure operations
+        scope: shared
+        estimated_size: S
+        priority: high
+        labels: [frontend-refactor, shared]
+        depends_on: [fe-api-teams-crud, fe-api-team-memberships, fe-api-users-directory, fe-api-user-invite-role, fe-api-password-reset]
+        acceptance_criteria:
+          - All new team/user/password mutations and organizationUsers query in ts-types
+        files:
+          - packages/ts-types/graphql/operations.graphql
+        tests:
+          - pnpm --filter @escalite/ts-types build
+
+  - id: fe-epic-org-ui
+    title: Teams & users admin UI
+    description: Operator screens for team CRUD, membership, and user directory/invite.
+    labels: [frontend-refactor, web]
+    suggested_order: 4
+    tasks:
+      - id: fe-ui-teams-list
+        title: Teams list and create team page
+        scope: web
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-shell-nav-config-routes, fe-codegen-org-teams-users, fe-api-teams-crud]
+        acceptance_criteria:
+          - /teams route in sidebar (Configuration)
+          - List teams with search; create team dialog
+          - Empty state when no teams with CTA
+        files:
+          - apps/web/src/routes/teams.tsx
+          - apps/web/src/App.tsx
+        tests:
+          - e2e create team flow
+
+      - id: fe-ui-team-detail-members
+        title: Team detail with member management
+        scope: web
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-teams-list, fe-api-team-memberships]
+        acceptance_criteria:
+          - /teams/:teamId shows members table
+          - Add/remove member via user combobox from organizationUsers
+          - Rename team inline
+        files:
+          - apps/web/src/routes/team.tsx
+        tests:
+          - e2e add member
+
+      - id: fe-ui-users-list-invite
+        title: Users list and invite flow
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-codegen-org-teams-users, fe-api-user-invite-role]
+        acceptance_criteria:
+          - /users route (admin only) lists organization users
+          - Invite dialog collects email + role + optional team
+          - Role change action for existing users
+        files:
+          - apps/web/src/routes/users.tsx
+        tests:
+          - Manual invite flow
+
+  - id: fe-epic-dashboard
+    title: Dashboard & on-call widget
+    description: Replace placeholder dashboard with ops landing (open alerts, on-call now).
+    labels: [frontend-refactor, web, shared]
+    suggested_order: 5
+    tasks:
+      - id: fe-domain-oncall-widget
+        title: OnCallWidget domain component
+        scope: shared
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, shared]
+        depends_on: [fe-api-users-directory]
+        acceptance_criteria:
+          - packages/ui/domain/OnCallWidget exported
+          - Shows primary/secondary layers with user display names and avatars
+          - Uses packages/tokens severity-neutral styling
+        files:
+          - packages/ui/domain/OnCallWidget/
+        tests:
+          - packages/ui unit/story if present
+
+      - id: fe-ui-dashboard-page
+        title: Dashboard with open alerts summary and OnCallWidget
+        scope: web
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-domain-oncall-widget, fe-shell-sidebar-layout]
+        acceptance_criteria:
+          - Dashboard shows triggered/acknowledged alert counts with links
+          - OnCallWidget for user's teams or org-wide for admin
+          - Placeholder copy removed; all strings i18n
+        files:
+          - apps/web/src/routes/dashboard.tsx
+          - apps/web/src/lib/i18n.ts
+        tests:
+          - e2e dashboard renders widgets after login
+
+      - id: fe-ui-dashboard-oncall-subscription
+        title: Wire onCallUpdated subscription to dashboard widget
+        scope: web
+        estimated_size: S
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-dashboard-page]
+        acceptance_criteria:
+          - useOnCallUpdatedSubscription updates widget without manual refresh
+        files:
+          - apps/web/src/routes/dashboard.tsx
+        tests:
+          - Integration test or manual verify
+
+  - id: fe-epic-alerts
+    title: Alerts UI completion
+    description: Snooze/re-escalate, escalation state display, service links, AlertCard optional.
+    labels: [frontend-refactor, web]
+    suggested_order: 6
+    tasks:
+      - id: fe-ui-alerts-snooze-reescalate
+        title: Alert snooze and re-escalate actions
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-codegen-alerts-escalation]
+        acceptance_criteria:
+          - Snooze dialog with duration presets calls snoozeAlert
+          - Re-escalate button on acknowledged alerts calls reEscalateAlert
+          - Toast on success/error
+        files:
+          - apps/web/src/routes/alerts.tsx
+        tests:
+          - go test escalation snooze API; e2e optional
+
+      - id: fe-ui-alerts-detail-polish
+        title: Alert detail escalation state and service link
+        scope: web
+        estimated_size: S
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: []
+        acceptance_criteria:
+          - Service links to /services/:id by name not raw UUID
+          - Shows current escalation step and next_escalation_at when present
+          - Optional notification attempts summary (read-only)
+        files:
+          - apps/web/src/routes/alerts.tsx
+        tests:
+          - Manual
+
+      - id: fe-domain-alert-card
+        title: AlertCard domain component for list rows
+        scope: shared
+        estimated_size: M
+        priority: low
+        labels: [frontend-refactor, shared]
+        depends_on: []
+        acceptance_criteria:
+          - packages/ui/domain/AlertCard per spec 05 (p-table-8 patterns)
+          - apps/web alerts list may adopt or keep table (document choice)
+        files:
+          - packages/ui/domain/AlertCard/
+          - apps/web/src/routes/alerts.tsx
+        tests:
+          - lint typecheck ui package
+
+  - id: fe-epic-escalation
+    title: Escalation policy editor completion
+    description: Wire user/schedule pickers, integrate in service shell, delete policy, repeat settings.
+    labels: [frontend-refactor, web]
+    suggested_order: 7
+    tasks:
+      - id: fe-ui-escalation-wire-pickers
+        title: Wire user and schedule options into EscalationPolicyEditor
+        scope: web
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-api-escalation-policy-targets, fe-api-users-directory, fe-codegen-schedules-rotations]
+        acceptance_criteria:
+          - Editor options populated from organizationUsers and team schedules
+          - Save persists targets round-trip
+          - No empty options arrays in escalation-policy.tsx
+        files:
+          - apps/web/src/routes/escalation-policy.tsx
+          - apps/web/src/lib/escalation-policy.ts
+        tests:
+          - e2e create policy with user target
+
+      - id: fe-ui-escalation-integrate-shell
+        title: Integrate escalation editor into AppShell with breadcrumbs
+        scope: web
+        estimated_size: S
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-escalation-wire-pickers, fe-shell-breadcrumbs]
+        acceptance_criteria:
+          - Escalation policy page uses AppShell not custom header
+          - Breadcrumb Services → Service → Policy
+        files:
+          - apps/web/src/routes/escalation-policy.tsx
+        tests:
+          - smoke navigation
+
+      - id: fe-ui-escalation-delete-policy
+        title: Delete escalation policy from service tab
+        scope: web
+        estimated_size: S
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-codegen-alerts-escalation]
+        acceptance_criteria:
+          - Delete with AlertDialog on service escalation tab
+          - Calls deleteEscalationPolicy mutation
+        files:
+          - apps/web/src/routes/service.tsx
+        tests:
+          - Manual
+
+      - id: fe-ui-escalation-repeat-settings
+        title: Expose repeat and max-repeat in escalation editor
+        scope: web
+        estimated_size: M
+        priority: low
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-escalation-wire-pickers]
+        acceptance_criteria:
+          - UI fields for repeat enabled and max repeat count
+          - Validation matches API rules
+        files:
+          - packages/ui/domain/EscalationPolicyEditor/
+          - apps/web/src/routes/escalation-policy.tsx
+        tests:
+          - Unit validation tests
+
+  - id: fe-epic-schedules
+    title: Schedules & on-call management UI
+    description: Schedule index, CRUD, rotations, iCal export, user labels, realtime updates.
+    labels: [frontend-refactor, web]
+    suggested_order: 8
+    tasks:
+      - id: fe-ui-schedules-index
+        title: Schedules list page with team filter
+        scope: web
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-shell-nav-config-routes, fe-codegen-schedules-rotations]
+        acceptance_criteria:
+          - /schedules route lists schedules across teams (admin) or member teams
+          - Link to schedule detail
+          - Create schedule button
+        files:
+          - apps/web/src/routes/schedules.tsx
+          - apps/web/src/App.tsx
+        tests:
+          - e2e navigate schedules index
+
+      - id: fe-ui-schedule-create-edit
+        title: Create and edit schedule (name, timezone, team)
+        scope: web
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-schedules-index, fe-ui-teams-list]
+        acceptance_criteria:
+          - Dialog or page for createSchedule / updateSchedule
+          - IANA timezone combobox validation
+        files:
+          - apps/web/src/routes/schedules.tsx
+          - apps/web/src/routes/schedule.tsx
+        tests:
+          - e2e create schedule
+
+      - id: fe-ui-rotation-crud
+        title: Rotation CRUD on schedule detail
+        scope: web
+        estimated_size: L
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-schedule-create-edit, fe-api-users-directory]
+        acceptance_criteria:
+          - Add/edit/delete rotations with RRULE helper or form
+          - Participant picker uses organizationUsers display names
+          - Layer (primary/secondary) selectable
+        files:
+          - apps/web/src/routes/schedule.tsx
+          - packages/ui/domain/ScheduleCalendar/
+        tests:
+          - e2e add rotation
+
+      - id: fe-ui-schedule-user-labels
+        title: Resolve user display names in schedule calendar
+        scope: web
+        estimated_size: S
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-api-users-directory]
+        acceptance_criteria:
+          - schedule.ts collectScheduleUsers uses email/name not UUID slice
+        files:
+          - apps/web/src/lib/schedule.ts
+          - apps/web/src/routes/schedule.tsx
+        tests:
+          - Unit test label mapping
+
+      - id: fe-ui-schedule-ical-export
+        title: iCal export download on schedule page
+        scope: web
+        estimated_size: M
+        priority: low
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-schedule-create-edit]
+        acceptance_criteria:
+          - Export button downloads .ics from API endpoint or GraphQL
+          - File validates RFC 5545 in existing API test fixture
+        files:
+          - apps/web/src/routes/schedule.tsx
+        tests:
+          - API ical export test
+
+      - id: fe-ui-schedule-oncall-subscription
+        title: Wire onCallUpdated on schedule calendar page
+        scope: web
+        estimated_size: S
+        priority: low
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-rotation-crud]
+        acceptance_criteria:
+          - Schedule page refreshes on-call layers on subscription event
+        files:
+          - apps/web/src/routes/schedule.tsx
+        tests:
+          - Manual
+
+  - id: fe-epic-services
+    title: Service configuration completion
+    description: Heartbeat tab, team reassignment, escalation list polish.
+    labels: [frontend-refactor, web]
+    suggested_order: 9
+    tasks:
+      - id: fe-ui-service-heartbeat-tab
+        title: Heartbeat monitors tab on service detail
+        scope: web
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-codegen-heartbeat]
+        acceptance_criteria:
+          - New tab lists heartbeatMonitors for service
+          - Create shows ping URL once; thereafter prefix only
+          - Status badges healthy/overdue/triggered
+          - CRUD matches API
+        files:
+          - apps/web/src/components/heartbeat-monitors-panel.tsx
+          - apps/web/src/routes/service.tsx
+        tests:
+          - e2e create heartbeat monitor
+
+      - id: fe-ui-service-team-reassign
+        title: Allow changing service team on general tab
+        scope: web
+        estimated_size: S
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-teams-list]
+        acceptance_criteria:
+          - Team select on service general tab calls updateService with teamId
+        files:
+          - apps/web/src/routes/service.tsx
+        tests:
+          - Manual
+
+      - id: fe-ui-service-escalation-list-polish
+        title: Escalation policies table on service tab
+        scope: web
+        estimated_size: S
+        priority: low
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-escalation-delete-policy]
+        acceptance_criteria:
+          - Table shows policy name, step count, last updated
+          - Actions edit/delete
+        files:
+          - apps/web/src/routes/service.tsx
+        tests:
+          - Manual
+
+  - id: fe-epic-integrations
+    title: Integrations UI completion
+    description: Service picker, JSON Schema config forms, additional presets.
+    labels: [frontend-refactor, web]
+    suggested_order: 10
+    tasks:
+      - id: fe-ui-integrations-service-picker
+        title: Replace Service UUID input with service combobox
+        scope: web
+        estimated_size: S
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-shell-sidebar-layout]
+        acceptance_criteria:
+          - /integrations page uses services query combobox
+          - Raw UUID input removed
+        files:
+          - apps/web/src/components/integration-keys-panel.tsx
+          - apps/web/src/routes/integrations.tsx
+        tests:
+          - e2e select service on integrations page
+
+      - id: fe-ui-integrations-route-consolidate
+        title: Consolidate standalone /integrations route
+        scope: web
+        estimated_size: S
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-integrations-service-picker]
+        acceptance_criteria:
+          - Remove duplicate inferior flow or redirect /integrations to service-scoped tab
+          - Sidebar nav no longer exposes redundant top-level Integrations if service tab covers it
+          - Deep links from docs use /services/:id?tab=integrations
+        files:
+          - apps/web/src/routes/integrations.tsx
+          - apps/web/src/components/sidebar-nav.tsx
+        tests:
+          - e2e integrations reachable via service detail tab
+
+      - id: fe-ui-integrations-schema-config
+        title: JSON Schema driven integration key config form
+        scope: web
+        estimated_size: L
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-codegen-notifications]
+        acceptance_criteria:
+          - Fetch plugin ConfigSchema via notificationChannels or dedicated integration schema query
+          - buildFormFieldsFromConfigSchema used in integration picker
+          - Per-plugin fields render without bespoke UI per integration
+        files:
+          - apps/web/src/lib/notification-channel-form.ts
+          - apps/web/src/components/integration-picker.tsx
+        tests:
+          - apps/web/test/notification-channel-form.test.mjs extended
+
+      - id: fe-ui-integrations-presets
+        title: Add integration presets beyond Beszel
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-integrations-schema-config]
+        acceptance_criteria:
+          - Presets for generic-webhook, prometheus-alertmanager, uptime-kuma (field mappings + docs snippet)
+          - integration-presets.ts documents Shoutrrr URL format where applicable
+        files:
+          - apps/web/src/lib/integration-presets.ts
+          - apps/web/src/components/integration-picker.tsx
+        tests:
+          - apps/web/test/integration-presets.test.mjs
+
+  - id: fe-epic-notifications
+    title: User notification preferences UI
+    description: Contact methods and per-priority notification rules in settings.
+    labels: [frontend-refactor, web]
+    suggested_order: 11
+    tasks:
+      - id: fe-ui-contact-methods
+        title: Contact methods settings panel
+        scope: web
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-codegen-notifications]
+        acceptance_criteria:
+          - Settings section lists channels from notificationChannels
+          - saveUserContactMethod per channel with schema-driven form
+        files:
+          - apps/web/src/components/contact-methods-panel.tsx
+          - apps/web/src/routes/settings.tsx
+        tests:
+          - Manual save contact method
+
+      - id: fe-ui-notification-rules
+        title: Per-priority notification rules editor
+        scope: web
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-contact-methods]
+        acceptance_criteria:
+          - High and low priority tabs with ordered steps (channel + delay)
+          - saveNotificationRule / deleteNotificationRule wired
+        files:
+          - apps/web/src/components/notification-rules-panel.tsx
+          - apps/web/src/routes/settings.tsx
+        tests:
+          - Manual
+
+  - id: fe-epic-incidents
+    title: Incidents UI completion
+    description: Create incident, role definition admin, unassign, status page publish.
+    labels: [frontend-refactor, web]
+    suggested_order: 12
+    tasks:
+      - id: fe-ui-incident-create
+        title: Create incident without promoting alert
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-codegen-incidents-admin, fe-ui-teams-list]
+        acceptance_criteria:
+          - New incident button on incidents list
+          - createIncident with title, team, optional linked alerts
+        files:
+          - apps/web/src/routes/incidents.tsx
+        tests:
+          - e2e create incident
+
+      - id: fe-ui-incident-role-definitions-admin
+        title: Incident role definitions admin settings
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-codegen-incidents-admin]
+        acceptance_criteria:
+          - Admin settings section CRUD role definitions (IC, Comms Lead, custom)
+        files:
+          - apps/web/src/components/incident-roles-panel.tsx
+          - apps/web/src/routes/settings.tsx
+        tests:
+          - Manual
+
+      - id: fe-ui-incident-role-unassign
+        title: Unassign incident role from detail view
+        scope: web
+        estimated_size: S
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-codegen-incidents-admin]
+        acceptance_criteria:
+          - Role slots show unassign when occupied
+          - unassignIncidentRole mutation wired
+        files:
+          - apps/web/src/routes/incidents.tsx
+        tests:
+          - Manual
+
+      - id: fe-ui-incident-publish-status-page
+        title: Publish incident to status page from detail
+        scope: web
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-codegen-status-page, fe-ui-status-page-settings]
+        acceptance_criteria:
+          - Button opens dialog to publishIncidentToStatusPage
+          - Shows link to public status page when published
+        files:
+          - apps/web/src/routes/incidents.tsx
+        tests:
+          - e2e publish flow with status page enabled
+
+  - id: fe-epic-status-admin
+    title: Status page admin (apps/web)
+    description: Full operator UI for status page configuration and incident publishing.
+    labels: [frontend-refactor, web]
+    suggested_order: 13
+    tasks:
+      - id: fe-ui-status-page-settings
+        title: Status page settings route (slug, title, enabled, CSP)
+        scope: web
+        estimated_size: M
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-codegen-status-page, fe-shell-nav-config-routes]
+        acceptance_criteria:
+          - /status-pages route (admin) loads statusPage query
+          - saveStatusPage form with slug validation
+          - Preview link to public app URL
+        files:
+          - apps/web/src/routes/status-pages.tsx
+          - apps/web/src/App.tsx
+        tests:
+          - e2e enable status page
+
+      - id: fe-ui-status-page-components
+        title: Status page component CRUD and reorder
+        scope: web
+        estimated_size: L
+        priority: high
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-status-page-settings, fe-ui-integrations-service-picker]
+        acceptance_criteria:
+          - Component list with create/edit/delete
+          - Optional serviceId link via service combobox
+          - Position ordering persisted
+        files:
+          - apps/web/src/components/status-page-components-panel.tsx
+        tests:
+          - Manual
+
+      - id: fe-ui-status-page-incident-admin
+        title: Status page incident updates admin
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-status-page-settings]
+        acceptance_criteria:
+          - Admin can post createStatusPageIncidentUpdate
+          - updateStatusPageIncidentStatus for resolve
+          - List active public incidents on status page admin
+        files:
+          - apps/web/src/components/status-page-incidents-panel.tsx
+        tests:
+          - Manual
+
+      - id: fe-ui-status-page-subscriptions
+        title: View status page email subscriptions (admin)
+        scope: web
+        estimated_size: S
+        priority: low
+        labels: [frontend-refactor, web]
+        depends_on: [fe-ui-status-page-settings]
+        acceptance_criteria:
+          - Admin panel lists subscriber emails from statusPage query (or dedicated field)
+          - Read-only list with count; no PII beyond email already stored
+          - Empty state when no subscribers
+        files:
+          - apps/web/src/components/status-page-subscriptions-panel.tsx
+          - apps/web/src/routes/status-pages.tsx
+        tests:
+          - Manual
+        implementation_notes: |
+          Gap analysis admin checklist item "View subscriptions". Confirm GraphQL field on statusPage
+          query; add API leaf if subscriptions are not exposed yet.
+
+  - id: fe-epic-status-public
+    title: Status page public app polish
+    description: Gaps in apps/status-page and subscribe email delivery worker.
+    labels: [frontend-refactor, status-page, api]
+    suggested_order: 14
+    tasks:
+      - id: fe-api-status-subscribe-email
+        title: Email notifications for status page subscribers
+        scope: api
+        estimated_size: L
+        priority: high
+        labels: [frontend-refactor, api]
+        depends_on: []
+        acceptance_criteria:
+          - River job or engine worker sends email on status page incident create/update
+          - Uses org SMTP config; skips gracefully when SMTP unset
+          - Integration test with test SMTP or mock
+        files:
+          - services/engine/
+          - services/api/
+        tests:
+          - go test worker package
+
+      - id: fe-ui-status-public-resolved-history
+        title: Resolved incidents section on public status page
+        scope: status-page
+        estimated_size: M
+        priority: low
+        labels: [frontend-refactor, status-page]
+        depends_on: []
+        acceptance_criteria:
+          - API exposes resolved incidents window (e.g. 30d) or separate endpoint
+          - Public UI section collapsible below active incidents
+        files:
+          - apps/status-page/src/routes/status-page.tsx
+          - services/api/internal/handlers/
+        tests:
+          - API integration test
+
+      - id: fe-ui-status-public-unsubscribe
+        title: Email unsubscribe flow for status page subscribers
+        scope: status-page
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, status-page]
+        depends_on: [fe-api-status-subscribe-email]
+        acceptance_criteria:
+          - Unsubscribe link in notification emails with signed token
+          - Public /unsubscribe route confirms removal
+          - Idempotent when token already used
+        files:
+          - apps/status-page/src/routes/unsubscribe.tsx
+          - services/api/internal/handlers/
+        tests:
+          - API integration test unsubscribe token
+
+      - id: fe-ui-status-public-meta
+        title: Dynamic page title and meta per status page
+        scope: status-page
+        estimated_size: S
+        priority: low
+        labels: [frontend-refactor, status-page]
+        depends_on: []
+        acceptance_criteria:
+          - document.title updates to "{page title} Status"
+          - Optional meta description from page title
+        files:
+          - apps/status-page/src/routes/status-page.tsx
+        tests:
+          - Manual
+
+      - id: fe-e2e-status-page-public
+        title: Playwright E2E for public status page
+        scope: status-page
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, ci]
+        depends_on: [fe-ui-status-page-settings]
+        acceptance_criteria:
+          - E2E loads public slug, sees components, subscribes email
+          - Runs in CI compose gate or separate workflow
+        files:
+          - apps/status-page/e2e/
+        tests:
+          - playwright
+
+  - id: fe-epic-settings-analytics
+    title: Settings, auth, and analytics completion
+    description: Password reset UI, org profile, analytics settings toggle, Slack OAuth polish.
+    labels: [frontend-refactor, web]
+    suggested_order: 15
+    tasks:
+      - id: fe-ui-auth-password-reset
+        title: Password reset request and reset pages
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-api-password-reset, fe-codegen-org-teams-users]
+        acceptance_criteria:
+          - /forgot-password and /reset-password routes (guest)
+          - Linked from login page
+        files:
+          - apps/web/src/routes/forgot-password.tsx
+          - apps/web/src/routes/reset-password.tsx
+          - apps/web/src/routes/login.tsx
+        tests:
+          - e2e request reset (mock email)
+
+      - id: fe-ui-settings-section-nav
+        title: Settings page section navigation
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-shell-sidebar-layout]
+        acceptance_criteria:
+          - Settings uses vertical sub-nav or tabs (Enterprise, Notifications, Devices, Roles)
+          - Deep-linkable sections (/settings/notifications etc.)
+          - SAML/SCIM/Slack panels grouped under Enterprise
+        files:
+          - apps/web/src/routes/settings.tsx
+          - apps/web/src/components/settings-section-nav.tsx
+        tests:
+          - e2e navigate settings sections
+
+      - id: fe-ui-org-profile-settings
+        title: Organization profile settings section
+        scope: web
+        estimated_size: S
+        priority: low
+        labels: [frontend-refactor, web]
+        depends_on: [fe-api-organization-update]
+        acceptance_criteria:
+          - Display org name; editable via updateOrganization mutation
+        files:
+          - apps/web/src/routes/settings.tsx
+        tests:
+          - Manual
+
+      - id: fe-ui-analytics-settings
+        title: Analytics exclude-maintenance toggle
+        scope: web
+        estimated_size: S
+        priority: low
+        labels: [frontend-refactor, web]
+        depends_on: [fe-codegen-analytics-settings]
+        acceptance_criteria:
+          - Toggle on analytics page calls saveAnalyticsSettings
+          - Charts refetch after save
+        files:
+          - apps/web/src/routes/analytics.tsx
+        tests:
+          - Manual
+
+      - id: fe-ui-slack-oauth-install
+        title: Slack app OAuth install flow in settings
+        scope: web
+        estimated_size: M
+        priority: low
+        labels: [frontend-refactor, web]
+        depends_on: []
+        acceptance_criteria:
+          - Install button starts OAuth; callback stores token via saveSlackSettings
+          - Manual token fallback remains for dev
+        files:
+          - apps/web/src/components/slack-settings-panel.tsx
+        tests:
+          - Manual with test workspace
+
+  - id: fe-epic-polish
+    title: Design system & UX polish
+    description: i18n sweep, toasts, skeletons, dark mode, severity tokens audit.
+    labels: [frontend-refactor, web, shared]
+    suggested_order: 16
+    tasks:
+      - id: fe-ui-i18n-sweep
+        title: i18n for remaining hardcoded English strings
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: [fe-shell-sidebar-layout]
+        acceptance_criteria:
+          - dashboard, login, setup, integrations, escalation, integration-keys, analytics charts use t()
+          - No user-facing hardcoded English in apps/web routes
+        files:
+          - apps/web/src/lib/i18n.ts
+          - apps/web/src/routes/
+          - apps/web/src/components/
+        tests:
+          - rg hardcoded strings audit script or manual review
+
+      - id: fe-ui-toast-mutations
+        title: Toast feedback for mutations
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, web]
+        depends_on: []
+        acceptance_criteria:
+          - Success/error toasts on CRUD mutations (p-toast-2 pattern)
+          - Destructive actions use toast on error only or undo where applicable
+        files:
+          - apps/web/src/lib/toast.ts
+          - packages/ui/primitives/toast.tsx
+        tests:
+          - Manual
+
+      - id: fe-ui-skeleton-empty-states
+        title: Skeleton loaders and empty states on list pages
+        scope: web
+        estimated_size: M
+        priority: low
+        labels: [frontend-refactor, web]
+        depends_on: []
+        acceptance_criteria:
+          - alerts, services, incidents, teams, schedules use p-skeleton-1 while loading
+          - p-empty-1 when no data
+        files:
+          - apps/web/src/routes/
+        tests:
+          - Visual
+
+      - id: fe-ui-dark-mode-default
+        title: Dark mode default and token audit
+        scope: shared
+        estimated_size: S
+        priority: low
+        labels: [frontend-refactor, shared]
+        depends_on: []
+        acceptance_criteria:
+          - html class dark by default in apps/web and apps/status-page
+          - Alert severity badges use packages/tokens hues only
+        files:
+          - apps/web/index.html
+          - apps/status-page/index.html
+          - packages/tokens/
+        tests:
+          - Manual contrast check
+
+  - id: fe-epic-e2e
+    title: E2E coverage expansion
+    description: Playwright flows beyond alert happy path.
+    labels: [frontend-refactor, ci]
+    suggested_order: 17
+    tasks:
+      - id: fe-e2e-teams-schedules-flow
+        title: E2E create team → schedule → override
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, ci]
+        depends_on: [fe-ui-team-detail-members, fe-ui-rotation-crud]
+        acceptance_criteria:
+          - Single Playwright spec covers team/schedule/override path
+        files:
+          - apps/web/e2e/teams-schedules.spec.ts
+        tests:
+          - playwright in CI
+
+      - id: fe-e2e-escalation-flow
+        title: E2E escalation policy with user target
+        scope: web
+        estimated_size: M
+        priority: medium
+        labels: [frontend-refactor, ci]
+        depends_on: [fe-ui-escalation-wire-pickers]
+        acceptance_criteria:
+          - Create policy with user target; trigger alert; verify step 1 target
+        files:
+          - apps/web/e2e/escalation-policy.spec.ts
+        tests:
+          - playwright
+
+      - id: fe-e2e-status-page-admin-flow
+        title: E2E status page admin to public view
+        scope: web
+        estimated_size: L
+        priority: medium
+        labels: [frontend-refactor, ci]
+        depends_on: [fe-ui-status-page-components, fe-e2e-status-page-public]
+        acceptance_criteria:
+          - Admin enables page, adds component, publishes incident; public app shows it
+        files:
+          - apps/web/e2e/status-page-admin.spec.ts
+        tests:
+          - playwright cross-app or API seed

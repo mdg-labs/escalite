@@ -24,7 +24,8 @@ Pre-Phase 0 — specs and roadmap in `docs/`; monorepo scaffold pending (`p0-sca
 
 1. **Outline MCP** (Escalite collection) — authoritative spec bodies
 2. `docs/specs/*.md` — pointers and index (fetch Outline before implementing)
-3. `docs/roadmap/roadmap.yaml` / generated `docs/roadmap/ROADMAP.md` — implementation sequence
+3. `docs/frontend-refactor-plan.yaml` / `docs/frontend-refactor-plan.md` — active frontend refactor backlog
+4. Outline doc **06 — Roadmap / MVP Phasing** — historical MVP sequencing (completed; tracked in Phasical)
 4. `docs/specs/08-implementation-decisions-and-conventions.md` — pinned tooling, DoD, bootstrap order
 
 ## Hard rules
@@ -38,4 +39,4 @@ Pre-Phase 0 — specs and roadmap in `docs/`; monorepo scaffold pending (`p0-sca
 - Orchestrator: `.agents/skills/orchestrator/SKILL.md` (from `mdg-labs/skills`)
 - Sub-agent monitoring: `.agents/skills/orchestrator/references/sub-agent-monitoring.md` — mandatory when dispatching Task sub-agents
 - Project constants: `.agents/project/orchestrator/project.config.md`
-- Plan file: `docs/roadmap/ROADMAP.md`
+- Plan file: `docs/frontend-refactor-plan.md`

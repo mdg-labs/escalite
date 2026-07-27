@@ -113,4 +113,4 @@ When the operator completes portal submission, update this table (or add a PR am
 - Apple: [Critical Alerts entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.usernotifications.critical-alerts)
 - Apple: [Request Critical Alerts entitlement](https://developer.apple.com/contact/request/notifications-critical-alerts-entitlement/)
 - Escalite Outline doc 03 — `why-native`, `notification-payload-contract`
-- Roadmap: `docs/roadmap/ROADMAP.md` → `p2-ios-critical-alerts-entitlement`, `p2-ios-critical-alerts-impl`
+- Roadmap: `docs/roadmap/ROADMAP.md` → `p2-ios-critical-alerts-entitlement`, `p2-ios-critical-alerts-impl` (archived; see Phasical)

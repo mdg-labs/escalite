@@ -111,4 +111,4 @@ Set `DATABASE_URL` or `ESCALITE_DATABASE_URL` before running `task migrate`.
 ## Documentation
 
 - Spec index: [`docs/specs/README.md`](docs/specs/README.md)
-- Roadmap: [`docs/roadmap/ROADMAP.md`](docs/roadmap/ROADMAP.md)
+- Frontend refactor plan: [`docs/frontend-refactor-plan.md`](docs/frontend-refactor-plan.md) (Phasical import via `docs/import-frontend-refactor-plan.py`)
