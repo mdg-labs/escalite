@@ -34,6 +34,7 @@ import { AlertTriangleIcon, SettingsIcon } from 'lucide-react'
 import { IntegrationKeysPanel } from '../components/integration-keys-panel'
 import { MaintenanceWindowsPanel } from '../components/maintenance-windows-panel'
 import { AppShell } from '../components/app-shell'
+import { PageBreadcrumbs } from '../components/page-breadcrumbs'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
 
@@ -99,6 +100,14 @@ export function ServicePage(): ReactElement {
   const policies = policiesData?.escalationPolicies ?? []
   const schedules = schedulesData?.schedules ?? []
   const activeMaintenance = service?.activeMaintenanceWindows ?? []
+  const serviceTitle = service?.name ?? t('services.detail.title')
+  const breadcrumbItems = useMemo(
+    () => [
+      { label: t('nav.services'), href: '/services' },
+      { label: serviceTitle },
+    ],
+    [serviceTitle],
+  )
 
   async function handleSave(): Promise<void> {
     if (!serviceId) {
@@ -177,20 +186,12 @@ export function ServicePage(): ReactElement {
   }
 
   return (
-    <AppShell title={service?.name ?? t('services.detail.title')}>
+    <AppShell title={serviceTitle}>
       <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Link className="hover:text-foreground" to="/services">
-                {t('services.title')}
-              </Link>
-              <span>/</span>
-              <span>{service?.name ?? t('services.detail.title')}</span>
-            </div>
-            <h1 className="mt-2 text-xl font-semibold text-foreground">
-              {service?.name ?? t('services.detail.title')}
-            </h1>
+            <PageBreadcrumbs items={breadcrumbItems} />
+            <h1 className="mt-2 text-xl font-semibold text-foreground">{serviceTitle}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{t('services.detail.description')}</p>
           </div>
           <SettingsIcon className="size-5 text-muted-foreground" />

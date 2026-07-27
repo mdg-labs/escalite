@@ -12,6 +12,7 @@ import {
 import { ScheduleCalendar } from '@escalite/ui/domain/ScheduleCalendar'
 
 import { AppShell } from '../components/app-shell'
+import { PageBreadcrumbs } from '../components/page-breadcrumbs'
 import {
   collectScheduleUsers,
   formatGraphQLError,
@@ -48,6 +49,14 @@ export function SchedulePage(): ReactElement {
   const [saving, setSaving] = useState(false)
 
   const schedule = data?.schedule
+  const scheduleTitle = schedule?.name ?? t('schedule.pageTitle')
+  const breadcrumbItems = useMemo(
+    () => [
+      { label: t('nav.schedules'), href: '/schedules' },
+      { label: scheduleTitle },
+    ],
+    [scheduleTitle],
+  )
   const onCallLayers = useMemo(
     () => onCallData?.onCallNow?.layers ?? [],
     [onCallData?.onCallNow?.layers],
@@ -121,9 +130,10 @@ export function SchedulePage(): ReactElement {
   }
 
   return (
-    <AppShell title={t('schedule.pageTitle')}>
+    <AppShell title={scheduleTitle}>
       <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
-        <h1 className="text-xl font-semibold text-foreground">{t('schedule.pageTitle')}</h1>
+        <PageBreadcrumbs items={breadcrumbItems} />
+        <h1 className="mt-2 text-xl font-semibold text-foreground">{scheduleTitle}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t('schedule.pageDescription')}</p>
 
         {fetching ? <p className="mt-6 text-sm text-muted-foreground">{labels.loading}</p> : null}

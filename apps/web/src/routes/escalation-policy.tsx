@@ -4,6 +4,7 @@ import { Link, useParams, useSearchParams } from 'react-router'
 import {
   useCreateEscalationPolicyMutation,
   useEscalationPolicyQuery,
+  useServiceQuery,
   useUpdateEscalationPolicyMutation,
 } from '@escalite/ts-types'
 import {
@@ -13,19 +14,21 @@ import {
   type EscalationPolicySavePayload,
 } from '@escalite/ui/domain/EscalationPolicyEditor'
 
+import { PageBreadcrumbs } from '../components/page-breadcrumbs'
 import {
   createDefaultEditorPolicy,
   mapApiPolicyToEditor,
 } from '../lib/escalation-policy'
+import { t } from '../lib/i18n'
 
 function formatGraphQLError(message: string): string {
   return message.replace(/^(\[GraphQL\]\s*)+/, '')
 }
 
 export function EscalationPolicyPage(): ReactElement {
-  const { policyId } = useParams()
+  const { policyId, serviceId: routeServiceId } = useParams()
   const [searchParams] = useSearchParams()
-  const serviceId = searchParams.get('serviceId') ?? ''
+  const serviceId = routeServiceId ?? searchParams.get('serviceId') ?? ''
   const isCreateMode = policyId === 'new'
 
   const [{ data, fetching, error }] = useEscalationPolicyQuery({
@@ -33,8 +36,26 @@ export function EscalationPolicyPage(): ReactElement {
     variables: { id: policyId ?? '' },
   })
 
+  const [{ data: serviceData }] = useServiceQuery({
+    pause: !serviceId,
+    variables: { id: serviceId },
+  })
+
   const [, createEscalationPolicy] = useCreateEscalationPolicyMutation()
   const [, updateEscalationPolicy] = useUpdateEscalationPolicyMutation()
+
+  const serviceName = serviceData?.service?.name ?? t('services.detail.title')
+  const policyLabel = isCreateMode
+    ? t('services.escalation.create')
+    : (data?.escalationPolicy?.name ?? t('services.escalation.title'))
+  const breadcrumbItems = useMemo(
+    () => [
+      { label: t('nav.services'), href: '/services' },
+      { label: serviceName, href: `/services/${serviceId}` },
+      { label: policyLabel },
+    ],
+    [policyLabel, serviceId, serviceName],
+  )
 
   const initialPolicy = useMemo(() => {
     if (isCreateMode) {
@@ -139,8 +160,9 @@ export function EscalationPolicyPage(): ReactElement {
       </header>
       <main className="mx-auto max-w-5xl px-4 py-8">
         <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
-          <h1 className="text-xl font-semibold text-foreground">
-            {isCreateMode ? 'Create escalation policy' : 'Edit escalation policy'}
+          <PageBreadcrumbs items={breadcrumbItems} />
+          <h1 className="mt-2 text-xl font-semibold text-foreground">
+            {isCreateMode ? t('services.escalation.create') : policyLabel}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Configure ordered steps, delays, and notification targets. Drag steps to reorder; save
