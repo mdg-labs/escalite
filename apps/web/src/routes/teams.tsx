@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router'
 import { useCreateTeamMutation, useTeamsQuery } from '@escalite/ts-types'
 import {
   Alert,
@@ -186,7 +187,11 @@ export function TeamsPage(): ReactElement {
                 ) : (
                   teams.map((team) => (
                     <TableRow key={team.id}>
-                      <TableCell className="font-medium text-foreground">{team.name}</TableCell>
+                      <TableCell className="font-medium text-foreground">
+                        <Link className="text-primary hover:underline" to={`/teams/${team.id}`}>
+                          {team.name}
+                        </Link>
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
                         {new Date(team.createdAt).toLocaleString()}
                       </TableCell>

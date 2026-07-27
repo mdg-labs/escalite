@@ -15,6 +15,7 @@ import { SchedulePage } from './routes/schedule'
 import { ServicePage } from './routes/service'
 import { ServicesPage } from './routes/services'
 import { SettingsPage } from './routes/settings'
+import { TeamPage } from './routes/team'
 import { TeamsPage } from './routes/teams'
 import { NotFoundPage } from './routes/not-found'
 import { SetupPage } from './routes/setup'
@@ -106,6 +107,14 @@ export function App(): ReactElement {
         element={
           <ProtectedRoute>
             <TeamsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teams/:teamId"
+        element={
+          <ProtectedRoute>
+            <TeamPage />
           </ProtectedRoute>
         }
       />
