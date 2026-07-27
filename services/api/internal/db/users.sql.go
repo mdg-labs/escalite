@@ -631,6 +631,39 @@ func (q *Queries) ReprovisionScimUser(ctx context.Context, arg ReprovisionScimUs
 	return i, err
 }
 
+const reprovisionUserByInvite = `-- name: ReprovisionUserByInvite :one
+UPDATE users
+SET role = $3,
+    deprovisioned_at = NULL,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+RETURNING id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
+`
+
+type ReprovisionUserByInviteParams struct {
+	ID             uuid.UUID `json:"id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	Role           string    `json:"role"`
+}
+
+func (q *Queries) ReprovisionUserByInvite(ctx context.Context, arg ReprovisionUserByInviteParams) (User, error) {
+	row := q.db.QueryRow(ctx, reprovisionUserByInvite, arg.ID, arg.OrganizationID, arg.Role)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.OrganizationID,
+		&i.Email,
+		&i.Role,
+		&i.ScimExternalID,
+		&i.DeprovisionedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const updateScimUser = `-- name: UpdateScimUser :one
 UPDATE users
 SET email = $3,
@@ -658,6 +691,39 @@ func (q *Queries) UpdateScimUser(ctx context.Context, arg UpdateScimUserParams) 
 		arg.ScimExternalID,
 		arg.DeprovisionedAt,
 	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.OrganizationID,
+		&i.Email,
+		&i.Role,
+		&i.ScimExternalID,
+		&i.DeprovisionedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateUserRole = `-- name: UpdateUserRole :one
+UPDATE users
+SET role = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+  AND deprovisioned_at IS NULL
+RETURNING id, account_id, organization_id, email, role, scim_external_id, deprovisioned_at, created_at, updated_at
+`
+
+type UpdateUserRoleParams struct {
+	ID             uuid.UUID `json:"id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	Role           string    `json:"role"`
+}
+
+func (q *Queries) UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUserRole, arg.ID, arg.OrganizationID, arg.Role)
 	var i User
 	err := row.Scan(
 		&i.ID,

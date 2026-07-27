@@ -18,6 +18,7 @@ const (
 	ActionLoginFailed              = "auth.login_failed"
 	ActionLogout                   = "auth.logout"
 	ActionRoleChanged              = "user.role_changed"
+	ActionUserInvited              = "user.invited"
 	ActionIntegrationKeyCreated    = "integration_key.created"
 	ActionIntegrationKeyRevoked    = "integration_key.revoked"
 	ActionEscalationPolicyCreated  = "escalation_policy.created"
@@ -161,6 +162,28 @@ func (r *Recorder) RoleChanged(ctx context.Context, q db.Querier, orgID, actorID
 		OrganizationID: orgID,
 		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
 		Action:         ActionRoleChanged,
+		TargetType:     pgtype.Text{String: targetTypeUser, Valid: true},
+		TargetID:       pgtype.UUID{Bytes: targetUserID, Valid: true},
+		Metadata:       meta,
+	})
+}
+
+// UserInvited records an organization user invite.
+func (r *Recorder) UserInvited(ctx context.Context, q db.Querier, orgID, actorID, targetUserID uuid.UUID, email, role string) {
+	meta, err := json.Marshal(map[string]string{
+		"email": email,
+		"role":  role,
+	})
+	if err != nil {
+		r.logger.Error("marshal user invite audit metadata failed", "error", err)
+		return
+	}
+
+	r.insert(ctx, q, db.CreateAuditEventParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		ActorID:        pgtype.UUID{Bytes: actorID, Valid: true},
+		Action:         ActionUserInvited,
 		TargetType:     pgtype.Text{String: targetTypeUser, Valid: true},
 		TargetID:       pgtype.UUID{Bytes: targetUserID, Valid: true},
 		Metadata:       meta,

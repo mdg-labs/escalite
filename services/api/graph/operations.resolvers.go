@@ -3242,6 +3242,16 @@ func (r *mutationResolver) UpdateOrganization(ctx context.Context, input model.U
 	return organizationFromDB(org), nil
 }
 
+// InviteUser is the resolver for the inviteUser field.
+func (r *mutationResolver) InviteUser(ctx context.Context, input model.InviteUserInput) (*model.OrganizationUser, error) {
+	return r.resolveInviteUser(ctx, input)
+}
+
+// UpdateUserRole is the resolver for the updateUserRole field.
+func (r *mutationResolver) UpdateUserRole(ctx context.Context, input model.UpdateUserRoleInput) (*model.OrganizationUser, error) {
+	return r.resolveUpdateUserRole(ctx, input)
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	sc, ok := auth.SessionFromContext(ctx)

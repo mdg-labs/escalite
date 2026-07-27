@@ -288,6 +288,11 @@ type IntegrationKey struct {
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
 
+type InviteUserInput struct {
+	Email string   `json:"email"`
+	Role  UserRole `json:"role"`
+}
+
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -741,6 +746,11 @@ type UpdateStatusPageIncidentStatusInput struct {
 type UpdateTeamInput struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+type UpdateUserRoleInput struct {
+	UserID string   `json:"userId"`
+	Role   UserRole `json:"role"`
 }
 
 type User struct {

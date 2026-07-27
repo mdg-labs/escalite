@@ -178,3 +178,21 @@ SET email = $3,
 WHERE id = $1
   AND organization_id = $2
 RETURNING *;
+
+-- name: ReprovisionUserByInvite :one
+UPDATE users
+SET role = $3,
+    deprovisioned_at = NULL,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+RETURNING *;
+
+-- name: UpdateUserRole :one
+UPDATE users
+SET role = $3,
+    updated_at = now()
+WHERE id = $1
+  AND organization_id = $2
+  AND deprovisioned_at IS NULL
+RETURNING *;

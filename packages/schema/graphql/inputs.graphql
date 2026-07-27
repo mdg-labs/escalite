@@ -264,3 +264,13 @@ input SaveAnalyticsSettingsInput {
 input UpdateOrganizationInput {
   name: String!
 }
+
+input InviteUserInput {
+  email: String!
+  role: UserRole!
+}
+
+input UpdateUserRoleInput {
+  userId: ID!
+  role: UserRole!
+}

@@ -259,6 +259,7 @@ type ComplexityRoot struct {
 		DeleteService                  func(childComplexity int, id string) int
 		DeleteStatusPageComponent      func(childComplexity int, id string) int
 		DeleteTeam                     func(childComplexity int, id string) int
+		InviteUser                     func(childComplexity int, input model.InviteUserInput) int
 		Login                          func(childComplexity int, input model.LoginInput) int
 		PromoteAlertToIncident         func(childComplexity int, input model.PromoteAlertToIncidentInput) int
 		PublishIncidentToStatusPage    func(childComplexity int, input model.PublishIncidentToStatusPageInput) int
@@ -293,6 +294,7 @@ type ComplexityRoot struct {
 		UpdateStatusPageComponent      func(childComplexity int, input model.UpdateStatusPageComponentInput) int
 		UpdateStatusPageIncidentStatus func(childComplexity int, input model.UpdateStatusPageIncidentStatusInput) int
 		UpdateTeam                     func(childComplexity int, input model.UpdateTeamInput) int
+		UpdateUserRole                 func(childComplexity int, input model.UpdateUserRoleInput) int
 	}
 
 	NotificationChannelDefinition struct {
@@ -667,6 +669,8 @@ type MutationResolver interface {
 	UpdateStatusPageIncidentStatus(ctx context.Context, input model.UpdateStatusPageIncidentStatusInput) (*model.StatusPageIncident, error)
 	SaveAnalyticsSettings(ctx context.Context, input model.SaveAnalyticsSettingsInput) (*model.AnalyticsSettings, error)
 	UpdateOrganization(ctx context.Context, input model.UpdateOrganizationInput) (*model.Organization, error)
+	InviteUser(ctx context.Context, input model.InviteUserInput) (*model.OrganizationUser, error)
+	UpdateUserRole(ctx context.Context, input model.UpdateUserRoleInput) (*model.OrganizationUser, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
@@ -1847,6 +1851,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteTeam(childComplexity, args["id"].(string)), true
+	case "Mutation.inviteUser":
+		if e.ComplexityRoot.Mutation.InviteUser == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_inviteUser_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.InviteUser(childComplexity, args["input"].(model.InviteUserInput)), true
 	case "Mutation.login":
 		if e.ComplexityRoot.Mutation.Login == nil {
 			break
@@ -2216,6 +2231,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateTeam(childComplexity, args["input"].(model.UpdateTeamInput)), true
+	case "Mutation.updateUserRole":
+		if e.ComplexityRoot.Mutation.UpdateUserRole == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateUserRole_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateUserRole(childComplexity, args["input"].(model.UpdateUserRoleInput)), true
 
 	case "NotificationChannelDefinition.configSchema":
 		if e.ComplexityRoot.NotificationChannelDefinition.ConfigSchema == nil {
@@ -3537,6 +3563,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateTeamInput,
 		ec.unmarshalInputEscalationStepInput,
 		ec.unmarshalInputEscalationStepTargetInput,
+		ec.unmarshalInputInviteUserInput,
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputNotificationRuleStepInput,
 		ec.unmarshalInputPromoteAlertToIncidentInput,
@@ -3563,6 +3590,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateStatusPageComponentInput,
 		ec.unmarshalInputUpdateStatusPageIncidentStatusInput,
 		ec.unmarshalInputUpdateTeamInput,
+		ec.unmarshalInputUpdateUserRoleInput,
 	)
 	first := true
 
@@ -3985,6 +4013,16 @@ input SaveAnalyticsSettingsInput {
 
 input UpdateOrganizationInput {
   name: String!
+}
+
+input InviteUserInput {
+  email: String!
+  role: UserRole!
+}
+
+input UpdateUserRoleInput {
+  userId: ID!
+  role: UserRole!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/operations.graphql", Input: `type Subscription {
@@ -4507,6 +4545,28 @@ type Mutation {
   Update the organization display name (org admin only).
   """
   updateOrganization(input: UpdateOrganizationInput!): Organization!
+
+  """
+  Invite a user to the organization (org admin only).
+
+  Always creates or reactivates an organization user row immediately. A user is
+  "pending" when their account has no password yet — they cannot sign in until
+  they complete password setup.
+
+  When SMTP is configured, sends an invite email: a password-setup link for
+  accounts without a password, or a login notice when the account already has
+  a password (multi-org). When SMTP is not configured, only the user row is
+  created; share access out of band or use password reset once mail is available.
+
+  No invite tokens or passwords are returned in the GraphQL response.
+  """
+  inviteUser(input: InviteUserInput!): OrganizationUser!
+
+  """
+  Change an organization user's role (org admin only).
+  Rejected when demoting the last org admin.
+  """
+  updateUserRole(input: UpdateUserRoleInput!): OrganizationUser!
 }
 `, BuiltIn: false},
 	{Name: "../../../packages/schema/graphql/scalars.graphql", Input: `"""
@@ -6415,6 +6475,20 @@ func (ec *executionContext) field_Mutation_deleteTeam_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_inviteUser_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.InviteUserInput, error) {
+			return ec.unmarshalNInviteUserInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐInviteUserInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -6885,6 +6959,20 @@ func (ec *executionContext) field_Mutation_updateTeam_args(ctx context.Context, 
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.UpdateTeamInput, error) {
 			return ec.unmarshalNUpdateTeamInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateTeamInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateUserRole_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateUserRoleInput, error) {
+			return ec.unmarshalNUpdateUserRoleInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateUserRoleInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -13194,6 +13282,94 @@ func (ec *executionContext) fieldContext_Mutation_updateOrganization(ctx context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateOrganization_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_inviteUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_inviteUser(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().InviteUser(ctx, fc.Args["input"].(model.InviteUserInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.OrganizationUser) graphql.Marshaler {
+			return ec.marshalNOrganizationUser2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganizationUser(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_inviteUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_OrganizationUser(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_inviteUser_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateUserRole(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateUserRole(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateUserRole(ctx, fc.Args["input"].(model.UpdateUserRoleInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.OrganizationUser) graphql.Marshaler {
+			return ec.marshalNOrganizationUser2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganizationUser(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateUserRole(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_OrganizationUser(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateUserRole_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -20302,6 +20478,43 @@ func (ec *executionContext) unmarshalInputEscalationStepTargetInput(ctx context.
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputInviteUserInput(ctx context.Context, obj any) (model.InviteUserInput, error) {
+	var it model.InviteUserInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"email", "role"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "email":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Email = data
+		case "role":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
+			data, err := ec.unmarshalNUserRole2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUserRole(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Role = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj any) (model.LoginInput, error) {
 	var it model.LoginInput
 	if obj == nil {
@@ -21434,6 +21647,43 @@ func (ec *executionContext) unmarshalInputUpdateTeamInput(ctx context.Context, o
 				return it, err
 			}
 			it.Name = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateUserRoleInput(ctx context.Context, obj any) (model.UpdateUserRoleInput, error) {
+	var it model.UpdateUserRoleInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"userId", "role"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "userId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserID = data
+		case "role":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
+			data, err := ec.unmarshalNUserRole2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUserRole(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Role = data
 		}
 	}
 	return it, nil
@@ -23440,6 +23690,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateOrganization":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateOrganization(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "inviteUser":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_inviteUser(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateUserRole":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateUserRole(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -27178,6 +27442,11 @@ func (ec *executionContext) marshalNIntegrationKey2ᚖgithubᚗcomᚋmdgᚑlabs�
 	return ec._IntegrationKey(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNInviteUserInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐInviteUserInput(ctx context.Context, v any) (model.InviteUserInput, error) {
+	res, err := ec.unmarshalInputInviteUserInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNJSON2map(ctx context.Context, v any) (map[string]any, error) {
 	res, err := graphql.UnmarshalMap(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -27442,6 +27711,10 @@ func (ec *executionContext) marshalNOrganizationMembership2ᚖgithubᚗcomᚋmdg
 		return graphql.Null
 	}
 	return ec._OrganizationMembership(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNOrganizationUser2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganizationUser(ctx context.Context, sel ast.SelectionSet, v model.OrganizationUser) graphql.Marshaler {
+	return ec._OrganizationUser(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNOrganizationUser2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐOrganizationUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.OrganizationUser) graphql.Marshaler {
@@ -28086,6 +28359,11 @@ func (ec *executionContext) unmarshalNUpdateStatusPageIncidentStatusInput2github
 
 func (ec *executionContext) unmarshalNUpdateTeamInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateTeamInput(ctx context.Context, v any) (model.UpdateTeamInput, error) {
 	res, err := ec.unmarshalInputUpdateTeamInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateUserRoleInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐUpdateUserRoleInput(ctx context.Context, v any) (model.UpdateUserRoleInput, error) {
+	res, err := ec.unmarshalInputUpdateUserRoleInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

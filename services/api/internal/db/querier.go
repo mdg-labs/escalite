@@ -188,6 +188,7 @@ type Querier interface {
 	RemoveScimGroupMember(ctx context.Context, arg RemoveScimGroupMemberParams) error
 	ReplaceStatusPageIncidentComponents(ctx context.Context, arg ReplaceStatusPageIncidentComponentsParams) error
 	ReprovisionScimUser(ctx context.Context, arg ReprovisionScimUserParams) (User, error)
+	ReprovisionUserByInvite(ctx context.Context, arg ReprovisionUserByInviteParams) (User, error)
 	ResolveOpenAlert(ctx context.Context, arg ResolveOpenAlertParams) (Alert, error)
 	RevokeAllUserRefreshTokens(ctx context.Context, arg RevokeAllUserRefreshTokensParams) error
 	RevokeAllUserSessions(ctx context.Context, arg RevokeAllUserSessionsParams) error
@@ -221,6 +222,7 @@ type Querier interface {
 	UpdateStatusPageComponent(ctx context.Context, arg UpdateStatusPageComponentParams) (StatusPageComponent, error)
 	UpdateStatusPageIncidentStatus(ctx context.Context, arg UpdateStatusPageIncidentStatusParams) (StatusPageIncident, error)
 	UpdateTeam(ctx context.Context, arg UpdateTeamParams) (Team, error)
+	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) (User, error)
 	UpsertMobileDevice(ctx context.Context, arg UpsertMobileDeviceParams) (MobileDevice, error)
 	UpsertOrganizationAnalyticsSettings(ctx context.Context, arg UpsertOrganizationAnalyticsSettingsParams) (OrganizationAnalyticsSetting, error)
 	UpsertOrganizationSamlSettings(ctx context.Context, arg UpsertOrganizationSamlSettingsParams) (OrganizationSamlSetting, error)

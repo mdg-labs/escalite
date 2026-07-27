@@ -75,3 +75,12 @@ func (r *Resolver) passwordResetService() *handlers.PasswordResetService {
 	}
 	return handlers.NewPasswordResetService(r.pool, db.New(r.pool), mail, cfg, r.logger)
 }
+
+func (r *Resolver) userInviteService() *handlers.UserInviteService {
+	cfg := handlers.UserInviteConfig{PublicURL: r.publicURL}
+	mail := r.mail
+	if mail == nil {
+		mail = email.NoopSender{}
+	}
+	return handlers.NewUserInviteService(r.pool, db.New(r.pool), mail, cfg, r.logger)
+}

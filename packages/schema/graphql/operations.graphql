@@ -518,4 +518,26 @@ type Mutation {
   Update the organization display name (org admin only).
   """
   updateOrganization(input: UpdateOrganizationInput!): Organization!
+
+  """
+  Invite a user to the organization (org admin only).
+
+  Always creates or reactivates an organization user row immediately. A user is
+  "pending" when their account has no password yet — they cannot sign in until
+  they complete password setup.
+
+  When SMTP is configured, sends an invite email: a password-setup link for
+  accounts without a password, or a login notice when the account already has
+  a password (multi-org). When SMTP is not configured, only the user row is
+  created; share access out of band or use password reset once mail is available.
+
+  No invite tokens or passwords are returned in the GraphQL response.
+  """
+  inviteUser(input: InviteUserInput!): OrganizationUser!
+
+  """
+  Change an organization user's role (org admin only).
+  Rejected when demoting the last org admin.
+  """
+  updateUserRole(input: UpdateUserRoleInput!): OrganizationUser!
 }

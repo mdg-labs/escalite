@@ -32,6 +32,15 @@ func organizationFromDB(org db.Organization) *model.Organization {
 	}
 }
 
+func userRoleToDB(role model.UserRole) string {
+	switch role {
+	case model.UserRoleAdmin:
+		return "admin"
+	default:
+		return "member"
+	}
+}
+
 func userRoleFromDB(role string) model.UserRole {
 	switch strings.ToLower(strings.TrimSpace(role)) {
 	case "admin":
