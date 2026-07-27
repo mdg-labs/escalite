@@ -652,3 +652,46 @@ query AuditEvents($action: String, $from: DateTime, $to: DateTime, $limit: Int, 
     }
   }
 }
+
+fragment HeartbeatMonitorFields on HeartbeatMonitor {
+  id
+  organizationId
+  serviceId
+  name
+  intervalSeconds
+  graceSeconds
+  status
+  tokenPrefix
+  token
+  lastPingAt
+  createdAt
+  updatedAt
+}
+
+query HeartbeatMonitors($serviceId: ID!) {
+  heartbeatMonitors(serviceId: $serviceId) {
+    ...HeartbeatMonitorFields
+  }
+}
+
+query HeartbeatMonitor($id: ID!) {
+  heartbeatMonitor(id: $id) {
+    ...HeartbeatMonitorFields
+  }
+}
+
+mutation CreateHeartbeatMonitor($input: CreateHeartbeatMonitorInput!) {
+  createHeartbeatMonitor(input: $input) {
+    ...HeartbeatMonitorFields
+  }
+}
+
+mutation UpdateHeartbeatMonitor($input: UpdateHeartbeatMonitorInput!) {
+  updateHeartbeatMonitor(input: $input) {
+    ...HeartbeatMonitorFields
+  }
+}
+
+mutation DeleteHeartbeatMonitor($id: ID!) {
+  deleteHeartbeatMonitor(id: $id)
+}
