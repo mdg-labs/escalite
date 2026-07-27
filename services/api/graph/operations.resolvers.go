@@ -678,7 +678,7 @@ func (r *mutationResolver) CreateEscalationPolicy(ctx context.Context, input mod
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
 
-	return escalationPolicyFromDB(policy, steps), nil
+	return escalationPolicyFromDBWithTargets(ctx, queries, sc.User.OrganizationID, policy, steps)
 }
 
 // UpdateEscalationPolicy is the resolver for the updateEscalationPolicy field.
@@ -754,7 +754,7 @@ func (r *mutationResolver) UpdateEscalationPolicy(ctx context.Context, input mod
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
 
-	return escalationPolicyFromDB(policy, steps), nil
+	return escalationPolicyFromDBWithTargets(ctx, queries, sc.User.OrganizationID, policy, steps)
 }
 
 // DeleteEscalationPolicy is the resolver for the deleteEscalationPolicy field.
@@ -3355,7 +3355,7 @@ func (r *queryResolver) EscalationPolicy(ctx context.Context, id string) (*model
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
 
-	return escalationPolicyFromDB(policy, steps), nil
+	return escalationPolicyFromDBWithTargets(ctx, queries, sc.User.OrganizationID, policy, steps)
 }
 
 // EscalationPolicies is the resolver for the escalationPolicies field.
@@ -3401,7 +3401,12 @@ func (r *queryResolver) EscalationPolicies(ctx context.Context, serviceID string
 			r.logger.Error("list escalation steps failed", "error", err)
 			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 		}
-		result = append(result, escalationPolicyFromDB(policy, steps))
+		policyWithTargets, err := escalationPolicyFromDBWithTargets(ctx, queries, sc.User.OrganizationID, policy, steps)
+		if err != nil {
+			r.logger.Error("list escalation step targets failed", "error", err)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+		result = append(result, policyWithTargets)
 	}
 
 	return result, nil

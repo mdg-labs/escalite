@@ -175,15 +175,16 @@ type EscalationPolicy struct {
 }
 
 type EscalationStep struct {
-	ID                 string    `json:"id"`
-	EscalationPolicyID string    `json:"escalationPolicyId"`
-	OrganizationID     string    `json:"organizationId"`
-	StepOrder          int       `json:"stepOrder"`
-	DelayMinutes       int       `json:"delayMinutes"`
-	RepeatLastStep     bool      `json:"repeatLastStep"`
-	MaxRepeats         *int      `json:"maxRepeats,omitempty"`
-	CreatedAt          time.Time `json:"createdAt"`
-	UpdatedAt          time.Time `json:"updatedAt"`
+	ID                 string                  `json:"id"`
+	EscalationPolicyID string                  `json:"escalationPolicyId"`
+	OrganizationID     string                  `json:"organizationId"`
+	StepOrder          int                     `json:"stepOrder"`
+	DelayMinutes       int                     `json:"delayMinutes"`
+	RepeatLastStep     bool                    `json:"repeatLastStep"`
+	MaxRepeats         *int                    `json:"maxRepeats,omitempty"`
+	Targets            []*EscalationStepTarget `json:"targets"`
+	CreatedAt          time.Time               `json:"createdAt"`
+	UpdatedAt          time.Time               `json:"updatedAt"`
 }
 
 type EscalationStepInput struct {
@@ -192,6 +193,15 @@ type EscalationStepInput struct {
 	RepeatLastStep *bool                        `json:"repeatLastStep,omitempty"`
 	MaxRepeats     *int                         `json:"maxRepeats,omitempty"`
 	Targets        []*EscalationStepTargetInput `json:"targets"`
+}
+
+// Notification target for an escalation step (user, rotation schedule, or webhook).
+type EscalationStepTarget struct {
+	ID         string  `json:"id"`
+	TargetType string  `json:"targetType"`
+	UserID     *string `json:"userId,omitempty"`
+	ScheduleID *string `json:"scheduleId,omitempty"`
+	WebhookURL *string `json:"webhookUrl,omitempty"`
 }
 
 type EscalationStepTargetInput struct {

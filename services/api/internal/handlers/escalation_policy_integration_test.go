@@ -292,3 +292,150 @@ func TestGraphQLEscalationPolicyRequiresAdmin(t *testing.T) {
 	require.NotEmpty(t, resp.Errors)
 	require.Equal(t, handlers.CodeForbidden, resp.Errors[0].Extensions["code"])
 }
+
+func TestGraphQLEscalationPolicyReturnsStepTargets(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	adminCookie := bootstrapAdmin(t, handler)
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+	schedule, err := queries.CreateSchedule(context.Background(), db.CreateScheduleParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: admin.OrganizationID,
+		TeamID:         team.ID,
+		Name:           "Primary",
+		Timezone:       "UTC",
+	})
+	require.NoError(t, err)
+
+	adminUserID := admin.ID.String()
+	scheduleID := schedule.ID.String()
+	webhookURL := "https://example.com/hooks/escalite"
+
+	createRec := postGraphQL(t, handler, `mutation {
+		createEscalationPolicy(input: {
+			serviceId: "`+service.ID.String()+`"
+			name: "With targets"
+			steps: [{
+				stepOrder: 1
+				delayMinutes: 0
+				targets: [
+					{ targetType: "user", userId: "`+adminUserID+`" }
+					{ targetType: "rotation", scheduleId: "`+scheduleID+`" }
+					{ targetType: "webhook", webhookUrl: "`+webhookURL+`" }
+				]
+			}]
+		}) {
+			id
+			steps {
+				id
+				targets {
+					targetType
+					userId
+					scheduleId
+					webhookUrl
+				}
+			}
+		}
+	}`, adminCookie)
+	require.Equal(t, 200, createRec.Code, createRec.Body.String())
+
+	var createResp struct {
+		Data struct {
+			CreateEscalationPolicy struct {
+				ID    string `json:"id"`
+				Steps []struct {
+					ID      string `json:"id"`
+					Targets []struct {
+						TargetType string  `json:"targetType"`
+						UserID     *string `json:"userId"`
+						ScheduleID *string `json:"scheduleId"`
+						WebhookURL *string `json:"webhookUrl"`
+					} `json:"targets"`
+				} `json:"steps"`
+			} `json:"createEscalationPolicy"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(createRec.Body.Bytes(), &createResp))
+	require.Len(t, createResp.Data.CreateEscalationPolicy.Steps, 1)
+	require.Len(t, createResp.Data.CreateEscalationPolicy.Steps[0].Targets, 3)
+
+	policyID := createResp.Data.CreateEscalationPolicy.ID
+
+	getRec := postGraphQL(t, handler, `{
+		escalationPolicy(id: "`+policyID+`") {
+			id
+			name
+			steps {
+				id
+				stepOrder
+				delayMinutes
+				targets {
+					id
+					targetType
+					userId
+					scheduleId
+					webhookUrl
+				}
+			}
+		}
+	}`, adminCookie)
+	require.Equal(t, 200, getRec.Code, getRec.Body.String())
+
+	var getResp struct {
+		Data struct {
+			EscalationPolicy struct {
+				ID    string `json:"id"`
+				Name  string `json:"name"`
+				Steps []struct {
+					StepOrder    int `json:"stepOrder"`
+					DelayMinutes int `json:"delayMinutes"`
+					Targets      []struct {
+						ID         string  `json:"id"`
+						TargetType string  `json:"targetType"`
+						UserID     *string `json:"userId"`
+						ScheduleID *string `json:"scheduleId"`
+						WebhookURL *string `json:"webhookUrl"`
+					} `json:"targets"`
+				} `json:"steps"`
+			} `json:"escalationPolicy"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(getRec.Body.Bytes(), &getResp))
+	require.Equal(t, policyID, getResp.Data.EscalationPolicy.ID)
+	require.Equal(t, "With targets", getResp.Data.EscalationPolicy.Name)
+	require.Len(t, getResp.Data.EscalationPolicy.Steps, 1)
+	require.Equal(t, 1, getResp.Data.EscalationPolicy.Steps[0].StepOrder)
+	require.Len(t, getResp.Data.EscalationPolicy.Steps[0].Targets, 3)
+
+	targetsByType := map[string]struct {
+		UserID     *string
+		ScheduleID *string
+		WebhookURL *string
+	}{}
+	for _, target := range getResp.Data.EscalationPolicy.Steps[0].Targets {
+		require.NotEmpty(t, target.ID)
+		targetsByType[target.TargetType] = struct {
+			UserID     *string
+			ScheduleID *string
+			WebhookURL *string
+		}{
+			UserID:     target.UserID,
+			ScheduleID: target.ScheduleID,
+			WebhookURL: target.WebhookURL,
+		}
+	}
+
+	require.NotNil(t, targetsByType["user"].UserID)
+	require.Equal(t, adminUserID, *targetsByType["user"].UserID)
+	require.NotNil(t, targetsByType["rotation"].ScheduleID)
+	require.Equal(t, scheduleID, *targetsByType["rotation"].ScheduleID)
+	require.NotNil(t, targetsByType["webhook"].WebhookURL)
+	require.Equal(t, webhookURL, *targetsByType["webhook"].WebhookURL)
+}

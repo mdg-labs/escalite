@@ -115,7 +115,16 @@ type ComplexityRoot struct {
 		OrganizationID     func(childComplexity int) int
 		RepeatLastStep     func(childComplexity int) int
 		StepOrder          func(childComplexity int) int
+		Targets            func(childComplexity int) int
 		UpdatedAt          func(childComplexity int) int
+	}
+
+	EscalationStepTarget struct {
+		ID         func(childComplexity int) int
+		ScheduleID func(childComplexity int) int
+		TargetType func(childComplexity int) int
+		UserID     func(childComplexity int) int
+		WebhookURL func(childComplexity int) int
 	}
 
 	Health struct {
@@ -1033,12 +1042,49 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.EscalationStep.StepOrder(childComplexity), true
+	case "EscalationStep.targets":
+		if e.ComplexityRoot.EscalationStep.Targets == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStep.Targets(childComplexity), true
 	case "EscalationStep.updatedAt":
 		if e.ComplexityRoot.EscalationStep.UpdatedAt == nil {
 			break
 		}
 
 		return e.ComplexityRoot.EscalationStep.UpdatedAt(childComplexity), true
+
+	case "EscalationStepTarget.id":
+		if e.ComplexityRoot.EscalationStepTarget.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStepTarget.ID(childComplexity), true
+	case "EscalationStepTarget.scheduleId":
+		if e.ComplexityRoot.EscalationStepTarget.ScheduleID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStepTarget.ScheduleID(childComplexity), true
+	case "EscalationStepTarget.targetType":
+		if e.ComplexityRoot.EscalationStepTarget.TargetType == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStepTarget.TargetType(childComplexity), true
+	case "EscalationStepTarget.userId":
+		if e.ComplexityRoot.EscalationStepTarget.UserID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStepTarget.UserID(childComplexity), true
+	case "EscalationStepTarget.webhookUrl":
+		if e.ComplexityRoot.EscalationStepTarget.WebhookURL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EscalationStepTarget.WebhookURL(childComplexity), true
 
 	case "Health.status":
 		if e.ComplexityRoot.Health.Status == nil {
@@ -4602,8 +4648,18 @@ type EscalationStep {
   delayMinutes: Int!
   repeatLastStep: Boolean!
   maxRepeats: Int
+  targets: [EscalationStepTarget!]!
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+"""Notification target for an escalation step (user, rotation schedule, or webhook)."""
+type EscalationStepTarget {
+  id: ID!
+  targetType: String!
+  userId: ID
+  scheduleId: ID
+  webhookUrl: String
 }
 
 type Health {
@@ -5111,12 +5167,30 @@ func (ec *executionContext) childFields_EscalationStep(ctx context.Context, fiel
 		return ec.fieldContext_EscalationStep_repeatLastStep(ctx, field)
 	case "maxRepeats":
 		return ec.fieldContext_EscalationStep_maxRepeats(ctx, field)
+	case "targets":
+		return ec.fieldContext_EscalationStep_targets(ctx, field)
 	case "createdAt":
 		return ec.fieldContext_EscalationStep_createdAt(ctx, field)
 	case "updatedAt":
 		return ec.fieldContext_EscalationStep_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type EscalationStep", field.Name)
+}
+
+func (ec *executionContext) childFields_EscalationStepTarget(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_EscalationStepTarget_id(ctx, field)
+	case "targetType":
+		return ec.fieldContext_EscalationStepTarget_targetType(ctx, field)
+	case "userId":
+		return ec.fieldContext_EscalationStepTarget_userId(ctx, field)
+	case "scheduleId":
+		return ec.fieldContext_EscalationStepTarget_scheduleId(ctx, field)
+	case "webhookUrl":
+		return ec.fieldContext_EscalationStepTarget_webhookUrl(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type EscalationStepTarget", field.Name)
 }
 
 func (ec *executionContext) childFields_Health(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -8445,6 +8519,38 @@ func (ec *executionContext) fieldContext_EscalationStep_maxRepeats(_ context.Con
 	return graphql.NewScalarFieldContext("EscalationStep", field, false, false, errors.New("field of type Int does not have child fields"))
 }
 
+func (ec *executionContext) _EscalationStep_targets(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStep) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStep_targets(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Targets, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.EscalationStepTarget) graphql.Marshaler {
+			return ec.marshalNEscalationStepTarget2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepTargetᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStep_targets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EscalationStep",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_EscalationStepTarget(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _EscalationStep_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStep) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -8489,6 +8595,121 @@ func (ec *executionContext) _EscalationStep_updatedAt(ctx context.Context, field
 }
 func (ec *executionContext) fieldContext_EscalationStep_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("EscalationStep", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStepTarget_id(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStepTarget) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStepTarget_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStepTarget_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStepTarget", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStepTarget_targetType(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStepTarget) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStepTarget_targetType(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TargetType, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStepTarget_targetType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStepTarget", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStepTarget_userId(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStepTarget) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStepTarget_userId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStepTarget_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStepTarget", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStepTarget_scheduleId(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStepTarget) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStepTarget_scheduleId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ScheduleID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOID2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStepTarget_scheduleId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStepTarget", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _EscalationStepTarget_webhookUrl(ctx context.Context, field graphql.CollectedField, obj *model.EscalationStepTarget) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EscalationStepTarget_webhookUrl(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.WebhookURL, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_EscalationStepTarget_webhookUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EscalationStepTarget", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Health_status(ctx context.Context, field graphql.CollectedField, obj *model.Health) (ret graphql.Marshaler) {
@@ -21747,6 +21968,11 @@ func (ec *executionContext) _EscalationStep(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
+		case "targets":
+			out.Values[i] = ec._EscalationStep_targets(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createdAt":
 			out.Values[i] = ec._EscalationStep_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -21755,6 +21981,64 @@ func (ec *executionContext) _EscalationStep(ctx context.Context, sel ast.Selecti
 		case "updatedAt":
 			out.Values[i] = ec._EscalationStep_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var escalationStepTargetImplementors = []string{"EscalationStepTarget"}
+
+func (ec *executionContext) _EscalationStepTarget(ctx context.Context, sel ast.SelectionSet, obj *model.EscalationStepTarget) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, escalationStepTargetImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EscalationStepTarget")
+		case "id":
+			out.Values[i] = ec._EscalationStepTarget_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "targetType":
+			out.Values[i] = ec._EscalationStepTarget_targetType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userId":
+			out.Values[i] = ec._EscalationStepTarget_userId(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "scheduleId":
+			out.Values[i] = ec._EscalationStepTarget_scheduleId(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "webhookUrl":
+			out.Values[i] = ec._EscalationStepTarget_webhookUrl(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
 		default:
@@ -26602,6 +26886,32 @@ func (ec *executionContext) unmarshalNEscalationStepInput2ᚕᚖgithubᚗcomᚋm
 func (ec *executionContext) unmarshalNEscalationStepInput2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepInput(ctx context.Context, v any) (*model.EscalationStepInput, error) {
 	res, err := ec.unmarshalInputEscalationStepInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNEscalationStepTarget2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepTargetᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EscalationStepTarget) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNEscalationStepTarget2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepTarget(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNEscalationStepTarget2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepTarget(ctx context.Context, sel ast.SelectionSet, v *model.EscalationStepTarget) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EscalationStepTarget(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNEscalationStepTargetInput2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐEscalationStepTargetInputᚄ(ctx context.Context, v any) ([]*model.EscalationStepTargetInput, error) {

@@ -120,8 +120,18 @@ type EscalationStep {
   delayMinutes: Int!
   repeatLastStep: Boolean!
   maxRepeats: Int
+  targets: [EscalationStepTarget!]!
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+"""Notification target for an escalation step (user, rotation schedule, or webhook)."""
+type EscalationStepTarget {
+  id: ID!
+  targetType: String!
+  userId: ID
+  scheduleId: ID
+  webhookUrl: String
 }
 
 type Health {

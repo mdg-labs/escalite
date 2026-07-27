@@ -114,3 +114,46 @@ func (q *Queries) ListEscalationStepTargetsByStepID(ctx context.Context, arg Lis
 	}
 	return items, nil
 }
+
+const listEscalationStepTargetsByStepIDs = `-- name: ListEscalationStepTargetsByStepIDs :many
+SELECT id, escalation_step_id, organization_id, target_type, user_id, schedule_id, webhook_url, channels, created_at
+FROM escalation_step_targets
+WHERE escalation_step_id = ANY($1::uuid[])
+  AND organization_id = $2
+ORDER BY escalation_step_id, created_at
+`
+
+type ListEscalationStepTargetsByStepIDsParams struct {
+	Column1        []uuid.UUID `json:"column_1"`
+	OrganizationID uuid.UUID   `json:"organization_id"`
+}
+
+func (q *Queries) ListEscalationStepTargetsByStepIDs(ctx context.Context, arg ListEscalationStepTargetsByStepIDsParams) ([]EscalationStepTarget, error) {
+	rows, err := q.db.Query(ctx, listEscalationStepTargetsByStepIDs, arg.Column1, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []EscalationStepTarget{}
+	for rows.Next() {
+		var i EscalationStepTarget
+		if err := rows.Scan(
+			&i.ID,
+			&i.EscalationStepID,
+			&i.OrganizationID,
+			&i.TargetType,
+			&i.UserID,
+			&i.ScheduleID,
+			&i.WebhookUrl,
+			&i.Channels,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

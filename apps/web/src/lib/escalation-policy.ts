@@ -2,7 +2,16 @@ import type {
   EscalationEditorPolicy,
   EscalationEditorStep,
   EscalationStepTarget,
+  EscalationTargetType,
 } from '@escalite/ui/domain/EscalationPolicyEditor'
+
+type ApiEscalationStepTarget = {
+  id: string
+  targetType: string
+  userId?: string | null
+  scheduleId?: string | null
+  webhookUrl?: string | null
+}
 
 type ApiEscalationStep = {
   id: string
@@ -10,6 +19,17 @@ type ApiEscalationStep = {
   delayMinutes: number
   repeatLastStep: boolean
   maxRepeats?: number | null
+  targets?: ApiEscalationStepTarget[]
+}
+
+function mapApiTargetToEditor(target: ApiEscalationStepTarget): EscalationStepTarget {
+  return {
+    id: target.id,
+    targetType: target.targetType as EscalationTargetType,
+    userId: target.userId ?? undefined,
+    scheduleId: target.scheduleId ?? undefined,
+    webhookUrl: target.webhookUrl ?? undefined,
+  }
 }
 
 export function mapApiPolicyToEditor(
@@ -32,7 +52,7 @@ export function mapApiPolicyToEditor(
           delayMinutes: step.delayMinutes,
           repeatLastStep: step.repeatLastStep,
           maxRepeats: step.maxRepeats ?? null,
-          targets: targetsByStepId[step.id] ?? [],
+          targets: (step.targets ?? targetsByStepId[step.id] ?? []).map(mapApiTargetToEditor),
         }),
       ),
   }

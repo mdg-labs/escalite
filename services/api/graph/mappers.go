@@ -48,10 +48,14 @@ func timeFromDB(value pgtype.Timestamptz) time.Time {
 	return value.Time.UTC()
 }
 
-func escalationPolicyFromDB(policy db.EscalationPolicy, steps []db.EscalationStep) *model.EscalationPolicy {
+func escalationPolicyFromDB(
+	policy db.EscalationPolicy,
+	steps []db.EscalationStep,
+	targetsByStepID map[uuid.UUID][]db.EscalationStepTarget,
+) *model.EscalationPolicy {
 	gqlSteps := make([]*model.EscalationStep, 0, len(steps))
 	for _, step := range steps {
-		gqlSteps = append(gqlSteps, escalationStepFromDB(step))
+		gqlSteps = append(gqlSteps, escalationStepFromDB(step, targetsByStepID[step.ID]))
 	}
 
 	return &model.EscalationPolicy{
@@ -65,11 +69,16 @@ func escalationPolicyFromDB(policy db.EscalationPolicy, steps []db.EscalationSte
 	}
 }
 
-func escalationStepFromDB(step db.EscalationStep) *model.EscalationStep {
+func escalationStepFromDB(step db.EscalationStep, targets []db.EscalationStepTarget) *model.EscalationStep {
 	var maxRepeats *int
 	if step.MaxRepeats.Valid {
 		value := int(step.MaxRepeats.Int32)
 		maxRepeats = &value
+	}
+
+	gqlTargets := make([]*model.EscalationStepTarget, 0, len(targets))
+	for _, target := range targets {
+		gqlTargets = append(gqlTargets, escalationStepTargetFromDB(target))
 	}
 
 	return &model.EscalationStep{
@@ -80,9 +89,36 @@ func escalationStepFromDB(step db.EscalationStep) *model.EscalationStep {
 		DelayMinutes:       int(step.DelayMinutes),
 		RepeatLastStep:     step.RepeatLastStep,
 		MaxRepeats:         maxRepeats,
+		Targets:            gqlTargets,
 		CreatedAt:          timeFromDB(step.CreatedAt),
 		UpdatedAt:          timeFromDB(step.UpdatedAt),
 	}
+}
+
+func escalationStepTargetFromDB(target db.EscalationStepTarget) *model.EscalationStepTarget {
+	return &model.EscalationStepTarget{
+		ID:         target.ID.String(),
+		TargetType: target.TargetType,
+		UserID:     optionalIDFromUUID(target.UserID),
+		ScheduleID: optionalIDFromUUID(target.ScheduleID),
+		WebhookURL: optionalStringFromText(target.WebhookUrl),
+	}
+}
+
+func optionalIDFromUUID(value pgtype.UUID) *string {
+	if !value.Valid {
+		return nil
+	}
+	id := uuid.UUID(value.Bytes).String()
+	return &id
+}
+
+func optionalStringFromText(value pgtype.Text) *string {
+	if !value.Valid {
+		return nil
+	}
+	s := value.String
+	return &s
 }
 
 func alertFromDB(alert db.Alert, acknowledgedBy *db.User) *model.Alert {

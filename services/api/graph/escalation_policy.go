@@ -187,3 +187,48 @@ func insertEscalationStepTargets(
 
 	return nil
 }
+
+func loadEscalationStepTargetsBySteps(
+	ctx context.Context,
+	q db.Querier,
+	orgID uuid.UUID,
+	steps []db.EscalationStep,
+) (map[uuid.UUID][]db.EscalationStepTarget, error) {
+	result := make(map[uuid.UUID][]db.EscalationStepTarget, len(steps))
+	if len(steps) == 0 {
+		return result, nil
+	}
+
+	stepIDs := make([]uuid.UUID, 0, len(steps))
+	for _, step := range steps {
+		stepIDs = append(stepIDs, step.ID)
+	}
+
+	targets, err := q.ListEscalationStepTargetsByStepIDs(ctx, db.ListEscalationStepTargetsByStepIDsParams{
+		Column1:        stepIDs,
+		OrganizationID: orgID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, target := range targets {
+		result[target.EscalationStepID] = append(result[target.EscalationStepID], target)
+	}
+
+	return result, nil
+}
+
+func escalationPolicyFromDBWithTargets(
+	ctx context.Context,
+	q db.Querier,
+	orgID uuid.UUID,
+	policy db.EscalationPolicy,
+	steps []db.EscalationStep,
+) (*model.EscalationPolicy, error) {
+	targetsByStepID, err := loadEscalationStepTargetsBySteps(ctx, q, orgID, steps)
+	if err != nil {
+		return nil, err
+	}
+	return escalationPolicyFromDB(policy, steps, targetsByStepID), nil
+}

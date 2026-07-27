@@ -119,6 +119,13 @@ query EscalationPolicy($id: ID!) {
       delayMinutes
       repeatLastStep
       maxRepeats
+      targets {
+        id
+        targetType
+        userId
+        scheduleId
+        webhookUrl
+      }
     }
   }
 }
@@ -145,6 +152,13 @@ mutation CreateEscalationPolicy($input: CreateEscalationPolicyInput!) {
       delayMinutes
       repeatLastStep
       maxRepeats
+      targets {
+        id
+        targetType
+        userId
+        scheduleId
+        webhookUrl
+      }
     }
   }
 }
@@ -159,6 +173,13 @@ mutation UpdateEscalationPolicy($input: UpdateEscalationPolicyInput!) {
       delayMinutes
       repeatLastStep
       maxRepeats
+      targets {
+        id
+        targetType
+        userId
+        scheduleId
+        webhookUrl
+      }
     }
   }
 }

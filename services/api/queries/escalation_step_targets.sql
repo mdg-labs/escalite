@@ -26,3 +26,10 @@ FROM escalation_step_targets
 WHERE escalation_step_id = $1
   AND organization_id = $2
 ORDER BY created_at;
+
+-- name: ListEscalationStepTargetsByStepIDs :many
+SELECT *
+FROM escalation_step_targets
+WHERE escalation_step_id = ANY($1::uuid[])
+  AND organization_id = $2
+ORDER BY escalation_step_id, created_at;

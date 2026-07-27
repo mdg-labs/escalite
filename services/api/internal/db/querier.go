@@ -147,6 +147,7 @@ type Querier interface {
 	ListAuditEventsFiltered(ctx context.Context, arg ListAuditEventsFilteredParams) ([]AuditEvent, error)
 	ListEscalationPoliciesByServiceID(ctx context.Context, arg ListEscalationPoliciesByServiceIDParams) ([]EscalationPolicy, error)
 	ListEscalationStepTargetsByStepID(ctx context.Context, arg ListEscalationStepTargetsByStepIDParams) ([]EscalationStepTarget, error)
+	ListEscalationStepTargetsByStepIDs(ctx context.Context, arg ListEscalationStepTargetsByStepIDsParams) ([]EscalationStepTarget, error)
 	ListEscalationStepsByPolicyID(ctx context.Context, arg ListEscalationStepsByPolicyIDParams) ([]EscalationStep, error)
 	ListHeartbeatMonitorsByServiceID(ctx context.Context, arg ListHeartbeatMonitorsByServiceIDParams) ([]HeartbeatMonitor, error)
 	ListIncidentRoleAssignmentsByIncidentID(ctx context.Context, arg ListIncidentRoleAssignmentsByIncidentIDParams) ([]IncidentRoleAssignment, error)
