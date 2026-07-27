@@ -1,7 +1,16 @@
-import { useMemo, type ReactElement } from 'react'
+import { useEffect, useMemo, useState, type ReactElement } from 'react'
 import { Link, useLocation } from 'react-router'
 import { UserRole, useMeQuery } from '@escalite/ts-types'
-import { ScrollArea, cn } from '@escalite/ui'
+import {
+  Button,
+  Drawer,
+  DrawerPopup,
+  DrawerTitle,
+  DrawerTrigger,
+  ScrollArea,
+  cn,
+} from '@escalite/ui'
+import { MenuIcon } from 'lucide-react'
 
 import { type MessageKey, t } from '../lib/i18n'
 import { OrgSwitcher } from './org-switcher'
@@ -61,10 +70,16 @@ function isNavItemActive(pathname: string, path: string): boolean {
 type SidebarNavProps = {
   /** EL-166: mobile drawer will pass onNavigate to close drawer after route change. */
   onNavigate?: () => void
+  /** Hide footer org switcher when shell header already shows it (mobile drawer). */
+  hideOrgSwitcher?: boolean
   className?: string
 }
 
-export function SidebarNav({ onNavigate, className }: SidebarNavProps): ReactElement {
+export function SidebarNav({
+  onNavigate,
+  hideOrgSwitcher = false,
+  className,
+}: SidebarNavProps): ReactElement {
   const location = useLocation()
   const [{ data: meData }] = useMeQuery({ requestPolicy: 'cache-first' })
   const isAdmin = meData?.me?.role === UserRole.Admin
@@ -125,11 +140,46 @@ export function SidebarNav({ onNavigate, className }: SidebarNavProps): ReactEle
         </nav>
       </ScrollArea>
 
-      <footer className="shrink-0 border-t border-sidebar-border p-3">
-        <div className="[&>div]:items-stretch [&>div]:gap-2">
-          <OrgSwitcher />
-        </div>
-      </footer>
+      {!hideOrgSwitcher ? (
+        <footer className="shrink-0 border-t border-sidebar-border p-3">
+          <div className="[&>div]:items-stretch [&>div]:gap-2">
+            <OrgSwitcher />
+          </div>
+        </footer>
+      ) : null}
     </div>
+  )
+}
+
+/** Mobile hamburger → left drawer (p-drawer-11) for viewports below md. */
+export function MobileSidebarDrawer(): ReactElement {
+  const [open, setOpen] = useState(false)
+  const location = useLocation()
+
+  useEffect(() => {
+    setOpen(false)
+  }, [location.pathname])
+
+  const closeDrawer = (): void => {
+    setOpen(false)
+  }
+
+  return (
+    <Drawer onOpenChange={setOpen} open={open} position="left">
+      <DrawerTrigger
+        aria-label={t('nav.openMenu')}
+        render={<Button size="icon" type="button" variant="ghost" />}
+      >
+        <MenuIcon />
+      </DrawerTrigger>
+      <DrawerPopup
+        className="h-full max-h-none w-56 max-w-[85vw] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground shadow-none"
+        position="left"
+        variant="straight"
+      >
+        <DrawerTitle className="sr-only">{t('nav.menu')}</DrawerTitle>
+        <SidebarNav hideOrgSwitcher className="h-full" onNavigate={closeDrawer} />
+      </DrawerPopup>
+    </Drawer>
   )
 }

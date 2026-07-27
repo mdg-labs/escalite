@@ -30,6 +30,8 @@ const messages = {
   'alerts.priority.high': 'High',
   'alerts.priority.low': 'Low',
   'alerts.error.action': 'Action failed. Try again.',
+  'nav.openMenu': 'Open navigation menu',
+  'nav.menu': 'Navigation menu',
   'nav.dashboard': 'Dashboard',
   'nav.analytics': 'Analytics',
   'nav.alerts': 'Alerts',
