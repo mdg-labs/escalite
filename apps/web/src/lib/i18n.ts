@@ -519,6 +519,8 @@ const messages = {
   'incidents.roles.unassigned': 'Unassigned',
   'incidents.roles.assignMe': 'Assign me',
   'incidents.roles.assigning': 'Assigning…',
+  'incidents.roles.unassign': 'Unassign',
+  'incidents.roles.unassigning': 'Unassigning…',
   'incidents.timeline.title': 'Timeline',
   'incidents.timeline.empty': 'No timeline events yet.',
   'incidents.timeline.declared': 'Declared',

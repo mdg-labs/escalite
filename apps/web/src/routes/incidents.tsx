@@ -9,6 +9,7 @@ import {
   useAddIncidentTimelineNoteMutation,
   useAlertsQuery,
   useAssignIncidentRoleMutation,
+  useUnassignIncidentRoleMutation,
   useCreateIncidentMutation,
   useIncidentQuery,
   useIncidentRoleDefinitionsQuery,
@@ -96,14 +97,21 @@ function RoleSlot({
   roleDefinitionId,
   assignment,
   assigningRoleId,
+  unassigningRoleId,
   onAssign,
+  onUnassign,
 }: {
   roleName: string
   roleDefinitionId: string
   assignment?: IncidentRoleAssignmentFieldsFragment
   assigningRoleId: string | null
+  unassigningRoleId: string | null
   onAssign: () => void
+  onUnassign: () => void
 }): ReactElement {
+  const isAssigning = assigningRoleId === roleDefinitionId
+  const isUnassigning = assignment != null && unassigningRoleId === assignment.id
+
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
       <div className="flex min-w-0 items-center gap-3">
@@ -119,18 +127,20 @@ function RoleSlot({
           <span className="text-sm text-muted-foreground">{t('incidents.roles.unassigned')}</span>
         )}
       </div>
-      {!assignment ? (
+      {assignment ? (
         <Button
-          loading={assigningRoleId === roleDefinitionId}
-          onClick={onAssign}
+          loading={isUnassigning}
+          onClick={onUnassign}
           size="sm"
           variant="outline"
         >
-          {assigningRoleId === roleDefinitionId
-            ? t('incidents.roles.assigning')
-            : t('incidents.roles.assignMe')}
+          {isUnassigning ? t('incidents.roles.unassigning') : t('incidents.roles.unassign')}
         </Button>
-      ) : null}
+      ) : (
+        <Button loading={isAssigning} onClick={onAssign} size="sm" variant="outline">
+          {isAssigning ? t('incidents.roles.assigning') : t('incidents.roles.assignMe')}
+        </Button>
+      )}
     </div>
   )
 }
@@ -414,6 +424,7 @@ export function IncidentsPage(): ReactElement {
   const [noteLoading, setNoteLoading] = useState(false)
   const [statusLoading, setStatusLoading] = useState(false)
   const [assigningRoleId, setAssigningRoleId] = useState<string | null>(null)
+  const [unassigningRoleId, setUnassigningRoleId] = useState<string | null>(null)
 
   const [{ data: meData }] = useMeQuery({ requestPolicy: 'cache-first' })
   const currentUserId = meData?.me?.id ?? ''
@@ -437,6 +448,7 @@ export function IncidentsPage(): ReactElement {
   const [, addTimelineNote] = useAddIncidentTimelineNoteMutation()
   const [, updateIncidentStatus] = useUpdateIncidentStatusMutation()
   const [, assignIncidentRole] = useAssignIncidentRoleMutation()
+  const [, unassignIncidentRole] = useUnassignIncidentRoleMutation()
 
   const incident = incidentData?.incident
 
@@ -546,6 +558,20 @@ export function IncidentsPage(): ReactElement {
         )
         return [...withoutRole, assigned]
       })
+    }
+  }
+
+  async function handleUnassignRole(assignmentId: string): Promise<void> {
+    setActionError(null)
+    setUnassigningRoleId(assignmentId)
+    const result = await unassignIncidentRole({ id: assignmentId })
+    setUnassigningRoleId(null)
+    if (result.error) {
+      setActionError(t('incidents.error.action'))
+      return
+    }
+    if (result.data?.unassignIncidentRole) {
+      setRoleAssignments((current) => current.filter((assignment) => assignment.id !== assignmentId))
     }
   }
 
@@ -684,25 +710,38 @@ export function IncidentsPage(): ReactElement {
                           onAssign={() => {
                             void handleAssignRole(assignment.role.id)
                           }}
+                          onUnassign={() => {
+                            void handleUnassignRole(assignment.id)
+                          }}
                           roleDefinitionId={assignment.role.id}
                           roleName={assignment.role.name}
+                          unassigningRoleId={unassigningRoleId}
                         />
                       ))
-                    : roleDefinitions.map((roleDefinition) => (
+                    : roleDefinitions.map((roleDefinition) => {
+                        const assignment = assignmentByRoleDefinitionId(
+                          roleAssignments,
+                          roleDefinition.id,
+                        )
+                        return (
                         <RoleSlot
                           key={roleDefinition.id}
-                          assignment={assignmentByRoleDefinitionId(
-                            roleAssignments,
-                            roleDefinition.id,
-                          )}
+                          assignment={assignment}
                           assigningRoleId={assigningRoleId}
                           onAssign={() => {
                             void handleAssignRole(roleDefinition.id)
                           }}
+                          onUnassign={() => {
+                            if (assignment) {
+                              void handleUnassignRole(assignment.id)
+                            }
+                          }}
                           roleDefinitionId={roleDefinition.id}
                           roleName={roleDefinition.name}
+                          unassigningRoleId={unassigningRoleId}
                         />
-                      ))}
+                        )
+                      })}
                 </div>
               </div>
 
