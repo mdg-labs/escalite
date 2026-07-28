@@ -29,6 +29,7 @@ import {
 import { AlertTriangleIcon, CircleCheckIcon, SmartphoneIcon } from 'lucide-react'
 
 import { AppShell } from '../components/app-shell'
+import { ContactMethodsPanel } from '../components/contact-methods-panel'
 import { SamlSettingsPanel } from '../components/saml-settings-panel'
 import { ScimSettingsPanel } from '../components/scim-settings-panel'
 import { SlackSettingsPanel } from '../components/slack-settings-panel'
@@ -108,6 +109,7 @@ export function SettingsPage(): ReactElement {
         <SamlSettingsPanel />
         <ScimSettingsPanel />
         <SlackSettingsPanel />
+        <ContactMethodsPanel />
 
         <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
         <div className="flex items-start gap-3">

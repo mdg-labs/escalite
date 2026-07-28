@@ -401,6 +401,28 @@ const messages = {
   'settings.scim.action.rotating': 'Rotating…',
   'login.oidc.button': 'Sign in with SSO',
   'login.divider': 'or continue with email',
+  'settings.contactMethods.title': 'Notification contact methods',
+  'settings.contactMethods.description':
+    'Configure how Escalite reaches you for each notification channel. Settings apply to your user account in the active organization.',
+  'settings.contactMethods.loading': 'Loading notification channels…',
+  'settings.contactMethods.empty': 'No notification channels are registered on this instance.',
+  'settings.contactMethods.noFields':
+    'This channel uses your account defaults. Save to register the contact method.',
+  'settings.contactMethods.saved': 'Contact method saved.',
+  'settings.contactMethods.action.save': 'Save contact method',
+  'settings.contactMethods.action.saving': 'Saving…',
+  'settings.contactMethods.channel.email': 'Email',
+  'settings.contactMethods.channel.push': 'Mobile push',
+  'settings.contactMethods.channel.slackDm': 'Slack direct message',
+  'settings.contactMethods.channel.webhook': 'Webhook',
+  'settings.contactMethods.channel.description.email':
+    'Alerts are sent to the email address on your Escalite account.',
+  'settings.contactMethods.channel.description.push':
+    'Deliver alerts to a registered Expo push token from the mobile app.',
+  'settings.contactMethods.channel.description.slackDm':
+    'Send alerts as Slack direct messages using your Slack user ID.',
+  'settings.contactMethods.channel.description.webhook':
+    'POST alert payloads to an HTTPS endpoint you control.',
   'settings.devices.title': 'Mobile devices',
   'settings.devices.description':
     'Registered Expo push tokens for the Escalite mobile app. Revoke a device to stop push delivery to that installation.',
