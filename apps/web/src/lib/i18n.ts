@@ -279,6 +279,9 @@ const messages = {
   'schedules.action.create': 'Create schedule',
   'schedules.error.load': 'Could not load schedules',
   'schedule.action.edit': 'Edit schedule',
+  'schedule.action.export': 'Export iCal',
+  'schedule.action.exporting': 'Exporting…',
+  'schedule.error.export': 'Could not export the schedule calendar.',
   'schedule.meta': '{team} · {timezone}',
   'schedule.form.create.title': 'Create schedule',
   'schedule.form.create.description':

@@ -15,7 +15,7 @@ import {
   useUpdateRotationMutation,
 } from '@escalite/ts-types'
 import { Button } from '@escalite/ui'
-import { PencilIcon } from 'lucide-react'
+import { DownloadIcon, PencilIcon } from 'lucide-react'
 import { ScheduleCalendar } from '@escalite/ui/domain/ScheduleCalendar'
 
 import { AppShell } from '../components/app-shell'
@@ -27,6 +27,7 @@ import {
   mapOrganizationUsersToScheduleUsers,
   scheduleCalendarLabels,
 } from '../lib/schedule'
+import { downloadScheduleICal } from '../lib/schedule-ical-export'
 import type { ScheduleOrganizationUser } from '../lib/schedule-users'
 import { t } from '../lib/i18n'
 
@@ -63,6 +64,7 @@ export function SchedulePage(): ReactElement {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   const schedule = data?.schedule
   const scheduleTitle = schedule?.name ?? t('schedule.pageTitle')
@@ -226,6 +228,23 @@ export function SchedulePage(): ReactElement {
     reexecuteSchedule({ requestPolicy: 'network-only' })
   }
 
+  async function handleExportICal(): Promise<void> {
+    if (!schedule) {
+      return
+    }
+
+    setSaveError(null)
+    setExporting(true)
+
+    try {
+      await downloadScheduleICal(schedule.id, schedule.name)
+    } catch {
+      setSaveError(t('schedule.error.export'))
+    } finally {
+      setExporting(false)
+    }
+  }
+
   async function handleDeleteRotation(id: string): Promise<void> {
     setSaveError(null)
     setSaving(true)
@@ -256,28 +275,41 @@ export function SchedulePage(): ReactElement {
             ) : null}
           </div>
           {schedule ? (
-            <ScheduleFormDialog
-              initialValues={{
-                id: schedule.id,
-                name: schedule.name,
-                timezone: schedule.timezone,
-                teamId: schedule.teamId,
-                teamName,
-              }}
-              mode="edit"
-              onOpenChange={setEditOpen}
-              onSuccess={() => {
-                reexecuteSchedule({ requestPolicy: 'network-only' })
-              }}
-              open={editOpen}
-              teams={[]}
-              trigger={
-                <Button type="button" variant="outline">
-                  <PencilIcon />
-                  {t('schedule.action.edit')}
+            <div className="flex flex-wrap gap-2">
+              {viewerRole === 'ADMIN' ? (
+                <Button
+                  disabled={exporting}
+                  onClick={() => void handleExportICal()}
+                  type="button"
+                  variant="outline"
+                >
+                  <DownloadIcon />
+                  {exporting ? t('schedule.action.exporting') : t('schedule.action.export')}
                 </Button>
-              }
-            />
+              ) : null}
+              <ScheduleFormDialog
+                initialValues={{
+                  id: schedule.id,
+                  name: schedule.name,
+                  timezone: schedule.timezone,
+                  teamId: schedule.teamId,
+                  teamName,
+                }}
+                mode="edit"
+                onOpenChange={setEditOpen}
+                onSuccess={() => {
+                  reexecuteSchedule({ requestPolicy: 'network-only' })
+                }}
+                open={editOpen}
+                teams={[]}
+                trigger={
+                  <Button type="button" variant="outline">
+                    <PencilIcon />
+                    {t('schedule.action.edit')}
+                  </Button>
+                }
+              />
+            </div>
           ) : null}
         </div>
 
