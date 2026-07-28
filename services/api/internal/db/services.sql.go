@@ -172,10 +172,11 @@ func (q *Queries) SoftDeleteService(ctx context.Context, arg SoftDeleteServicePa
 const updateService = `-- name: UpdateService :one
 UPDATE services
 SET name = COALESCE($3::text, name),
-    auto_promote_enabled = COALESCE($4::boolean, auto_promote_enabled),
-    auto_promote_alert_threshold = COALESCE($5::integer, auto_promote_alert_threshold),
-    auto_promote_window_seconds = COALESCE($6::integer, auto_promote_window_seconds),
-    auto_promote_suppress_escalation_priorities = COALESCE($7::text[], auto_promote_suppress_escalation_priorities),
+    team_id = COALESCE($4::uuid, team_id),
+    auto_promote_enabled = COALESCE($5::boolean, auto_promote_enabled),
+    auto_promote_alert_threshold = COALESCE($6::integer, auto_promote_alert_threshold),
+    auto_promote_window_seconds = COALESCE($7::integer, auto_promote_window_seconds),
+    auto_promote_suppress_escalation_priorities = COALESCE($8::text[], auto_promote_suppress_escalation_priorities),
     updated_at = now()
 WHERE id = $1
   AND organization_id = $2
@@ -187,6 +188,7 @@ type UpdateServiceParams struct {
 	ID                                      uuid.UUID   `json:"id"`
 	OrganizationID                          uuid.UUID   `json:"organization_id"`
 	Name                                    pgtype.Text `json:"name"`
+	TeamID                                  pgtype.UUID `json:"team_id"`
 	AutoPromoteEnabled                      pgtype.Bool `json:"auto_promote_enabled"`
 	AutoPromoteAlertThreshold               pgtype.Int4 `json:"auto_promote_alert_threshold"`
 	AutoPromoteWindowSeconds                pgtype.Int4 `json:"auto_promote_window_seconds"`
@@ -198,6 +200,7 @@ func (q *Queries) UpdateService(ctx context.Context, arg UpdateServiceParams) (S
 		arg.ID,
 		arg.OrganizationID,
 		arg.Name,
+		arg.TeamID,
 		arg.AutoPromoteEnabled,
 		arg.AutoPromoteAlertThreshold,
 		arg.AutoPromoteWindowSeconds,

@@ -148,6 +148,7 @@ input CreateServiceInput {
 input UpdateServiceInput {
   id: ID!
   name: String
+  teamId: ID
   autoPromoteEnabled: Boolean
   autoPromoteAlertThreshold: Int
   autoPromoteWindowSeconds: Int

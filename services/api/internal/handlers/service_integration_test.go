@@ -70,6 +70,31 @@ func TestGraphQLServiceCRUD(t *testing.T) {
 	require.Len(t, listResp.Data.Services, 1)
 	require.Equal(t, serviceID, listResp.Data.Services[0].ID)
 
+	otherTeam := seedTeam(t, pool, admin.OrganizationID, "Infrastructure")
+
+	reassignRec := postGraphQL(t, handler, `mutation {
+		updateService(input: {
+			id: "`+serviceID+`"
+			teamId: "`+otherTeam.ID.String()+`"
+		}) {
+			id
+			teamId
+		}
+	}`, adminCookie)
+	require.Equal(t, 200, reassignRec.Code, reassignRec.Body.String())
+
+	var reassignResp struct {
+		Data struct {
+			UpdateService struct {
+				ID     string `json:"id"`
+				TeamID string `json:"teamId"`
+			} `json:"updateService"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(reassignRec.Body.Bytes(), &reassignResp))
+	require.Equal(t, serviceID, reassignResp.Data.UpdateService.ID)
+	require.Equal(t, otherTeam.ID.String(), reassignResp.Data.UpdateService.TeamID)
+
 	updateRec := postGraphQL(t, handler, `mutation {
 		updateService(input: {
 			id: "`+serviceID+`"

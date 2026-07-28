@@ -36,6 +36,14 @@ func buildUpdateServiceParams(input model.UpdateServiceInput) (db.UpdateServiceP
 		params.Name = pgtype.Text{String: name, Valid: true}
 	}
 
+	if input.TeamID != nil {
+		teamID, err := parseUUIDField(*input.TeamID, "teamId")
+		if err != nil {
+			return db.UpdateServiceParams{}, err
+		}
+		params.TeamID = pgtype.UUID{Bytes: teamID, Valid: true}
+	}
+
 	if input.AutoPromoteEnabled != nil {
 		params.AutoPromoteEnabled = pgtype.Bool{Bool: *input.AutoPromoteEnabled, Valid: true}
 	}

@@ -2326,6 +2326,19 @@ func (r *mutationResolver) UpdateService(ctx context.Context, input model.Update
 	params.OrganizationID = sc.User.OrganizationID
 
 	queries := db.New(r.pool)
+	if input.TeamID != nil {
+		if _, err := queries.GetTeamByID(ctx, db.GetTeamByIDParams{
+			ID:             params.TeamID.Bytes,
+			OrganizationID: sc.User.OrganizationID,
+		}); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, gqlerr.New(handlers.CodeNotFound, "team not found")
+			}
+			r.logger.Error("load team failed", "error", err)
+			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+		}
+	}
+
 	service, err := queries.UpdateService(ctx, params)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

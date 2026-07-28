@@ -741,6 +741,7 @@ type UpdateScheduleInput struct {
 type UpdateServiceInput struct {
 	ID                                      string          `json:"id"`
 	Name                                    *string         `json:"name,omitempty"`
+	TeamID                                  *string         `json:"teamId,omitempty"`
 	AutoPromoteEnabled                      *bool           `json:"autoPromoteEnabled,omitempty"`
 	AutoPromoteAlertThreshold               *int            `json:"autoPromoteAlertThreshold,omitempty"`
 	AutoPromoteWindowSeconds                *int            `json:"autoPromoteWindowSeconds,omitempty"`

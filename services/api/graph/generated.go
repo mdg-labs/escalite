@@ -3983,6 +3983,7 @@ input CreateServiceInput {
 input UpdateServiceInput {
   id: ID!
   name: String
+  teamId: ID
   autoPromoteEnabled: Boolean
   autoPromoteAlertThreshold: Int
   autoPromoteWindowSeconds: Int
@@ -21870,7 +21871,7 @@ func (ec *executionContext) unmarshalInputUpdateServiceInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "name", "autoPromoteEnabled", "autoPromoteAlertThreshold", "autoPromoteWindowSeconds", "autoPromoteSuppressEscalationPriorities"}
+	fieldsInOrder := [...]string{"id", "name", "teamId", "autoPromoteEnabled", "autoPromoteAlertThreshold", "autoPromoteWindowSeconds", "autoPromoteSuppressEscalationPriorities"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -21891,6 +21892,13 @@ func (ec *executionContext) unmarshalInputUpdateServiceInput(ctx context.Context
 				return it, err
 			}
 			it.Name = data
+		case "teamId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("teamId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TeamID = data
 		case "autoPromoteEnabled":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoPromoteEnabled"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)

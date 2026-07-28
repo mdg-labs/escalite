@@ -30,6 +30,7 @@ RETURNING *;
 -- name: UpdateService :one
 UPDATE services
 SET name = COALESCE(sqlc.narg('name')::text, name),
+    team_id = COALESCE(sqlc.narg('team_id')::uuid, team_id),
     auto_promote_enabled = COALESCE(sqlc.narg('auto_promote_enabled')::boolean, auto_promote_enabled),
     auto_promote_alert_threshold = COALESCE(sqlc.narg('auto_promote_alert_threshold')::integer, auto_promote_alert_threshold),
     auto_promote_window_seconds = COALESCE(sqlc.narg('auto_promote_window_seconds')::integer, auto_promote_window_seconds),

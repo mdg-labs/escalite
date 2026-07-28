@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   AlertPriority,
-  type UpdateServiceInput,
   useDeleteEscalationPolicyMutation,
   useDeleteServiceMutation,
   useEscalationPoliciesQuery,
@@ -189,7 +188,7 @@ export function ServicePage(): ReactElement {
       input: {
         id: serviceId,
         teamId: newTeamId,
-      } as UpdateServiceInput,
+      },
     })
     setSavingTeam(false)
 
