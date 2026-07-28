@@ -33,6 +33,7 @@ import { AlertTriangleIcon, CircleCheckIcon, SmartphoneIcon } from 'lucide-react
 import { AppShell } from '../components/app-shell'
 import { ContactMethodsPanel } from '../components/contact-methods-panel'
 import { IncidentRolesPanel } from '../components/incident-roles-panel'
+import { OrgProfilePanel } from '../components/org-profile-panel'
 import { NotificationRulesPanel } from '../components/notification-rules-panel'
 import { SamlSettingsPanel } from '../components/saml-settings-panel'
 import { ScimSettingsPanel } from '../components/scim-settings-panel'
@@ -85,6 +86,7 @@ function AdminOnlySection({ children }: { children: ReactNode }): ReactElement {
 function SettingsEnterpriseSection(): ReactElement {
   return (
     <div className="space-y-6">
+      <OrgProfilePanel />
       <SamlSettingsPanel />
       <ScimSettingsPanel />
       <SlackSettingsPanel />
