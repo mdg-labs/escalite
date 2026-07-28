@@ -3,9 +3,10 @@ package jobs
 import "github.com/google/uuid"
 
 const (
-	EscalationTriggerKind = "escalation_trigger"
-	EscalationStepKind    = "escalation_step"
-	NotifyKind            = "notify"
+	EscalationTriggerKind          = "escalation_trigger"
+	EscalationStepKind             = "escalation_step"
+	NotifyKind                     = "notify"
+	StatusPageIncidentNotifyKind   = "status_page_incident_notify"
 )
 
 // EscalationTriggerArgs schedules step-1 notifications for a triggered alert.
@@ -32,6 +33,15 @@ type NotifyArgs struct {
 }
 
 func (NotifyArgs) Kind() string { return NotifyKind }
+
+// StatusPageIncidentNotifyArgs emails status page subscribers about an incident update.
+type StatusPageIncidentNotifyArgs struct {
+	OrganizationID       uuid.UUID `json:"organization_id"`
+	StatusPageIncidentID uuid.UUID `json:"status_page_incident_id"`
+	UpdateID             uuid.UUID `json:"update_id"`
+}
+
+func (StatusPageIncidentNotifyArgs) Kind() string { return StatusPageIncidentNotifyKind }
 
 // NotifyMaxAttempts is the River retry budget for outbound notification jobs.
 const NotifyMaxAttempts = 3

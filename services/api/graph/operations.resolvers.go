@@ -3106,6 +3106,8 @@ func (r *mutationResolver) PublishIncidentToStatusPage(ctx context.Context, inpu
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
 
+	r.enqueueStatusPageIncidentNotify(ctx, sc.User.OrganizationID, publicIncidentID, update.ID)
+
 	affected := make([]string, 0, len(componentUUIDs))
 	for _, id := range componentUUIDs {
 		affected = append(affected, id.String())
@@ -3157,6 +3159,8 @@ func (r *mutationResolver) CreateStatusPageIncidentUpdate(ctx context.Context, i
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
 
+	r.enqueueStatusPageIncidentNotify(ctx, sc.User.OrganizationID, incidentID, update.ID)
+
 	return statusPageIncidentUpdateFromDB(update), nil
 }
 
@@ -3186,18 +3190,26 @@ func (r *mutationResolver) UpdateStatusPageIncidentStatus(ctx context.Context, i
 		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
 	}
 
-	if input.Body != nil && strings.TrimSpace(*input.Body) != "" {
-		if _, err := queries.CreateStatusPageIncidentUpdate(ctx, db.CreateStatusPageIncidentUpdateParams{
-			ID:                   uuid.Must(uuid.NewV7()),
-			StatusPageIncidentID: incidentID,
-			OrganizationID:       sc.User.OrganizationID,
-			Body:                 strings.TrimSpace(*input.Body),
-			Status:               incidentStatusToDB(input.Status),
-		}); err != nil {
-			r.logger.Error("create status page incident update failed", "error", err)
-			return nil, gqlerr.New(handlers.CodeInternal, "internal error")
-		}
+	updateBody := ""
+	if input.Body != nil {
+		updateBody = strings.TrimSpace(*input.Body)
 	}
+	if updateBody == "" {
+		updateBody = "Status updated to " + statusPageIncidentStatusLabel(input.Status) + "."
+	}
+
+	update, err := queries.CreateStatusPageIncidentUpdate(ctx, db.CreateStatusPageIncidentUpdateParams{
+		ID:                   uuid.Must(uuid.NewV7()),
+		StatusPageIncidentID: incidentID,
+		OrganizationID:       sc.User.OrganizationID,
+		Body:                 updateBody,
+		Status:               incidentStatusToDB(input.Status),
+	})
+	if err != nil {
+		r.logger.Error("create status page incident update failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+	r.enqueueStatusPageIncidentNotify(ctx, sc.User.OrganizationID, incidentID, update.ID)
 
 	incidents, err := r.statusPageIncidentsFromDB(ctx, queries, sc.User.OrganizationID, []db.StatusPageIncident{incident})
 	if err != nil {

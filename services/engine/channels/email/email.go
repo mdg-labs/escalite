@@ -21,6 +21,11 @@ func SetSender(s engineemail.Sender) {
 	sender = s
 }
 
+// Sender returns the configured SMTP sender, or nil when SMTP is unset.
+func Sender() engineemail.Sender {
+	return sender
+}
+
 type channel struct{}
 
 // New returns the email notification channel plugin.

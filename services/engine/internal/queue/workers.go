@@ -17,5 +17,6 @@ func NewWorkers(logger *slog.Logger, pool *pgxpool.Pool, inserter escalation.Job
 	river.AddWorker(workers, NewEscalationTriggerWorker(logger, pool, inserter))
 	river.AddWorker(workers, NewEscalationStepWorker(logger, pool, inserter))
 	river.AddWorker(workers, NewNotifyWorker(logger, pool, secrets))
+	river.AddWorker(workers, NewStatusPageIncidentNotifyWorker(logger, pool))
 	return workers
 }

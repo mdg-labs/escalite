@@ -291,3 +291,16 @@ func (r *Resolver) setStatusPageIncidentComponents(ctx context.Context, queries 
 func isStatusPageSlugConflict(err error) bool {
 	return isUniqueViolation(err) && strings.Contains(err.Error(), "status_pages_slug_key")
 }
+
+func statusPageIncidentStatusLabel(status model.IncidentStatus) string {
+	switch status {
+	case model.IncidentStatusIdentified:
+		return "Identified"
+	case model.IncidentStatusMonitoring:
+		return "Monitoring"
+	case model.IncidentStatusResolved:
+		return "Resolved"
+	default:
+		return "Investigating"
+	}
+}
