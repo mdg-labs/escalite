@@ -1,8 +1,9 @@
-import { useEffect, useState, type ReactElement } from 'react'
+import { useEffect, useMemo, useState, type ReactElement } from 'react'
 import {
   useIntegrationKeysQuery,
   useRevokeIntegrationKeyMutation,
   useRotateIntegrationKeyMutation,
+  useServicesQuery,
   type IntegrationKeysQuery,
 } from '@escalite/ts-types'
 import {
@@ -19,6 +20,12 @@ import {
   AlertTitle,
   Badge,
   Button,
+  Combobox,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxPopup,
   Dialog,
   DialogClose,
   DialogDescription,
@@ -28,7 +35,6 @@ import {
   DialogPopup,
   DialogTitle,
   DialogTrigger,
-  Input,
   Table,
   TableBody,
   TableCell,
@@ -95,7 +101,12 @@ export function IntegrationKeysPanel({
 
   const [, revokeIntegrationKey] = useRevokeIntegrationKeyMutation()
   const [, rotateIntegrationKey] = useRotateIntegrationKeyMutation()
+  const [{ data: servicesData, fetching: servicesFetching }] = useServicesQuery({
+    pause: embedded,
+    requestPolicy: 'cache-first',
+  })
 
+  const services = useMemo(() => servicesData?.services ?? [], [servicesData?.services])
   const keys = data?.integrationKeys ?? []
 
   useEffect(() => {
@@ -105,14 +116,11 @@ export function IntegrationKeysPanel({
     }
   }, [embedded, initialServiceId])
 
-  function handleLoadKeys(): void {
-    const trimmed = serviceId.trim()
-    if (!trimmed) {
-      setError('Service ID is required.')
-      return
-    }
+  function handleServiceSelect(value: string | null): void {
+    const next = value ?? ''
+    setServiceId(next)
+    setLoadedServiceId(next)
     setError(null)
-    setLoadedServiceId(trimmed)
   }
 
   async function handleRevoke(key: IntegrationKeyRow): Promise<void> {
@@ -181,21 +189,29 @@ export function IntegrationKeysPanel({
   return (
     <div className="space-y-6">
       {!embedded ? (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="flex-1 space-y-2">
-            <label className="text-sm font-medium text-foreground" htmlFor="integration-service-id">
-              Service ID
-            </label>
-            <Input
-              id="integration-service-id"
-              onChange={(event) => setServiceId(event.target.value)}
-              placeholder="Service UUID"
-              value={serviceId}
+        <div className="max-w-md space-y-2">
+          <label className="text-sm font-medium text-foreground" htmlFor="integration-service-picker">
+            Service
+          </label>
+          <Combobox onValueChange={handleServiceSelect} value={serviceId || null}>
+            <ComboboxInput
+              id="integration-service-picker"
+              placeholder="Select a service"
+              showClear
             />
-          </div>
-          <Button onClick={handleLoadKeys} type="button">
-            Load keys
-          </Button>
+            <ComboboxPopup>
+              <ComboboxList>
+                <ComboboxEmpty>
+                  {servicesFetching ? 'Loading services…' : 'No services found.'}
+                </ComboboxEmpty>
+                {services.map((service) => (
+                  <ComboboxItem key={service.id} value={service.id}>
+                    {service.name}
+                  </ComboboxItem>
+                ))}
+              </ComboboxList>
+            </ComboboxPopup>
+          </Combobox>
         </div>
       ) : null}
 
