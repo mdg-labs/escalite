@@ -46,5 +46,6 @@ docker compose "${COMPOSE_FILES[@]}" --profile prod up -d --build --wait
 
 echo "Running E2E smoke tests against compose stack..."
 cd "${REPO_ROOT}"
+mkdir -p allure-results/e2e/web allure-results/e2e/status-page
 pnpm --filter @escalite/web e2e
 pnpm --filter @escalite/status-page e2e

@@ -1,7 +1,19 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig, devices } from '@playwright/test'
 
 const statusPageOrigin =
   process.env.ESCALITE_STATUS_PAGE_ORIGIN ?? 'http://localhost:5174'
+const configDir = path.dirname(fileURLToPath(import.meta.url))
+const allureResultsDir = path.resolve(
+  configDir,
+  '../../allure-results/e2e/status-page',
+)
+
+const allureReporter = [
+  'allure-playwright',
+  { resultsDir: allureResultsDir },
+] as const
 
 export default defineConfig({
   testDir: './e2e',
@@ -14,8 +26,9 @@ export default defineConfig({
     ? [
         ['github'],
         ['html', { open: 'never', outputFolder: 'playwright-report' }],
+        allureReporter,
       ]
-    : 'list',
+    : [['list'], allureReporter],
   use: {
     baseURL: statusPageOrigin,
     trace: process.env.CI ? 'retain-on-failure' : 'on-first-retry',
