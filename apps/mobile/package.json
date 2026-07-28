@@ -1,13 +1,13 @@
 {
   "name": "@escalite/mobile",
-  "version": "0.1.0-beta.13",
+  "version": "0.1.0-beta.14",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
     "build": "expo export --platform all --output-dir dist",
     "dev": "expo start",
     "lint": "eslint .",
-    "test:unit": "node --test test/*.test.mjs",
+    "test:unit": "node ../../scripts/node-test-allure.mjs --package mobile test/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "android": "expo run:android",
     "ios": "expo run:ios",

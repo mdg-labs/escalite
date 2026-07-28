@@ -31,6 +31,9 @@ importers:
       allure:
         specifier: ^3.14.3
         version: 3.14.3(preact@10.29.7)(typescript@5.9.3)
+      allure-node-test:
+        specifier: ^3.10.2
+        version: 3.10.2(allure-playwright@3.10.2(@playwright/test@1.61.1))
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -3506,6 +3509,9 @@ packages:
     peerDependenciesMeta:
       allure-playwright:
         optional: true
+
+  allure-node-test@3.10.2:
+    resolution: {integrity: sha512-DJXcsVzpQu5B9U0hR4RJh6KffOu8yTWd2Ra9s+0UHkPx8ghPDQSpdAaJUvdUuE/48c7ntgo2/OOl0QJ8/fhV8Q==}
 
   allure-playwright@3.10.2:
     resolution: {integrity: sha512-CGyhxSvx2bIkojhBy0pbQZ12vkLbOE3FBh39WgzPs+katwnuGPUE0whJhryG8aD/dlDALxMehL9G0k8WYBx4tQ==}
@@ -12473,6 +12479,12 @@ snapshots:
       md5: 2.3.0
     optionalDependencies:
       allure-playwright: 3.10.2(@playwright/test@1.61.1)
+
+  allure-node-test@3.10.2(allure-playwright@3.10.2(@playwright/test@1.61.1)):
+    dependencies:
+      allure-js-commons: 3.10.2(allure-playwright@3.10.2(@playwright/test@1.61.1))
+    transitivePeerDependencies:
+      - allure-playwright
 
   allure-playwright@3.10.2(@playwright/test@1.61.1):
     dependencies:

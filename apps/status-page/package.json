@@ -9,7 +9,7 @@
     "e2e": "playwright test",
     "e2e:install": "playwright install --with-deps chromium",
     "lint": "eslint .",
-    "test:unit": "node --test test/*.test.mjs",
+    "test:unit": "node ../../scripts/node-test-allure.mjs --package status-page test/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview"
   },
