@@ -242,6 +242,9 @@ const messages = {
   'services.escalation.description': 'Assign ordered escalation steps for this service.',
   'services.escalation.create': 'Create policy',
   'services.escalation.empty': 'No escalation policies yet.',
+  'services.escalation.delete.title': 'Delete escalation policy?',
+  'services.escalation.delete.description':
+    'This permanently removes {name} and its escalation steps.',
   'services.autoPromote.title': 'Auto-promote to incident',
   'services.autoPromote.description':
     'Automatically declare an incident when multiple alerts fire on this service within a time window.',
