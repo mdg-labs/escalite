@@ -3,13 +3,14 @@ package alerts_test
 import (
 	"context"
 	"encoding/json"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"log/slog"
 	"testing"
 
+	"github.com/allure-framework/allure-go/testify/require"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/alerts"
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
@@ -170,411 +171,429 @@ func seedEscalationPolicyWithUsers(
 }
 
 func TestProcessInboundCollapseIncrementsEventCount(t *testing.T) {
-	pool, cleanup := startPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		pool, cleanup := startPostgres(t)
+		defer cleanup()
 
-	fixture := seedInboundFixture(t, pool)
-	ctx := context.Background()
-	logger := slog.Default()
+		fixture := seedInboundFixture(t, pool)
+		ctx := context.Background()
+		logger := slog.Default()
 
-	event := integrations.AlertCreate{
-		EventType:   integrations.EventTriggered,
-		DedupKey:    "host-1-disk",
-		Summary:     "Disk usage high",
-		Description: "Volume /data is 95% full",
-		Priority:    "low",
-	}
+		event := integrations.AlertCreate{
+			EventType:   integrations.EventTriggered,
+			DedupKey:    "host-1-disk",
+			Summary:     "Disk usage high",
+			Description: "Volume /data is 95% full",
+			Priority:    "low",
+		}
 
-	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
-	require.NoError(t, err)
-	require.NotEqual(t, uuid.Nil, firstID)
+		firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
+		require.NoError(a, err)
+		require.NotEqual(a, uuid.Nil, firstID)
 
-	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
-	require.NoError(t, err)
-	require.Equal(t, firstID, secondID)
+		secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
+		require.NoError(a, err)
+		require.Equal(a, firstID, secondID)
 
-	alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-		ID:             firstID,
-		OrganizationID: fixture.key.OrganizationID,
-	})
-	require.NoError(t, err)
-	require.Equal(t, int32(2), alert.EventCount)
-	require.Equal(t, "triggered", alert.Status)
+		alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+			ID:             firstID,
+			OrganizationID: fixture.key.OrganizationID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, int32(2), alert.EventCount)
+		require.Equal(a, "triggered", alert.Status)
 
-	var alertCount int
-	err = pool.QueryRow(ctx, `
+		var alertCount int
+		err = pool.QueryRow(ctx, `
 		SELECT COUNT(*) FROM alerts
 		WHERE service_id = $1 AND dedup_key = $2
 	`, fixture.key.ServiceID, event.DedupKey).Scan(&alertCount)
-	require.NoError(t, err)
-	require.Equal(t, 1, alertCount)
+		require.NoError(a, err)
+		require.Equal(a, 1, alertCount)
+	})
 }
 
 func TestProcessInboundCollapseAcknowledgedAlertDoesNotCreateNotifications(t *testing.T) {
-	pool, cleanup := startPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		pool, cleanup := startPostgres(t)
+		defer cleanup()
 
-	fixture := seedInboundFixture(t, pool)
-	jobs := newInboundJobs(t, pool)
-	oncallID := uuid.Must(uuid.NewV7())
-	account, err := fixture.queries.CreateAccount(context.Background(), db.CreateAccountParams{
-		ID:           uuid.Must(uuid.NewV7()),
-		Email:        "oncall@example.com",
-		PasswordHash: pgtype.Text{String: "argon2id:test", Valid: true},
-	})
-	require.NoError(t, err)
-	_, err = fixture.queries.CreateUser(context.Background(), db.CreateUserParams{
-		ID:             oncallID,
-		AccountID:      account.ID,
-		OrganizationID: fixture.key.OrganizationID,
-		Email:          "oncall@example.com",
-		Role:           "member",
-	})
-	require.NoError(t, err)
-	seedEscalationPolicyWithUsers(t, pool, fixture, oncallID)
+		fixture := seedInboundFixture(t, pool)
+		jobs := newInboundJobs(t, pool)
+		oncallID := uuid.Must(uuid.NewV7())
+		account, err := fixture.queries.CreateAccount(context.Background(), db.CreateAccountParams{
+			ID:           uuid.Must(uuid.NewV7()),
+			Email:        "oncall@example.com",
+			PasswordHash: pgtype.Text{String: "argon2id:test", Valid: true},
+		})
+		require.NoError(a, err)
+		_, err = fixture.queries.CreateUser(context.Background(), db.CreateUserParams{
+			ID:             oncallID,
+			AccountID:      account.ID,
+			OrganizationID: fixture.key.OrganizationID,
+			Email:          "oncall@example.com",
+			Role:           "member",
+		})
+		require.NoError(a, err)
+		seedEscalationPolicyWithUsers(t, pool, fixture, oncallID)
 
-	ctx := context.Background()
-	logger := slog.Default()
-	deps := &alerts.InboundDeps{Pool: pool, Jobs: jobs}
+		ctx := context.Background()
+		logger := slog.Default()
+		deps := &alerts.InboundDeps{Pool: pool, Jobs: jobs}
 
-	event := integrations.AlertCreate{
-		EventType: integrations.EventTriggered,
-		DedupKey:  "memory-high",
-		Summary:   "Memory above threshold",
-		Priority:  "high",
-	}
-
-	alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
-	require.NoError(t, err)
-
-	_, err = fixture.queries.AcknowledgeAlert(ctx, db.AcknowledgeAlertParams{
-		ID:                   alertID,
-		OrganizationID:       fixture.key.OrganizationID,
-		EscalationState:      []byte(`{"current_step":1}`),
-		AcknowledgedByUserID: pgtype.UUID{Bytes: fixture.userID, Valid: true},
-	})
-	require.NoError(t, err)
-
-	_, err = fixture.queries.CreateNotificationAttempt(ctx, db.CreateNotificationAttemptParams{
-		ID:             uuid.Must(uuid.NewV7()),
-		OrganizationID: fixture.key.OrganizationID,
-		AlertID:        alertID,
-		Channel:        "email",
-		Status:         "sent",
-		Recipient:      []byte(`{"type":"user","user_id":"` + fixture.userID.String() + `"}`),
-	})
-	require.NoError(t, err)
-	_, err = fixture.queries.CreateNotificationAttempt(ctx, db.CreateNotificationAttemptParams{
-		ID:             uuid.Must(uuid.NewV7()),
-		OrganizationID: fixture.key.OrganizationID,
-		AlertID:        alertID,
-		Channel:        "email",
-		Status:         "sent",
-		Recipient:      []byte(`{"type":"user","user_id":"` + oncallID.String() + `"}`),
-	})
-	require.NoError(t, err)
-
-	beforeCount, err := fixture.queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
-		AlertID:        alertID,
-		OrganizationID: fixture.key.OrganizationID,
-	})
-	require.NoError(t, err)
-	require.Equal(t, int64(2), beforeCount)
-
-	collapsedID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, deps)
-	require.NoError(t, err)
-	require.Equal(t, alertID, collapsedID)
-
-	afterCount, err := fixture.queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
-		AlertID:        alertID,
-		OrganizationID: fixture.key.OrganizationID,
-	})
-	require.NoError(t, err)
-	require.Equal(t, beforeCount+1, afterCount)
-
-	attempts, err := fixture.queries.ListNotificationAttemptsByAlertID(ctx, db.ListNotificationAttemptsByAlertIDParams{
-		AlertID:        alertID,
-		OrganizationID: fixture.key.OrganizationID,
-	})
-	require.NoError(t, err)
-
-	adminAttempts := 0
-	oncallAttempts := 0
-	for _, attempt := range attempts {
-		var recipient struct {
-			UserID string `json:"user_id"`
+		event := integrations.AlertCreate{
+			EventType: integrations.EventTriggered,
+			DedupKey:  "memory-high",
+			Summary:   "Memory above threshold",
+			Priority:  "high",
 		}
-		require.NoError(t, json.Unmarshal(attempt.Recipient, &recipient))
-		switch recipient.UserID {
-		case fixture.userID.String():
-			adminAttempts++
-		case oncallID.String():
-			oncallAttempts++
-		}
-	}
-	require.Equal(t, 1, adminAttempts)
-	require.Equal(t, 2, oncallAttempts)
 
-	alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-		ID:             alertID,
-		OrganizationID: fixture.key.OrganizationID,
+		alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
+		require.NoError(a, err)
+
+		_, err = fixture.queries.AcknowledgeAlert(ctx, db.AcknowledgeAlertParams{
+			ID:                   alertID,
+			OrganizationID:       fixture.key.OrganizationID,
+			EscalationState:      []byte(`{"current_step":1}`),
+			AcknowledgedByUserID: pgtype.UUID{Bytes: fixture.userID, Valid: true},
+		})
+		require.NoError(a, err)
+
+		_, err = fixture.queries.CreateNotificationAttempt(ctx, db.CreateNotificationAttemptParams{
+			ID:             uuid.Must(uuid.NewV7()),
+			OrganizationID: fixture.key.OrganizationID,
+			AlertID:        alertID,
+			Channel:        "email",
+			Status:         "sent",
+			Recipient:      []byte(`{"type":"user","user_id":"` + fixture.userID.String() + `"}`),
+		})
+		require.NoError(a, err)
+		_, err = fixture.queries.CreateNotificationAttempt(ctx, db.CreateNotificationAttemptParams{
+			ID:             uuid.Must(uuid.NewV7()),
+			OrganizationID: fixture.key.OrganizationID,
+			AlertID:        alertID,
+			Channel:        "email",
+			Status:         "sent",
+			Recipient:      []byte(`{"type":"user","user_id":"` + oncallID.String() + `"}`),
+		})
+		require.NoError(a, err)
+
+		beforeCount, err := fixture.queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+			AlertID:        alertID,
+			OrganizationID: fixture.key.OrganizationID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, int64(2), beforeCount)
+
+		collapsedID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, deps)
+		require.NoError(a, err)
+		require.Equal(a, alertID, collapsedID)
+
+		afterCount, err := fixture.queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+			AlertID:        alertID,
+			OrganizationID: fixture.key.OrganizationID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, beforeCount+1, afterCount)
+
+		attempts, err := fixture.queries.ListNotificationAttemptsByAlertID(ctx, db.ListNotificationAttemptsByAlertIDParams{
+			AlertID:        alertID,
+			OrganizationID: fixture.key.OrganizationID,
+		})
+		require.NoError(a, err)
+
+		adminAttempts := 0
+		oncallAttempts := 0
+		for _, attempt := range attempts {
+			var recipient struct {
+				UserID string `json:"user_id"`
+			}
+			require.NoError(a, json.Unmarshal(attempt.Recipient, &recipient))
+			switch recipient.UserID {
+			case fixture.userID.String():
+				adminAttempts++
+			case oncallID.String():
+				oncallAttempts++
+			}
+		}
+		require.Equal(a, 1, adminAttempts)
+		require.Equal(a, 2, oncallAttempts)
+
+		alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+			ID:             alertID,
+			OrganizationID: fixture.key.OrganizationID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, "acknowledged", alert.Status)
+		require.Equal(a, int32(2), alert.EventCount)
 	})
-	require.NoError(t, err)
-	require.Equal(t, "acknowledged", alert.Status)
-	require.Equal(t, int32(2), alert.EventCount)
 }
 
 func TestProcessInboundOutsideDedupWindowCreatesNewAlertRow(t *testing.T) {
-	pool, cleanup := startPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		pool, cleanup := startPostgres(t)
+		defer cleanup()
 
-	fixture := seedInboundFixture(t, pool)
-	ctx := context.Background()
-	logger := slog.Default()
+		fixture := seedInboundFixture(t, pool)
+		ctx := context.Background()
+		logger := slog.Default()
 
-	event := integrations.AlertCreate{
-		EventType: integrations.EventTriggered,
-		DedupKey:  "host-1-disk",
-		Summary:   "Disk usage high",
-		Priority:  "low",
-	}
+		event := integrations.AlertCreate{
+			EventType: integrations.EventTriggered,
+			DedupKey:  "host-1-disk",
+			Summary:   "Disk usage high",
+			Priority:  "low",
+		}
 
-	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
-	require.NoError(t, err)
-	require.NotEqual(t, uuid.Nil, firstID)
+		firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
+		require.NoError(a, err)
+		require.NotEqual(a, uuid.Nil, firstID)
 
-	_, err = pool.Exec(ctx, `
+		_, err = pool.Exec(ctx, `
 		UPDATE alerts
 		SET updated_at = now() - interval '10 minutes'
 		WHERE id = $1
 	`, firstID)
-	require.NoError(t, err)
+		require.NoError(a, err)
 
-	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
-	require.NoError(t, err)
-	require.NotEqual(t, uuid.Nil, secondID)
-	require.NotEqual(t, firstID, secondID)
+		secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
+		require.NoError(a, err)
+		require.NotEqual(a, uuid.Nil, secondID)
+		require.NotEqual(a, firstID, secondID)
 
-	var alertCount int
-	err = pool.QueryRow(ctx, `
+		var alertCount int
+		err = pool.QueryRow(ctx, `
 		SELECT COUNT(*) FROM alerts
 		WHERE service_id = $1 AND dedup_key = $2
 	`, fixture.key.ServiceID, event.DedupKey).Scan(&alertCount)
-	require.NoError(t, err)
-	require.Equal(t, 2, alertCount)
+		require.NoError(a, err)
+		require.Equal(a, 2, alertCount)
 
-	firstAlert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-		ID:             firstID,
-		OrganizationID: fixture.key.OrganizationID,
-	})
-	require.NoError(t, err)
-	require.Equal(t, int32(1), firstAlert.EventCount)
+		firstAlert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+			ID:             firstID,
+			OrganizationID: fixture.key.OrganizationID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, int32(1), firstAlert.EventCount)
 
-	secondAlert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-		ID:             secondID,
-		OrganizationID: fixture.key.OrganizationID,
+		secondAlert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+			ID:             secondID,
+			OrganizationID: fixture.key.OrganizationID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, int32(1), secondAlert.EventCount)
 	})
-	require.NoError(t, err)
-	require.Equal(t, int32(1), secondAlert.EventCount)
 }
 
 func TestProcessInboundServiceDefaultDedupWindowSeconds(t *testing.T) {
-	pool, cleanup := startPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		pool, cleanup := startPostgres(t)
+		defer cleanup()
 
-	fixture := seedInboundFixture(t, pool)
-	ctx := context.Background()
+		fixture := seedInboundFixture(t, pool)
+		ctx := context.Background()
 
-	service, err := fixture.queries.GetServiceByID(ctx, db.GetServiceByIDParams{
-		ID:             fixture.key.ServiceID,
-		OrganizationID: fixture.key.OrganizationID,
+		service, err := fixture.queries.GetServiceByID(ctx, db.GetServiceByIDParams{
+			ID:             fixture.key.ServiceID,
+			OrganizationID: fixture.key.OrganizationID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, int32(300), service.DedupWindowSeconds)
 	})
-	require.NoError(t, err)
-	require.Equal(t, int32(300), service.DedupWindowSeconds)
 }
 
 func TestProcessInboundCustomDedupWindowCollapsesWithinWindow(t *testing.T) {
-	pool, cleanup := startPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		pool, cleanup := startPostgres(t)
+		defer cleanup()
 
-	fixture := seedInboundFixture(t, pool)
-	ctx := context.Background()
-	logger := slog.Default()
+		fixture := seedInboundFixture(t, pool)
+		ctx := context.Background()
+		logger := slog.Default()
 
-	_, err := pool.Exec(ctx, `
+		_, err := pool.Exec(ctx, `
 		UPDATE services
 		SET dedup_window_seconds = 600
 		WHERE id = $1
 	`, fixture.key.ServiceID)
-	require.NoError(t, err)
+		require.NoError(a, err)
 
-	event := integrations.AlertCreate{
-		EventType: integrations.EventTriggered,
-		DedupKey:  "cpu-spike",
-		Summary:   "CPU above threshold",
-		Priority:  "high",
-	}
+		event := integrations.AlertCreate{
+			EventType: integrations.EventTriggered,
+			DedupKey:  "cpu-spike",
+			Summary:   "CPU above threshold",
+			Priority:  "high",
+		}
 
-	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
-	require.NoError(t, err)
+		firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
+		require.NoError(a, err)
 
-	_, err = pool.Exec(ctx, `
+		_, err = pool.Exec(ctx, `
 		UPDATE alerts
 		SET updated_at = now() - interval '7 minutes'
 		WHERE id = $1
 	`, firstID)
-	require.NoError(t, err)
+		require.NoError(a, err)
 
-	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
-	require.NoError(t, err)
-	require.Equal(t, firstID, secondID)
+		secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
+		require.NoError(a, err)
+		require.Equal(a, firstID, secondID)
 
-	alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-		ID:             firstID,
-		OrganizationID: fixture.key.OrganizationID,
+		alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+			ID:             firstID,
+			OrganizationID: fixture.key.OrganizationID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, int32(2), alert.EventCount)
 	})
-	require.NoError(t, err)
-	require.Equal(t, int32(2), alert.EventCount)
 }
 
 func TestProcessInboundCustomDedupWindowOutsideCreatesNewRow(t *testing.T) {
-	pool, cleanup := startPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		pool, cleanup := startPostgres(t)
+		defer cleanup()
 
-	fixture := seedInboundFixture(t, pool)
-	ctx := context.Background()
-	logger := slog.Default()
+		fixture := seedInboundFixture(t, pool)
+		ctx := context.Background()
+		logger := slog.Default()
 
-	_, err := pool.Exec(ctx, `
+		_, err := pool.Exec(ctx, `
 		UPDATE services
 		SET dedup_window_seconds = 120
 		WHERE id = $1
 	`, fixture.key.ServiceID)
-	require.NoError(t, err)
+		require.NoError(a, err)
 
-	event := integrations.AlertCreate{
-		EventType: integrations.EventTriggered,
-		DedupKey:  "memory-leak",
-		Summary:   "Memory climbing",
-		Priority:  "high",
-	}
+		event := integrations.AlertCreate{
+			EventType: integrations.EventTriggered,
+			DedupKey:  "memory-leak",
+			Summary:   "Memory climbing",
+			Priority:  "high",
+		}
 
-	firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
-	require.NoError(t, err)
+		firstID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
+		require.NoError(a, err)
 
-	_, err = pool.Exec(ctx, `
+		_, err = pool.Exec(ctx, `
 		UPDATE alerts
 		SET updated_at = now() - interval '3 minutes'
 		WHERE id = $1
 	`, firstID)
-	require.NoError(t, err)
+		require.NoError(a, err)
 
-	secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
-	require.NoError(t, err)
-	require.NotEqual(t, firstID, secondID)
+		secondID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
+		require.NoError(a, err)
+		require.NotEqual(a, firstID, secondID)
 
-	var alertCount int
-	err = pool.QueryRow(ctx, `
+		var alertCount int
+		err = pool.QueryRow(ctx, `
 		SELECT COUNT(*) FROM alerts
 		WHERE service_id = $1 AND dedup_key = $2
 	`, fixture.key.ServiceID, event.DedupKey).Scan(&alertCount)
-	require.NoError(t, err)
-	require.Equal(t, 2, alertCount)
+		require.NoError(a, err)
+		require.Equal(a, 2, alertCount)
+	})
 }
 
 func TestProcessInboundResolveSetsResolvedAtAndIntegration(t *testing.T) {
-	pool, cleanup := startPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		pool, cleanup := startPostgres(t)
+		defer cleanup()
 
-	fixture := seedInboundFixture(t, pool)
-	ctx := context.Background()
-	logger := slog.Default()
+		fixture := seedInboundFixture(t, pool)
+		ctx := context.Background()
+		logger := slog.Default()
 
-	triggered := integrations.AlertCreate{
-		EventType: integrations.EventTriggered,
-		DedupKey:  "host-1-disk",
-		Summary:   "Disk usage high",
-		Priority:  "low",
-	}
-	alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, triggered, nil)
-	require.NoError(t, err)
-	require.NotEqual(t, uuid.Nil, alertID)
+		triggered := integrations.AlertCreate{
+			EventType: integrations.EventTriggered,
+			DedupKey:  "host-1-disk",
+			Summary:   "Disk usage high",
+			Priority:  "low",
+		}
+		alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, triggered, nil)
+		require.NoError(a, err)
+		require.NotEqual(a, uuid.Nil, alertID)
 
-	resolved := integrations.AlertCreate{
-		EventType: integrations.EventResolved,
-		DedupKey:  "host-1-disk",
-	}
-	_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved, nil)
-	require.NoError(t, err)
+		resolved := integrations.AlertCreate{
+			EventType: integrations.EventResolved,
+			DedupKey:  "host-1-disk",
+		}
+		_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved, nil)
+		require.NoError(a, err)
 
-	alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-		ID:             alertID,
-		OrganizationID: fixture.key.OrganizationID,
+		alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+			ID:             alertID,
+			OrganizationID: fixture.key.OrganizationID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, "closed", alert.Status)
+		require.True(a, alert.ClosedAt.Valid)
+		require.True(a, alert.ResolvedAt.Valid)
+		require.True(a, alert.ResolvedIntegration.Valid)
+		require.Equal(a, "generic-rest-api", alert.ResolvedIntegration.String)
 	})
-	require.NoError(t, err)
-	require.Equal(t, "closed", alert.Status)
-	require.True(t, alert.ClosedAt.Valid)
-	require.True(t, alert.ResolvedAt.Valid)
-	require.True(t, alert.ResolvedIntegration.Valid)
-	require.Equal(t, "generic-rest-api", alert.ResolvedIntegration.String)
 }
 
 func TestProcessInboundResolveUnknownDedupKeyNoOp(t *testing.T) {
-	pool, cleanup := startPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		pool, cleanup := startPostgres(t)
+		defer cleanup()
 
-	fixture := seedInboundFixture(t, pool)
-	ctx := context.Background()
-	logger := slog.Default()
+		fixture := seedInboundFixture(t, pool)
+		ctx := context.Background()
+		logger := slog.Default()
 
-	resolved := integrations.AlertCreate{
-		EventType: integrations.EventResolved,
-		DedupKey:  "missing-key",
-	}
-	_, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved, nil)
-	require.NoError(t, err)
+		resolved := integrations.AlertCreate{
+			EventType: integrations.EventResolved,
+			DedupKey:  "missing-key",
+		}
+		_, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved, nil)
+		require.NoError(a, err)
 
-	var alertCount int
-	err = pool.QueryRow(ctx, `
+		var alertCount int
+		err = pool.QueryRow(ctx, `
 		SELECT COUNT(*) FROM alerts
 		WHERE service_id = $1 AND dedup_key = $2
 	`, fixture.key.ServiceID, resolved.DedupKey).Scan(&alertCount)
-	require.NoError(t, err)
-	require.Equal(t, 0, alertCount)
+		require.NoError(a, err)
+		require.Equal(a, 0, alertCount)
+	})
 }
 
 func TestProcessInboundResolveIdempotentWhenAlreadyClosed(t *testing.T) {
-	pool, cleanup := startPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		pool, cleanup := startPostgres(t)
+		defer cleanup()
 
-	fixture := seedInboundFixture(t, pool)
-	ctx := context.Background()
-	logger := slog.Default()
+		fixture := seedInboundFixture(t, pool)
+		ctx := context.Background()
+		logger := slog.Default()
 
-	event := integrations.AlertCreate{
-		EventType: integrations.EventTriggered,
-		DedupKey:  "cpu-high",
-		Summary:   "CPU above threshold",
-		Priority:  "high",
-	}
-	alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
-	require.NoError(t, err)
+		event := integrations.AlertCreate{
+			EventType: integrations.EventTriggered,
+			DedupKey:  "cpu-high",
+			Summary:   "CPU above threshold",
+			Priority:  "high",
+		}
+		alertID, err := alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, event, nil)
+		require.NoError(a, err)
 
-	resolved := integrations.AlertCreate{
-		EventType: integrations.EventResolved,
-		DedupKey:  "cpu-high",
-	}
-	_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved, nil)
-	require.NoError(t, err)
+		resolved := integrations.AlertCreate{
+			EventType: integrations.EventResolved,
+			DedupKey:  "cpu-high",
+		}
+		_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved, nil)
+		require.NoError(a, err)
 
-	_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved, nil)
-	require.NoError(t, err)
+		_, err = alerts.ProcessInbound(ctx, fixture.queries, logger, fixture.key, resolved, nil)
+		require.NoError(a, err)
 
-	alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-		ID:             alertID,
-		OrganizationID: fixture.key.OrganizationID,
+		alert, err := fixture.queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+			ID:             alertID,
+			OrganizationID: fixture.key.OrganizationID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, "closed", alert.Status)
+		require.True(a, alert.ResolvedAt.Valid)
 	})
-	require.NoError(t, err)
-	require.Equal(t, "closed", alert.Status)
-	require.True(t, alert.ResolvedAt.Valid)
 }

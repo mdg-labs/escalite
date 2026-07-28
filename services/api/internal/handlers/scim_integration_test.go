@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/allure-framework/allure-go/testify/require"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
@@ -20,12 +21,13 @@ import (
 )
 
 func TestGraphQLRotateScimToken(t *testing.T) {
-	handler, _, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	cookie := bootstrapAdmin(t, handler)
+		cookie := bootstrapAdmin(t, handler)
 
-	rec := postGraphQL(t, handler, `mutation {
+		rec := postGraphQL(t, handler, `mutation {
 		rotateScimToken {
 			token
 			scimSettings {
@@ -35,117 +37,122 @@ func TestGraphQLRotateScimToken(t *testing.T) {
 			}
 		}
 	}`, cookie)
-	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+		require.Equal(a, http.StatusOK, rec.Code, rec.Body.String())
 
-	var resp struct {
-		Data struct {
-			RotateScimToken struct {
-				Token        string `json:"token"`
-				ScimSettings struct {
-					Configured  bool   `json:"configured"`
-					TokenHint   string `json:"tokenHint"`
-					ScimBaseURL string `json:"scimBaseUrl"`
-				} `json:"scimSettings"`
-			} `json:"rotateScimToken"`
-		} `json:"data"`
-		Errors []any `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	require.Empty(t, resp.Errors)
-	require.NotEmpty(t, resp.Data.RotateScimToken.Token)
-	require.True(t, resp.Data.RotateScimToken.ScimSettings.Configured)
-	require.NotEmpty(t, resp.Data.RotateScimToken.ScimSettings.TokenHint)
-	require.Contains(t, resp.Data.RotateScimToken.ScimSettings.ScimBaseURL, "/scim/v2")
+		var resp struct {
+			Data struct {
+				RotateScimToken struct {
+					Token        string `json:"token"`
+					ScimSettings struct {
+						Configured  bool   `json:"configured"`
+						TokenHint   string `json:"tokenHint"`
+						ScimBaseURL string `json:"scimBaseUrl"`
+					} `json:"scimSettings"`
+				} `json:"rotateScimToken"`
+			} `json:"data"`
+			Errors []any `json:"errors"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &resp))
+		require.Empty(a, resp.Errors)
+		require.NotEmpty(a, resp.Data.RotateScimToken.Token)
+		require.True(a, resp.Data.RotateScimToken.ScimSettings.Configured)
+		require.NotEmpty(a, resp.Data.RotateScimToken.ScimSettings.TokenHint)
+		require.Contains(a, resp.Data.RotateScimToken.ScimSettings.ScimBaseURL, "/scim/v2")
 
-	settingsRec := postGraphQL(t, handler, `{ scimSettings { configured tokenHint scimBaseUrl } }`, cookie)
-	require.Equal(t, http.StatusOK, settingsRec.Code)
-	require.NotContains(t, settingsRec.Body.String(), resp.Data.RotateScimToken.Token)
+		settingsRec := postGraphQL(t, handler, `{ scimSettings { configured tokenHint scimBaseUrl } }`, cookie)
+		require.Equal(a, http.StatusOK, settingsRec.Code)
+		require.NotContains(a, settingsRec.Body.String(), resp.Data.RotateScimToken.Token)
+	})
 }
 
 func TestScimDeprovisionBlocksAuthenticationWithin60Seconds(t *testing.T) {
-	handler, pool, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	cookie := bootstrapAdmin(t, handler)
-	token := rotateScimToken(t, handler, cookie)
+		cookie := bootstrapAdmin(t, handler)
+		token := rotateScimToken(t, handler, cookie)
 
-	userID := createScimUser(t, handler, token, "scim-user@example.com", "ext-1")
-	sessionCookie := createSessionForUser(t, pool, userID)
+		userID := createScimUser(t, handler, token, "scim-user@example.com", "ext-1")
+		sessionCookie := createSessionForUser(t, pool, userID)
 
-	meReq := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
-	meReq.AddCookie(sessionCookie)
-	meRec := httptest.NewRecorder()
-	handler.ServeHTTP(meRec, meReq)
-	require.Equal(t, http.StatusOK, meRec.Code)
+		meReq := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
+		meReq.AddCookie(sessionCookie)
+		meRec := httptest.NewRecorder()
+		handler.ServeHTTP(meRec, meReq)
+		require.Equal(a, http.StatusOK, meRec.Code)
 
-	deleteReq := scimRequest(t, http.MethodDelete, "/scim/v2/Users/"+userID.String(), token, nil)
-	deleteRec := httptest.NewRecorder()
-	handler.ServeHTTP(deleteRec, deleteReq)
-	require.Equal(t, http.StatusNoContent, deleteRec.Code)
+		deleteReq := scimRequest(t, http.MethodDelete, "/scim/v2/Users/"+userID.String(), token, nil)
+		deleteRec := httptest.NewRecorder()
+		handler.ServeHTTP(deleteRec, deleteReq)
+		require.Equal(a, http.StatusNoContent, deleteRec.Code)
 
-	start := time.Now()
-	meReq = httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
-	meReq.AddCookie(sessionCookie)
-	meRec = httptest.NewRecorder()
-	handler.ServeHTTP(meRec, meReq)
-	require.Equal(t, http.StatusUnauthorized, meRec.Code)
-	require.Less(t, time.Since(start), 60*time.Second)
+		start := time.Now()
+		meReq = httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
+		meReq.AddCookie(sessionCookie)
+		meRec = httptest.NewRecorder()
+		handler.ServeHTTP(meRec, meReq)
+		require.Equal(a, http.StatusUnauthorized, meRec.Code)
+		require.Less(a, time.Since(start), 60*time.Second)
 
-	loginBody := map[string]string{
-		"email":    "scim-user@example.com",
-		"password": "correct-horse-battery-staple",
-	}
-	payload, err := json.Marshal(loginBody)
-	require.NoError(t, err)
-	loginReq := httptest.NewRequest(http.MethodPost, "/api/v1/login", bytes.NewReader(payload))
-	loginReq.Header.Set("Content-Type", "application/json")
-	loginRec := httptest.NewRecorder()
-	handler.ServeHTTP(loginRec, loginReq)
-	require.Equal(t, http.StatusUnauthorized, loginRec.Code)
+		loginBody := map[string]string{
+			"email":    "scim-user@example.com",
+			"password": "correct-horse-battery-staple",
+		}
+		payload, err := json.Marshal(loginBody)
+		require.NoError(a, err)
+		loginReq := httptest.NewRequest(http.MethodPost, "/api/v1/login", bytes.NewReader(payload))
+		loginReq.Header.Set("Content-Type", "application/json")
+		loginRec := httptest.NewRecorder()
+		handler.ServeHTTP(loginRec, loginReq)
+		require.Equal(a, http.StatusUnauthorized, loginRec.Code)
+	})
 }
 
 func TestScimGroupMapsMembersToTeam(t *testing.T) {
-	handler, pool, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	cookie := bootstrapAdmin(t, handler)
-	token := rotateScimToken(t, handler, cookie)
+		cookie := bootstrapAdmin(t, handler)
+		token := rotateScimToken(t, handler, cookie)
 
-	userID := createScimUser(t, handler, token, "group-user@example.com", "ext-group-user")
+		userID := createScimUser(t, handler, token, "group-user@example.com", "ext-group-user")
 
-	groupBody := map[string]any{
-		"schemas":     []string{escalitescim.SchemaGroup},
-		"externalId":  "eng-oncall",
-		"displayName": "Engineering On-Call",
-		"members": []map[string]string{
-			{"value": userID.String()},
-		},
-	}
-	groupPayload, err := json.Marshal(groupBody)
-	require.NoError(t, err)
+		groupBody := map[string]any{
+			"schemas":     []string{escalitescim.SchemaGroup},
+			"externalId":  "eng-oncall",
+			"displayName": "Engineering On-Call",
+			"members": []map[string]string{
+				{"value": userID.String()},
+			},
+		}
+		groupPayload, err := json.Marshal(groupBody)
+		require.NoError(a, err)
 
-	createGroupReq := scimRequest(t, http.MethodPost, "/scim/v2/Groups", token, groupPayload)
-	createGroupRec := httptest.NewRecorder()
-	handler.ServeHTTP(createGroupRec, createGroupReq)
-	require.Equal(t, http.StatusCreated, createGroupRec.Code)
+		createGroupReq := scimRequest(t, http.MethodPost, "/scim/v2/Groups", token, groupPayload)
+		createGroupRec := httptest.NewRecorder()
+		handler.ServeHTTP(createGroupRec, createGroupReq)
+		require.Equal(a, http.StatusCreated, createGroupRec.Code)
 
-	queries := db.New(pool)
-	org, err := queries.GetFirstOrganization(context.Background())
-	require.NoError(t, err)
+		queries := db.New(pool)
+		org, err := queries.GetFirstOrganization(context.Background())
+		require.NoError(a, err)
 
-	team, err := queries.GetTeamByName(context.Background(), db.GetTeamByNameParams{
-		OrganizationID: org.ID,
-		Name:           "Engineering On-Call",
+		team, err := queries.GetTeamByName(context.Background(), db.GetTeamByNameParams{
+			OrganizationID: org.ID,
+			Name:           "Engineering On-Call",
+		})
+		require.NoError(a, err)
+
+		hasMembership, err := queries.HasTeamMembership(context.Background(), db.HasTeamMembershipParams{
+			TeamID:         team.ID,
+			UserID:         uuid.MustParse(userID.String()),
+			OrganizationID: org.ID,
+		})
+		require.NoError(a, err)
+		require.True(a, hasMembership)
 	})
-	require.NoError(t, err)
-
-	hasMembership, err := queries.HasTeamMembership(context.Background(), db.HasTeamMembershipParams{
-		TeamID:         team.ID,
-		UserID:         uuid.MustParse(userID.String()),
-		OrganizationID: org.ID,
-	})
-	require.NoError(t, err)
-	require.True(t, hasMembership)
 }
 
 func rotateScimToken(t *testing.T, handler http.Handler, cookie *http.Cookie) string {

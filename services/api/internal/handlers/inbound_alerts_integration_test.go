@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/allure-framework/allure-go/testify/require"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
@@ -30,160 +31,170 @@ func postInboundAlert(t *testing.T, handler http.Handler, token string, body []b
 }
 
 func TestInboundAlertsMissingAuthorizationReturnsUnauthenticated(t *testing.T) {
-	handler, _, cleanup := inboundWebhookTestHandler(t, 0)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := inboundWebhookTestHandler(t, 0)
+		defer cleanup()
 
-	rec := postInboundAlert(t, handler, "", []byte(`{"summary":"Test","dedup_key":"abc"}`))
-	require.Equal(t, http.StatusUnauthorized, rec.Code)
+		rec := postInboundAlert(t, handler, "", []byte(`{"summary":"Test","dedup_key":"abc"}`))
+		require.Equal(a, http.StatusUnauthorized, rec.Code)
 
-	var errResp struct {
-		Error string `json:"error"`
-		Code  string `json:"code"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &errResp))
-	require.Equal(t, handlers.CodeUnauthenticated, errResp.Code)
-	require.NotEmpty(t, errResp.Error)
+		var errResp struct {
+			Error string `json:"error"`
+			Code  string `json:"code"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &errResp))
+		require.Equal(a, handlers.CodeUnauthenticated, errResp.Code)
+		require.NotEmpty(a, errResp.Error)
+	})
 }
 
 func TestInboundAlertsValidPayloadCreatesAlert(t *testing.T) {
-	handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "generic-rest-api")
+		_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "generic-rest-api")
 
-	payload := []byte(`{
+		payload := []byte(`{
 		"summary": "Disk usage high",
 		"description": "Volume /data is 95% full",
 		"dedup_key": "host-1-disk",
 		"priority": "low"
 	}`)
-	rec := postInboundAlert(t, handler, token, payload)
-	require.Equal(t, http.StatusCreated, rec.Code, rec.Body.String())
+		rec := postInboundAlert(t, handler, token, payload)
+		require.Equal(a, http.StatusCreated, rec.Code, rec.Body.String())
 
-	var resp struct {
-		ID string `json:"id"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	require.NotEmpty(t, resp.ID)
-	_, err = uuid.Parse(resp.ID)
-	require.NoError(t, err)
+		var resp struct {
+			ID string `json:"id"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &resp))
+		require.NotEmpty(a, resp.ID)
+		_, err = uuid.Parse(resp.ID)
+		require.NoError(a, err)
 
-	queries := db.New(pool)
-	alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
-		ServiceID: service.ID,
-		DedupKey:  "host-1-disk",
+		queries := db.New(pool)
+		alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
+			ServiceID: service.ID,
+			DedupKey:  "host-1-disk",
+		})
+		require.NoError(a, err)
+		require.Equal(a, resp.ID, alert.ID.String())
+		require.Equal(a, "triggered", alert.Status)
+		require.Equal(a, "Disk usage high", alert.Summary)
+		require.Equal(a, "low", alert.Priority)
 	})
-	require.NoError(t, err)
-	require.Equal(t, resp.ID, alert.ID.String())
-	require.Equal(t, "triggered", alert.Status)
-	require.Equal(t, "Disk usage high", alert.Summary)
-	require.Equal(t, "low", alert.Priority)
 }
 
 func TestInboundAlertsDuplicateDedupKeyCollapsesAlert(t *testing.T) {
-	handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "generic-rest-api")
+		_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "generic-rest-api")
 
-	payload := []byte(`{
+		payload := []byte(`{
 		"summary": "Disk usage high",
 		"description": "Volume /data is 95% full",
 		"dedup_key": "host-1-disk",
 		"priority": "low"
 	}`)
-	rec := postInboundAlert(t, handler, token, payload)
-	require.Equal(t, http.StatusCreated, rec.Code, rec.Body.String())
+		rec := postInboundAlert(t, handler, token, payload)
+		require.Equal(a, http.StatusCreated, rec.Code, rec.Body.String())
 
-	var firstResp struct {
-		ID string `json:"id"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &firstResp))
+		var firstResp struct {
+			ID string `json:"id"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &firstResp))
 
-	rec = postInboundAlert(t, handler, token, payload)
-	require.Equal(t, http.StatusCreated, rec.Code, rec.Body.String())
+		rec = postInboundAlert(t, handler, token, payload)
+		require.Equal(a, http.StatusCreated, rec.Code, rec.Body.String())
 
-	var secondResp struct {
-		ID string `json:"id"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &secondResp))
-	require.Equal(t, firstResp.ID, secondResp.ID)
+		var secondResp struct {
+			ID string `json:"id"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &secondResp))
+		require.Equal(a, firstResp.ID, secondResp.ID)
 
-	queries := db.New(pool)
-	alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
-		ServiceID: service.ID,
-		DedupKey:  "host-1-disk",
+		queries := db.New(pool)
+		alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
+			ServiceID: service.ID,
+			DedupKey:  "host-1-disk",
+		})
+		require.NoError(a, err)
+		require.Equal(a, firstResp.ID, alert.ID.String())
+		require.Equal(a, int32(2), alert.EventCount)
 	})
-	require.NoError(t, err)
-	require.Equal(t, firstResp.ID, alert.ID.String())
-	require.Equal(t, int32(2), alert.EventCount)
 }
 
 func TestInboundAlertsRejectsNonGenericRESTKey(t *testing.T) {
-	handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
+		_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
 
-	rec := postInboundAlert(t, handler, token, []byte(`{"summary":"Test","dedup_key":"abc"}`))
-	require.Equal(t, http.StatusUnauthorized, rec.Code)
+		rec := postInboundAlert(t, handler, token, []byte(`{"summary":"Test","dedup_key":"abc"}`))
+		require.Equal(a, http.StatusUnauthorized, rec.Code)
 
-	var errResp struct {
-		Code string `json:"code"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &errResp))
-	require.Equal(t, handlers.CodeUnauthenticated, errResp.Code)
+		var errResp struct {
+			Code string `json:"code"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &errResp))
+		require.Equal(a, handlers.CodeUnauthenticated, errResp.Code)
+	})
 }
 
 func TestInboundAlertsResolveUnknownDedupKeyReturnsOK(t *testing.T) {
-	handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "generic-rest-api")
+		_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "generic-rest-api")
 
-	payload := []byte(`{
+		payload := []byte(`{
 		"summary": "Recovered",
 		"dedup_key": "unknown-key",
 		"event_type": "resolved"
 	}`)
-	rec := postInboundAlert(t, handler, token, payload)
-	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+		rec := postInboundAlert(t, handler, token, payload)
+		require.Equal(a, http.StatusOK, rec.Code, rec.Body.String())
 
-	var resp struct {
-		Status string `json:"status"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	require.Equal(t, "resolved", resp.Status)
+		var resp struct {
+			Status string `json:"status"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &resp))
+		require.Equal(a, "resolved", resp.Status)
+	})
 }

@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/allure-framework/allure-go/testify/require"
 	"github.com/coder/websocket"
-	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
@@ -160,109 +161,114 @@ func readGraphQLWSMessage(ctx context.Context, conn *websocket.Conn) (graphqlWSM
 }
 
 func TestGraphQLAlertUpdatedSubscriptionReceivesMutationWithinTwoSeconds(t *testing.T) {
-	handler, pool, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	adminCookie := bootstrapAdmin(t, handler)
+		adminCookie := bootstrapAdmin(t, handler)
 
-	queries := db.New(pool)
-	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		queries := db.New(pool)
+		admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
-	alert := seedTriggeredAlert(t, pool, admin.OrganizationID, service.ID, "cpu-high")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		alert := seedTriggeredAlert(t, pool, admin.OrganizationID, service.ID, "cpu-high")
 
-	client := dialGraphQLWS(t, handler, adminCookie)
-	client.subscribe(t, "1", fmt.Sprintf(`subscription {
+		client := dialGraphQLWS(t, handler, adminCookie)
+		client.subscribe(t, "1", fmt.Sprintf(`subscription {
 		alertUpdated(orgId: "%s") {
 			id
 			status
 		}
 	}`, admin.OrganizationID), nil)
 
-	ackRec := postGraphQL(t, handler, `mutation {
+		ackRec := postGraphQL(t, handler, `mutation {
 		acknowledgeAlert(id: "`+alert.ID.String()+`") {
 			id
 			status
 		}
 	}`, adminCookie)
-	require.Equal(t, http.StatusOK, ackRec.Code)
+		require.Equal(a, http.StatusOK, ackRec.Code)
 
-	payload := client.waitForNext(t, "1", 2*time.Second)
+		payload := client.waitForNext(t, "1", 2*time.Second)
 
-	var data struct {
-		AlertUpdated struct {
-			ID     string `json:"id"`
-			Status string `json:"status"`
-		} `json:"alertUpdated"`
-	}
-	require.NoError(t, json.Unmarshal(payload.Data, &data))
-	require.Empty(t, payload.Errors)
-	require.Equal(t, alert.ID.String(), data.AlertUpdated.ID)
-	require.Equal(t, "ACKNOWLEDGED", data.AlertUpdated.Status)
+		var data struct {
+			AlertUpdated struct {
+				ID     string `json:"id"`
+				Status string `json:"status"`
+			} `json:"alertUpdated"`
+		}
+		require.NoError(a, json.Unmarshal(payload.Data, &data))
+		require.Empty(a, payload.Errors)
+		require.Equal(a, alert.ID.String(), data.AlertUpdated.ID)
+		require.Equal(a, "ACKNOWLEDGED", data.AlertUpdated.Status)
+	})
 }
 
 func TestGraphQLAlertUpdatedSubscriptionRejectsUnauthenticated(t *testing.T) {
-	handler, _, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	client := dialGraphQLWS(t, handler, nil)
-	client.subscribe(t, "1", `subscription { alertUpdated(orgId: "00000000-0000-7000-8000-000000000001") { id } }`, nil)
+		client := dialGraphQLWS(t, handler, nil)
+		client.subscribe(t, "1", `subscription { alertUpdated(orgId: "00000000-0000-7000-8000-000000000001") { id } }`, nil)
 
-	deadline := time.Now().Add(2 * time.Second)
-	for time.Now().Before(deadline) {
-		remaining := time.Until(deadline)
-		ctx, cancel := context.WithTimeout(context.Background(), remaining)
+		deadline := time.Now().Add(2 * time.Second)
+		for time.Now().Before(deadline) {
+			remaining := time.Until(deadline)
+			ctx, cancel := context.WithTimeout(context.Background(), remaining)
 
-		msg, err := readGraphQLWSMessage(ctx, client.conn)
-		cancel()
-		if err != nil {
-			continue
-		}
-
-		switch msg.Type {
-		case "ping":
-			pingCtx, pingCancel := context.WithTimeout(context.Background(), time.Second)
-			_ = writeGraphQLWSMessage(pingCtx, client.conn, graphqlWSMessage{Type: "pong"})
-			pingCancel()
-		case "error":
-			var errs []struct {
-				Extensions map[string]interface{} `json:"extensions"`
+			msg, err := readGraphQLWSMessage(ctx, client.conn)
+			cancel()
+			if err != nil {
+				continue
 			}
-			require.NoError(t, json.Unmarshal(msg.Payload, &errs))
-			require.NotEmpty(t, errs)
-			require.Equal(t, handlers.CodeUnauthenticated, errs[0].Extensions["code"])
-			return
-		case "next":
-			var payload graphqlWSNextPayload
-			require.NoError(t, json.Unmarshal(msg.Payload, &payload))
-			if len(payload.Errors) > 0 {
-				require.Equal(t, handlers.CodeUnauthenticated, payload.Errors[0].Extensions["code"])
+
+			switch msg.Type {
+			case "ping":
+				pingCtx, pingCancel := context.WithTimeout(context.Background(), time.Second)
+				_ = writeGraphQLWSMessage(pingCtx, client.conn, graphqlWSMessage{Type: "pong"})
+				pingCancel()
+			case "error":
+				var errs []struct {
+					Extensions map[string]interface{} `json:"extensions"`
+				}
+				require.NoError(a, json.Unmarshal(msg.Payload, &errs))
+				require.NotEmpty(a, errs)
+				require.Equal(a, handlers.CodeUnauthenticated, errs[0].Extensions["code"])
 				return
+			case "next":
+				var payload graphqlWSNextPayload
+				require.NoError(a, json.Unmarshal(msg.Payload, &payload))
+				if len(payload.Errors) > 0 {
+					require.Equal(a, handlers.CodeUnauthenticated, payload.Errors[0].Extensions["code"])
+					return
+				}
+				t.Fatalf("expected unauthenticated subscription error, got data: %s", string(payload.Data))
 			}
-			t.Fatalf("expected unauthenticated subscription error, got data: %s", string(payload.Data))
 		}
-	}
 
-	t.Fatal("timed out waiting for unauthenticated subscription rejection")
+		t.Fatal("timed out waiting for unauthenticated subscription rejection")
+	})
 }
 
 func TestGraphQLIncidentTimelineUpdatedSubscriptionReceivesNoteWithinTwoSeconds(t *testing.T) {
-	handler, pool, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	adminCookie := bootstrapAdmin(t, handler)
+		adminCookie := bootstrapAdmin(t, handler)
 
-	queries := db.New(pool)
-	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		queries := db.New(pool)
+		admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
-	alert := seedTriggeredAlert(t, pool, admin.OrganizationID, service.ID, "cpu-high")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		alert := seedTriggeredAlert(t, pool, admin.OrganizationID, service.ID, "cpu-high")
 
-	promoteRec := postGraphQL(t, handler, `mutation {
+		promoteRec := postGraphQL(t, handler, `mutation {
 		promoteAlertToIncident(input: {
 			alertId: "`+alert.ID.String()+`"
 			title: "Checkout degradation"
@@ -270,26 +276,26 @@ func TestGraphQLIncidentTimelineUpdatedSubscriptionReceivesNoteWithinTwoSeconds(
 			incidentId
 		}
 	}`, adminCookie)
-	require.Equal(t, http.StatusOK, promoteRec.Code)
+		require.Equal(a, http.StatusOK, promoteRec.Code)
 
-	var promoteResp struct {
-		Data struct {
-			PromoteAlertToIncident struct {
-				IncidentID *string `json:"incidentId"`
-			} `json:"promoteAlertToIncident"`
-		} `json:"data"`
-		Errors []struct {
-			Message string `json:"message"`
-		} `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(promoteRec.Body.Bytes(), &promoteResp))
-	require.Empty(t, promoteResp.Errors)
-	require.NotNil(t, promoteResp.Data.PromoteAlertToIncident.IncidentID)
+		var promoteResp struct {
+			Data struct {
+				PromoteAlertToIncident struct {
+					IncidentID *string `json:"incidentId"`
+				} `json:"promoteAlertToIncident"`
+			} `json:"data"`
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
+		}
+		require.NoError(a, json.Unmarshal(promoteRec.Body.Bytes(), &promoteResp))
+		require.Empty(a, promoteResp.Errors)
+		require.NotNil(a, promoteResp.Data.PromoteAlertToIncident.IncidentID)
 
-	incidentID := *promoteResp.Data.PromoteAlertToIncident.IncidentID
+		incidentID := *promoteResp.Data.PromoteAlertToIncident.IncidentID
 
-	client := dialGraphQLWS(t, handler, adminCookie)
-	client.subscribe(t, "1", fmt.Sprintf(`subscription {
+		client := dialGraphQLWS(t, handler, adminCookie)
+		client.subscribe(t, "1", fmt.Sprintf(`subscription {
 		incidentTimelineUpdated(incidentId: "%s") {
 			id
 			eventType
@@ -297,10 +303,10 @@ func TestGraphQLIncidentTimelineUpdatedSubscriptionReceivesNoteWithinTwoSeconds(
 		}
 	}`, incidentID), nil)
 
-	// Allow the subscription resolver to register on the hub before publishing.
-	time.Sleep(100 * time.Millisecond)
+		// Allow the subscription resolver to register on the hub before publishing.
+		time.Sleep(100 * time.Millisecond)
 
-	noteRec := postGraphQL(t, handler, `mutation {
+		noteRec := postGraphQL(t, handler, `mutation {
 		addIncidentTimelineNote(input: {
 			incidentId: "`+incidentID+`"
 			body: "Customer impact confirmed"
@@ -310,19 +316,20 @@ func TestGraphQLIncidentTimelineUpdatedSubscriptionReceivesNoteWithinTwoSeconds(
 			body
 		}
 	}`, adminCookie)
-	require.Equal(t, http.StatusOK, noteRec.Code)
+		require.Equal(a, http.StatusOK, noteRec.Code)
 
-	payload := client.waitForNext(t, "1", 2*time.Second)
+		payload := client.waitForNext(t, "1", 2*time.Second)
 
-	var data struct {
-		IncidentTimelineUpdated struct {
-			ID        string `json:"id"`
-			EventType string `json:"eventType"`
-			Body      string `json:"body"`
-		} `json:"incidentTimelineUpdated"`
-	}
-	require.NoError(t, json.Unmarshal(payload.Data, &data))
-	require.Empty(t, payload.Errors)
-	require.Equal(t, "NOTE", data.IncidentTimelineUpdated.EventType)
-	require.Equal(t, "Customer impact confirmed", data.IncidentTimelineUpdated.Body)
+		var data struct {
+			IncidentTimelineUpdated struct {
+				ID        string `json:"id"`
+				EventType string `json:"eventType"`
+				Body      string `json:"body"`
+			} `json:"incidentTimelineUpdated"`
+		}
+		require.NoError(a, json.Unmarshal(payload.Data, &data))
+		require.Empty(a, payload.Errors)
+		require.Equal(a, "NOTE", data.IncidentTimelineUpdated.EventType)
+		require.Equal(a, "Customer impact confirmed", data.IncidentTimelineUpdated.Body)
+	})
 }

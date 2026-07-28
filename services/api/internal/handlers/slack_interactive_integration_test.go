@@ -3,14 +3,15 @@ package handlers_test
 import (
 	"bytes"
 	"context"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/allure-framework/allure-go/testify/require"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
@@ -117,90 +118,100 @@ func buildSlackAckPayload(t *testing.T, workspaceID, slackUserID string, alertID
 }
 
 func TestSlackInteractiveRouteDisabledWithoutSigningSecret(t *testing.T) {
-	handler, _, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/integrations/slack/interactive", nil)
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, req)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/integrations/slack/interactive", nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
 
-	require.Equal(t, http.StatusNotFound, rec.Code)
+		require.Equal(a, http.StatusNotFound, rec.Code)
+	})
 }
 
 func TestSlackInteractiveRejectsInvalidSignature(t *testing.T) {
-	handler, _, cleanup := newTestHandlerWithSlackInteractive(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := newTestHandlerWithSlackInteractive(t)
+		defer cleanup()
 
-	body := buildSlackAckPayload(t, "T123", "U123", uuid.Must(uuid.NewV7()))
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/integrations/slack/interactive", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("X-Slack-Request-Timestamp", handlers.SlackInteractiveTimestamp())
-	req.Header.Set("X-Slack-Signature", "v0=invalid")
+		body := buildSlackAckPayload(t, "T123", "U123", uuid.Must(uuid.NewV7()))
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/integrations/slack/interactive", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("X-Slack-Request-Timestamp", handlers.SlackInteractiveTimestamp())
+		req.Header.Set("X-Slack-Signature", "v0=invalid")
 
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, req)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
 
-	require.Equal(t, http.StatusUnauthorized, rec.Code)
+		require.Equal(a, http.StatusUnauthorized, rec.Code)
+	})
 }
 
 func TestSlackInteractiveAcknowledgesIncidentLinkedAlert(t *testing.T) {
-	handler, pool, cleanup := newTestHandlerWithSlackInteractive(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandlerWithSlackInteractive(t)
+		defer cleanup()
 
-	_ = bootstrapAdmin(t, handler)
+		_ = bootstrapAdmin(t, handler)
 
-	queries := db.New(pool)
-	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		queries := db.New(pool)
+		admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	const workspaceID = "TWORKSPACE123"
-	const slackUserID = "USLACKUSER123"
-	seedSlackWorkspace(t, pool, admin.OrganizationID, workspaceID, slackUserID, admin.ID)
+		const workspaceID = "TWORKSPACE123"
+		const slackUserID = "USLACKUSER123"
+		seedSlackWorkspace(t, pool, admin.OrganizationID, workspaceID, slackUserID, admin.ID)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
-	alert, _ := seedIncidentLinkedAlert(t, pool, admin.OrganizationID, team.ID, service.ID, admin.ID)
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		alert, _ := seedIncidentLinkedAlert(t, pool, admin.OrganizationID, team.ID, service.ID, admin.ID)
 
-	body := buildSlackAckPayload(t, workspaceID, slackUserID, alert.ID)
-	req := signSlackInteractiveRequest(t, body)
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, req)
+		body := buildSlackAckPayload(t, workspaceID, slackUserID, alert.ID)
+		req := signSlackInteractiveRequest(t, body)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
 
-	require.Equal(t, http.StatusOK, rec.Code)
+		require.Equal(a, http.StatusOK, rec.Code)
 
-	stored, err := queries.GetAlertByID(context.Background(), db.GetAlertByIDParams{
-		ID:             alert.ID,
-		OrganizationID: admin.OrganizationID,
+		stored, err := queries.GetAlertByID(context.Background(), db.GetAlertByIDParams{
+			ID:             alert.ID,
+			OrganizationID: admin.OrganizationID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, "acknowledged", stored.Status)
+		require.True(a, stored.AcknowledgedByUserID.Valid)
+		require.Equal(a, admin.ID, uuid.UUID(stored.AcknowledgedByUserID.Bytes))
 	})
-	require.NoError(t, err)
-	require.Equal(t, "acknowledged", stored.Status)
-	require.True(t, stored.AcknowledgedByUserID.Valid)
-	require.Equal(t, admin.ID, uuid.UUID(stored.AcknowledgedByUserID.Bytes))
 }
 
 func TestVerifySlackSignatureAcceptsValidRequest(t *testing.T) {
-	body := []byte(`payload=%7B%22type%22%3A%22block_actions%22%7D`)
-	timestamp := handlers.SlackInteractiveTimestamp()
-	signature := handlers.SignSlackBody(testSlackSigningSecret, timestamp, body)
+	allure.Wrap(t, func(a *allure.Context) {
+		body := []byte(`payload=%7B%22type%22%3A%22block_actions%22%7D`)
+		timestamp := handlers.SlackInteractiveTimestamp()
+		signature := handlers.SignSlackBody(testSlackSigningSecret, timestamp, body)
 
-	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
-	req.Header.Set("X-Slack-Request-Timestamp", timestamp)
-	req.Header.Set("X-Slack-Signature", signature)
+		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+		req.Header.Set("X-Slack-Request-Timestamp", timestamp)
+		req.Header.Set("X-Slack-Signature", signature)
 
-	err := handlers.VerifySlackSignature(testSlackSigningSecret, body, req.Header)
-	require.NoError(t, err)
+		err := handlers.VerifySlackSignature(testSlackSigningSecret, body, req.Header)
+		require.NoError(a, err)
+	})
 }
 
 func TestVerifySlackSignatureRejectsTamperedBody(t *testing.T) {
-	body := []byte(`payload=%7B%22type%22%3A%22block_actions%22%7D`)
-	timestamp := handlers.SlackInteractiveTimestamp()
-	signature := handlers.SignSlackBody(testSlackSigningSecret, timestamp, body)
+	allure.Wrap(t, func(a *allure.Context) {
+		body := []byte(`payload=%7B%22type%22%3A%22block_actions%22%7D`)
+		timestamp := handlers.SlackInteractiveTimestamp()
+		signature := handlers.SignSlackBody(testSlackSigningSecret, timestamp, body)
 
-	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader([]byte("payload=tampered")))
-	req.Header.Set("X-Slack-Request-Timestamp", timestamp)
-	req.Header.Set("X-Slack-Signature", signature)
+		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader([]byte("payload=tampered")))
+		req.Header.Set("X-Slack-Request-Timestamp", timestamp)
+		req.Header.Set("X-Slack-Signature", signature)
 
-	err := handlers.VerifySlackSignature(testSlackSigningSecret, []byte("payload=tampered"), req.Header)
-	require.Error(t, err)
-	require.ErrorIs(t, err, handlers.ErrInvalidSlackSignature)
+		err := handlers.VerifySlackSignature(testSlackSigningSecret, []byte("payload=tampered"), req.Header)
+		require.Error(a, err)
+		require.ErrorIs(a, err, handlers.ErrInvalidSlackSignature)
+	})
 }

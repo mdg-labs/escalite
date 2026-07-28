@@ -1,24 +1,27 @@
 package graph
 
 import (
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/allure-framework/allure-go/testify/require"
 )
 
 func TestOrganizationUsersListLimit(t *testing.T) {
 	t.Parallel()
+	allure.Wrap(t, func(a *allure.Context) {
 
-	defaultLimit := defaultOrganizationUsersLimit
-	require.Equal(t, int32(500), organizationUsersListLimit(nil))
-	require.Equal(t, int32(500), organizationUsersListLimit(&defaultLimit))
+		defaultLimit := defaultOrganizationUsersLimit
+		require.Equal(a, int32(500), organizationUsersListLimit(nil))
+		require.Equal(a, int32(500), organizationUsersListLimit(&defaultLimit))
 
-	zero := 0
-	require.Equal(t, int32(500), organizationUsersListLimit(&zero))
+		zero := 0
+		require.Equal(a, int32(500), organizationUsersListLimit(&zero))
 
-	custom := 100
-	require.Equal(t, int32(100), organizationUsersListLimit(&custom))
+		custom := 100
+		require.Equal(a, int32(100), organizationUsersListLimit(&custom))
 
-	overMax := 1000
-	require.Equal(t, int32(500), organizationUsersListLimit(&overMax))
+		overMax := 1000
+		require.Equal(a, int32(500), organizationUsersListLimit(&overMax))
+	})
 }

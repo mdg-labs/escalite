@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/allure-framework/allure-go/testify/require"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
@@ -50,114 +51,124 @@ func postInboundEmail(t *testing.T, handler http.Handler, body []byte, opts ...f
 }
 
 func TestInboundEmailCreatesAlertWithSourceEmail(t *testing.T) {
-	handler, pool, cleanup := inboundEmailTestHandler(t, true)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := inboundEmailTestHandler(t, true)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	config := `{"title":"subject","body":"text","dedup_key":"message_id"}`
-	_, token := seedIntegrationKeyWithConfig(t, pool, admin.OrganizationID, service.ID, "email-to-alert", config)
-	recipient := handlers.InboundEmailAddress(token, testInboundEmailDomain)
+		config := `{"title":"subject","body":"text","dedup_key":"message_id"}`
+		_, token := seedIntegrationKeyWithConfig(t, pool, admin.OrganizationID, service.ID, "email-to-alert", config)
+		recipient := handlers.InboundEmailAddress(token, testInboundEmailDomain)
 
-	payload, err := json.Marshal(map[string]any{
-		"to":            recipient,
-		"from":          "monitor@example.com",
-		"subject":       "Disk usage high",
-		"text":          "Volume /data is 95% full",
-		"message_id":    "<disk-alert-1@example.com>",
-		"authenticated": true,
+		payload, err := json.Marshal(map[string]any{
+			"to":            recipient,
+			"from":          "monitor@example.com",
+			"subject":       "Disk usage high",
+			"text":          "Volume /data is 95% full",
+			"message_id":    "<disk-alert-1@example.com>",
+			"authenticated": true,
+		})
+		require.NoError(a, err)
+
+		rec := postInboundEmail(t, handler, payload)
+		require.Equal(a, http.StatusAccepted, rec.Code, rec.Body.String())
+
+		queries := db.New(pool)
+		alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
+			ServiceID: service.ID,
+			DedupKey:  "<disk-alert-1@example.com>",
+		})
+		require.NoError(a, err)
+		require.Equal(a, "triggered", alert.Status)
+		require.Equal(a, "Disk usage high", alert.Summary)
+		require.Equal(a, "Volume /data is 95% full", alert.Description.String)
 	})
-	require.NoError(t, err)
-
-	rec := postInboundEmail(t, handler, payload)
-	require.Equal(t, http.StatusAccepted, rec.Code, rec.Body.String())
-
-	queries := db.New(pool)
-	alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
-		ServiceID: service.ID,
-		DedupKey:  "<disk-alert-1@example.com>",
-	})
-	require.NoError(t, err)
-	require.Equal(t, "triggered", alert.Status)
-	require.Equal(t, "Disk usage high", alert.Summary)
-	require.Equal(t, "Volume /data is 95% full", alert.Description.String)
 }
 
 func TestInboundEmailRejectsMissingRelaySecret(t *testing.T) {
-	handler, _, cleanup := inboundEmailTestHandler(t, true)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := inboundEmailTestHandler(t, true)
+		defer cleanup()
 
-	rec := postInboundEmail(t, handler, []byte(`{}`), func(req *http.Request) {
-		req.Header.Del("X-Escalite-Relay-Secret")
+		rec := postInboundEmail(t, handler, []byte(`{}`), func(req *http.Request) {
+			req.Header.Del("X-Escalite-Relay-Secret")
+		})
+		require.Equal(a, http.StatusUnauthorized, rec.Code)
 	})
-	require.Equal(t, http.StatusUnauthorized, rec.Code)
 }
 
 func TestInboundEmailRejectsUnsignedMailWhenRequired(t *testing.T) {
-	handler, pool, cleanup := inboundEmailTestHandler(t, true)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := inboundEmailTestHandler(t, true)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	_, token := seedIntegrationKeyWithConfig(t, pool, admin.OrganizationID, service.ID, "email-to-alert", `{"title":"subject","dedup_key":"message_id"}`)
-	recipient := handlers.InboundEmailAddress(token, testInboundEmailDomain)
+		_, token := seedIntegrationKeyWithConfig(t, pool, admin.OrganizationID, service.ID, "email-to-alert", `{"title":"subject","dedup_key":"message_id"}`)
+		recipient := handlers.InboundEmailAddress(token, testInboundEmailDomain)
 
-	payload, err := json.Marshal(map[string]any{
-		"to":         recipient,
-		"subject":    "Unsigned alert",
-		"message_id": "<unsigned@example.com>",
+		payload, err := json.Marshal(map[string]any{
+			"to":         recipient,
+			"subject":    "Unsigned alert",
+			"message_id": "<unsigned@example.com>",
+		})
+		require.NoError(a, err)
+
+		rec := postInboundEmail(t, handler, payload)
+		require.Equal(a, http.StatusForbidden, rec.Code)
 	})
-	require.NoError(t, err)
-
-	rec := postInboundEmail(t, handler, payload)
-	require.Equal(t, http.StatusForbidden, rec.Code)
 }
 
 func TestInboundEmailAcceptsAuthenticatedRelayHeader(t *testing.T) {
-	handler, pool, cleanup := inboundEmailTestHandler(t, true)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := inboundEmailTestHandler(t, true)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	_, token := seedIntegrationKeyWithConfig(t, pool, admin.OrganizationID, service.ID, "email-to-alert", `{"title":"subject","dedup_key":"message_id"}`)
-	recipient := handlers.InboundEmailAddress(token, testInboundEmailDomain)
+		_, token := seedIntegrationKeyWithConfig(t, pool, admin.OrganizationID, service.ID, "email-to-alert", `{"title":"subject","dedup_key":"message_id"}`)
+		recipient := handlers.InboundEmailAddress(token, testInboundEmailDomain)
 
-	payload, err := json.Marshal(map[string]any{
-		"to":         recipient,
-		"subject":    "Relay signed alert",
-		"message_id": "<signed@example.com>",
+		payload, err := json.Marshal(map[string]any{
+			"to":         recipient,
+			"subject":    "Relay signed alert",
+			"message_id": "<signed@example.com>",
+		})
+		require.NoError(a, err)
+
+		rec := postInboundEmail(t, handler, payload, func(req *http.Request) {
+			req.Header.Set("X-Escalite-Email-Authenticated", "pass")
+		})
+		require.Equal(a, http.StatusAccepted, rec.Code, rec.Body.String())
 	})
-	require.NoError(t, err)
-
-	rec := postInboundEmail(t, handler, payload, func(req *http.Request) {
-		req.Header.Set("X-Escalite-Email-Authenticated", "pass")
-	})
-	require.Equal(t, http.StatusAccepted, rec.Code, rec.Body.String())
 }
 
 func TestInboundEmailInvalidRecipientReturnsValidation(t *testing.T) {
-	handler, _, cleanup := inboundEmailTestHandler(t, false)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := inboundEmailTestHandler(t, false)
+		defer cleanup()
 
-	payload := []byte(`{"to":"not-an-email","subject":"Hello","message_id":"<x@example.com>","authenticated":true}`)
-	rec := postInboundEmail(t, handler, payload)
-	require.Equal(t, http.StatusBadRequest, rec.Code)
+		payload := []byte(`{"to":"not-an-email","subject":"Hello","message_id":"<x@example.com>","authenticated":true}`)
+		rec := postInboundEmail(t, handler, payload)
+		require.Equal(a, http.StatusBadRequest, rec.Code)
+	})
 }

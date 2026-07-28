@@ -3,12 +3,13 @@ package handlers_test
 import (
 	"context"
 	"encoding/json"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"testing"
 	"time"
 
+	"github.com/allure-framework/allure-go/testify/require"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/audit"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
@@ -83,121 +84,123 @@ func seedEscalationPolicyWithTargets(
 }
 
 func TestGraphQLSnoozeAndReEscalateAlert(t *testing.T) {
-	handler, pool, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	adminCookie := bootstrapAdmin(t, handler)
+		adminCookie := bootstrapAdmin(t, handler)
 
-	queries := db.New(pool)
-	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		queries := db.New(pool)
+		admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
-	seedEscalationPolicyWithTargets(t, pool, admin.OrganizationID, admin.ID, service.ID, 30)
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		seedEscalationPolicyWithTargets(t, pool, admin.OrganizationID, admin.ID, service.ID, 30)
 
-	ctx := context.Background()
-	nextAt := time.Now().Add(30 * time.Minute).UTC()
-	stateRaw, err := apiescalation.MarshalState(apiescalation.State{
-		CurrentStep:      1,
-		NextEscalationAt: &nextAt,
-	})
-	require.NoError(t, err)
+		ctx := context.Background()
+		nextAt := time.Now().Add(30 * time.Minute).UTC()
+		stateRaw, err := apiescalation.MarshalState(apiescalation.State{
+			CurrentStep:      1,
+			NextEscalationAt: &nextAt,
+		})
+		require.NoError(a, err)
 
-	alert, err := queries.CreateTriggeredAlert(ctx, db.CreateTriggeredAlertParams{
-		ID:              uuid.Must(uuid.NewV7()),
-		OrganizationID:  admin.OrganizationID,
-		ServiceID:       service.ID,
-		IntegrationKeyID: pgtype.UUID{},
-		DedupKey:        "graphql-snooze",
-		Summary:         "GraphQL snooze target",
-		Priority:        "high",
-		EscalationState: stateRaw,
-	})
-	require.NoError(t, err)
+		alert, err := queries.CreateTriggeredAlert(ctx, db.CreateTriggeredAlertParams{
+			ID:               uuid.Must(uuid.NewV7()),
+			OrganizationID:   admin.OrganizationID,
+			ServiceID:        service.ID,
+			IntegrationKeyID: pgtype.UUID{},
+			DedupKey:         "graphql-snooze",
+			Summary:          "GraphQL snooze target",
+			Priority:         "high",
+			EscalationState:  stateRaw,
+		})
+		require.NoError(a, err)
 
-	snoozeRec := postGraphQL(t, handler, `mutation {
+		snoozeRec := postGraphQL(t, handler, `mutation {
 		snoozeAlert(id: "`+alert.ID.String()+`", durationMinutes: 10) {
 			id
 			status
 		}
 	}`, adminCookie)
-	require.Equal(t, 200, snoozeRec.Code)
+		require.Equal(a, 200, snoozeRec.Code)
 
-	var snoozeResp struct {
-		Data struct {
-			SnoozeAlert struct {
-				ID     string `json:"id"`
-				Status string `json:"status"`
-			} `json:"snoozeAlert"`
-		} `json:"data"`
-		Errors []struct {
-			Message string `json:"message"`
-		} `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(snoozeRec.Body.Bytes(), &snoozeResp))
-	require.Empty(t, snoozeResp.Errors)
-	require.Equal(t, "TRIGGERED", snoozeResp.Data.SnoozeAlert.Status)
-
-	after, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-		ID:             alert.ID,
-		OrganizationID: admin.OrganizationID,
-	})
-	require.NoError(t, err)
-	afterState, err := apiescalation.ParseState(after.EscalationState)
-	require.NoError(t, err)
-	require.NotNil(t, afterState.NextEscalationAt)
-	expected := nextAt.Add(10 * time.Minute)
-	require.WithinDuration(t, expected, *afterState.NextEscalationAt, 2*time.Second)
-
-	events, err := queries.ListAuditEventsByOrganization(ctx, admin.OrganizationID)
-	require.NoError(t, err)
-	var snoozeEvent *db.AuditEvent
-	for i := range events {
-		if events[i].Action == audit.ActionAlertEscalationSnoozed {
-			snoozeEvent = &events[i]
-			break
+		var snoozeResp struct {
+			Data struct {
+				SnoozeAlert struct {
+					ID     string `json:"id"`
+					Status string `json:"status"`
+				} `json:"snoozeAlert"`
+			} `json:"data"`
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
 		}
-	}
-	require.NotNil(t, snoozeEvent)
-	require.Equal(t, alert.ID, uuid.UUID(snoozeEvent.TargetID.Bytes))
+		require.NoError(a, json.Unmarshal(snoozeRec.Body.Bytes(), &snoozeResp))
+		require.Empty(a, snoozeResp.Errors)
+		require.Equal(a, "TRIGGERED", snoozeResp.Data.SnoozeAlert.Status)
 
-	ackRec := postGraphQL(t, handler, `mutation {
+		after, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+			ID:             alert.ID,
+			OrganizationID: admin.OrganizationID,
+		})
+		require.NoError(a, err)
+		afterState, err := apiescalation.ParseState(after.EscalationState)
+		require.NoError(a, err)
+		require.NotNil(a, afterState.NextEscalationAt)
+		expected := nextAt.Add(10 * time.Minute)
+		require.WithinDuration(a, expected, *afterState.NextEscalationAt, 2*time.Second)
+
+		events, err := queries.ListAuditEventsByOrganization(ctx, admin.OrganizationID)
+		require.NoError(a, err)
+		var snoozeEvent *db.AuditEvent
+		for i := range events {
+			if events[i].Action == audit.ActionAlertEscalationSnoozed {
+				snoozeEvent = &events[i]
+				break
+			}
+		}
+		require.NotNil(a, snoozeEvent)
+		require.Equal(a, alert.ID, uuid.UUID(snoozeEvent.TargetID.Bytes))
+
+		ackRec := postGraphQL(t, handler, `mutation {
 		acknowledgeAlert(id: "`+alert.ID.String()+`") { id status }
 	}`, adminCookie)
-	require.Equal(t, 200, ackRec.Code)
+		require.Equal(a, 200, ackRec.Code)
 
-	reEscalateRec := postGraphQL(t, handler, `mutation {
+		reEscalateRec := postGraphQL(t, handler, `mutation {
 		reEscalateAlert(id: "`+alert.ID.String()+`") {
 			id
 			status
 		}
 	}`, adminCookie)
-	require.Equal(t, 200, reEscalateRec.Code)
+		require.Equal(a, 200, reEscalateRec.Code)
 
-	var reEscalateResp struct {
-		Data struct {
-			ReEscalateAlert struct {
-				ID     string `json:"id"`
-				Status string `json:"status"`
-			} `json:"reEscalateAlert"`
-		} `json:"data"`
-		Errors []struct {
-			Message string `json:"message"`
-		} `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(reEscalateRec.Body.Bytes(), &reEscalateResp))
-	require.Empty(t, reEscalateResp.Errors)
-	require.Equal(t, "TRIGGERED", reEscalateResp.Data.ReEscalateAlert.Status)
-
-	events, err = queries.ListAuditEventsByOrganization(ctx, admin.OrganizationID)
-	require.NoError(t, err)
-	var reEscalateEvent *db.AuditEvent
-	for i := range events {
-		if events[i].Action == audit.ActionAlertReEscalated {
-			reEscalateEvent = &events[i]
-			break
+		var reEscalateResp struct {
+			Data struct {
+				ReEscalateAlert struct {
+					ID     string `json:"id"`
+					Status string `json:"status"`
+				} `json:"reEscalateAlert"`
+			} `json:"data"`
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
 		}
-	}
-	require.NotNil(t, reEscalateEvent)
+		require.NoError(a, json.Unmarshal(reEscalateRec.Body.Bytes(), &reEscalateResp))
+		require.Empty(a, reEscalateResp.Errors)
+		require.Equal(a, "TRIGGERED", reEscalateResp.Data.ReEscalateAlert.Status)
+
+		events, err = queries.ListAuditEventsByOrganization(ctx, admin.OrganizationID)
+		require.NoError(a, err)
+		var reEscalateEvent *db.AuditEvent
+		for i := range events {
+			if events[i].Action == audit.ActionAlertReEscalated {
+				reEscalateEvent = &events[i]
+				break
+			}
+		}
+		require.NotNil(a, reEscalateEvent)
+	})
 }

@@ -2,11 +2,12 @@ package handlers_test
 
 import (
 	"context"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	_ "github.com/mdg-labs/escalite/services/integrations/install"
@@ -14,58 +15,60 @@ import (
 )
 
 func TestInboundWebhookAlertmanagerCreatesAndResolvesAlert(t *testing.T) {
-	handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "prometheus-alertmanager")
+		_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "prometheus-alertmanager")
 
-	firing := loadAlertmanagerFixture(t, "firing_v4.json")
-	rec := postInboundWebhook(t, handler, "prometheus-alertmanager", token, firing)
-	require.Equal(t, 202, rec.Code, rec.Body.String())
+		firing := loadAlertmanagerFixture(t, "firing_v4.json")
+		rec := postInboundWebhook(t, handler, "prometheus-alertmanager", token, firing)
+		require.Equal(a, 202, rec.Code, rec.Body.String())
 
-	queries := db.New(pool)
-	alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
-		ServiceID: service.ID,
-		DedupKey:  "1a30ba71cca2921f",
+		queries := db.New(pool)
+		alert, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
+			ServiceID: service.ID,
+			DedupKey:  "1a30ba71cca2921f",
+		})
+		require.NoError(a, err)
+		require.Equal(a, "triggered", alert.Status)
+		require.Equal(a, "BlackBox Probe Failure: https://server.example.org", alert.Summary)
+		require.Equal(a, "high", alert.Priority)
+
+		rec = postInboundWebhook(t, handler, "prometheus-alertmanager", token, firing)
+		require.Equal(a, 202, rec.Code, rec.Body.String())
+
+		collapsed, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
+			ServiceID: service.ID,
+			DedupKey:  "1a30ba71cca2921f",
+		})
+		require.NoError(a, err)
+		require.Equal(a, alert.ID, collapsed.ID)
+		require.Equal(a, int32(2), collapsed.EventCount)
+
+		resolved := loadAlertmanagerFixture(t, "resolved_v4.json")
+		rec = postInboundWebhook(t, handler, "prometheus-alertmanager", token, resolved)
+		require.Equal(a, 202, rec.Code, rec.Body.String())
+
+		closed, err := queries.GetAlertByID(context.Background(), db.GetAlertByIDParams{
+			ID:             alert.ID,
+			OrganizationID: admin.OrganizationID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, "closed", closed.Status)
+		require.True(a, closed.ClosedAt.Valid)
+		require.True(a, closed.ResolvedAt.Valid)
+		require.True(a, closed.ResolvedIntegration.Valid)
+		require.Equal(a, "prometheus-alertmanager", closed.ResolvedIntegration.String)
 	})
-	require.NoError(t, err)
-	require.Equal(t, "triggered", alert.Status)
-	require.Equal(t, "BlackBox Probe Failure: https://server.example.org", alert.Summary)
-	require.Equal(t, "high", alert.Priority)
-
-	rec = postInboundWebhook(t, handler, "prometheus-alertmanager", token, firing)
-	require.Equal(t, 202, rec.Code, rec.Body.String())
-
-	collapsed, err := queries.GetOpenAlertByServiceDedupKeyForResolve(context.Background(), db.GetOpenAlertByServiceDedupKeyForResolveParams{
-		ServiceID: service.ID,
-		DedupKey:  "1a30ba71cca2921f",
-	})
-	require.NoError(t, err)
-	require.Equal(t, alert.ID, collapsed.ID)
-	require.Equal(t, int32(2), collapsed.EventCount)
-
-	resolved := loadAlertmanagerFixture(t, "resolved_v4.json")
-	rec = postInboundWebhook(t, handler, "prometheus-alertmanager", token, resolved)
-	require.Equal(t, 202, rec.Code, rec.Body.String())
-
-	closed, err := queries.GetAlertByID(context.Background(), db.GetAlertByIDParams{
-		ID:             alert.ID,
-		OrganizationID: admin.OrganizationID,
-	})
-	require.NoError(t, err)
-	require.Equal(t, "closed", closed.Status)
-	require.True(t, closed.ClosedAt.Valid)
-	require.True(t, closed.ResolvedAt.Valid)
-	require.True(t, closed.ResolvedIntegration.Valid)
-	require.Equal(t, "prometheus-alertmanager", closed.ResolvedIntegration.String)
 }
 
 func loadAlertmanagerFixture(t *testing.T, name string) []byte {

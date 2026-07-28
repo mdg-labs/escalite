@@ -1,81 +1,77 @@
 package graph
 
 import (
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/gqlerr"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 )
 
 func TestValidateTimezone(t *testing.T) {
-	t.Run("accepts valid IANA timezone", func(t *testing.T) {
-		require.NoError(t, validateTimezone("America/New_York"))
+	allure.Test(t, "accepts valid IANA timezone", func(a *allure.Context) {
+		require.NoError(a, validateTimezone("America/New_York"))
 	})
-
-	t.Run("rejects invalid timezone", func(t *testing.T) {
+	allure.Test(t, "rejects invalid timezone", func(a *allure.Context) {
 		err := validateTimezone("Not/A_Timezone")
-		require.Error(t, err)
+		require.Error(a, err)
 
 		var coded *gqlerr.CodedError
-		require.ErrorAs(t, err, &coded)
-		require.Equal(t, handlers.CodeValidation, coded.Code)
-		require.Contains(t, coded.Message, "IANA")
+		require.ErrorAs(a, err, &coded)
+		require.Equal(a, handlers.CodeValidation, coded.Code)
+		require.Contains(a, coded.Message, "IANA")
 	})
-
-	t.Run("rejects empty timezone", func(t *testing.T) {
+	allure.Test(t, "rejects empty timezone", func(a *allure.Context) {
 		err := validateTimezone("   ")
-		require.Error(t, err)
+		require.Error(a, err)
 
 		var coded *gqlerr.CodedError
-		require.ErrorAs(t, err, &coded)
-		require.Equal(t, handlers.CodeValidation, coded.Code)
+		require.ErrorAs(a, err, &coded)
+		require.Equal(a, handlers.CodeValidation, coded.Code)
 	})
 }
 
 func TestValidateRRule(t *testing.T) {
-	t.Run("accepts valid RRULE", func(t *testing.T) {
-		require.NoError(t, validateRRule("FREQ=DAILY;INTERVAL=1"))
+	allure.Test(t, "accepts valid RRULE", func(a *allure.Context) {
+		require.NoError(a, validateRRule("FREQ=DAILY;INTERVAL=1"))
 	})
-
-	t.Run("rejects invalid RRULE", func(t *testing.T) {
+	allure.Test(t, "rejects invalid RRULE", func(a *allure.Context) {
 		err := validateRRule("NOT_A_RRULE")
-		require.Error(t, err)
+		require.Error(a, err)
 
 		var coded *gqlerr.CodedError
-		require.ErrorAs(t, err, &coded)
-		require.Equal(t, handlers.CodeValidation, coded.Code)
-		require.Contains(t, coded.Message, "rrule is invalid")
+		require.ErrorAs(a, err, &coded)
+		require.Equal(a, handlers.CodeValidation, coded.Code)
+		require.Contains(a, coded.Message, "rrule is invalid")
 	})
-
-	t.Run("rejects empty RRULE", func(t *testing.T) {
+	allure.Test(t, "rejects empty RRULE", func(a *allure.Context) {
 		err := validateRRule("")
-		require.Error(t, err)
+		require.Error(a, err)
 
 		var coded *gqlerr.CodedError
-		require.ErrorAs(t, err, &coded)
-		require.Equal(t, handlers.CodeValidation, coded.Code)
+		require.ErrorAs(a, err, &coded)
+		require.Equal(a, handlers.CodeValidation, coded.Code)
 	})
 }
 
 func TestParseParticipantIDs(t *testing.T) {
-	t.Run("rejects empty list", func(t *testing.T) {
+	allure.Test(t, "rejects empty list", func(a *allure.Context) {
 		_, err := parseParticipantIDs(nil)
-		require.Error(t, err)
+		require.Error(a, err)
 
 		var coded *gqlerr.CodedError
-		require.ErrorAs(t, err, &coded)
-		require.Equal(t, handlers.CodeValidation, coded.Code)
+		require.ErrorAs(a, err, &coded)
+		require.Equal(a, handlers.CodeValidation, coded.Code)
 	})
-
-	t.Run("rejects duplicate ids", func(t *testing.T) {
+	allure.Test(t, "rejects duplicate ids", func(a *allure.Context) {
 		id := "018f5a28-9b0e-7000-8000-000000000001"
 		_, err := parseParticipantIDs([]string{id, id})
-		require.Error(t, err)
+		require.Error(a, err)
 
 		var coded *gqlerr.CodedError
-		require.ErrorAs(t, err, &coded)
-		require.Equal(t, handlers.CodeValidation, coded.Code)
+		require.ErrorAs(a, err, &coded)
+		require.Equal(a, handlers.CodeValidation, coded.Code)
 	})
 }

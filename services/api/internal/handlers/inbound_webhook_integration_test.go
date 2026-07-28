@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -13,9 +14,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/allure-framework/allure-go/testify/require"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
@@ -71,157 +72,169 @@ func seedIntegrationKeyWithConfig(t *testing.T, pool *pgxpool.Pool, orgID, servi
 }
 
 func TestInboundWebhookInvalidTokenReturnsNotFound(t *testing.T) {
-	handler, _, cleanup := inboundWebhookTestHandler(t, 0)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := inboundWebhookTestHandler(t, 0)
+		defer cleanup()
 
-	rec := postInboundWebhook(t, handler, "test-plugin", "invalid-token-value", []byte(`{}`))
-	require.Equal(t, http.StatusNotFound, rec.Code)
+		rec := postInboundWebhook(t, handler, "test-plugin", "invalid-token-value", []byte(`{}`))
+		require.Equal(a, http.StatusNotFound, rec.Code)
 
-	var errResp struct {
-		Code string `json:"code"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &errResp))
-	require.Equal(t, handlers.CodeNotFound, errResp.Code)
+		var errResp struct {
+			Code string `json:"code"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &errResp))
+		require.Equal(a, handlers.CodeNotFound, errResp.Code)
+	})
 }
 
 func TestInboundWebhookValidTokenAccepted(t *testing.T) {
-	handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
+		_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
 
-	rec := postInboundWebhook(t, handler, "test-plugin", token, []byte(`{"alert":"firing"}`))
-	require.Equal(t, http.StatusAccepted, rec.Code, rec.Body.String())
+		rec := postInboundWebhook(t, handler, "test-plugin", token, []byte(`{"alert":"firing"}`))
+		require.Equal(a, http.StatusAccepted, rec.Code, rec.Body.String())
 
-	var resp struct {
-		Status string `json:"status"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	require.Equal(t, "accepted", resp.Status)
+		var resp struct {
+			Status string `json:"status"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &resp))
+		require.Equal(a, "accepted", resp.Status)
+	})
 }
 
 func TestInboundWebhookRateLimited(t *testing.T) {
-	handler, pool, cleanup := inboundWebhookTestHandler(t, 2)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := inboundWebhookTestHandler(t, 2)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
-	body := []byte(`{"alert":"firing"}`)
+		_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
+		body := []byte(`{"alert":"firing"}`)
 
-	require.Equal(t, http.StatusAccepted, postInboundWebhook(t, handler, "test-plugin", token, body).Code)
-	require.Equal(t, http.StatusAccepted, postInboundWebhook(t, handler, "test-plugin", token, body).Code)
+		require.Equal(a, http.StatusAccepted, postInboundWebhook(t, handler, "test-plugin", token, body).Code)
+		require.Equal(a, http.StatusAccepted, postInboundWebhook(t, handler, "test-plugin", token, body).Code)
 
-	limited := postInboundWebhook(t, handler, "test-plugin", token, body)
-	require.Equal(t, http.StatusTooManyRequests, limited.Code)
+		limited := postInboundWebhook(t, handler, "test-plugin", token, body)
+		require.Equal(a, http.StatusTooManyRequests, limited.Code)
 
-	var errResp struct {
-		Code string `json:"code"`
-	}
-	require.NoError(t, json.Unmarshal(limited.Body.Bytes(), &errResp))
-	require.Equal(t, handlers.CodeRateLimited, errResp.Code)
+		var errResp struct {
+			Code string `json:"code"`
+		}
+		require.NoError(a, json.Unmarshal(limited.Body.Bytes(), &errResp))
+		require.Equal(a, handlers.CodeRateLimited, errResp.Code)
+	})
 }
 
 func TestInboundWebhookPayloadTooLarge(t *testing.T) {
-	handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
+		_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
 
-	oversized := []byte(`"` + strings.Repeat("a", 256*1024) + `"`)
-	rec := postInboundWebhook(t, handler, "test-plugin", token, oversized)
-	require.Equal(t, http.StatusRequestEntityTooLarge, rec.Code)
+		oversized := []byte(`"` + strings.Repeat("a", 256*1024) + `"`)
+		rec := postInboundWebhook(t, handler, "test-plugin", token, oversized)
+		require.Equal(a, http.StatusRequestEntityTooLarge, rec.Code)
 
-	var errResp struct {
-		Code string `json:"code"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &errResp))
-	require.Equal(t, handlers.CodePayloadTooLarge, errResp.Code)
+		var errResp struct {
+			Code string `json:"code"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &errResp))
+		require.Equal(a, handlers.CodePayloadTooLarge, errResp.Code)
+	})
 }
 
 func TestInboundWebhookRequiresJSONContentType(t *testing.T) {
-	handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
+		_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
 
-	req := httptest.NewRequest(http.MethodPost, "/webhook/test-plugin/"+token, bytes.NewReader([]byte(`{}`)))
-	req.Header.Set("Content-Type", "text/plain")
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, req)
+		req := httptest.NewRequest(http.MethodPost, "/webhook/test-plugin/"+token, bytes.NewReader([]byte(`{}`)))
+		req.Header.Set("Content-Type", "text/plain")
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
 
-	require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.Equal(a, http.StatusBadRequest, rec.Code)
 
-	var errResp struct {
-		Code string `json:"code"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &errResp))
-	require.Equal(t, handlers.CodeValidation, errResp.Code)
+		var errResp struct {
+			Code string `json:"code"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &errResp))
+		require.Equal(a, handlers.CodeValidation, errResp.Code)
+	})
 }
 
 func TestInboundWebhookLogsTokenPrefixOnly(t *testing.T) {
-	var buf bytes.Buffer
-	logger := slog.New(slog.NewJSONHandler(&buf, nil))
+	allure.Wrap(t, func(a *allure.Context) {
+		var buf bytes.Buffer
+		logger := slog.New(slog.NewJSONHandler(&buf, nil))
 
-	handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
-	defer cleanup()
+		handler, pool, cleanup := inboundWebhookTestHandler(t, 0)
+		defer cleanup()
 
-	bootstrapAdmin(t, handler)
+		bootstrapAdmin(t, handler)
 
-	admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		admin, err := db.New(pool).GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
-	prefix := auth.TokenPrefix(token)
+		_, token := seedIntegrationKey(t, pool, admin.OrganizationID, service.ID, "test-plugin")
+		prefix := auth.TokenPrefix(token)
 
-	jobs, err := queue.NewProducer(context.Background(), pool, logger)
-	require.NoError(t, err)
+		jobs, err := queue.NewProducer(context.Background(), pool, logger)
+		require.NoError(a, err)
 
-	webhookHandler := handlers.NewInboundWebhookHandler(pool, jobs, logger, handlers.InboundWebhookConfig{})
-	req := httptest.NewRequest(http.MethodPost, "/webhook/test-plugin/"+token, bytes.NewReader([]byte(`{}`)))
-	req.Header.Set("Content-Type", "application/json")
-	routeCtx := chi.NewRouteContext()
-	routeCtx.URLParams.Add("plugin", "test-plugin")
-	routeCtx.URLParams.Add("token", token)
-	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, routeCtx))
-	rec := httptest.NewRecorder()
-	webhookHandler.ServeHTTP(rec, req)
-	require.Equal(t, http.StatusAccepted, rec.Code)
+		webhookHandler := handlers.NewInboundWebhookHandler(pool, jobs, logger, handlers.InboundWebhookConfig{})
+		req := httptest.NewRequest(http.MethodPost, "/webhook/test-plugin/"+token, bytes.NewReader([]byte(`{}`)))
+		req.Header.Set("Content-Type", "application/json")
+		routeCtx := chi.NewRouteContext()
+		routeCtx.URLParams.Add("plugin", "test-plugin")
+		routeCtx.URLParams.Add("token", token)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, routeCtx))
+		rec := httptest.NewRecorder()
+		webhookHandler.ServeHTTP(rec, req)
+		require.Equal(a, http.StatusAccepted, rec.Code)
 
-	logOutput := buf.String()
-	require.Contains(t, logOutput, `"token_prefix":"`+prefix+`"`)
-	require.NotContains(t, logOutput, token)
+		logOutput := buf.String()
+		require.Contains(a, logOutput, `"token_prefix":"`+prefix+`"`)
+		require.NotContains(a, logOutput, token)
+	})
 }

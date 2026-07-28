@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -14,11 +15,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/allure-framework/allure-go/testify/require"
 	"github.com/mdg-labs/escalite/services/api/internal/migrate"
 	"github.com/mdg-labs/escalite/services/api/internal/testutil"
 	"github.com/mdg-labs/escalite/services/api/migrations"
 	"github.com/pressly/goose/v3"
-	"github.com/stretchr/testify/require"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -290,141 +291,149 @@ func runSchemaDiff(t *testing.T, databaseURL, migrationName, schemaDir, migratio
 }
 
 func TestIntegration_BaselineMigrationsApplyOnEmptyPostgres(t *testing.T) {
-	databaseURL, cleanup := testutil.StartPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		databaseURL, cleanup := testutil.StartPostgres(t)
+		defer cleanup()
 
-	ctx := context.Background()
-	require.NoError(t, migrate.Up(ctx, databaseURL, slog.Default()))
+		ctx := context.Background()
+		require.NoError(a, migrate.Up(ctx, databaseURL, slog.Default()))
 
-	db := openDB(t, databaseURL)
+		db := openDB(t, databaseURL)
 
-	var tableCount int
-	require.NoError(t, db.QueryRowContext(ctx, `
+		var tableCount int
+		require.NoError(a, db.QueryRowContext(ctx, `
 		SELECT count(*) FROM information_schema.tables
 		WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
 	`).Scan(&tableCount))
-	require.Greater(t, tableCount, 30)
+		require.Greater(a, tableCount, 30)
+	})
 }
 
 func TestIntegration_SchemaSQLFingerprintMatchesDBAfterGooseUp(t *testing.T) {
-	databaseURL, cleanup := testutil.StartPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		databaseURL, cleanup := testutil.StartPostgres(t)
+		defer cleanup()
 
-	ctx := context.Background()
-	require.NoError(t, migrate.Up(ctx, databaseURL, slog.Default()))
+		ctx := context.Background()
+		require.NoError(a, migrate.Up(ctx, databaseURL, slog.Default()))
 
-	schemaDir := canonicalSchemaDir(t)
-	plan := pgSchemaDiffPlan(t, databaseURL, false, schemaDir)
-	require.False(t, planHasDrift(plan), "expected no drift between DB and canonical schema/sql, plan:\n%s", plan)
+		schemaDir := canonicalSchemaDir(t)
+		plan := pgSchemaDiffPlan(t, databaseURL, false, schemaDir)
+		require.False(a, planHasDrift(plan), "expected no drift between DB and canonical schema/sql, plan:\n%s", plan)
 
-	db := openDB(t, databaseURL)
-	fp1 := schemaFingerprint(t, ctx, db)
-	fp2 := schemaFingerprint(t, ctx, db)
-	require.Equal(t, fp1, fp2)
-	require.NotEmpty(t, fp1)
+		db := openDB(t, databaseURL)
+		fp1 := schemaFingerprint(t, ctx, db)
+		fp2 := schemaFingerprint(t, ctx, db)
+		require.Equal(a, fp1, fp2)
+		require.NotEmpty(a, fp1)
 
-	var notifyFunctions, notifyTriggers int
-	require.NoError(t, db.QueryRowContext(ctx, `
+		var notifyFunctions, notifyTriggers int
+		require.NoError(a, db.QueryRowContext(ctx, `
 		SELECT count(*) FROM pg_proc p
 		JOIN pg_namespace n ON n.oid = p.pronamespace
 		WHERE n.nspname = 'public' AND p.proname LIKE 'notify_%'
 	`).Scan(&notifyFunctions))
-	require.NoError(t, db.QueryRowContext(ctx, `
+		require.NoError(a, db.QueryRowContext(ctx, `
 		SELECT count(*) FROM pg_trigger t
 		JOIN pg_class c ON c.oid = t.tgrelid
 		WHERE NOT t.tgisinternal AND c.relnamespace = 'public'::regnamespace
 		  AND t.tgname LIKE '%notify%'
 	`).Scan(&notifyTriggers))
-	require.Equal(t, 2, notifyFunctions)
-	require.Equal(t, 5, notifyTriggers)
+		require.Equal(a, 2, notifyFunctions)
+		require.Equal(a, 5, notifyTriggers)
+	})
 }
 
 func TestIntegration_SchemaDiffGeneratesAndAppliesIncrementalMigration(t *testing.T) {
-	databaseURL, cleanup := testutil.StartPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		databaseURL, cleanup := testutil.StartPostgres(t)
+		defer cleanup()
 
-	ctx := context.Background()
-	require.NoError(t, migrate.Up(ctx, databaseURL, slog.Default()))
+		ctx := context.Background()
+		require.NoError(a, migrate.Up(ctx, databaseURL, slog.Default()))
 
-	schemaDir := copyCanonicalSchema(t)
-	schemaPath := filepath.Join(schemaDir, "schema.sql")
-	schemaSQL, err := os.ReadFile(schemaPath)
-	require.NoError(t, err)
+		schemaDir := copyCanonicalSchema(t)
+		schemaPath := filepath.Join(schemaDir, "schema.sql")
+		schemaSQL, err := os.ReadFile(schemaPath)
+		require.NoError(a, err)
 
-	const marker = "migration_itest_marker"
-	needle := `"name" text NOT NULL,`
-	replacement := fmt.Sprintf(`"name" text NOT NULL,
+		const marker = "migration_itest_marker"
+		needle := `"name" text NOT NULL,`
+		replacement := fmt.Sprintf(`"name" text NOT NULL,
   "%s" text NULL,`, marker)
-	require.Contains(t, string(schemaSQL), needle)
-	require.NoError(t, os.WriteFile(schemaPath, []byte(strings.Replace(string(schemaSQL), needle, replacement, 1)), 0o644))
+		require.Contains(a, string(schemaSQL), needle)
+		require.NoError(a, os.WriteFile(schemaPath, []byte(strings.Replace(string(schemaSQL), needle, replacement, 1)), 0o644))
 
-	migrationsDir := filepath.Join(t.TempDir(), "migrations")
-	require.NoError(t, os.MkdirAll(migrationsDir, 0o755))
-	runSchemaDiff(t, databaseURL, "itest_add_marker", schemaDir, migrationsDir, false)
+		migrationsDir := filepath.Join(t.TempDir(), "migrations")
+		require.NoError(a, os.MkdirAll(migrationsDir, 0o755))
+		runSchemaDiff(t, databaseURL, "itest_add_marker", schemaDir, migrationsDir, false)
 
-	entries, err := os.ReadDir(migrationsDir)
-	require.NoError(t, err)
-	require.Len(t, entries, 1)
-	require.True(t, strings.HasSuffix(entries[0].Name(), "_itest_add_marker.sql"))
+		entries, err := os.ReadDir(migrationsDir)
+		require.NoError(a, err)
+		require.Len(a, entries, 1)
+		require.True(a, strings.HasSuffix(entries[0].Name(), "_itest_add_marker.sql"))
 
-	gooseUpFromDir(t, databaseURL, migrationsDir)
+		gooseUpFromDir(t, databaseURL, migrationsDir)
 
-	db := openDB(t, databaseURL)
-	var columnName string
-	require.NoError(t, db.QueryRowContext(ctx, `
+		db := openDB(t, databaseURL)
+		var columnName string
+		require.NoError(a, db.QueryRowContext(ctx, `
 		SELECT column_name FROM information_schema.columns
 		WHERE table_schema = 'public' AND table_name = 'organizations' AND column_name = $1
 	`, marker).Scan(&columnName))
-	require.Equal(t, marker, columnName)
+		require.Equal(a, marker, columnName)
 
-	plan := pgSchemaDiffPlan(t, databaseURL, false, schemaDir)
-	require.False(t, planHasDrift(plan), "expected DB to match modified canonical schema/sql, plan:\n%s", plan)
+		plan := pgSchemaDiffPlan(t, databaseURL, false, schemaDir)
+		require.False(a, planHasDrift(plan), "expected DB to match modified canonical schema/sql, plan:\n%s", plan)
+	})
 }
 
 func TestIntegration_DriftDetectionFailsWhenMigrationHandEdited(t *testing.T) {
-	databaseURL, cleanup := testutil.StartPostgres(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		databaseURL, cleanup := testutil.StartPostgres(t)
+		defer cleanup()
 
-	migrationsDir := filepath.Join(t.TempDir(), "migrations")
-	require.NoError(t, os.MkdirAll(migrationsDir, 0o755))
+		migrationsDir := filepath.Join(t.TempDir(), "migrations")
+		require.NoError(a, os.MkdirAll(migrationsDir, 0o755))
 
-	entries, err := migrations.Files.ReadDir(".")
-	require.NoError(t, err)
-	require.NotEmpty(t, entries)
+		entries, err := migrations.Files.ReadDir(".")
+		require.NoError(a, err)
+		require.NotEmpty(a, entries)
 
-	var bootstrapName string
-	for _, entry := range entries {
-		if strings.HasSuffix(entry.Name(), ".sql") {
-			bootstrapName = entry.Name()
-			break
+		var bootstrapName string
+		for _, entry := range entries {
+			if strings.HasSuffix(entry.Name(), ".sql") {
+				bootstrapName = entry.Name()
+				break
+			}
 		}
-	}
-	require.NotEmpty(t, bootstrapName)
+		require.NotEmpty(a, bootstrapName)
 
-	bootstrapSQL, err := migrations.Files.ReadFile(bootstrapName)
-	require.NoError(t, err)
+		bootstrapSQL, err := migrations.Files.ReadFile(bootstrapName)
+		require.NoError(a, err)
 
-	const driftColumn = "drift_smoke_col"
-	handEdited := strings.Replace(
-		string(bootstrapSQL),
-		"-- +goose StatementEnd",
-		fmt.Sprintf("ALTER TABLE organizations ADD COLUMN %s text;\n-- +goose StatementEnd", driftColumn),
-		1,
-	)
-	require.NoError(t, os.WriteFile(filepath.Join(migrationsDir, bootstrapName), []byte(handEdited), 0o644))
+		const driftColumn = "drift_smoke_col"
+		handEdited := strings.Replace(
+			string(bootstrapSQL),
+			"-- +goose StatementEnd",
+			fmt.Sprintf("ALTER TABLE organizations ADD COLUMN %s text;\n-- +goose StatementEnd", driftColumn),
+			1,
+		)
+		require.NoError(a, os.WriteFile(filepath.Join(migrationsDir, bootstrapName), []byte(handEdited), 0o644))
 
-	gooseUpFromDir(t, databaseURL, migrationsDir)
+		gooseUpFromDir(t, databaseURL, migrationsDir)
 
-	db := openDB(t, databaseURL)
-	var columnExists bool
-	require.NoError(t, db.QueryRowContext(context.Background(), `
+		db := openDB(t, databaseURL)
+		var columnExists bool
+		require.NoError(a, db.QueryRowContext(context.Background(), `
 		SELECT EXISTS (
 			SELECT 1 FROM information_schema.columns
 			WHERE table_schema = 'public' AND table_name = 'organizations' AND column_name = $1
 		)
 	`, driftColumn).Scan(&columnExists))
-	require.True(t, columnExists, "hand-edited migration should have created drift column")
+		require.True(a, columnExists, "hand-edited migration should have created drift column")
 
-	plan := pgSchemaDiffPlan(t, databaseURL, false, canonicalSchemaDir(t))
-	require.True(t, planHasDrift(plan), "expected drift detection when migration was hand-edited without schema/sql change")
+		plan := pgSchemaDiffPlan(t, databaseURL, false, canonicalSchemaDir(t))
+		require.True(a, planHasDrift(plan), "expected drift detection when migration was hand-edited without schema/sql change")
+	})
 }

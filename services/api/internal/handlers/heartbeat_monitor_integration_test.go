@@ -3,9 +3,10 @@ package handlers_test
 import (
 	"context"
 	"encoding/json"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/audit"
 	"github.com/mdg-labs/escalite/services/api/internal/db"
@@ -13,19 +14,20 @@ import (
 )
 
 func TestGraphQLHeartbeatMonitorCRUD(t *testing.T) {
-	handler, pool, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	adminCookie := bootstrapAdmin(t, handler)
+		adminCookie := bootstrapAdmin(t, handler)
 
-	queries := db.New(pool)
-	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		queries := db.New(pool)
+		admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
 
-	createRec := postGraphQL(t, handler, `mutation {
+		createRec := postGraphQL(t, handler, `mutation {
 		createHeartbeatMonitor(input: {
 			serviceId: "`+service.ID.String()+`"
 			name: "Nightly backup"
@@ -42,45 +44,45 @@ func TestGraphQLHeartbeatMonitorCRUD(t *testing.T) {
 			token
 		}
 	}`, adminCookie)
-	require.Equal(t, 200, createRec.Code, createRec.Body.String())
+		require.Equal(a, 200, createRec.Code, createRec.Body.String())
 
-	var createResp struct {
-		Data struct {
-			CreateHeartbeatMonitor struct {
-				ID              string `json:"id"`
-				Name            string `json:"name"`
-				ServiceID       string `json:"serviceId"`
-				IntervalSeconds int    `json:"intervalSeconds"`
-				GraceSeconds    int    `json:"graceSeconds"`
-				Status          string `json:"status"`
-				TokenPrefix     string `json:"tokenPrefix"`
-				Token           string `json:"token"`
-			} `json:"createHeartbeatMonitor"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(createRec.Body.Bytes(), &createResp))
-	require.Equal(t, "Nightly backup", createResp.Data.CreateHeartbeatMonitor.Name)
-	require.Equal(t, service.ID.String(), createResp.Data.CreateHeartbeatMonitor.ServiceID)
-	require.Equal(t, 3600, createResp.Data.CreateHeartbeatMonitor.IntervalSeconds)
-	require.Equal(t, 300, createResp.Data.CreateHeartbeatMonitor.GraceSeconds)
-	require.Equal(t, "HEALTHY", createResp.Data.CreateHeartbeatMonitor.Status)
-	require.NotEmpty(t, createResp.Data.CreateHeartbeatMonitor.TokenPrefix)
-	require.NotEmpty(t, createResp.Data.CreateHeartbeatMonitor.Token)
-
-	monitorID := createResp.Data.CreateHeartbeatMonitor.ID
-
-	events, err := queries.ListAuditEventsByOrganization(context.Background(), admin.OrganizationID)
-	require.NoError(t, err)
-	foundCreate := false
-	for _, event := range events {
-		if event.Action == audit.ActionHeartbeatMonitorCreated {
-			foundCreate = true
-			break
+		var createResp struct {
+			Data struct {
+				CreateHeartbeatMonitor struct {
+					ID              string `json:"id"`
+					Name            string `json:"name"`
+					ServiceID       string `json:"serviceId"`
+					IntervalSeconds int    `json:"intervalSeconds"`
+					GraceSeconds    int    `json:"graceSeconds"`
+					Status          string `json:"status"`
+					TokenPrefix     string `json:"tokenPrefix"`
+					Token           string `json:"token"`
+				} `json:"createHeartbeatMonitor"`
+			} `json:"data"`
 		}
-	}
-	require.True(t, foundCreate, "expected heartbeat_monitor.created audit event")
+		require.NoError(a, json.Unmarshal(createRec.Body.Bytes(), &createResp))
+		require.Equal(a, "Nightly backup", createResp.Data.CreateHeartbeatMonitor.Name)
+		require.Equal(a, service.ID.String(), createResp.Data.CreateHeartbeatMonitor.ServiceID)
+		require.Equal(a, 3600, createResp.Data.CreateHeartbeatMonitor.IntervalSeconds)
+		require.Equal(a, 300, createResp.Data.CreateHeartbeatMonitor.GraceSeconds)
+		require.Equal(a, "HEALTHY", createResp.Data.CreateHeartbeatMonitor.Status)
+		require.NotEmpty(a, createResp.Data.CreateHeartbeatMonitor.TokenPrefix)
+		require.NotEmpty(a, createResp.Data.CreateHeartbeatMonitor.Token)
 
-	invalidRec := postGraphQL(t, handler, `mutation {
+		monitorID := createResp.Data.CreateHeartbeatMonitor.ID
+
+		events, err := queries.ListAuditEventsByOrganization(context.Background(), admin.OrganizationID)
+		require.NoError(a, err)
+		foundCreate := false
+		for _, event := range events {
+			if event.Action == audit.ActionHeartbeatMonitorCreated {
+				foundCreate = true
+				break
+			}
+		}
+		require.True(a, foundCreate, "expected heartbeat_monitor.created audit event")
+
+		invalidRec := postGraphQL(t, handler, `mutation {
 		createHeartbeatMonitor(input: {
 			serviceId: "`+service.ID.String()+`"
 			name: "Broken"
@@ -88,18 +90,18 @@ func TestGraphQLHeartbeatMonitorCRUD(t *testing.T) {
 			graceSeconds: 60
 		}) { id }
 	}`, adminCookie)
-	require.Equal(t, 200, invalidRec.Code)
+		require.Equal(a, 200, invalidRec.Code)
 
-	var invalidResp struct {
-		Errors []struct {
-			Extensions map[string]interface{} `json:"extensions"`
-		} `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(invalidRec.Body.Bytes(), &invalidResp))
-	require.NotEmpty(t, invalidResp.Errors)
-	require.Equal(t, handlers.CodeValidation, invalidResp.Errors[0].Extensions["code"])
+		var invalidResp struct {
+			Errors []struct {
+				Extensions map[string]interface{} `json:"extensions"`
+			} `json:"errors"`
+		}
+		require.NoError(a, json.Unmarshal(invalidRec.Body.Bytes(), &invalidResp))
+		require.NotEmpty(a, invalidResp.Errors)
+		require.Equal(a, handlers.CodeValidation, invalidResp.Errors[0].Extensions["code"])
 
-	listRec := postGraphQL(t, handler, `{
+		listRec := postGraphQL(t, handler, `{
 		heartbeatMonitors(serviceId: "`+service.ID.String()+`") {
 			id
 			name
@@ -109,26 +111,26 @@ func TestGraphQLHeartbeatMonitorCRUD(t *testing.T) {
 			token
 		}
 	}`, adminCookie)
-	require.Equal(t, 200, listRec.Code, listRec.Body.String())
+		require.Equal(a, 200, listRec.Code, listRec.Body.String())
 
-	var listResp struct {
-		Data struct {
-			HeartbeatMonitors []struct {
-				ID              string  `json:"id"`
-				Name            string  `json:"name"`
-				IntervalSeconds int     `json:"intervalSeconds"`
-				GraceSeconds    int     `json:"graceSeconds"`
-				Status          string  `json:"status"`
-				Token           *string `json:"token"`
-			} `json:"heartbeatMonitors"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(listRec.Body.Bytes(), &listResp))
-	require.Len(t, listResp.Data.HeartbeatMonitors, 1)
-	require.Equal(t, monitorID, listResp.Data.HeartbeatMonitors[0].ID)
-	require.Nil(t, listResp.Data.HeartbeatMonitors[0].Token)
+		var listResp struct {
+			Data struct {
+				HeartbeatMonitors []struct {
+					ID              string  `json:"id"`
+					Name            string  `json:"name"`
+					IntervalSeconds int     `json:"intervalSeconds"`
+					GraceSeconds    int     `json:"graceSeconds"`
+					Status          string  `json:"status"`
+					Token           *string `json:"token"`
+				} `json:"heartbeatMonitors"`
+			} `json:"data"`
+		}
+		require.NoError(a, json.Unmarshal(listRec.Body.Bytes(), &listResp))
+		require.Len(a, listResp.Data.HeartbeatMonitors, 1)
+		require.Equal(a, monitorID, listResp.Data.HeartbeatMonitors[0].ID)
+		require.Nil(a, listResp.Data.HeartbeatMonitors[0].Token)
 
-	updateRec := postGraphQL(t, handler, `mutation {
+		updateRec := postGraphQL(t, handler, `mutation {
 		updateHeartbeatMonitor(input: {
 			id: "`+monitorID+`"
 			name: "Updated backup"
@@ -141,74 +143,76 @@ func TestGraphQLHeartbeatMonitorCRUD(t *testing.T) {
 			graceSeconds
 		}
 	}`, adminCookie)
-	require.Equal(t, 200, updateRec.Code, updateRec.Body.String())
+		require.Equal(a, 200, updateRec.Code, updateRec.Body.String())
 
-	var updateResp struct {
-		Data struct {
-			UpdateHeartbeatMonitor struct {
-				Name            string `json:"name"`
-				IntervalSeconds int    `json:"intervalSeconds"`
-				GraceSeconds    int    `json:"graceSeconds"`
-			} `json:"updateHeartbeatMonitor"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(updateRec.Body.Bytes(), &updateResp))
-	require.Equal(t, "Updated backup", updateResp.Data.UpdateHeartbeatMonitor.Name)
-	require.Equal(t, 7200, updateResp.Data.UpdateHeartbeatMonitor.IntervalSeconds)
-	require.Equal(t, 600, updateResp.Data.UpdateHeartbeatMonitor.GraceSeconds)
-
-	events, err = queries.ListAuditEventsByOrganization(context.Background(), admin.OrganizationID)
-	require.NoError(t, err)
-	foundUpdate := false
-	for _, event := range events {
-		if event.Action == audit.ActionHeartbeatMonitorUpdated {
-			foundUpdate = true
-			break
+		var updateResp struct {
+			Data struct {
+				UpdateHeartbeatMonitor struct {
+					Name            string `json:"name"`
+					IntervalSeconds int    `json:"intervalSeconds"`
+					GraceSeconds    int    `json:"graceSeconds"`
+				} `json:"updateHeartbeatMonitor"`
+			} `json:"data"`
 		}
-	}
-	require.True(t, foundUpdate, "expected heartbeat_monitor.updated audit event")
+		require.NoError(a, json.Unmarshal(updateRec.Body.Bytes(), &updateResp))
+		require.Equal(a, "Updated backup", updateResp.Data.UpdateHeartbeatMonitor.Name)
+		require.Equal(a, 7200, updateResp.Data.UpdateHeartbeatMonitor.IntervalSeconds)
+		require.Equal(a, 600, updateResp.Data.UpdateHeartbeatMonitor.GraceSeconds)
 
-	deleteRec := postGraphQL(t, handler, `mutation {
+		events, err = queries.ListAuditEventsByOrganization(context.Background(), admin.OrganizationID)
+		require.NoError(a, err)
+		foundUpdate := false
+		for _, event := range events {
+			if event.Action == audit.ActionHeartbeatMonitorUpdated {
+				foundUpdate = true
+				break
+			}
+		}
+		require.True(a, foundUpdate, "expected heartbeat_monitor.updated audit event")
+
+		deleteRec := postGraphQL(t, handler, `mutation {
 		deleteHeartbeatMonitor(id: "`+monitorID+`")
 	}`, adminCookie)
-	require.Equal(t, 200, deleteRec.Code, deleteRec.Body.String())
+		require.Equal(a, 200, deleteRec.Code, deleteRec.Body.String())
 
-	var deleteResp struct {
-		Data struct {
-			DeleteHeartbeatMonitor bool `json:"deleteHeartbeatMonitor"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(deleteRec.Body.Bytes(), &deleteResp))
-	require.True(t, deleteResp.Data.DeleteHeartbeatMonitor)
-
-	events, err = queries.ListAuditEventsByOrganization(context.Background(), admin.OrganizationID)
-	require.NoError(t, err)
-	foundDelete := false
-	for _, event := range events {
-		if event.Action == audit.ActionHeartbeatMonitorDeleted {
-			foundDelete = true
-			break
+		var deleteResp struct {
+			Data struct {
+				DeleteHeartbeatMonitor bool `json:"deleteHeartbeatMonitor"`
+			} `json:"data"`
 		}
-	}
-	require.True(t, foundDelete, "expected heartbeat_monitor.deleted audit event")
+		require.NoError(a, json.Unmarshal(deleteRec.Body.Bytes(), &deleteResp))
+		require.True(a, deleteResp.Data.DeleteHeartbeatMonitor)
+
+		events, err = queries.ListAuditEventsByOrganization(context.Background(), admin.OrganizationID)
+		require.NoError(a, err)
+		foundDelete := false
+		for _, event := range events {
+			if event.Action == audit.ActionHeartbeatMonitorDeleted {
+				foundDelete = true
+				break
+			}
+		}
+		require.True(a, foundDelete, "expected heartbeat_monitor.deleted audit event")
+	})
 }
 
 func TestGraphQLHeartbeatMonitorRequiresAdmin(t *testing.T) {
-	handler, pool, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	_ = bootstrapAdmin(t, handler)
+		_ = bootstrapAdmin(t, handler)
 
-	queries := db.New(pool)
-	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		queries := db.New(pool)
+		admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
-	member := seedMemberUser(t, pool, admin.OrganizationID, "member@example.com", "member-password-123")
-	memberCookie := loginUser(t, handler, member.Email, "member-password-123")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		member := seedMemberUser(t, pool, admin.OrganizationID, "member@example.com", "member-password-123")
+		memberCookie := loginUser(t, handler, member.Email, "member-password-123")
 
-	rec := postGraphQL(t, handler, `mutation {
+		rec := postGraphQL(t, handler, `mutation {
 		createHeartbeatMonitor(input: {
 			serviceId: "`+service.ID.String()+`"
 			name: "Nightly backup"
@@ -216,14 +220,15 @@ func TestGraphQLHeartbeatMonitorRequiresAdmin(t *testing.T) {
 			graceSeconds: 300
 		}) { id }
 	}`, memberCookie)
-	require.Equal(t, 200, rec.Code)
+		require.Equal(a, 200, rec.Code)
 
-	var resp struct {
-		Errors []struct {
-			Extensions map[string]interface{} `json:"extensions"`
-		} `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	require.NotEmpty(t, resp.Errors)
-	require.Equal(t, handlers.CodeForbidden, resp.Errors[0].Extensions["code"])
+		var resp struct {
+			Errors []struct {
+				Extensions map[string]interface{} `json:"extensions"`
+			} `json:"errors"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &resp))
+		require.NotEmpty(a, resp.Errors)
+		require.Equal(a, handlers.CodeForbidden, resp.Errors[0].Extensions["code"])
+	})
 }

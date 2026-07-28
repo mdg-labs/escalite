@@ -3,28 +3,30 @@ package handlers_test
 import (
 	"context"
 	"encoding/json"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"testing"
 
+	"github.com/allure-framework/allure-go/testify/require"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 )
 
 func TestGraphQLScheduleCRUD(t *testing.T) {
-	handler, pool, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	adminCookie := bootstrapAdmin(t, handler)
+		adminCookie := bootstrapAdmin(t, handler)
 
-	queries := db.New(pool)
-	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		queries := db.New(pool)
+		admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
 
-	createRec := postGraphQL(t, handler, `mutation {
+		createRec := postGraphQL(t, handler, `mutation {
 		createSchedule(input: {
 			teamId: "`+team.ID.String()+`"
 			name: "Primary On-Call"
@@ -36,44 +38,44 @@ func TestGraphQLScheduleCRUD(t *testing.T) {
 			rotations { id }
 		}
 	}`, adminCookie)
-	require.Equal(t, 200, createRec.Code, createRec.Body.String())
+		require.Equal(a, 200, createRec.Code, createRec.Body.String())
 
-	var createResp struct {
-		Data struct {
-			CreateSchedule struct {
-				ID       string `json:"id"`
-				Name     string `json:"name"`
-				Timezone string `json:"timezone"`
-			} `json:"createSchedule"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(createRec.Body.Bytes(), &createResp))
-	require.Equal(t, "Primary On-Call", createResp.Data.CreateSchedule.Name)
-	require.Equal(t, "America/New_York", createResp.Data.CreateSchedule.Timezone)
+		var createResp struct {
+			Data struct {
+				CreateSchedule struct {
+					ID       string `json:"id"`
+					Name     string `json:"name"`
+					Timezone string `json:"timezone"`
+				} `json:"createSchedule"`
+			} `json:"data"`
+		}
+		require.NoError(a, json.Unmarshal(createRec.Body.Bytes(), &createResp))
+		require.Equal(a, "Primary On-Call", createResp.Data.CreateSchedule.Name)
+		require.Equal(a, "America/New_York", createResp.Data.CreateSchedule.Timezone)
 
-	scheduleID := createResp.Data.CreateSchedule.ID
+		scheduleID := createResp.Data.CreateSchedule.ID
 
-	invalidTZRec := postGraphQL(t, handler, `mutation {
+		invalidTZRec := postGraphQL(t, handler, `mutation {
 		createSchedule(input: {
 			teamId: "`+team.ID.String()+`"
 			name: "Bad TZ"
 			timezone: "Not/A_Timezone"
 		}) { id }
 	}`, adminCookie)
-	require.Equal(t, 200, invalidTZRec.Code)
+		require.Equal(a, 200, invalidTZRec.Code)
 
-	var invalidTZResp struct {
-		Errors []struct {
-			Message    string                 `json:"message"`
-			Extensions map[string]interface{} `json:"extensions"`
-		} `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(invalidTZRec.Body.Bytes(), &invalidTZResp))
-	require.NotEmpty(t, invalidTZResp.Errors)
-	require.Equal(t, handlers.CodeValidation, invalidTZResp.Errors[0].Extensions["code"])
-	require.Contains(t, invalidTZResp.Errors[0].Message, "IANA")
+		var invalidTZResp struct {
+			Errors []struct {
+				Message    string                 `json:"message"`
+				Extensions map[string]interface{} `json:"extensions"`
+			} `json:"errors"`
+		}
+		require.NoError(a, json.Unmarshal(invalidTZRec.Body.Bytes(), &invalidTZResp))
+		require.NotEmpty(a, invalidTZResp.Errors)
+		require.Equal(a, handlers.CodeValidation, invalidTZResp.Errors[0].Extensions["code"])
+		require.Contains(a, invalidTZResp.Errors[0].Message, "IANA")
 
-	rotationRec := postGraphQL(t, handler, `mutation {
+		rotationRec := postGraphQL(t, handler, `mutation {
 		createRotation(input: {
 			scheduleId: "`+scheduleID+`"
 			name: "Weekly"
@@ -87,25 +89,25 @@ func TestGraphQLScheduleCRUD(t *testing.T) {
 			participantIds
 		}
 	}`, adminCookie)
-	require.Equal(t, 200, rotationRec.Code, rotationRec.Body.String())
+		require.Equal(a, 200, rotationRec.Code, rotationRec.Body.String())
 
-	var rotationResp struct {
-		Data struct {
-			CreateRotation struct {
-				ID             string   `json:"id"`
-				Layer          int      `json:"layer"`
-				Rrule          string   `json:"rrule"`
-				ParticipantIds []string `json:"participantIds"`
-			} `json:"createRotation"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(rotationRec.Body.Bytes(), &rotationResp))
-	require.Equal(t, 1, rotationResp.Data.CreateRotation.Layer)
-	require.Equal(t, admin.ID.String(), rotationResp.Data.CreateRotation.ParticipantIds[0])
+		var rotationResp struct {
+			Data struct {
+				CreateRotation struct {
+					ID             string   `json:"id"`
+					Layer          int      `json:"layer"`
+					Rrule          string   `json:"rrule"`
+					ParticipantIds []string `json:"participantIds"`
+				} `json:"createRotation"`
+			} `json:"data"`
+		}
+		require.NoError(a, json.Unmarshal(rotationRec.Body.Bytes(), &rotationResp))
+		require.Equal(a, 1, rotationResp.Data.CreateRotation.Layer)
+		require.Equal(a, admin.ID.String(), rotationResp.Data.CreateRotation.ParticipantIds[0])
 
-	rotationID := rotationResp.Data.CreateRotation.ID
+		rotationID := rotationResp.Data.CreateRotation.ID
 
-	invalidRRuleRec := postGraphQL(t, handler, `mutation {
+		invalidRRuleRec := postGraphQL(t, handler, `mutation {
 		createRotation(input: {
 			scheduleId: "`+scheduleID+`"
 			name: "Broken"
@@ -114,46 +116,46 @@ func TestGraphQLScheduleCRUD(t *testing.T) {
 			participantIds: ["`+admin.ID.String()+`"]
 		}) { id }
 	}`, adminCookie)
-	require.Equal(t, 200, invalidRRuleRec.Code)
+		require.Equal(a, 200, invalidRRuleRec.Code)
 
-	var invalidRRuleResp struct {
-		Errors []struct {
-			Message    string                 `json:"message"`
-			Extensions map[string]interface{} `json:"extensions"`
-		} `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(invalidRRuleRec.Body.Bytes(), &invalidRRuleResp))
-	require.NotEmpty(t, invalidRRuleResp.Errors)
-	require.Equal(t, handlers.CodeValidation, invalidRRuleResp.Errors[0].Extensions["code"])
-	require.Contains(t, invalidRRuleResp.Errors[0].Message, "rrule is invalid")
+		var invalidRRuleResp struct {
+			Errors []struct {
+				Message    string                 `json:"message"`
+				Extensions map[string]interface{} `json:"extensions"`
+			} `json:"errors"`
+		}
+		require.NoError(a, json.Unmarshal(invalidRRuleRec.Body.Bytes(), &invalidRRuleResp))
+		require.NotEmpty(a, invalidRRuleResp.Errors)
+		require.Equal(a, handlers.CodeValidation, invalidRRuleResp.Errors[0].Extensions["code"])
+		require.Contains(a, invalidRRuleResp.Errors[0].Message, "rrule is invalid")
 
-	listRec := postGraphQL(t, handler, `{
+		listRec := postGraphQL(t, handler, `{
 		schedules(teamId: "`+team.ID.String()+`") {
 			id
 			name
 			rotations { id layer }
 		}
 	}`, adminCookie)
-	require.Equal(t, 200, listRec.Code, listRec.Body.String())
+		require.Equal(a, 200, listRec.Code, listRec.Body.String())
 
-	var listResp struct {
-		Data struct {
-			Schedules []struct {
-				ID        string `json:"id"`
-				Name      string `json:"name"`
-				Rotations []struct {
-					ID    string `json:"id"`
-					Layer int    `json:"layer"`
-				} `json:"rotations"`
-			} `json:"schedules"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(listRec.Body.Bytes(), &listResp))
-	require.Len(t, listResp.Data.Schedules, 1)
-	require.Equal(t, scheduleID, listResp.Data.Schedules[0].ID)
-	require.Len(t, listResp.Data.Schedules[0].Rotations, 1)
+		var listResp struct {
+			Data struct {
+				Schedules []struct {
+					ID        string `json:"id"`
+					Name      string `json:"name"`
+					Rotations []struct {
+						ID    string `json:"id"`
+						Layer int    `json:"layer"`
+					} `json:"rotations"`
+				} `json:"schedules"`
+			} `json:"data"`
+		}
+		require.NoError(a, json.Unmarshal(listRec.Body.Bytes(), &listResp))
+		require.Len(a, listResp.Data.Schedules, 1)
+		require.Equal(a, scheduleID, listResp.Data.Schedules[0].ID)
+		require.Len(a, listResp.Data.Schedules[0].Rotations, 1)
 
-	updateScheduleRec := postGraphQL(t, handler, `mutation {
+		updateScheduleRec := postGraphQL(t, handler, `mutation {
 		updateSchedule(input: {
 			id: "`+scheduleID+`"
 			name: "Updated On-Call"
@@ -164,21 +166,21 @@ func TestGraphQLScheduleCRUD(t *testing.T) {
 			timezone
 		}
 	}`, adminCookie)
-	require.Equal(t, 200, updateScheduleRec.Code, updateScheduleRec.Body.String())
+		require.Equal(a, 200, updateScheduleRec.Code, updateScheduleRec.Body.String())
 
-	var updateScheduleResp struct {
-		Data struct {
-			UpdateSchedule struct {
-				Name     string `json:"name"`
-				Timezone string `json:"timezone"`
-			} `json:"updateSchedule"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(updateScheduleRec.Body.Bytes(), &updateScheduleResp))
-	require.Equal(t, "Updated On-Call", updateScheduleResp.Data.UpdateSchedule.Name)
-	require.Equal(t, "Europe/Berlin", updateScheduleResp.Data.UpdateSchedule.Timezone)
+		var updateScheduleResp struct {
+			Data struct {
+				UpdateSchedule struct {
+					Name     string `json:"name"`
+					Timezone string `json:"timezone"`
+				} `json:"updateSchedule"`
+			} `json:"data"`
+		}
+		require.NoError(a, json.Unmarshal(updateScheduleRec.Body.Bytes(), &updateScheduleResp))
+		require.Equal(a, "Updated On-Call", updateScheduleResp.Data.UpdateSchedule.Name)
+		require.Equal(a, "Europe/Berlin", updateScheduleResp.Data.UpdateSchedule.Timezone)
 
-	updateRotationRec := postGraphQL(t, handler, `mutation {
+		updateRotationRec := postGraphQL(t, handler, `mutation {
 		updateRotation(input: {
 			id: "`+rotationID+`"
 			name: "Biweekly"
@@ -190,81 +192,84 @@ func TestGraphQLScheduleCRUD(t *testing.T) {
 			rrule
 		}
 	}`, adminCookie)
-	require.Equal(t, 200, updateRotationRec.Code, updateRotationRec.Body.String())
+		require.Equal(a, 200, updateRotationRec.Code, updateRotationRec.Body.String())
 
-	var updateRotationResp struct {
-		Data struct {
-			UpdateRotation struct {
-				Name  string `json:"name"`
-				Rrule string `json:"rrule"`
-			} `json:"updateRotation"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(updateRotationRec.Body.Bytes(), &updateRotationResp))
-	require.Equal(t, "Biweekly", updateRotationResp.Data.UpdateRotation.Name)
+		var updateRotationResp struct {
+			Data struct {
+				UpdateRotation struct {
+					Name  string `json:"name"`
+					Rrule string `json:"rrule"`
+				} `json:"updateRotation"`
+			} `json:"data"`
+		}
+		require.NoError(a, json.Unmarshal(updateRotationRec.Body.Bytes(), &updateRotationResp))
+		require.Equal(a, "Biweekly", updateRotationResp.Data.UpdateRotation.Name)
 
-	getRec := postGraphQL(t, handler, `{
+		getRec := postGraphQL(t, handler, `{
 		schedule(id: "`+scheduleID+`") {
 			id
 			rotations { id name }
 		}
 	}`, adminCookie)
-	require.Equal(t, 200, getRec.Code, getRec.Body.String())
+		require.Equal(a, 200, getRec.Code, getRec.Body.String())
 
-	deleteRotationRec := postGraphQL(t, handler, `mutation {
+		deleteRotationRec := postGraphQL(t, handler, `mutation {
 		deleteRotation(id: "`+rotationID+`")
 	}`, adminCookie)
-	require.Equal(t, 200, deleteRotationRec.Code, deleteRotationRec.Body.String())
+		require.Equal(a, 200, deleteRotationRec.Code, deleteRotationRec.Body.String())
 
-	deleteScheduleRec := postGraphQL(t, handler, `mutation {
+		deleteScheduleRec := postGraphQL(t, handler, `mutation {
 		deleteSchedule(id: "`+scheduleID+`")
 	}`, adminCookie)
-	require.Equal(t, 200, deleteScheduleRec.Code, deleteScheduleRec.Body.String())
+		require.Equal(a, 200, deleteScheduleRec.Code, deleteScheduleRec.Body.String())
 
-	var deleteScheduleResp struct {
-		Data struct {
-			DeleteSchedule bool `json:"deleteSchedule"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(deleteScheduleRec.Body.Bytes(), &deleteScheduleResp))
-	require.True(t, deleteScheduleResp.Data.DeleteSchedule)
+		var deleteScheduleResp struct {
+			Data struct {
+				DeleteSchedule bool `json:"deleteSchedule"`
+			} `json:"data"`
+		}
+		require.NoError(a, json.Unmarshal(deleteScheduleRec.Body.Bytes(), &deleteScheduleResp))
+		require.True(a, deleteScheduleResp.Data.DeleteSchedule)
 
-	_, err = queries.GetScheduleByID(context.Background(), db.GetScheduleByIDParams{
-		ID:             uuid.MustParse(scheduleID),
-		OrganizationID: admin.OrganizationID,
+		_, err = queries.GetScheduleByID(context.Background(), db.GetScheduleByIDParams{
+			ID:             uuid.MustParse(scheduleID),
+			OrganizationID: admin.OrganizationID,
+		})
+		require.Error(a, err)
 	})
-	require.Error(t, err)
 }
 
 func TestGraphQLScheduleRequiresAdmin(t *testing.T) {
-	handler, pool, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	_ = bootstrapAdmin(t, handler)
+		_ = bootstrapAdmin(t, handler)
 
-	queries := db.New(pool)
-	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
-	require.NoError(t, err)
+		queries := db.New(pool)
+		admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
 
-	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
-	member := seedMemberUser(t, pool, admin.OrganizationID, "member@example.com", "member-password-123")
-	memberCookie := loginUser(t, handler, member.Email, "member-password-123")
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		member := seedMemberUser(t, pool, admin.OrganizationID, "member@example.com", "member-password-123")
+		memberCookie := loginUser(t, handler, member.Email, "member-password-123")
 
-	rec := postGraphQL(t, handler, `mutation {
+		rec := postGraphQL(t, handler, `mutation {
 		createSchedule(input: {
 			teamId: "`+team.ID.String()+`"
 			name: "Denied"
 			timezone: "UTC"
 		}) { id }
 	}`, memberCookie)
-	require.Equal(t, 200, rec.Code)
+		require.Equal(a, 200, rec.Code)
 
-	var resp struct {
-		Errors []struct {
-			Extensions map[string]interface{} `json:"extensions"`
-		} `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	require.NotEmpty(t, resp.Errors)
-	require.Equal(t, handlers.CodeForbidden, resp.Errors[0].Extensions["code"])
+		var resp struct {
+			Errors []struct {
+				Extensions map[string]interface{} `json:"extensions"`
+			} `json:"errors"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &resp))
+		require.NotEmpty(a, resp.Errors)
+		require.Equal(a, handlers.CodeForbidden, resp.Errors[0].Extensions["code"])
+	})
 }

@@ -5,15 +5,16 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/allure-framework/allure-go/testify/require"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/auth"
 	"github.com/mdg-labs/escalite/services/api/internal/crypto"
@@ -116,113 +117,117 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 }
 
 func TestSetupIntegration(t *testing.T) {
-	handler, pool, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	body := map[string]string{
-		"organizationName": "Acme On-Call",
-		"email":            "admin@example.com",
-		"password":         "correct-horse-battery-staple",
-	}
-	payload, err := json.Marshal(body)
-	require.NoError(t, err)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/setup", bytes.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "setup-integration-test")
-
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, req)
-
-	require.Equal(t, http.StatusCreated, rec.Code)
-
-	var resp struct {
-		Organization struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
-		} `json:"organization"`
-		User struct {
-			ID    string `json:"id"`
-			Email string `json:"email"`
-			Role  string `json:"role"`
-		} `json:"user"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	require.Equal(t, "Acme On-Call", resp.Organization.Name)
-	require.NotEmpty(t, resp.Organization.ID)
-	require.Equal(t, "admin@example.com", resp.User.Email)
-	require.Equal(t, "admin", resp.User.Role)
-	require.NotEmpty(t, resp.User.ID)
-
-	cookies := rec.Result().Cookies()
-	var sessionCookie *http.Cookie
-	for _, cookie := range cookies {
-		if cookie.Name == auth.SessionCookieName {
-			sessionCookie = cookie
-			break
+		body := map[string]string{
+			"organizationName": "Acme On-Call",
+			"email":            "admin@example.com",
+			"password":         "correct-horse-battery-staple",
 		}
-	}
-	require.NotNil(t, sessionCookie)
-	require.NotEmpty(t, sessionCookie.Value)
-	require.True(t, sessionCookie.HttpOnly)
-	require.Equal(t, http.SameSiteLaxMode, sessionCookie.SameSite)
+		payload, err := json.Marshal(body)
+		require.NoError(a, err)
 
-	orgID := uuid.MustParse(resp.Organization.ID)
-	sessionID := uuid.MustParse(sessionCookie.Value)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/setup", bytes.NewReader(payload))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("User-Agent", "setup-integration-test")
 
-	ctx := context.Background()
-	queries := db.New(pool)
-	session, err := queries.GetSessionByID(ctx, db.GetSessionByIDParams{
-		ID:             sessionID,
-		OrganizationID: orgID,
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		require.Equal(a, http.StatusCreated, rec.Code)
+
+		var resp struct {
+			Organization struct {
+				ID   string `json:"id"`
+				Name string `json:"name"`
+			} `json:"organization"`
+			User struct {
+				ID    string `json:"id"`
+				Email string `json:"email"`
+				Role  string `json:"role"`
+			} `json:"user"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &resp))
+		require.Equal(a, "Acme On-Call", resp.Organization.Name)
+		require.NotEmpty(a, resp.Organization.ID)
+		require.Equal(a, "admin@example.com", resp.User.Email)
+		require.Equal(a, "admin", resp.User.Role)
+		require.NotEmpty(a, resp.User.ID)
+
+		cookies := rec.Result().Cookies()
+		var sessionCookie *http.Cookie
+		for _, cookie := range cookies {
+			if cookie.Name == auth.SessionCookieName {
+				sessionCookie = cookie
+				break
+			}
+		}
+		require.NotNil(a, sessionCookie)
+		require.NotEmpty(a, sessionCookie.Value)
+		require.True(a, sessionCookie.HttpOnly)
+		require.Equal(a, http.SameSiteLaxMode, sessionCookie.SameSite)
+
+		orgID := uuid.MustParse(resp.Organization.ID)
+		sessionID := uuid.MustParse(sessionCookie.Value)
+
+		ctx := context.Background()
+		queries := db.New(pool)
+		session, err := queries.GetSessionByID(ctx, db.GetSessionByIDParams{
+			ID:             sessionID,
+			OrganizationID: orgID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, uuid.MustParse(resp.User.ID), session.UserID)
+
+		user, err := queries.GetUserByEmail(ctx, db.GetUserByEmailParams{
+			OrganizationID: orgID,
+			Email:          "admin@example.com",
+		})
+		require.NoError(a, err)
+		require.Equal(a, "admin", user.Role)
+
+		account, err := queries.GetAccountByID(ctx, user.AccountID)
+		require.NoError(a, err)
+		require.True(a, account.PasswordHash.Valid)
+		require.NotEmpty(a, account.PasswordHash.String)
+
+		match, err := auth.VerifyPassword("correct-horse-battery-staple", account.PasswordHash.String)
+		require.NoError(a, err)
+		require.True(a, match)
+
+		repeatReq := httptest.NewRequest(http.MethodPost, "/api/v1/setup", bytes.NewReader(payload))
+		repeatReq.Header.Set("Content-Type", "application/json")
+		repeatRec := httptest.NewRecorder()
+		handler.ServeHTTP(repeatRec, repeatReq)
+
+		require.Equal(a, http.StatusForbidden, repeatRec.Code)
+
+		var errResp struct {
+			Error string `json:"error"`
+			Code  string `json:"code"`
+		}
+		require.NoError(a, json.Unmarshal(repeatRec.Body.Bytes(), &errResp))
+		require.Equal(a, "FORBIDDEN", errResp.Code)
 	})
-	require.NoError(t, err)
-	require.Equal(t, uuid.MustParse(resp.User.ID), session.UserID)
-
-	user, err := queries.GetUserByEmail(ctx, db.GetUserByEmailParams{
-		OrganizationID: orgID,
-		Email:          "admin@example.com",
-	})
-	require.NoError(t, err)
-	require.Equal(t, "admin", user.Role)
-
-	account, err := queries.GetAccountByID(ctx, user.AccountID)
-	require.NoError(t, err)
-	require.True(t, account.PasswordHash.Valid)
-	require.NotEmpty(t, account.PasswordHash.String)
-
-	match, err := auth.VerifyPassword("correct-horse-battery-staple", account.PasswordHash.String)
-	require.NoError(t, err)
-	require.True(t, match)
-
-	repeatReq := httptest.NewRequest(http.MethodPost, "/api/v1/setup", bytes.NewReader(payload))
-	repeatReq.Header.Set("Content-Type", "application/json")
-	repeatRec := httptest.NewRecorder()
-	handler.ServeHTTP(repeatRec, repeatReq)
-
-	require.Equal(t, http.StatusForbidden, repeatRec.Code)
-
-	var errResp struct {
-		Error string `json:"error"`
-		Code  string `json:"code"`
-	}
-	require.NoError(t, json.Unmarshal(repeatRec.Body.Bytes(), &errResp))
-	require.Equal(t, "FORBIDDEN", errResp.Code)
 }
 
 func TestSetupHandlerValidation(t *testing.T) {
-	_, pool, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		_, pool, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	setup := handlers.NewSetupHandler(pool, slog.Default())
+		setup := handlers.NewSetupHandler(pool, slog.Default())
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/setup", bytes.NewReader([]byte(`{"organizationName":"","email":"bad","password":"short"}`)))
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	setup.ServeHTTP(rec, req)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/setup", bytes.NewReader([]byte(`{"organizationName":"","email":"bad","password":"short"}`)))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		setup.ServeHTTP(rec, req)
 
-	require.Equal(t, http.StatusBadRequest, rec.Code)
-	body, err := io.ReadAll(rec.Body)
-	require.NoError(t, err)
-	require.Contains(t, string(body), "VALIDATION")
+		require.Equal(a, http.StatusBadRequest, rec.Code)
+		body, err := io.ReadAll(rec.Body)
+		require.NoError(a, err)
+		require.Contains(a, string(body), "VALIDATION")
+	})
 }

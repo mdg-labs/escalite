@@ -1,9 +1,10 @@
 package saml_test
 
 import (
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/saml"
 )
@@ -22,14 +23,18 @@ const testIDPMetadataXML = `<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0
 </EntityDescriptor>`
 
 func TestParseIDPMetadataExtractsEntitySSOAndCertificate(t *testing.T) {
-	cfg, err := saml.ParseIDPMetadata(testIDPMetadataXML)
-	require.NoError(t, err)
-	require.Equal(t, "https://idp.example.com/metadata", cfg.EntityID)
-	require.Equal(t, "https://idp.example.com/sso", cfg.SSOURL)
-	require.Contains(t, cfg.CertificatePEM, "BEGIN CERTIFICATE")
+	allure.Wrap(t, func(a *allure.Context) {
+		cfg, err := saml.ParseIDPMetadata(testIDPMetadataXML)
+		require.NoError(a, err)
+		require.Equal(a, "https://idp.example.com/metadata", cfg.EntityID)
+		require.Equal(a, "https://idp.example.com/sso", cfg.SSOURL)
+		require.Contains(a, cfg.CertificatePEM, "BEGIN CERTIFICATE")
+	})
 }
 
 func TestParseIDPMetadataRejectsMissingCertificate(t *testing.T) {
-	_, err := saml.ParseIDPMetadata(`<EntityDescriptor entityID="https://idp.example.com/metadata"><IDPSSODescriptor><SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://idp.example.com/sso"/></IDPSSODescriptor></EntityDescriptor>`)
-	require.Error(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
+		_, err := saml.ParseIDPMetadata(`<EntityDescriptor entityID="https://idp.example.com/metadata"><IDPSSODescriptor><SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://idp.example.com/sso"/></IDPSSODescriptor></EntityDescriptor>`)
+		require.Error(a, err)
+	})
 }

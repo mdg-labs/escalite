@@ -3,12 +3,13 @@ package handlers_test
 import (
 	"context"
 	"encoding/json"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/allure-framework/allure-go/testify/require"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/db"
 	"github.com/mdg-labs/escalite/services/api/internal/saml"
@@ -28,58 +29,65 @@ const testIDPMetadataXML = `<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0
 </EntityDescriptor>`
 
 func TestSAMLLoginDisabledReturnsNotFound(t *testing.T) {
-	handler, _, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/saml/login", nil)
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, req)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/saml/login", nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
 
-	require.Equal(t, http.StatusNotFound, rec.Code)
+		require.Equal(a, http.StatusNotFound, rec.Code)
+	})
 }
 
 func TestGraphQLLoginOptionsWithoutSAML(t *testing.T) {
-	handler, _, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	rec := postGraphQL(t, handler, `{ loginOptions { samlEnabled oidcEnabled } }`, nil)
-	require.Equal(t, http.StatusOK, rec.Code)
+		rec := postGraphQL(t, handler, `{ loginOptions { samlEnabled oidcEnabled } }`, nil)
+		require.Equal(a, http.StatusOK, rec.Code)
 
-	var resp struct {
-		Data struct {
-			LoginOptions struct {
-				SamlEnabled bool `json:"samlEnabled"`
-				OidcEnabled bool `json:"oidcEnabled"`
-			} `json:"loginOptions"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	require.False(t, resp.Data.LoginOptions.SamlEnabled)
-	require.False(t, resp.Data.LoginOptions.OidcEnabled)
+		var resp struct {
+			Data struct {
+				LoginOptions struct {
+					SamlEnabled bool `json:"samlEnabled"`
+					OidcEnabled bool `json:"oidcEnabled"`
+				} `json:"loginOptions"`
+			} `json:"data"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &resp))
+		require.False(a, resp.Data.LoginOptions.SamlEnabled)
+		require.False(a, resp.Data.LoginOptions.OidcEnabled)
+	})
 }
 
 func TestSAMLLoginEnabledRedirectsToIdP(t *testing.T) {
-	handler, pool, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	_ = bootstrapAdmin(t, handler)
-	seedEnabledSAMLSettings(t, pool)
+		_ = bootstrapAdmin(t, handler)
+		seedEnabledSAMLSettings(t, pool)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/saml/login", nil)
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, req)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/saml/login", nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
 
-	require.Equal(t, http.StatusFound, rec.Code)
-	require.Contains(t, rec.Header().Get("Location"), "https://idp.example.com/sso")
+		require.Equal(a, http.StatusFound, rec.Code)
+		require.Contains(a, rec.Header().Get("Location"), "https://idp.example.com/sso")
+	})
 }
 
 func TestGraphQLSaveSamlSettingsAndLoginOptions(t *testing.T) {
-	handler, _, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	cookie := bootstrapAdmin(t, handler)
+		cookie := bootstrapAdmin(t, handler)
 
-	saveRec := postGraphQL(t, handler, `mutation {
+		saveRec := postGraphQL(t, handler, `mutation {
 		saveSamlSettings(input: { metadataXml: """`+testIDPMetadataXML+`""", enabled: true }) {
 			configured
 			enabled
@@ -87,41 +95,42 @@ func TestGraphQLSaveSamlSettingsAndLoginOptions(t *testing.T) {
 			certificateHint
 		}
 	}`, cookie)
-	require.Equal(t, 200, saveRec.Code, saveRec.Body.String())
+		require.Equal(a, 200, saveRec.Code, saveRec.Body.String())
 
-	var saveResp struct {
-		Data struct {
-			SaveSamlSettings struct {
-				Configured      bool   `json:"configured"`
-				Enabled         bool   `json:"enabled"`
-				IdpEntityID     string `json:"idpEntityId"`
-				CertificateHint string `json:"certificateHint"`
-			} `json:"saveSamlSettings"`
-		} `json:"data"`
-		Errors []any `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(saveRec.Body.Bytes(), &saveResp))
-	require.Empty(t, saveResp.Errors)
-	require.True(t, saveResp.Data.SaveSamlSettings.Configured)
-	require.True(t, saveResp.Data.SaveSamlSettings.Enabled)
-	require.Equal(t, "https://idp.example.com/metadata", saveResp.Data.SaveSamlSettings.IdpEntityID)
-	require.NotEmpty(t, saveResp.Data.SaveSamlSettings.CertificateHint)
-	require.NotContains(t, saveRec.Body.String(), "BEGIN CERTIFICATE")
+		var saveResp struct {
+			Data struct {
+				SaveSamlSettings struct {
+					Configured      bool   `json:"configured"`
+					Enabled         bool   `json:"enabled"`
+					IdpEntityID     string `json:"idpEntityId"`
+					CertificateHint string `json:"certificateHint"`
+				} `json:"saveSamlSettings"`
+			} `json:"data"`
+			Errors []any `json:"errors"`
+		}
+		require.NoError(a, json.Unmarshal(saveRec.Body.Bytes(), &saveResp))
+		require.Empty(a, saveResp.Errors)
+		require.True(a, saveResp.Data.SaveSamlSettings.Configured)
+		require.True(a, saveResp.Data.SaveSamlSettings.Enabled)
+		require.Equal(a, "https://idp.example.com/metadata", saveResp.Data.SaveSamlSettings.IdpEntityID)
+		require.NotEmpty(a, saveResp.Data.SaveSamlSettings.CertificateHint)
+		require.NotContains(a, saveRec.Body.String(), "BEGIN CERTIFICATE")
 
-	optionsRec := postGraphQL(t, handler, `{ loginOptions { samlEnabled samlLoginUrl } }`, nil)
-	require.Equal(t, 200, optionsRec.Code)
+		optionsRec := postGraphQL(t, handler, `{ loginOptions { samlEnabled samlLoginUrl } }`, nil)
+		require.Equal(a, 200, optionsRec.Code)
 
-	var optionsResp struct {
-		Data struct {
-			LoginOptions struct {
-				SamlEnabled  bool   `json:"samlEnabled"`
-				SamlLoginURL string `json:"samlLoginUrl"`
-			} `json:"loginOptions"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(optionsRec.Body.Bytes(), &optionsResp))
-	require.True(t, optionsResp.Data.LoginOptions.SamlEnabled)
-	require.Contains(t, optionsResp.Data.LoginOptions.SamlLoginURL, "/api/v1/auth/saml/login")
+		var optionsResp struct {
+			Data struct {
+				LoginOptions struct {
+					SamlEnabled  bool   `json:"samlEnabled"`
+					SamlLoginURL string `json:"samlLoginUrl"`
+				} `json:"loginOptions"`
+			} `json:"data"`
+		}
+		require.NoError(a, json.Unmarshal(optionsRec.Body.Bytes(), &optionsResp))
+		require.True(a, optionsResp.Data.LoginOptions.SamlEnabled)
+		require.Contains(a, optionsResp.Data.LoginOptions.SamlLoginURL, "/api/v1/auth/saml/login")
+	})
 }
 
 func seedEnabledSAMLSettings(t *testing.T, pool *pgxpool.Pool) {

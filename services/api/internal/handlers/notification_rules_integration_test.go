@@ -2,20 +2,22 @@ package handlers_test
 
 import (
 	"encoding/json"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/handlers"
 )
 
 func TestGraphQLSaveNotificationRule(t *testing.T) {
-	handler, _, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	cookie := bootstrapAdmin(t, handler)
+		cookie := bootstrapAdmin(t, handler)
 
-	rec := postGraphQL(t, handler, `mutation {
+		rec := postGraphQL(t, handler, `mutation {
 		saveNotificationRule(input: {
 			priority: HIGH
 			steps: [
@@ -30,32 +32,32 @@ func TestGraphQLSaveNotificationRule(t *testing.T) {
 			}
 		}
 	}`, cookie)
-	require.Equal(t, 200, rec.Code, rec.Body.String())
+		require.Equal(a, 200, rec.Code, rec.Body.String())
 
-	var resp struct {
-		Data struct {
-			SaveNotificationRule struct {
-				Priority string `json:"priority"`
-				Steps    []struct {
-					Channel      string `json:"channel"`
-					DelayMinutes int    `json:"delayMinutes"`
-				} `json:"steps"`
-			} `json:"saveNotificationRule"`
-		} `json:"data"`
-		Errors []any `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	require.Empty(t, resp.Errors)
-	require.Equal(t, "HIGH", resp.Data.SaveNotificationRule.Priority)
-	require.Equal(t, []struct {
-		Channel      string `json:"channel"`
-		DelayMinutes int    `json:"delayMinutes"`
-	}{
-		{Channel: "push", DelayMinutes: 0},
-		{Channel: "email", DelayMinutes: 2},
-	}, resp.Data.SaveNotificationRule.Steps)
+		var resp struct {
+			Data struct {
+				SaveNotificationRule struct {
+					Priority string `json:"priority"`
+					Steps    []struct {
+						Channel      string `json:"channel"`
+						DelayMinutes int    `json:"delayMinutes"`
+					} `json:"steps"`
+				} `json:"saveNotificationRule"`
+			} `json:"data"`
+			Errors []any `json:"errors"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &resp))
+		require.Empty(a, resp.Errors)
+		require.Equal(a, "HIGH", resp.Data.SaveNotificationRule.Priority)
+		require.Equal(a, []struct {
+			Channel      string `json:"channel"`
+			DelayMinutes int    `json:"delayMinutes"`
+		}{
+			{Channel: "push", DelayMinutes: 0},
+			{Channel: "email", DelayMinutes: 2},
+		}, resp.Data.SaveNotificationRule.Steps)
 
-	rec = postGraphQL(t, handler, `{
+		rec = postGraphQL(t, handler, `{
 		notificationRules {
 			priority
 			steps {
@@ -64,33 +66,35 @@ func TestGraphQLSaveNotificationRule(t *testing.T) {
 			}
 		}
 	}`, cookie)
-	require.Equal(t, 200, rec.Code, rec.Body.String())
+		require.Equal(a, 200, rec.Code, rec.Body.String())
 
-	var listResp struct {
-		Data struct {
-			NotificationRules []struct {
-				Priority string `json:"priority"`
-				Steps    []struct {
-					Channel      string `json:"channel"`
-					DelayMinutes int    `json:"delayMinutes"`
-				} `json:"steps"`
-			} `json:"notificationRules"`
-		} `json:"data"`
-		Errors []any `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &listResp))
-	require.Empty(t, listResp.Errors)
-	require.Len(t, listResp.Data.NotificationRules, 1)
-	require.Equal(t, "HIGH", listResp.Data.NotificationRules[0].Priority)
+		var listResp struct {
+			Data struct {
+				NotificationRules []struct {
+					Priority string `json:"priority"`
+					Steps    []struct {
+						Channel      string `json:"channel"`
+						DelayMinutes int    `json:"delayMinutes"`
+					} `json:"steps"`
+				} `json:"notificationRules"`
+			} `json:"data"`
+			Errors []any `json:"errors"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &listResp))
+		require.Empty(a, listResp.Errors)
+		require.Len(a, listResp.Data.NotificationRules, 1)
+		require.Equal(a, "HIGH", listResp.Data.NotificationRules[0].Priority)
+	})
 }
 
 func TestGraphQLSaveNotificationRuleRejectsUnknownChannel(t *testing.T) {
-	handler, _, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	cookie := bootstrapAdmin(t, handler)
+		cookie := bootstrapAdmin(t, handler)
 
-	rec := postGraphQL(t, handler, `mutation {
+		rec := postGraphQL(t, handler, `mutation {
 		saveNotificationRule(input: {
 			priority: HIGH
 			steps: [{ channel: "pagerduty", delayMinutes: 0 }]
@@ -98,27 +102,29 @@ func TestGraphQLSaveNotificationRuleRejectsUnknownChannel(t *testing.T) {
 			id
 		}
 	}`, cookie)
-	require.Equal(t, 200, rec.Code)
+		require.Equal(a, 200, rec.Code)
 
-	var resp struct {
-		Errors []struct {
-			Message    string                 `json:"message"`
-			Extensions map[string]interface{} `json:"extensions"`
-		} `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	require.NotEmpty(t, resp.Errors)
-	require.Equal(t, handlers.CodeValidation, resp.Errors[0].Extensions["code"])
-	require.Contains(t, resp.Errors[0].Message, `unknown notification channel "pagerduty"`)
+		var resp struct {
+			Errors []struct {
+				Message    string                 `json:"message"`
+				Extensions map[string]interface{} `json:"extensions"`
+			} `json:"errors"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &resp))
+		require.NotEmpty(a, resp.Errors)
+		require.Equal(a, handlers.CodeValidation, resp.Errors[0].Extensions["code"])
+		require.Contains(a, resp.Errors[0].Message, `unknown notification channel "pagerduty"`)
+	})
 }
 
 func TestGraphQLDeleteNotificationRule(t *testing.T) {
-	handler, _, cleanup := newTestHandler(t)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, _, cleanup := newTestHandler(t)
+		defer cleanup()
 
-	cookie := bootstrapAdmin(t, handler)
+		cookie := bootstrapAdmin(t, handler)
 
-	rec := postGraphQL(t, handler, `mutation {
+		rec := postGraphQL(t, handler, `mutation {
 		saveNotificationRule(input: {
 			priority: LOW
 			steps: [{ channel: "email", delayMinutes: 0 }]
@@ -126,33 +132,34 @@ func TestGraphQLDeleteNotificationRule(t *testing.T) {
 			id
 		}
 	}`, cookie)
-	require.Equal(t, 200, rec.Code, rec.Body.String())
+		require.Equal(a, 200, rec.Code, rec.Body.String())
 
-	rec = postGraphQL(t, handler, `mutation {
+		rec = postGraphQL(t, handler, `mutation {
 		deleteNotificationRule(priority: LOW)
 	}`, cookie)
-	require.Equal(t, 200, rec.Code, rec.Body.String())
+		require.Equal(a, 200, rec.Code, rec.Body.String())
 
-	var deleteResp struct {
-		Data struct {
-			DeleteNotificationRule bool `json:"deleteNotificationRule"`
-		} `json:"data"`
-		Errors []any `json:"errors"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &deleteResp))
-	require.Empty(t, deleteResp.Errors)
-	require.True(t, deleteResp.Data.DeleteNotificationRule)
+		var deleteResp struct {
+			Data struct {
+				DeleteNotificationRule bool `json:"deleteNotificationRule"`
+			} `json:"data"`
+			Errors []any `json:"errors"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &deleteResp))
+		require.Empty(a, deleteResp.Errors)
+		require.True(a, deleteResp.Data.DeleteNotificationRule)
 
-	rec = postGraphQL(t, handler, `{ notificationRules { priority } }`, cookie)
-	require.Equal(t, 200, rec.Code, rec.Body.String())
+		rec = postGraphQL(t, handler, `{ notificationRules { priority } }`, cookie)
+		require.Equal(a, 200, rec.Code, rec.Body.String())
 
-	var listResp struct {
-		Data struct {
-			NotificationRules []struct {
-				Priority string `json:"priority"`
-			} `json:"notificationRules"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &listResp))
-	require.Empty(t, listResp.Data.NotificationRules)
+		var listResp struct {
+			Data struct {
+				NotificationRules []struct {
+					Priority string `json:"priority"`
+				} `json:"notificationRules"`
+			} `json:"data"`
+		}
+		require.NoError(a, json.Unmarshal(rec.Body.Bytes(), &listResp))
+		require.Empty(a, listResp.Data.NotificationRules)
+	})
 }
