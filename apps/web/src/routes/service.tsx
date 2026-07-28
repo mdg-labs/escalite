@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   AlertPriority,
+  useDeleteEscalationPolicyMutation,
   useDeleteServiceMutation,
   useEscalationPoliciesQuery,
   useSchedulesQuery,
@@ -50,7 +51,7 @@ export function ServicePage(): ReactElement {
 
   const service = data?.service
   const [{ data: teamsData }] = useTeamsQuery()
-  const [{ data: policiesData }] = useEscalationPoliciesQuery({
+  const [{ data: policiesData }, reexecutePolicies] = useEscalationPoliciesQuery({
     pause: !serviceId,
     variables: { serviceId: serviceId ?? '' },
   })
@@ -61,6 +62,7 @@ export function ServicePage(): ReactElement {
 
   const [, updateService] = useUpdateServiceMutation()
   const [, deleteService] = useDeleteServiceMutation()
+  const [, deleteEscalationPolicy] = useDeleteEscalationPolicyMutation()
 
   const [name, setName] = useState('')
   const [autoPromoteEnabled, setAutoPromoteEnabled] = useState(false)
@@ -72,6 +74,8 @@ export function ServicePage(): ReactElement {
   const [savedMessage, setSavedMessage] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [deletingPolicyId, setDeletingPolicyId] = useState<string | null>(null)
+  const [escalationError, setEscalationError] = useState<string | null>(null)
 
   useEffect(() => {
     if (service?.name) {
@@ -183,6 +187,20 @@ export function ServicePage(): ReactElement {
     }
 
     navigate('/services')
+  }
+
+  async function handleDeletePolicy(policyId: string): Promise<void> {
+    setEscalationError(null)
+    setDeletingPolicyId(policyId)
+    const result = await deleteEscalationPolicy({ id: policyId })
+    setDeletingPolicyId(null)
+
+    if (result.error) {
+      setEscalationError(formatGraphQLError(result.error.message))
+      return
+    }
+
+    reexecutePolicies({ requestPolicy: 'network-only' })
   }
 
   return (
@@ -410,18 +428,60 @@ export function ServicePage(): ReactElement {
                       {t('services.escalation.create')}
                     </Button>
                   </div>
+                  {escalationError ? (
+                    <Alert variant="error">
+                      <AlertTriangleIcon />
+                      <AlertDescription>{escalationError}</AlertDescription>
+                    </Alert>
+                  ) : null}
                   {policies.length === 0 ? (
                     <p className="text-sm text-muted-foreground">{t('services.escalation.empty')}</p>
                   ) : (
                     <ul className="space-y-2">
                       {policies.map((policy) => (
-                        <li key={policy.id}>
+                        <li
+                          className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
+                          key={policy.id}
+                        >
                           <Link
                             className="text-sm font-medium text-foreground hover:underline"
                             to={`/services/${service.id}/escalation-policies/${policy.id}`}
                           >
                             {policy.name}
                           </Link>
+                          <AlertDialog>
+                            <AlertDialogTrigger
+                              render={
+                                <Button
+                                  disabled={deletingPolicyId === policy.id}
+                                  size="sm"
+                                  type="button"
+                                  variant="destructive-outline"
+                                />
+                              }
+                            >
+                              {t('services.action.delete')}
+                            </AlertDialogTrigger>
+                            <AlertDialogPopup>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>{t('services.escalation.delete.title')}</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {t('services.escalation.delete.description', { name: policy.name })}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogClose render={<Button type="button" variant="ghost" />}>
+                                  {t('services.action.cancel')}
+                                </AlertDialogClose>
+                                <AlertDialogClose
+                                  onClick={() => void handleDeletePolicy(policy.id)}
+                                  render={<Button type="button" variant="destructive" />}
+                                >
+                                  {t('services.action.deleteConfirm')}
+                                </AlertDialogClose>
+                              </AlertDialogFooter>
+                            </AlertDialogPopup>
+                          </AlertDialog>
                         </li>
                       ))}
                     </ul>
