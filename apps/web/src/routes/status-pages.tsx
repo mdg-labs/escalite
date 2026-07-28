@@ -4,14 +4,13 @@ import { UserRole, useMeQuery } from '@escalite/ts-types'
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@escalite/ui'
 
 import { AppShell } from '../components/app-shell'
+import { StatusPageComponentsPanel } from '../components/status-page-components-panel'
 import { StatusPageSettingsPanel } from '../components/status-page-settings-panel'
 import { t, type MessageKey } from '../lib/i18n'
 
 type StatusPagePlaceholderKey = Extract<
   MessageKey,
-  | 'statusPages.placeholder.components'
-  | 'statusPages.placeholder.incidents'
-  | 'statusPages.placeholder.subscriptions'
+  'statusPages.placeholder.incidents' | 'statusPages.placeholder.subscriptions'
 >
 
 function StatusPagePlaceholderPanel({ messageKey }: { messageKey: StatusPagePlaceholderKey }): ReactElement {
@@ -48,7 +47,7 @@ export function StatusPagesPage(): ReactElement {
           </TabsPanel>
 
           <TabsPanel className="mt-6" value="components">
-            <StatusPagePlaceholderPanel messageKey="statusPages.placeholder.components" />
+            <StatusPageComponentsPanel />
           </TabsPanel>
 
           <TabsPanel className="mt-6" value="incidents">
