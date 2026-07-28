@@ -1,6 +1,13 @@
-import type { ScheduleCalendarLabels, ScheduleCalendarUser } from '@escalite/ui/domain/ScheduleCalendar'
+import type { ScheduleCalendarLabels } from '@escalite/ui/domain/ScheduleCalendar'
 
 import { t } from './i18n'
+
+export type { ScheduleOrganizationUser } from './schedule-users'
+export {
+  collectScheduleUsers,
+  mapOrganizationUsersToScheduleUsers,
+  scheduleUserDisplayLabel,
+} from './schedule-users'
 
 export function scheduleCalendarLabels(): ScheduleCalendarLabels {
   return {
@@ -49,35 +56,6 @@ export function scheduleCalendarLabels(): ScheduleCalendarLabels {
         ? t('schedule.rotations.describe.single', { frequency })
         : t('schedule.rotations.describe.interval', { frequency, interval: String(interval) }),
   }
-}
-
-export function mapOrganizationUsersToScheduleUsers(
-  organizationUsers: Array<{ id: string; email: string }>,
-): ScheduleCalendarUser[] {
-  return [...organizationUsers]
-    .sort((left, right) => left.email.localeCompare(right.email))
-    .map((user) => ({
-      id: user.id,
-      label: user.email,
-      email: user.email,
-    }))
-}
-
-export function collectScheduleUsers(
-  organizationUsers: Array<{ id: string; email: string }>,
-  participantIds: string[],
-  onCallUserIds: string[],
-  overrideUserIds: string[],
-): ScheduleCalendarUser[] {
-  const byId = new Map(
-    organizationUsers.map((user) => [
-      user.id,
-      { id: user.id, label: user.email, email: user.email },
-    ]),
-  )
-  const ids = new Set([...participantIds, ...onCallUserIds, ...overrideUserIds])
-
-  return [...ids].map((id) => byId.get(id) ?? { id, label: id.slice(0, 8) })
 }
 
 export function formatGraphQLError(message: string): string {

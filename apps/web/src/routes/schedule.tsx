@@ -27,6 +27,7 @@ import {
   mapOrganizationUsersToScheduleUsers,
   scheduleCalendarLabels,
 } from '../lib/schedule'
+import type { ScheduleOrganizationUser } from '../lib/schedule-users'
 import { t } from '../lib/i18n'
 
 export function SchedulePage(): ReactElement {
@@ -96,7 +97,7 @@ export function SchedulePage(): ReactElement {
     const participantIds = schedule.rotations.flatMap((rotation) => rotation.participantIds)
     const onCallUserIds = onCallLayers.map((layer) => layer.userId)
     const overrideUserIds = overrides.map((override) => override.userId)
-    const organizationUsers = usersData?.organizationUsers ?? []
+    const organizationUsers: ScheduleOrganizationUser[] = usersData?.organizationUsers ?? []
 
     return collectScheduleUsers(
       organizationUsers,
