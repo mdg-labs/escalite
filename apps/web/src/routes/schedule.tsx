@@ -8,11 +8,15 @@ import {
   useOnCallNowQuery,
   useOverridesQuery,
   useScheduleQuery,
+  useTeamsQuery,
 } from '@escalite/ts-types'
+import { Button } from '@escalite/ui'
+import { PencilIcon } from 'lucide-react'
 import { ScheduleCalendar } from '@escalite/ui/domain/ScheduleCalendar'
 
 import { AppShell } from '../components/app-shell'
 import { PageBreadcrumbs } from '../components/page-breadcrumbs'
+import { ScheduleFormDialog } from '../components/schedule-form-dialog'
 import {
   collectScheduleUsers,
   formatGraphQLError,
@@ -27,10 +31,11 @@ export function SchedulePage(): ReactElement {
   const [{ data: meData }] = useMeQuery()
   const viewerRole = meData?.me?.role ?? 'MEMBER'
 
-  const [{ data, fetching, error }] = useScheduleQuery({
+  const [{ data, fetching, error }, reexecuteSchedule] = useScheduleQuery({
     pause: !scheduleId,
     variables: { id: scheduleId ?? '' },
   })
+  const [{ data: teamsData }] = useTeamsQuery({ requestPolicy: 'cache-first' })
 
   const [{ data: onCallData }] = useOnCallNowQuery({
     pause: !scheduleId,
@@ -47,9 +52,17 @@ export function SchedulePage(): ReactElement {
 
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
 
   const schedule = data?.schedule
   const scheduleTitle = schedule?.name ?? t('schedule.pageTitle')
+  const teamName = useMemo(() => {
+    if (!schedule?.teamId) {
+      return ''
+    }
+
+    return teamsData?.teams.find((team) => team.id === schedule.teamId)?.name ?? schedule.teamId
+  }, [schedule?.teamId, teamsData?.teams])
   const breadcrumbItems = useMemo(
     () => [
       { label: t('nav.schedules'), href: '/schedules' },
@@ -133,8 +146,41 @@ export function SchedulePage(): ReactElement {
     <AppShell title={scheduleTitle}>
       <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
         <PageBreadcrumbs items={breadcrumbItems} />
-        <h1 className="mt-2 text-xl font-semibold text-foreground">{scheduleTitle}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t('schedule.pageDescription')}</p>
+        <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">{scheduleTitle}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{t('schedule.pageDescription')}</p>
+            {schedule ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t('schedule.meta', { team: teamName, timezone: schedule.timezone })}
+              </p>
+            ) : null}
+          </div>
+          {schedule ? (
+            <ScheduleFormDialog
+              initialValues={{
+                id: schedule.id,
+                name: schedule.name,
+                timezone: schedule.timezone,
+                teamId: schedule.teamId,
+                teamName,
+              }}
+              mode="edit"
+              onOpenChange={setEditOpen}
+              onSuccess={() => {
+                reexecuteSchedule({ requestPolicy: 'network-only' })
+              }}
+              open={editOpen}
+              teams={[]}
+              trigger={
+                <Button type="button" variant="outline">
+                  <PencilIcon />
+                  {t('schedule.action.edit')}
+                </Button>
+              }
+            />
+          ) : null}
+        </div>
 
         {fetching ? <p className="mt-6 text-sm text-muted-foreground">{labels.loading}</p> : null}
 

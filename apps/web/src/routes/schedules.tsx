@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { useClient } from 'urql'
 import {
   SchedulesDocument,
@@ -31,6 +31,7 @@ import {
 import { AlertTriangleIcon, CalendarClockIcon, PlusIcon, SearchIcon } from 'lucide-react'
 
 import { AppShell } from '../components/app-shell'
+import { ScheduleFormDialog } from '../components/schedule-form-dialog'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
 
@@ -42,6 +43,7 @@ type ScheduleRow = SchedulesQuery['schedules'][number] & {
 
 export function SchedulesPage(): ReactElement {
   const client = useClient()
+  const navigate = useNavigate()
 
   const [{ data: meData }] = useMeQuery({ requestPolicy: 'cache-first' })
   const currentUser = meData?.me
@@ -59,6 +61,8 @@ export function SchedulesPage(): ReactElement {
   const [schedules, setSchedules] = useState<ScheduleRow[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [reloadToken, setReloadToken] = useState(0)
 
   const memberTeamIds = useMemo(() => {
     if (!currentUser?.id) {
@@ -145,7 +149,7 @@ export function SchedulesPage(): ReactElement {
     return () => {
       cancelled = true
     }
-  }, [client, teamIdsToLoad, teamNameById, teamsFetching])
+  }, [client, reloadToken, teamIdsToLoad, teamNameById, teamsFetching])
 
   const filteredSchedules = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -162,6 +166,27 @@ export function SchedulesPage(): ReactElement {
   }, [schedules, search])
 
   const showEmptyState = !loading && !loadError && schedules.length === 0
+  const defaultTeamId = teamFilter !== ALL_TEAMS_VALUE ? teamFilter : visibleTeams[0]?.id
+
+  const createDialog = (
+    <ScheduleFormDialog
+      defaultTeamId={defaultTeamId}
+      mode="create"
+      onOpenChange={setCreateOpen}
+      onSuccess={({ id }) => {
+        setReloadToken((current) => current + 1)
+        navigate(`/schedules/${id}`)
+      }}
+      open={createOpen}
+      teams={visibleTeams}
+      trigger={
+        <Button type="button">
+          <PlusIcon />
+          {t('schedules.action.create')}
+        </Button>
+      }
+    />
+  )
 
   return (
     <AppShell title={t('schedules.title')}>
@@ -171,12 +196,7 @@ export function SchedulesPage(): ReactElement {
             <h1 className="text-xl font-semibold text-foreground">{t('schedules.title')}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{t('schedules.description')}</p>
           </div>
-          {!showEmptyState ? (
-            <Button type="button">
-              <PlusIcon />
-              {t('schedules.action.create')}
-            </Button>
-          ) : null}
+          {!showEmptyState ? createDialog : null}
         </div>
 
         {loadError ? (
@@ -196,12 +216,7 @@ export function SchedulesPage(): ReactElement {
             <p className="mt-2 max-w-sm text-sm text-muted-foreground">
               {t('schedules.empty.description')}
             </p>
-            <div className="mt-6">
-              <Button type="button">
-                <PlusIcon />
-                {t('schedules.action.create')}
-              </Button>
-            </div>
+            <div className="mt-6">{createDialog}</div>
           </div>
         ) : (
           <>
