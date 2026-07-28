@@ -2,16 +2,22 @@ import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import {
+  AlertStatus,
   IncidentStatus,
   type IncidentRoleAssignmentFieldsFragment,
   type TimelineEventFieldsFragment,
   useAddIncidentTimelineNoteMutation,
+  useAlertsQuery,
   useAssignIncidentRoleMutation,
+  useCreateIncidentMutation,
   useIncidentQuery,
   useIncidentRoleDefinitionsQuery,
   useIncidentTimelineUpdatedSubscription,
   useIncidentsQuery,
   useMeQuery,
+  usePromoteAlertToIncidentMutation,
+  useServicesQuery,
+  useTeamsQuery,
   useUpdateIncidentStatusMutation,
 } from '@escalite/ts-types'
 import {
@@ -22,6 +28,16 @@ import {
   AvatarFallback,
   Badge,
   Button,
+  Dialog,
+  DialogClose,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogPanel,
+  DialogPopup,
+  DialogTitle,
+  DialogTrigger,
+  Input,
   ScrollArea,
   Select,
   SelectItem,
@@ -36,10 +52,10 @@ import {
   TableRow,
   Textarea,
 } from '@escalite/ui'
-import { AlertCircleIcon, DownloadIcon } from 'lucide-react'
+import { AlertCircleIcon, DownloadIcon, PlusIcon } from 'lucide-react'
 
 import { AppShell } from '../components/app-shell'
-import { formatDateTime } from '../lib/format'
+import { formatDateTime, formatGraphQLError } from '../lib/format'
 import {
   assignmentByRoleDefinitionId,
   incidentStatusLabel,
@@ -119,6 +135,249 @@ function RoleSlot({
   )
 }
 
+function CreateIncidentDialog({
+  onCreated,
+}: {
+  onCreated: (incidentId: string) => void
+}): ReactElement {
+  const [open, setOpen] = useState(false)
+  const [title, setTitle] = useState('')
+  const [teamId, setTeamId] = useState('')
+  const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([])
+  const [formError, setFormError] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
+
+  const [{ data: teamsData }] = useTeamsQuery({
+    requestPolicy: 'cache-first',
+    pause: !open,
+  })
+  const [{ data: alertsData }] = useAlertsQuery({
+    variables: { limit: 100 },
+    requestPolicy: 'cache-first',
+    pause: !open,
+  })
+  const [{ data: servicesData }] = useServicesQuery({
+    requestPolicy: 'cache-first',
+    pause: !open,
+  })
+
+  const [, createIncident] = useCreateIncidentMutation()
+  const [, promoteAlertToIncident] = usePromoteAlertToIncidentMutation()
+
+  const teams = teamsData?.teams ?? []
+  const serviceTeamById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const service of servicesData?.services ?? []) {
+      map.set(service.id, service.teamId)
+    }
+    return map
+  }, [servicesData?.services])
+
+  const linkableAlerts = useMemo(() => {
+    if (!teamId) {
+      return []
+    }
+    return (alertsData?.alerts ?? []).filter((alert) => {
+      if (alert.incidentId) {
+        return false
+      }
+      if (alert.status === AlertStatus.Closed) {
+        return false
+      }
+      return serviceTeamById.get(alert.serviceId) === teamId
+    })
+  }, [alertsData?.alerts, serviceTeamById, teamId])
+
+  useEffect(() => {
+    setSelectedAlertIds((current) =>
+      current.filter((alertId) => linkableAlerts.some((alert) => alert.id === alertId)),
+    )
+  }, [linkableAlerts])
+
+  function resetForm(): void {
+    setTitle('')
+    setTeamId('')
+    setSelectedAlertIds([])
+    setFormError(null)
+  }
+
+  function toggleAlertSelection(alertId: string): void {
+    setSelectedAlertIds((current) =>
+      current.includes(alertId)
+        ? current.filter((id) => id !== alertId)
+        : [...current, alertId],
+    )
+  }
+
+  async function handleCreate(): Promise<void> {
+    const trimmedTitle = title.trim()
+    if (!trimmedTitle) {
+      setFormError(t('incidents.error.requiredTitle'))
+      return
+    }
+    if (!teamId) {
+      setFormError(t('incidents.error.requiredTeam'))
+      return
+    }
+
+    setFormError(null)
+    setCreating(true)
+
+    const result = await createIncident({
+      input: {
+        title: trimmedTitle,
+        teamId,
+      },
+    })
+
+    if (result.error || !result.data?.createIncident) {
+      setCreating(false)
+      setFormError(
+        result.error ? formatGraphQLError(result.error.message) : t('incidents.error.action'),
+      )
+      return
+    }
+
+    const createdIncidentId = result.data.createIncident.id
+
+    for (const alertId of selectedAlertIds) {
+      const linkResult = await promoteAlertToIncident({
+        input: {
+          alertId,
+          incidentId: createdIncidentId,
+        },
+      })
+      if (linkResult.error) {
+        setCreating(false)
+        setFormError(formatGraphQLError(linkResult.error.message))
+        onCreated(createdIncidentId)
+        return
+      }
+    }
+
+    setCreating(false)
+    setOpen(false)
+    resetForm()
+    onCreated(createdIncidentId)
+  }
+
+  return (
+    <Dialog
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (!nextOpen) {
+          resetForm()
+        }
+      }}
+      open={open}
+    >
+      <DialogTrigger render={<Button type="button" />}>
+        <PlusIcon />
+        {t('incidents.action.create')}
+      </DialogTrigger>
+      <DialogPopup>
+        <DialogHeader>
+          <DialogTitle>{t('incidents.create.title')}</DialogTitle>
+          <DialogDescription>{t('incidents.create.description')}</DialogDescription>
+        </DialogHeader>
+        <DialogPanel className="space-y-4">
+          {formError ? (
+            <Alert variant="error">
+              <AlertCircleIcon />
+              <AlertTitle>{t('incidents.error.action')}</AlertTitle>
+              <AlertDescription>{formError}</AlertDescription>
+            </Alert>
+          ) : null}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground" htmlFor="incident-title">
+              {t('incidents.field.title')}
+            </label>
+            <Input
+              id="incident-title"
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder={t('incidents.field.titlePlaceholder')}
+              value={title}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground" htmlFor="incident-team">
+              {t('incidents.field.team')}
+            </label>
+            <Select
+              onValueChange={(value) => {
+                setTeamId(value ?? '')
+              }}
+              value={teamId || null}
+            >
+              <SelectTrigger id="incident-team">
+                <SelectValue placeholder={t('incidents.field.teamPlaceholder')} />
+              </SelectTrigger>
+              <SelectPopup>
+                {teams.map((team) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name}
+                  </SelectItem>
+                ))}
+              </SelectPopup>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <div>
+              <p className="text-sm font-medium text-foreground">{t('incidents.field.linkedAlerts')}</p>
+              <p className="text-sm text-muted-foreground">
+                {t('incidents.field.linkedAlertsDescription')}
+              </p>
+            </div>
+            <ScrollArea className="h-40 rounded-lg border border-border">
+              <div className="space-y-1 p-2">
+                {!teamId ? (
+                  <p className="px-2 py-3 text-sm text-muted-foreground">
+                    {t('incidents.field.teamPlaceholder')}
+                  </p>
+                ) : linkableAlerts.length === 0 ? (
+                  <p className="px-2 py-3 text-sm text-muted-foreground">
+                    {t('incidents.field.linkedAlertsEmpty')}
+                  </p>
+                ) : (
+                  linkableAlerts.map((alert) => (
+                    <label
+                      key={alert.id}
+                      className="flex cursor-pointer items-start gap-3 rounded-md px-2 py-2 hover:bg-muted/50"
+                    >
+                      <input
+                        checked={selectedAlertIds.includes(alert.id)}
+                        className="mt-1"
+                        onChange={() => toggleAlertSelection(alert.id)}
+                        type="checkbox"
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-foreground">
+                          {alert.summary}
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {alert.service.name}
+                        </span>
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </DialogPanel>
+        <DialogFooter>
+          <DialogClose render={<Button type="button" variant="ghost" />}>
+            {t('incidents.action.cancel')}
+          </DialogClose>
+          <Button disabled={creating} onClick={() => void handleCreate()} type="button">
+            {creating ? t('incidents.action.creating') : t('incidents.create.title')}
+          </Button>
+        </DialogFooter>
+      </DialogPopup>
+    </Dialog>
+  )
+}
+
 function TimelineFeed({ events }: { events: TimelineEventFieldsFragment[] }): ReactElement {
   if (events.length === 0) {
     return <p className="text-sm text-muted-foreground">{t('incidents.timeline.empty')}</p>
@@ -159,10 +418,11 @@ export function IncidentsPage(): ReactElement {
   const [{ data: meData }] = useMeQuery({ requestPolicy: 'cache-first' })
   const currentUserId = meData?.me?.id ?? ''
 
-  const [{ data: incidentsData, fetching: incidentsFetching }] = useIncidentsQuery({
-    variables: { limit: 100 },
-    requestPolicy: 'network-only',
-  })
+  const [{ data: incidentsData, fetching: incidentsFetching }, reexecuteIncidentsQuery] =
+    useIncidentsQuery({
+      variables: { limit: 100 },
+      requestPolicy: 'network-only',
+    })
 
   const [{ data: incidentData, fetching: incidentFetching }] = useIncidentQuery({
     variables: { id: incidentId ?? '' },
@@ -293,8 +553,14 @@ export function IncidentsPage(): ReactElement {
     <AppShell title={t('incidents.title')}>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
         <section className="rounded-xl border border-border bg-card shadow-xs/5">
-          <div className="border-b border-border p-4">
+          <div className="flex items-center justify-between gap-3 border-b border-border p-4">
             <h2 className="text-sm font-medium text-foreground">{t('incidents.title')}</h2>
+            <CreateIncidentDialog
+              onCreated={(createdIncidentId) => {
+                reexecuteIncidentsQuery({ requestPolicy: 'network-only' })
+                navigate(`/incidents/${createdIncidentId}`)
+              }}
+            />
           </div>
           <ScrollArea className="h-[40rem]">
             <Table variant="card">

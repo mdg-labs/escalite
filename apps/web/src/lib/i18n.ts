@@ -506,6 +506,22 @@ const messages = {
   'incidents.status.update': 'Update status',
   'incidents.status.updating': 'Updating…',
   'incidents.error.action': 'Action failed. Try again.',
+  'incidents.action.create': 'New incident',
+  'incidents.action.creating': 'Creating…',
+  'incidents.action.cancel': 'Cancel',
+  'incidents.create.title': 'Create incident',
+  'incidents.create.description':
+    'Declare an incident for a team. Optionally link open alerts from that team.',
+  'incidents.field.title': 'Title',
+  'incidents.field.titlePlaceholder': 'Database connection pool exhausted',
+  'incidents.field.team': 'Team',
+  'incidents.field.teamPlaceholder': 'Select a team…',
+  'incidents.field.linkedAlerts': 'Linked alerts',
+  'incidents.field.linkedAlertsDescription':
+    'Optional open alerts from services owned by the selected team.',
+  'incidents.field.linkedAlertsEmpty': 'No linkable alerts for this team.',
+  'incidents.error.requiredTitle': 'Incident title is required.',
+  'incidents.error.requiredTeam': 'Select a team.',
   'alerts.detail.viewIncident': 'View incident',
   'analytics.title': 'Analytics',
   'analytics.description':
