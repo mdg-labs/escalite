@@ -5,13 +5,11 @@ import { Tabs, TabsList, TabsPanel, TabsTab } from '@escalite/ui'
 
 import { AppShell } from '../components/app-shell'
 import { StatusPageComponentsPanel } from '../components/status-page-components-panel'
+import { StatusPageIncidentsPanel } from '../components/status-page-incidents-panel'
 import { StatusPageSettingsPanel } from '../components/status-page-settings-panel'
 import { t, type MessageKey } from '../lib/i18n'
 
-type StatusPagePlaceholderKey = Extract<
-  MessageKey,
-  'statusPages.placeholder.incidents' | 'statusPages.placeholder.subscriptions'
->
+type StatusPagePlaceholderKey = Extract<MessageKey, 'statusPages.placeholder.subscriptions'>
 
 function StatusPagePlaceholderPanel({ messageKey }: { messageKey: StatusPagePlaceholderKey }): ReactElement {
   return (
@@ -51,7 +49,7 @@ export function StatusPagesPage(): ReactElement {
           </TabsPanel>
 
           <TabsPanel className="mt-6" value="incidents">
-            <StatusPagePlaceholderPanel messageKey="statusPages.placeholder.incidents" />
+            <StatusPageIncidentsPanel />
           </TabsPanel>
 
           <TabsPanel className="mt-6" value="subscriptions">

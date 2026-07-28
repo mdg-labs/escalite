@@ -578,7 +578,6 @@ const messages = {
   'statusPages.tabs.components': 'Components',
   'statusPages.tabs.incidents': 'Incidents',
   'statusPages.tabs.subscriptions': 'Subscriptions',
-  'statusPages.placeholder.incidents': 'Incident publishing will be available in a future update.',
   'statusPages.placeholder.subscriptions': 'Subscription management will be available in a future update.',
   'statusPages.settings.title': 'Status page settings',
   'statusPages.settings.description':
@@ -652,6 +651,37 @@ const messages = {
     'Remove {name} from the status page. This cannot be undone.',
   'statusPages.components.delete.confirm': 'Delete component',
   'statusPages.components.validation.requiredName': 'Component name is required.',
+  'statusPages.incidents.title': 'Active status page incidents',
+  'statusPages.incidents.description':
+    'Post public updates and resolve incidents published on your status page.',
+  'statusPages.incidents.loading': 'Loading incidents…',
+  'statusPages.incidents.empty': 'No active incidents on the status page.',
+  'statusPages.incidents.notConfigured':
+    'Configure a status page before managing incidents.',
+  'statusPages.incidents.components': 'Affected components',
+  'statusPages.incidents.updates': 'Public updates',
+  'statusPages.incidents.viewPublic': 'View public status page',
+  'statusPages.incidents.field.updated': 'Last updated {date}',
+  'statusPages.incidents.action.postUpdate': 'Post update',
+  'statusPages.incidents.action.resolve': 'Resolve',
+  'statusPages.incidents.action.cancel': 'Cancel',
+  'statusPages.incidents.action.post': 'Post update',
+  'statusPages.incidents.action.posting': 'Posting…',
+  'statusPages.incidents.action.resolving': 'Resolving…',
+  'statusPages.incidents.action.confirmResolve': 'Resolve incident',
+  'statusPages.incidents.update.title': 'Post status page update',
+  'statusPages.incidents.update.description': 'Share a new public update for {title}.',
+  'statusPages.incidents.update.field.status': 'Status',
+  'statusPages.incidents.update.field.body': 'Update message',
+  'statusPages.incidents.update.field.bodyPlaceholder':
+    'We have identified the root cause and are deploying a fix…',
+  'statusPages.incidents.resolve.title': 'Resolve status page incident?',
+  'statusPages.incidents.resolve.description':
+    'Mark {title} as resolved on the public status page. You can include a final update message.',
+  'statusPages.incidents.resolve.field.body': 'Resolution message (optional)',
+  'statusPages.incidents.resolve.field.bodyPlaceholder':
+    'This incident has been resolved. All systems are operational.',
+  'statusPages.incidents.validation.requiredBody': 'Update message is required.',
   'alerts.detail.viewIncident': 'View incident',
   'analytics.title': 'Analytics',
   'analytics.description':
