@@ -246,6 +246,8 @@ const messages = {
   'services.description':
     'Create and configure services, escalation policies, schedules, and integration keys.',
   'services.loading': 'Loading services…',
+  'services.empty.title': 'No services yet',
+  'services.empty.description': 'Create a service to start routing alerts to your team.',
   'services.empty.default': 'No services yet. Create one to start routing alerts.',
   'services.empty.search': 'No services match your search.',
   'services.search.label': 'Search services',
@@ -604,6 +606,7 @@ const messages = {
   'nav.incidents': 'Incidents',
   'incidents.title': 'Incidents',
   'incidents.empty': 'No incidents yet.',
+  'incidents.empty.description': 'Create an incident to coordinate your response.',
   'incidents.loading': 'Loading incidents…',
   'incidents.detail.loading': 'Loading incident…',
   'incidents.detail.notFound': 'Incident not found.',

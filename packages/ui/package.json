@@ -30,6 +30,8 @@
     "./primitives/group": "./primitives/group.tsx",
     "./primitives/scroll-area": "./primitives/scroll-area.tsx",
     "./primitives/tabs": "./primitives/tabs.tsx",
+    "./primitives/skeleton": "./primitives/skeleton.tsx",
+    "./primitives/empty": "./primitives/empty.tsx",
     "./domain/EscalationPolicyEditor": "./domain/EscalationPolicyEditor/index.ts",
     "./domain/ScheduleCalendar": "./domain/ScheduleCalendar/index.ts",
     "./domain/OnCallWidget": "./domain/OnCallWidget/index.ts",

@@ -29,12 +29,19 @@ import {
   DialogPopup,
   DialogTitle,
   DialogTrigger,
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
   Input,
   Select,
   SelectItem,
   SelectPopup,
   SelectTrigger,
   SelectValue,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -42,12 +49,38 @@ import {
   TableHeader,
   TableRow,
 } from '@escalite/ui'
-import { AlertTriangleIcon, PlusIcon, SearchIcon } from 'lucide-react'
+import { AlertTriangleIcon, PlusIcon, SearchIcon, ServerIcon } from 'lucide-react'
 
 import { AppShell } from '../components/app-shell'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
 import { notifyMutationSuccess, showMutationError } from '../lib/toast'
+
+function ServiceTableSkeletonRows(): ReactElement {
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <TableRow key={`service-skeleton-${index}`}>
+          <TableCell>
+            <Skeleton className="h-4 max-w-48" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-28" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-36" />
+          </TableCell>
+          <TableCell className="text-right">
+            <div className="flex justify-end gap-2">
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-8 w-20" />
+            </div>
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
+  )
+}
 
 export function ServicesPage(): ReactElement {
   const [{ data, fetching, error }, reexecuteQuery] = useServicesQuery({
@@ -74,6 +107,9 @@ export function ServicesPage(): ReactElement {
     }
     return items.filter((service) => service.name.toLowerCase().includes(query))
   }, [data?.services, search])
+
+  const allServices = data?.services ?? []
+  const showEmptyState = !fetching && !error && allServices.length === 0
 
   async function handleCreate(): Promise<void> {
     const name = newName.trim()
@@ -114,6 +150,59 @@ export function ServicesPage(): ReactElement {
     reexecuteQuery({ requestPolicy: 'network-only' })
   }
 
+  const createDialog = (
+    <Dialog onOpenChange={setCreateOpen} open={createOpen}>
+      <DialogTrigger render={<Button type="button" />}>
+        <PlusIcon />
+        {t('services.action.create')}
+      </DialogTrigger>
+      <DialogPopup>
+        <DialogHeader>
+          <DialogTitle>{t('services.create.title')}</DialogTitle>
+          <DialogDescription>{t('services.create.description')}</DialogDescription>
+        </DialogHeader>
+        <DialogPanel className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground" htmlFor="service-name">
+              {t('services.field.name')}
+            </label>
+            <Input
+              id="service-name"
+              onChange={(event) => setNewName(event.target.value)}
+              placeholder={t('services.field.namePlaceholder')}
+              value={newName}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground" htmlFor="service-team">
+              {t('services.field.team')}
+            </label>
+            <Select onValueChange={(value) => setNewTeamId(value ?? '')} value={newTeamId}>
+              <SelectTrigger id="service-team">
+                <SelectValue placeholder={t('services.field.teamPlaceholder')} />
+              </SelectTrigger>
+              <SelectPopup>
+                {teams.map((team) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name}
+                  </SelectItem>
+                ))}
+              </SelectPopup>
+            </Select>
+          </div>
+        </DialogPanel>
+        <DialogFooter>
+          <DialogClose render={<Button type="button" variant="ghost" />}>
+            {t('services.action.cancel')}
+          </DialogClose>
+          <Button disabled={creating} onClick={() => void handleCreate()} type="button">
+            {creating ? t('services.action.creating') : t('services.action.create')}
+          </Button>
+        </DialogFooter>
+      </DialogPopup>
+    </Dialog>
+  )
+
   return (
     <AppShell title={t('services.title')}>
       <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
@@ -122,67 +211,7 @@ export function ServicesPage(): ReactElement {
             <h1 className="text-xl font-semibold text-foreground">{t('services.title')}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{t('services.description')}</p>
           </div>
-          <Dialog onOpenChange={setCreateOpen} open={createOpen}>
-            <DialogTrigger render={<Button type="button" />}>
-              <PlusIcon />
-              {t('services.action.create')}
-            </DialogTrigger>
-            <DialogPopup>
-              <DialogHeader>
-                <DialogTitle>{t('services.create.title')}</DialogTitle>
-                <DialogDescription>{t('services.create.description')}</DialogDescription>
-              </DialogHeader>
-              <DialogPanel className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground" htmlFor="service-name">
-                    {t('services.field.name')}
-                  </label>
-                  <Input
-                    id="service-name"
-                    onChange={(event) => setNewName(event.target.value)}
-                    placeholder={t('services.field.namePlaceholder')}
-                    value={newName}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground" htmlFor="service-team">
-                    {t('services.field.team')}
-                  </label>
-                  <Select onValueChange={(value) => setNewTeamId(value ?? '')} value={newTeamId}>
-                    <SelectTrigger id="service-team">
-                      <SelectValue placeholder={t('services.field.teamPlaceholder')} />
-                    </SelectTrigger>
-                    <SelectPopup>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id}>
-                          {team.name}
-                        </SelectItem>
-                      ))}
-                    </SelectPopup>
-                  </Select>
-                </div>
-              </DialogPanel>
-              <DialogFooter>
-                <DialogClose render={<Button type="button" variant="ghost" />}>
-                  {t('services.action.cancel')}
-                </DialogClose>
-                <Button disabled={creating} onClick={() => void handleCreate()} type="button">
-                  {creating ? t('services.action.creating') : t('services.action.create')}
-                </Button>
-              </DialogFooter>
-            </DialogPopup>
-          </Dialog>
-        </div>
-
-        <div className="relative mt-6 max-w-md">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            aria-label={t('services.search.label')}
-            className="pl-9"
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={t('services.search.placeholder')}
-            value={search}
-          />
+          {!showEmptyState ? createDialog : null}
         </div>
 
         {error ? (
@@ -201,98 +230,127 @@ export function ServicesPage(): ReactElement {
           </Alert>
         ) : null}
 
-        <Table className="mt-6" variant="card">
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t('services.column.name')}</TableHead>
-              <TableHead>{t('services.column.team')}</TableHead>
-              <TableHead>{t('services.column.updated')}</TableHead>
-              <TableHead className="text-right">{t('services.column.actions')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {fetching ? (
-              <TableRow>
-                <TableCell className="text-muted-foreground" colSpan={4}>
-                  {t('services.loading')}
-                </TableCell>
-              </TableRow>
-            ) : services.length === 0 ? (
-              <TableRow>
-                <TableCell className="text-muted-foreground" colSpan={4}>
-                  {search.trim() ? t('services.empty.search') : t('services.empty.default')}
-                </TableCell>
-              </TableRow>
-            ) : (
-              services.map((service) => {
-                const teamName =
-                  teams.find((team) => team.id === service.teamId)?.name ?? service.teamId
+        {showEmptyState ? (
+          <Empty className="mt-10">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <ServerIcon />
+              </EmptyMedia>
+              <EmptyTitle>{t('services.empty.title')}</EmptyTitle>
+              <EmptyDescription>{t('services.empty.description')}</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>{createDialog}</EmptyContent>
+          </Empty>
+        ) : (
+          <>
+            <div className="relative mt-6 max-w-md">
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                aria-label={t('services.search.label')}
+                className="pl-9"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={t('services.search.placeholder')}
+                value={search}
+              />
+            </div>
 
-                return (
-                  <TableRow key={service.id}>
-                    <TableCell>
-                      <Link
-                        className="font-medium text-foreground hover:underline"
-                        to={`/services/${service.id}`}
-                      >
-                        {service.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{teamName}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(service.updatedAt).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          render={<Link to={`/services/${service.id}`} />}
-                          size="sm"
-                          type="button"
-                          variant="outline"
-                        >
-                          {t('services.action.configure')}
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger
-                            render={
-                              <Button
-                                disabled={deletingId === service.id}
-                                size="sm"
-                                type="button"
-                                variant="destructive-outline"
-                              />
-                            }
-                          >
-                            {t('services.action.delete')}
-                          </AlertDialogTrigger>
-                          <AlertDialogPopup>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>{t('services.delete.title')}</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {t('services.delete.description', { name: service.name })}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogClose render={<Button type="button" variant="ghost" />}>
-                                {t('services.action.cancel')}
-                              </AlertDialogClose>
-                              <AlertDialogClose
-                                onClick={() => void handleDelete(service.id)}
-                                render={<Button type="button" variant="destructive" />}
-                              >
-                                {t('services.action.deleteConfirm')}
-                              </AlertDialogClose>
-                            </AlertDialogFooter>
-                          </AlertDialogPopup>
-                        </AlertDialog>
-                      </div>
+            <Table className="mt-6" variant="card">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('services.column.name')}</TableHead>
+                  <TableHead>{t('services.column.team')}</TableHead>
+                  <TableHead>{t('services.column.updated')}</TableHead>
+                  <TableHead className="text-right">{t('services.column.actions')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {fetching ? (
+                  <ServiceTableSkeletonRows />
+                ) : services.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4}>
+                      <Empty>
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon">
+                            <ServerIcon />
+                          </EmptyMedia>
+                          <EmptyTitle>{t('services.empty.search')}</EmptyTitle>
+                        </EmptyHeader>
+                      </Empty>
                     </TableCell>
                   </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
+                ) : (
+                  services.map((service) => {
+                    const teamName =
+                      teams.find((team) => team.id === service.teamId)?.name ?? service.teamId
+
+                    return (
+                      <TableRow key={service.id}>
+                        <TableCell>
+                          <Link
+                            className="font-medium text-foreground hover:underline"
+                            to={`/services/${service.id}`}
+                          >
+                            {service.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{teamName}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {new Date(service.updatedAt).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              render={<Link to={`/services/${service.id}`} />}
+                              size="sm"
+                              type="button"
+                              variant="outline"
+                            >
+                              {t('services.action.configure')}
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger
+                                render={
+                                  <Button
+                                    disabled={deletingId === service.id}
+                                    size="sm"
+                                    type="button"
+                                    variant="destructive-outline"
+                                  />
+                                }
+                              >
+                                {t('services.action.delete')}
+                              </AlertDialogTrigger>
+                              <AlertDialogPopup>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>{t('services.delete.title')}</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {t('services.delete.description', { name: service.name })}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogClose render={<Button type="button" variant="ghost" />}>
+                                    {t('services.action.cancel')}
+                                  </AlertDialogClose>
+                                  <AlertDialogClose
+                                    onClick={() => void handleDelete(service.id)}
+                                    render={<Button type="button" variant="destructive" />}
+                                  >
+                                    {t('services.action.deleteConfirm')}
+                                  </AlertDialogClose>
+                                </AlertDialogFooter>
+                              </AlertDialogPopup>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </>
+        )}
       </section>
     </AppShell>
   )

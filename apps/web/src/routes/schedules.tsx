@@ -15,12 +15,19 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
   Input,
   Select,
   SelectItem,
   SelectPopup,
   SelectTrigger,
   SelectValue,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -34,6 +41,26 @@ import { AppShell } from '../components/app-shell'
 import { ScheduleFormDialog } from '../components/schedule-form-dialog'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+
+function ScheduleTableSkeletonRows(): ReactElement {
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <TableRow key={`schedule-skeleton-${index}`}>
+          <TableCell>
+            <Skeleton className="h-4 max-w-48" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-28" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-36" />
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
+  )
+}
 
 const ALL_TEAMS_VALUE = '__all__'
 
@@ -208,16 +235,16 @@ export function SchedulesPage(): ReactElement {
         ) : null}
 
         {showEmptyState ? (
-          <div className="mt-10 flex flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 py-16 text-center">
-            <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-              <CalendarClockIcon className="size-6 text-muted-foreground" />
-            </div>
-            <h2 className="mt-4 text-lg font-medium text-foreground">{t('schedules.empty.title')}</h2>
-            <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-              {t('schedules.empty.description')}
-            </p>
-            <div className="mt-6">{createDialog}</div>
-          </div>
+          <Empty className="mt-10">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <CalendarClockIcon />
+              </EmptyMedia>
+              <EmptyTitle>{t('schedules.empty.title')}</EmptyTitle>
+              <EmptyDescription>{t('schedules.empty.description')}</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>{createDialog}</EmptyContent>
+          </Empty>
         ) : (
           <>
             <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end">
@@ -267,15 +294,20 @@ export function SchedulesPage(): ReactElement {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell className="text-muted-foreground" colSpan={3}>
-                      {t('schedules.loading')}
-                    </TableCell>
-                  </TableRow>
+                  <ScheduleTableSkeletonRows />
                 ) : filteredSchedules.length === 0 ? (
                   <TableRow>
-                    <TableCell className="text-muted-foreground" colSpan={3}>
-                      {search.trim() ? t('schedules.empty.search') : t('schedules.empty.default')}
+                    <TableCell colSpan={3}>
+                      <Empty>
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon">
+                            <CalendarClockIcon />
+                          </EmptyMedia>
+                          <EmptyTitle>
+                            {search.trim() ? t('schedules.empty.search') : t('schedules.empty.default')}
+                          </EmptyTitle>
+                        </EmptyHeader>
+                      </Empty>
                     </TableCell>
                   </TableRow>
                 ) : (

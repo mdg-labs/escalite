@@ -16,7 +16,14 @@ import {
   DialogPopup,
   DialogTitle,
   DialogTrigger,
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
   Input,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -30,6 +37,26 @@ import { AppShell } from '../components/app-shell'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
 import { notifyMutationSuccess, showMutationError } from '../lib/toast'
+
+function TeamTableSkeletonRows(): ReactElement {
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <TableRow key={`team-skeleton-${index}`}>
+          <TableCell>
+            <Skeleton className="h-4 max-w-48" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-36" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-36" />
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
+  )
+}
 
 export function TeamsPage(): ReactElement {
   const [{ data, fetching, error }, reexecuteQuery] = useTeamsQuery({
@@ -142,16 +169,16 @@ export function TeamsPage(): ReactElement {
         ) : null}
 
         {showEmptyState ? (
-          <div className="mt-10 flex flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 py-16 text-center">
-            <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-              <UsersIcon className="size-6 text-muted-foreground" />
-            </div>
-            <h2 className="mt-4 text-lg font-medium text-foreground">{t('teams.empty.title')}</h2>
-            <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-              {t('teams.empty.description')}
-            </p>
-            <div className="mt-6">{createDialog}</div>
-          </div>
+          <Empty className="mt-10">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <UsersIcon />
+              </EmptyMedia>
+              <EmptyTitle>{t('teams.empty.title')}</EmptyTitle>
+              <EmptyDescription>{t('teams.empty.description')}</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>{createDialog}</EmptyContent>
+          </Empty>
         ) : (
           <>
             <div className="relative mt-6 max-w-md">
@@ -175,15 +202,18 @@ export function TeamsPage(): ReactElement {
               </TableHeader>
               <TableBody>
                 {fetching ? (
-                  <TableRow>
-                    <TableCell className="text-muted-foreground" colSpan={3}>
-                      {t('teams.loading')}
-                    </TableCell>
-                  </TableRow>
+                  <TeamTableSkeletonRows />
                 ) : teams.length === 0 ? (
                   <TableRow>
-                    <TableCell className="text-muted-foreground" colSpan={3}>
-                      {t('teams.empty.search')}
+                    <TableCell colSpan={3}>
+                      <Empty>
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon">
+                            <UsersIcon />
+                          </EmptyMedia>
+                          <EmptyTitle>{t('teams.empty.search')}</EmptyTitle>
+                        </EmptyHeader>
+                      </Empty>
                     </TableCell>
                   </TableRow>
                 ) : (

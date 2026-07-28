@@ -32,9 +32,14 @@ import {
   DialogPopup,
   DialogTitle,
   DialogTrigger,
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
   Group,
   GroupSeparator,
   ScrollArea,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -46,7 +51,7 @@ import {
   TabsPanel,
   TabsTab,
 } from '@escalite/ui'
-import { AlertCircleIcon } from 'lucide-react'
+import { AlertCircleIcon, BellIcon } from 'lucide-react'
 
 import { AlertPriorityBadge } from '../components/alert-priority-badge'
 import { AlertStatusBadge } from '../components/alert-status-badge'
@@ -98,6 +103,35 @@ function statusFilterLabel(filter: StatusFilter): string {
     default:
       return t('alerts.filter.all')
   }
+}
+
+function AlertListSkeletonRows(): ReactElement {
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <TableRow key={`alert-skeleton-${index}`}>
+          <TableCell>
+            <div className="flex flex-col gap-1">
+              <Skeleton className="h-4 max-w-xs" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-5 w-20" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-5 w-16" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-10" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-28" />
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
+  )
 }
 
 export function AlertsPage(): ReactElement {
@@ -322,17 +356,18 @@ export function AlertsPage(): ReactElement {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {fetching && visibleAlerts.length === 0 ? (
-                  <TableRow>
-                    <TableCell className="text-muted-foreground" colSpan={5}>
-                      {t('alerts.loading')}
-                    </TableCell>
-                  </TableRow>
-                ) : null}
+                {fetching && alerts.length === 0 ? <AlertListSkeletonRows /> : null}
                 {!fetching && visibleAlerts.length === 0 ? (
                   <TableRow>
-                    <TableCell className="text-muted-foreground" colSpan={5}>
-                      {t('alerts.empty')}
+                    <TableCell colSpan={5}>
+                      <Empty>
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon">
+                            <BellIcon />
+                          </EmptyMedia>
+                          <EmptyTitle>{t('alerts.empty')}</EmptyTitle>
+                        </EmptyHeader>
+                      </Empty>
                     </TableCell>
                   </TableRow>
                 ) : null}
