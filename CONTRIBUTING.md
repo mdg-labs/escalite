@@ -108,6 +108,31 @@ fix(web)[#51]: correct timezone label on on-call calendar
 chore(infra)[#33]: add AGPL license and DCO workflow
 ```
 
+## Allure test reports (local)
+
+Escalite uses [Allure Report 3](https://allurereport.org/docs/v3/) for unified HTML test
+reporting. Configuration lives in `allurerc.mjs` at the repo root; generated artifacts are
+gitignored (`allure-results/`, `allure-report/`).
+
+After running tests with Allure instrumentation (see child tasks in the reporting epic), use
+this workflow locally:
+
+```bash
+pnpm test:allure    # run tests and merge per-package allure-results/
+pnpm report:allure  # merge results and generate the HTML report
+pnpm open:allure    # serve the report in your browser
+```
+
+Equivalent [Task](https://taskfile.dev/) targets: `task test:allure`, `task report:allure`,
+`task open:allure`.
+
+Smoke-check the CLI after installing dependencies:
+
+```bash
+npx allure --version
+pnpm report:allure   # succeeds even when allure-results/ is empty
+```
+
 ## Pull requests
 
 1. Branch from `dev` (or the integration branch named in the issue).

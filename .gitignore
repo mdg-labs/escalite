@@ -38,3 +38,6 @@ apps/web/playwright-report/
 apps/web/test-results/
 apps/status-page/test-results/
 apps/status-page/playwright-report/
+allure-results/
+allure-report/
+.allure/

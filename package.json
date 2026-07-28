@@ -9,10 +9,14 @@
     "e2e": "turbo run e2e --filter=@escalite/web",
     "lint": "turbo run lint",
     "test": "turbo run test:unit",
+    "test:allure": "pnpm test && node scripts/allure/merge-results.mjs",
+    "report:allure": "node scripts/allure/merge-results.mjs && allure generate --config ./allurerc.mjs ./allure-results",
+    "open:allure": "allure open --config ./allurerc.mjs ./allure-report",
     "typecheck": "turbo run typecheck",
     "prepare": "node scripts/ci/husky-prepare.mjs"
   },
   "devDependencies": {
+    "allure": "^3.14.3",
     "husky": "^9.1.7",
     "turbo": "^2.5.4"
   },

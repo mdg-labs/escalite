@@ -21,6 +21,21 @@ tasks:
       - pnpm test
       - task: go:test
 
+  test:allure:
+    desc: Run JS unit tests and merge per-package Allure results
+    cmds:
+      - pnpm test:allure
+
+  report:allure:
+    desc: Merge Allure results and generate the unified HTML report
+    cmds:
+      - pnpm report:allure
+
+  open:allure:
+    desc: Serve the generated Allure report locally
+    cmds:
+      - pnpm open:allure
+
   lint:
     desc: Run JS linters across the monorepo
     cmds:
