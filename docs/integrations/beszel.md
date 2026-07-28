@@ -12,8 +12,8 @@ Escalite handles Beszel via the **generic-webhook** inbound plugin — there is 
 ## 1. Create a Beszel integration key in Escalite
 
 1. Sign in to Escalite as an org admin.
-2. Open **Integrations** (`/integrations`).
-3. Enter the target **Service ID** (UUID of the service that should receive Beszel alerts).
+2. Open **Services** and select the service that should receive Beszel alerts.
+3. Open the **Integrations** tab (`/services/<service-id>?tab=integrations`).
 4. Select **Beszel** and click **Create integration key**.
 5. Copy the **Beszel notification URL** shown after creation. The full webhook token is only displayed once.
 
