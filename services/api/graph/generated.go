@@ -203,6 +203,11 @@ type ComplexityRoot struct {
 		UpdatedAt      func(childComplexity int) int
 	}
 
+	IntegrationPluginDefinition struct {
+		ConfigSchema func(childComplexity int) int
+		Name         func(childComplexity int) int
+	}
+
 	LoginOptions struct {
 		OidcEnabled  func(childComplexity int) int
 		OidcLoginURL func(childComplexity int) int
@@ -391,6 +396,7 @@ type ComplexityRoot struct {
 		Health                  func(childComplexity int) int
 		HeartbeatMonitor        func(childComplexity int, id string) int
 		HeartbeatMonitors       func(childComplexity int, serviceID string) int
+		InboundIntegrations     func(childComplexity int) int
 		Incident                func(childComplexity int, id string) int
 		IncidentRoleDefinitions func(childComplexity int) int
 		Incidents               func(childComplexity int, status *model.IncidentStatus, teamID *string, limit *int) int
@@ -707,6 +713,7 @@ type QueryResolver interface {
 	OnCallNow(ctx context.Context, scheduleID string, at *time.Time) (*model.OnCallNow, error)
 	Overrides(ctx context.Context, scheduleID string) ([]*model.Override, error)
 	NotificationChannels(ctx context.Context) ([]*model.NotificationChannelDefinition, error)
+	InboundIntegrations(ctx context.Context) ([]*model.IntegrationPluginDefinition, error)
 	NotificationRules(ctx context.Context) ([]*model.UserNotificationRule, error)
 	MobileDevices(ctx context.Context) ([]*model.MobileDevice, error)
 	SlackSettings(ctx context.Context) (*model.SlackSettings, error)
@@ -1443,6 +1450,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.IntegrationKey.UpdatedAt(childComplexity), true
+
+	case "IntegrationPluginDefinition.configSchema":
+		if e.ComplexityRoot.IntegrationPluginDefinition.ConfigSchema == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IntegrationPluginDefinition.ConfigSchema(childComplexity), true
+	case "IntegrationPluginDefinition.name":
+		if e.ComplexityRoot.IntegrationPluginDefinition.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.IntegrationPluginDefinition.Name(childComplexity), true
 
 	case "LoginOptions.oidcEnabled":
 		if e.ComplexityRoot.LoginOptions.OidcEnabled == nil {
@@ -2654,6 +2674,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.HeartbeatMonitors(childComplexity, args["serviceId"].(string)), true
+	case "Query.inboundIntegrations":
+		if e.ComplexityRoot.Query.InboundIntegrations == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.InboundIntegrations(childComplexity), true
 	case "Query.incident":
 		if e.ComplexityRoot.Query.Incident == nil {
 			break
@@ -4217,6 +4243,11 @@ type Query {
   notificationChannels: [NotificationChannelDefinition!]!
 
   """
+  List registered inbound integration plugins and config schemas for form generation.
+  """
+  inboundIntegrations: [IntegrationPluginDefinition!]!
+
+  """
   List the current user's notification rules by alert priority.
   """
   notificationRules: [UserNotificationRule!]!
@@ -4929,6 +4960,12 @@ type NotificationChannelDefinition {
   configSchema: JSON!
 }
 
+"""Registered inbound integration plugin and its JSON Schema config form."""
+type IntegrationPluginDefinition {
+  name: String!
+  configSchema: JSON!
+}
+
 """Per-user contact method configuration for a notification channel."""
 type UserContactMethod {
   id: ID!
@@ -5508,6 +5545,16 @@ func (ec *executionContext) childFields_IntegrationKey(ctx context.Context, fiel
 		return ec.fieldContext_IntegrationKey_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type IntegrationKey", field.Name)
+}
+
+func (ec *executionContext) childFields_IntegrationPluginDefinition(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "name":
+		return ec.fieldContext_IntegrationPluginDefinition_name(ctx, field)
+	case "configSchema":
+		return ec.fieldContext_IntegrationPluginDefinition_configSchema(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type IntegrationPluginDefinition", field.Name)
 }
 
 func (ec *executionContext) childFields_LoginOptions(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -10292,6 +10339,52 @@ func (ec *executionContext) _IntegrationKey_updatedAt(ctx context.Context, field
 }
 func (ec *executionContext) fieldContext_IntegrationKey_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("IntegrationKey", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
+func (ec *executionContext) _IntegrationPluginDefinition_name(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationPluginDefinition) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IntegrationPluginDefinition_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IntegrationPluginDefinition_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IntegrationPluginDefinition", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _IntegrationPluginDefinition_configSchema(ctx context.Context, field graphql.CollectedField, obj *model.IntegrationPluginDefinition) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_IntegrationPluginDefinition_configSchema(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ConfigSchema, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v map[string]any) graphql.Marshaler {
+			return ec.marshalNJSON2map(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_IntegrationPluginDefinition_configSchema(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("IntegrationPluginDefinition", field, false, false, errors.New("field of type JSON does not have child fields"))
 }
 
 func (ec *executionContext) _LoginOptions_samlEnabled(ctx context.Context, field graphql.CollectedField, obj *model.LoginOptions) (ret graphql.Marshaler) {
@@ -15310,6 +15403,38 @@ func (ec *executionContext) fieldContext_Query_notificationChannels(_ context.Co
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_NotificationChannelDefinition(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_inboundIntegrations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_inboundIntegrations(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().InboundIntegrations(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.IntegrationPluginDefinition) graphql.Marshaler {
+			return ec.marshalNIntegrationPluginDefinition2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationPluginDefinitionᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_inboundIntegrations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_IntegrationPluginDefinition(ctx, field)
 		},
 	}
 	return fc, nil
@@ -23475,6 +23600,49 @@ func (ec *executionContext) _IntegrationKey(ctx context.Context, sel ast.Selecti
 	return out
 }
 
+var integrationPluginDefinitionImplementors = []string{"IntegrationPluginDefinition"}
+
+func (ec *executionContext) _IntegrationPluginDefinition(ctx context.Context, sel ast.SelectionSet, obj *model.IntegrationPluginDefinition) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, integrationPluginDefinitionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("IntegrationPluginDefinition")
+		case "name":
+			out.Values[i] = ec._IntegrationPluginDefinition_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "configSchema":
+			out.Values[i] = ec._IntegrationPluginDefinition_configSchema(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var loginOptionsImplementors = []string{"LoginOptions"}
 
 func (ec *executionContext) _LoginOptions(ctx context.Context, sel ast.SelectionSet, obj *model.LoginOptions) graphql.Marshaler {
@@ -25163,6 +25331,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_notificationChannels(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "inboundIntegrations":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_inboundIntegrations(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -27987,6 +28177,32 @@ func (ec *executionContext) marshalNIntegrationKey2ᚖgithubᚗcomᚋmdgᚑlabs�
 		return graphql.Null
 	}
 	return ec._IntegrationKey(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNIntegrationPluginDefinition2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationPluginDefinitionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.IntegrationPluginDefinition) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNIntegrationPluginDefinition2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationPluginDefinition(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNIntegrationPluginDefinition2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐIntegrationPluginDefinition(ctx context.Context, sel ast.SelectionSet, v *model.IntegrationPluginDefinition) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._IntegrationPluginDefinition(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNInviteUserInput2githubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐInviteUserInput(ctx context.Context, v any) (model.InviteUserInput, error) {

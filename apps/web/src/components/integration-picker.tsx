@@ -1,15 +1,21 @@
-import { useState, type ReactElement } from 'react'
-import { useCreateIntegrationKeyMutation } from '@escalite/ts-types'
-import { Alert, AlertDescription, AlertTitle, Button } from '@escalite/ui'
+import { useEffect, useMemo, useState, type ReactElement } from 'react'
+import { useCreateIntegrationKeyMutation, useInboundIntegrationsQuery } from '@escalite/ts-types'
+import { Alert, AlertDescription, AlertTitle, Button, Input } from '@escalite/ui'
 import { AlertTriangleIcon } from 'lucide-react'
 
 import {
   BESZEL_PRESET,
   INTEGRATION_PRESETS,
-  buildIntegrationKeyConfigFromPreset,
   type IntegrationPreset,
 } from '../lib/integration-presets'
 import { formatGraphQLError } from '../lib/format'
+import {
+  buildConfigFromFormValues,
+  buildFormFieldsFromConfigSchema,
+  findPluginConfigSchema,
+  mergeConfigInitialValues,
+  validateConfigFormValues,
+} from '../lib/notification-channel-form'
 
 type IntegrationPickerProps = {
   serviceId: string
@@ -26,13 +32,66 @@ export function IntegrationPicker({
   onCreated,
 }: IntegrationPickerProps): ReactElement {
   const [, createIntegrationKey] = useCreateIntegrationKeyMutation()
+  const [{ data: inboundData, fetching: schemasFetching, error: schemasError }] =
+    useInboundIntegrationsQuery({
+      requestPolicy: 'cache-first',
+    })
+
   const [selectedPresetId, setSelectedPresetId] = useState(BESZEL_PRESET.id)
+  const [configValues, setConfigValues] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const selectedPreset = useMemo(
+    () => INTEGRATION_PRESETS.find((item) => item.id === selectedPresetId),
+    [selectedPresetId],
+  )
+
+  const inboundPlugins = useMemo(
+    () =>
+      (inboundData?.inboundIntegrations ?? []).map((plugin) => ({
+        name: plugin.name,
+        configSchema: plugin.configSchema,
+      })),
+    [inboundData?.inboundIntegrations],
+  )
+
+  const configSchema = useMemo(
+    () =>
+      selectedPreset
+        ? findPluginConfigSchema(inboundPlugins, selectedPreset.pluginName)
+        : undefined,
+    [inboundPlugins, selectedPreset],
+  )
+
+  const formFields = useMemo(
+    () => (configSchema ? buildFormFieldsFromConfigSchema(configSchema) : []),
+    [configSchema],
+  )
+
+  useEffect(() => {
+    if (!selectedPreset || formFields.length === 0) {
+      setConfigValues({})
+      return
+    }
+
+    setConfigValues(
+      mergeConfigInitialValues(formFields, {
+        title: selectedPreset.mapping.title,
+        body: selectedPreset.mapping.body,
+        dedup_key: selectedPreset.mapping.dedup_key,
+        priority: selectedPreset.mapping.priority,
+        event_type: selectedPreset.mapping.event_type,
+      }),
+    )
+  }, [formFields, selectedPreset])
+
+  function handleConfigChange(name: string, value: string): void {
+    setConfigValues((current) => ({ ...current, [name]: value }))
+  }
+
   async function handleCreate(): Promise<void> {
-    const preset = INTEGRATION_PRESETS.find((item) => item.id === selectedPresetId)
-    if (!preset) {
+    if (!selectedPreset) {
       setError('Select an integration preset.')
       return
     }
@@ -43,14 +102,25 @@ export function IntegrationPicker({
       return
     }
 
+    if (!configSchema) {
+      setError('Integration config schema is not available yet.')
+      return
+    }
+
+    const validationError = validateConfigFormValues(formFields, configValues)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
     setError(null)
     setLoading(true)
 
     const result = await createIntegrationKey({
       input: {
         serviceId: trimmedServiceId,
-        pluginName: preset.pluginName,
-        config: buildIntegrationKeyConfigFromPreset(preset),
+        pluginName: selectedPreset.pluginName,
+        config: buildConfigFromFormValues(formFields, configValues),
       },
     })
 
@@ -71,7 +141,7 @@ export function IntegrationPicker({
       pluginName: key.pluginName,
       token: key.token,
       tokenPrefix: key.tokenPrefix,
-      presetLabel: preset.label,
+      presetLabel: selectedPreset.label,
     })
   }
 
@@ -89,6 +159,43 @@ export function IntegrationPicker({
         ))}
       </fieldset>
 
+      {schemasFetching ? (
+        <p className="text-sm text-muted-foreground">Loading integration config schema…</p>
+      ) : null}
+
+      {schemasError ? (
+        <Alert variant="error">
+          <AlertTriangleIcon />
+          <AlertTitle>Could not load config schema</AlertTitle>
+          <AlertDescription>{formatGraphQLError(schemasError.message)}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {formFields.length > 0 ? (
+        <fieldset className="space-y-4">
+          <legend className="text-sm font-medium text-foreground">Field mapping</legend>
+          <p className="text-sm text-muted-foreground">
+            JSON paths in the inbound webhook payload for each alert field.
+          </p>
+          {formFields.map((field) => (
+            <div className="space-y-2" key={field.name}>
+              <label className="text-sm font-medium text-foreground" htmlFor={field.name}>
+                {field.label}
+                {field.required ? <span className="text-destructive"> *</span> : null}
+              </label>
+              <Input
+                id={field.name}
+                onChange={(event) => handleConfigChange(field.name, event.target.value)}
+                placeholder={field.format === 'uri' ? 'https://example.com/hook' : field.name}
+                required={field.required}
+                type={field.format === 'uri' ? 'url' : 'text'}
+                value={configValues[field.name] ?? ''}
+              />
+            </div>
+          ))}
+        </fieldset>
+      ) : null}
+
       {error ? (
         <Alert variant="error">
           <AlertTriangleIcon />
@@ -97,7 +204,11 @@ export function IntegrationPicker({
         </Alert>
       ) : null}
 
-      <Button disabled={loading} onClick={() => void handleCreate()} type="button">
+      <Button
+        disabled={loading || schemasFetching || formFields.length === 0}
+        onClick={() => void handleCreate()}
+        type="button"
+      >
         {loading ? 'Creating…' : 'Create integration key'}
       </Button>
     </div>

@@ -298,6 +298,12 @@ type IntegrationKey struct {
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
 
+// Registered inbound integration plugin and its JSON Schema config form.
+type IntegrationPluginDefinition struct {
+	Name         string         `json:"name"`
+	ConfigSchema map[string]any `json:"configSchema"`
+}
+
 type InviteUserInput struct {
 	Email string   `json:"email"`
 	Role  UserRole `json:"role"`

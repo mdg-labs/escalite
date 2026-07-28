@@ -104,6 +104,11 @@ type Query {
   notificationChannels: [NotificationChannelDefinition!]!
 
   """
+  List registered inbound integration plugins and config schemas for form generation.
+  """
+  inboundIntegrations: [IntegrationPluginDefinition!]!
+
+  """
   List the current user's notification rules by alert priority.
   """
   notificationRules: [UserNotificationRule!]!

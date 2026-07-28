@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/mail"
 	"strings"
 	"time"
@@ -3802,6 +3803,14 @@ func (r *queryResolver) NotificationChannels(ctx context.Context) ([]*model.Noti
 		return nil, err
 	}
 	return notificationChannelDefinitions(), nil
+}
+
+// InboundIntegrations is the resolver for the inboundIntegrations field.
+func (r *queryResolver) InboundIntegrations(ctx context.Context) ([]*model.IntegrationPluginDefinition, error) {
+	if _, err := requireAuthSession(ctx); err != nil {
+		return nil, err
+	}
+	return inboundIntegrationDefinitions(), nil
 }
 
 // NotificationRules is the resolver for the notificationRules field.

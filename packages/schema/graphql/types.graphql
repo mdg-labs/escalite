@@ -255,6 +255,12 @@ type NotificationChannelDefinition {
   configSchema: JSON!
 }
 
+"""Registered inbound integration plugin and its JSON Schema config form."""
+type IntegrationPluginDefinition {
+  name: String!
+  configSchema: JSON!
+}
+
 """Per-user contact method configuration for a notification channel."""
 type UserContactMethod {
   id: ID!
