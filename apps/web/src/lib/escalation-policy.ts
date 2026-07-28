@@ -1,9 +1,20 @@
 import type {
+  EscalationEditorOptions,
   EscalationEditorPolicy,
   EscalationEditorStep,
   EscalationStepTarget,
   EscalationTargetType,
 } from '@escalite/ui/domain/EscalationPolicyEditor'
+
+type OrganizationUserOption = {
+  id: string
+  email: string
+}
+
+type ScheduleOption = {
+  id: string
+  name: string
+}
 
 type ApiEscalationStepTarget = {
   id: string
@@ -55,6 +66,38 @@ export function mapApiPolicyToEditor(
           targets: (step.targets ?? targetsByStepId[step.id] ?? []).map(mapApiTargetToEditor),
         }),
       ),
+  }
+}
+
+export function mapOrganizationUsersToEditorOptions(
+  users: OrganizationUserOption[],
+): EscalationEditorOptions['users'] {
+  return [...users]
+    .sort((left, right) => left.email.localeCompare(right.email))
+    .map((user) => ({
+      id: user.id,
+      label: user.email,
+    }))
+}
+
+export function mapTeamSchedulesToEditorOptions(
+  schedules: ScheduleOption[],
+): EscalationEditorOptions['schedules'] {
+  return [...schedules]
+    .sort((left, right) => left.name.localeCompare(right.name))
+    .map((schedule) => ({
+      id: schedule.id,
+      label: schedule.name,
+    }))
+}
+
+export function buildEscalationEditorOptions(
+  users: OrganizationUserOption[],
+  schedules: ScheduleOption[],
+): EscalationEditorOptions {
+  return {
+    users: mapOrganizationUsersToEditorOptions(users),
+    schedules: mapTeamSchedulesToEditorOptions(schedules),
   }
 }
 

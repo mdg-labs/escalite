@@ -4,6 +4,8 @@ import { Link, useParams, useSearchParams } from 'react-router'
 import {
   useCreateEscalationPolicyMutation,
   useEscalationPolicyQuery,
+  useOrganizationUsersQuery,
+  useSchedulesQuery,
   useServiceQuery,
   useUpdateEscalationPolicyMutation,
 } from '@escalite/ts-types'
@@ -16,6 +18,7 @@ import {
 
 import { PageBreadcrumbs } from '../components/page-breadcrumbs'
 import {
+  buildEscalationEditorOptions,
   createDefaultEditorPolicy,
   mapApiPolicyToEditor,
 } from '../lib/escalation-policy'
@@ -40,6 +43,26 @@ export function EscalationPolicyPage(): ReactElement {
     pause: !serviceId,
     variables: { id: serviceId },
   })
+
+  const teamId = serviceData?.service?.teamId ?? ''
+
+  const [{ data: usersData }] = useOrganizationUsersQuery({
+    requestPolicy: 'cache-and-network',
+  })
+
+  const [{ data: schedulesData }] = useSchedulesQuery({
+    pause: !teamId,
+    variables: { teamId },
+  })
+
+  const editorOptions = useMemo(
+    () =>
+      buildEscalationEditorOptions(
+        usersData?.organizationUsers ?? [],
+        schedulesData?.schedules ?? [],
+      ),
+    [schedulesData?.schedules, usersData?.organizationUsers],
+  )
 
   const [, createEscalationPolicy] = useCreateEscalationPolicyMutation()
   const [, updateEscalationPolicy] = useUpdateEscalationPolicyMutation()
@@ -112,6 +135,10 @@ export function EscalationPolicyPage(): ReactElement {
       if (result.error) {
         setSaveError(formatGraphQLError(result.error.message))
         return
+      }
+
+      if (result.data?.createEscalationPolicy) {
+        setPolicy(mapApiPolicyToEditor(result.data.createEscalationPolicy))
       }
 
       setSavedMessage('Escalation policy created. Step order was saved to the API.')
@@ -197,10 +224,7 @@ export function EscalationPolicyPage(): ReactElement {
               <EscalationPolicyEditor
                 onChange={setPolicy}
                 onSave={handleSave}
-                options={{
-                  users: [],
-                  schedules: [],
-                }}
+                options={editorOptions}
                 policy={editorPolicy}
                 saving={saving}
               />
