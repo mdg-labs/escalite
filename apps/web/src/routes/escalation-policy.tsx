@@ -24,6 +24,7 @@ import {
   mapApiPolicyToEditor,
 } from '../lib/escalation-policy'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 function formatGraphQLError(message: string): string {
   return message.replace(/^(\[GraphQL\]\s*)+/, '')
@@ -134,7 +135,7 @@ export function EscalationPolicyPage(): ReactElement {
       setSaving(false)
 
       if (result.error) {
-        setSaveError(formatGraphQLError(result.error.message))
+        showMutationError(result.error, 'escalationPolicy.error.action')
         return
       }
 
@@ -143,6 +144,7 @@ export function EscalationPolicyPage(): ReactElement {
       }
 
       setSavedMessage(t('escalationPolicy.success.created'))
+      notifyMutationSuccess('escalationPolicy.toast.created')
       return
     }
 
@@ -163,7 +165,7 @@ export function EscalationPolicyPage(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setSaveError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'escalationPolicy.error.action')
       return
     }
 
@@ -172,6 +174,7 @@ export function EscalationPolicyPage(): ReactElement {
     }
 
     setSavedMessage(t('escalationPolicy.success.updated'))
+    notifyMutationSuccess('escalationPolicy.toast.updated')
   }
 
   return (

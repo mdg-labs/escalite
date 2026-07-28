@@ -42,6 +42,7 @@ import { AlertTriangleIcon, PlusIcon, SearchIcon, UsersIcon } from 'lucide-react
 import { AppShell } from '../components/app-shell'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 const NO_TEAM_VALUE = '__none__'
 
@@ -123,7 +124,7 @@ export function UsersPage(): ReactElement {
 
     if (inviteResult.error) {
       setInviting(false)
-      setActionError(formatGraphQLError(inviteResult.error.message))
+      showMutationError(inviteResult.error, 'users.error.action')
       return
     }
 
@@ -132,7 +133,7 @@ export function UsersPage(): ReactElement {
       const addResult = await addTeamMember({ teamId: inviteTeamId, userId: invitedUserId })
       if (addResult.error) {
         setInviting(false)
-        setActionError(formatGraphQLError(addResult.error.message))
+        showMutationError(addResult.error, 'users.error.action')
         reexecuteQuery({ requestPolicy: 'network-only' })
         return
       }
@@ -141,6 +142,7 @@ export function UsersPage(): ReactElement {
     setInviting(false)
     setInviteOpen(false)
     resetInviteForm()
+    notifyMutationSuccess('users.toast.invited')
     reexecuteQuery({ requestPolicy: 'network-only' })
   }
 
@@ -155,10 +157,11 @@ export function UsersPage(): ReactElement {
     setUpdatingUserId(null)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'users.error.action')
       return
     }
 
+    notifyMutationSuccess('users.toast.roleUpdated')
     reexecuteQuery({ requestPolicy: 'network-only' })
   }
 

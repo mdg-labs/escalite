@@ -31,6 +31,7 @@ import {
 import { downloadScheduleICal } from '../lib/schedule-ical-export'
 import type { ScheduleOrganizationUser } from '../lib/schedule-users'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 export function SchedulePage(): ReactElement {
   const { scheduleId } = useParams()
@@ -159,10 +160,11 @@ export function SchedulePage(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setSaveError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'schedule.error.save')
       return
     }
 
+    notifyMutationSuccess('schedule.toast.overrideCreated')
     reexecuteOverrides({ requestPolicy: 'network-only' })
   }
 
@@ -174,7 +176,7 @@ export function SchedulePage(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setSaveError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'schedule.error.save')
       return
     }
 
@@ -207,10 +209,11 @@ export function SchedulePage(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setSaveError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'schedule.error.save')
       return
     }
 
+    notifyMutationSuccess('schedule.toast.rotationCreated')
     reexecuteSchedule({ requestPolicy: 'network-only' })
   }
 
@@ -237,10 +240,11 @@ export function SchedulePage(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setSaveError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'schedule.error.save')
       return
     }
 
+    notifyMutationSuccess('schedule.toast.rotationUpdated')
     reexecuteSchedule({ requestPolicy: 'network-only' })
   }
 
@@ -269,7 +273,7 @@ export function SchedulePage(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setSaveError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'schedule.error.save')
       return
     }
 

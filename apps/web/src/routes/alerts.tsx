@@ -45,7 +45,6 @@ import {
   TabsList,
   TabsPanel,
   TabsTab,
-  toastManager,
 } from '@escalite/ui'
 import { AlertCircleIcon } from 'lucide-react'
 
@@ -64,8 +63,8 @@ import {
   mergeAlertUpdate,
   sortAlertsByUpdatedAt,
 } from '../lib/alerts'
-import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 type StatusFilter = 'ALL' | AlertStatus
 
@@ -196,11 +195,12 @@ export function AlertsPage(): ReactElement {
     const result = await acknowledgeAlert({ id: selectedAlert.id })
     setAckLoading(false)
     if (result.error) {
-      setActionError(t('alerts.error.action'))
+      showMutationError(result.error, 'alerts.error.action')
       return
     }
     if (result.data?.acknowledgeAlert) {
       applyAlertUpdate(result.data.acknowledgeAlert)
+      notifyMutationSuccess('alerts.toast.acknowledge.success')
     }
   }
 
@@ -213,11 +213,12 @@ export function AlertsPage(): ReactElement {
     const result = await closeAlert({ id: selectedAlert.id })
     setCloseLoading(false)
     if (result.error) {
-      setActionError(t('alerts.error.action'))
+      showMutationError(result.error, 'alerts.error.action')
       return
     }
     if (result.data?.closeAlert) {
       applyAlertUpdate(result.data.closeAlert)
+      notifyMutationSuccess('alerts.toast.close.success')
     }
   }
 
@@ -232,11 +233,12 @@ export function AlertsPage(): ReactElement {
     })
     setPromoteLoading(false)
     if (result.error) {
-      setActionError(t('alerts.error.action'))
+      showMutationError(result.error, 'alerts.error.action')
       return
     }
     if (result.data?.promoteAlertToIncident) {
       applyAlertUpdate(result.data.promoteAlertToIncident)
+      notifyMutationSuccess('alerts.toast.promote.success')
     }
   }
 
@@ -252,20 +254,13 @@ export function AlertsPage(): ReactElement {
     })
     setSnoozeLoading(false)
     if (result.error) {
-      toastManager.add({
-        type: 'error',
-        title: t('alerts.error.action'),
-        description: formatGraphQLError(result.error.message),
-      })
+      showMutationError(result.error, 'alerts.error.action')
       return
     }
     if (result.data?.snoozeAlert) {
       applyAlertUpdate(result.data.snoozeAlert)
       setSnoozeOpen(false)
-      toastManager.add({
-        type: 'success',
-        title: t('alerts.toast.snooze.success'),
-      })
+      notifyMutationSuccess('alerts.toast.snooze.success')
     }
   }
 
@@ -278,19 +273,12 @@ export function AlertsPage(): ReactElement {
     const result = await reEscalateAlert({ id: selectedAlert.id })
     setReEscalateLoading(false)
     if (result.error) {
-      toastManager.add({
-        type: 'error',
-        title: t('alerts.error.action'),
-        description: formatGraphQLError(result.error.message),
-      })
+      showMutationError(result.error, 'alerts.error.action')
       return
     }
     if (result.data?.reEscalateAlert) {
       applyAlertUpdate(result.data.reEscalateAlert)
-      toastManager.add({
-        type: 'success',
-        title: t('alerts.toast.reEscalate.success'),
-      })
+      notifyMutationSuccess('alerts.toast.reEscalate.success')
     }
   }
 

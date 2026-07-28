@@ -70,6 +70,7 @@ import {
 } from '../lib/incidents'
 import { t } from '../lib/i18n'
 import { downloadPostmortemMarkdown } from '../lib/postmortem-export'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 const INCIDENT_STATUSES: IncidentStatus[] = [
   IncidentStatus.Investigating,
@@ -253,6 +254,9 @@ function CreateIncidentDialog({
 
     if (result.error || !result.data?.createIncident) {
       setCreating(false)
+      if (result.error) {
+        showMutationError(result.error, 'incidents.error.action')
+      }
       setFormError(
         result.error ? formatGraphQLError(result.error.message) : t('incidents.error.action'),
       )
@@ -270,6 +274,7 @@ function CreateIncidentDialog({
       })
       if (linkResult.error) {
         setCreating(false)
+        showMutationError(linkResult.error, 'incidents.error.action')
         setFormError(formatGraphQLError(linkResult.error.message))
         onCreated(createdIncidentId)
         return
@@ -279,6 +284,7 @@ function CreateIncidentDialog({
     setCreating(false)
     setOpen(false)
     resetForm()
+    notifyMutationSuccess('incidents.toast.created')
     onCreated(createdIncidentId)
   }
 
@@ -488,6 +494,9 @@ function PublishToStatusPageDialog({
     setPublishing(false)
 
     if (result.error || !result.data?.publishIncidentToStatusPage) {
+      if (result.error) {
+        showMutationError(result.error, 'incidents.error.action')
+      }
       setFormError(
         result.error ? formatGraphQLError(result.error.message) : t('incidents.error.action'),
       )
@@ -497,6 +506,7 @@ function PublishToStatusPageDialog({
     setPublished(true)
     setOpen(false)
     resetForm()
+    notifyMutationSuccess('incidents.toast.published')
   }
 
   if (!isAdmin || !enabled || !slug) {
@@ -753,12 +763,13 @@ export function IncidentsPage(): ReactElement {
     })
     setNoteLoading(false)
     if (result.error) {
-      setActionError(t('incidents.error.action'))
+      showMutationError(result.error, 'incidents.error.action')
       return
     }
     if (result.data?.addIncidentTimelineNote) {
       applyTimelineEvent(result.data.addIncidentTimelineNote)
       setNoteBody('')
+      notifyMutationSuccess('incidents.toast.noteAdded')
     }
   }
 
@@ -776,12 +787,13 @@ export function IncidentsPage(): ReactElement {
     })
     setStatusLoading(false)
     if (result.error) {
-      setActionError(t('incidents.error.action'))
+      showMutationError(result.error, 'incidents.error.action')
       return
     }
     if (result.data?.updateIncidentStatus) {
       setTimelineEvents(sortTimelineEvents(result.data.updateIncidentStatus.timelineEvents))
       setIncidentStatus(result.data.updateIncidentStatus.status)
+      notifyMutationSuccess('incidents.toast.statusUpdated')
     }
   }
 
@@ -800,7 +812,7 @@ export function IncidentsPage(): ReactElement {
     })
     setAssigningRoleId(null)
     if (result.error) {
-      setActionError(t('incidents.error.action'))
+      showMutationError(result.error, 'incidents.error.action')
       return
     }
     if (result.data?.assignIncidentRole) {
@@ -811,6 +823,7 @@ export function IncidentsPage(): ReactElement {
         )
         return [...withoutRole, assigned]
       })
+      notifyMutationSuccess('incidents.toast.roleAssigned')
     }
   }
 
@@ -820,7 +833,7 @@ export function IncidentsPage(): ReactElement {
     const result = await unassignIncidentRole({ id: assignmentId })
     setUnassigningRoleId(null)
     if (result.error) {
-      setActionError(t('incidents.error.action'))
+      showMutationError(result.error, 'incidents.error.action')
       return
     }
     if (result.data?.unassignIncidentRole) {

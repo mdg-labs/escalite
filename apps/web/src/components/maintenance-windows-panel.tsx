@@ -39,6 +39,7 @@ import { AlertTriangleIcon, PlusIcon } from 'lucide-react'
 
 import { formatDateTime, formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 type MaintenanceWindowRow = MaintenanceWindowsQuery['maintenanceWindows'][number]
 
@@ -154,10 +155,13 @@ export function MaintenanceWindowsPanel({ serviceId }: MaintenanceWindowsPanelPr
     setSaving(false)
 
     if (result.error) {
-      setFormError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'services.error.action')
       return
     }
 
+    notifyMutationSuccess(
+      editing ? 'maintenance.toast.updated' : 'maintenance.toast.created',
+    )
     setFormOpen(false)
     reexecute({ requestPolicy: 'network-only' })
   }
@@ -165,7 +169,7 @@ export function MaintenanceWindowsPanel({ serviceId }: MaintenanceWindowsPanelPr
   async function handleDelete(id: string): Promise<void> {
     const result = await deleteWindow({ id })
     if (result.error) {
-      setFormError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'services.error.action')
       return
     }
     reexecute({ requestPolicy: 'network-only' })

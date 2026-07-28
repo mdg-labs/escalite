@@ -43,6 +43,7 @@ import { AlertTriangleIcon, CircleCheckIcon, InfoIcon, PlusIcon } from 'lucide-r
 import { appConfig } from '../lib/config'
 import { formatDateTime, formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 import { CopyButton } from './copy-button'
 
 type HeartbeatMonitorRow = HeartbeatMonitorsQuery['heartbeatMonitors'][number]
@@ -185,10 +186,11 @@ export function HeartbeatMonitorsPanel({ serviceId }: HeartbeatMonitorsPanelProp
       setSaving(false)
 
       if (result.error) {
-        setFormError(formatGraphQLError(result.error.message))
+        showMutationError(result.error, 'heartbeats.error.action')
         return
       }
 
+      notifyMutationSuccess('heartbeats.toast.updated')
       setFormOpen(false)
       reexecute({ requestPolicy: 'network-only' })
       return
@@ -205,16 +207,17 @@ export function HeartbeatMonitorsPanel({ serviceId }: HeartbeatMonitorsPanelProp
     setSaving(false)
 
     if (result.error) {
-      setFormError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'heartbeats.error.action')
       return
     }
 
+    notifyMutationSuccess('heartbeats.toast.created')
     setFormOpen(false)
     reexecute({ requestPolicy: 'network-only' })
 
     const created = result.data?.createHeartbeatMonitor
     if (!created?.token) {
-      setFormError(t('heartbeats.error.createNoToken'))
+      showMutationError(t('heartbeats.error.createNoToken'), 'heartbeats.error.action')
       return
     }
 
@@ -229,7 +232,7 @@ export function HeartbeatMonitorsPanel({ serviceId }: HeartbeatMonitorsPanelProp
   async function handleDelete(id: string): Promise<void> {
     const result = await deleteMonitor({ id })
     if (result.error) {
-      setFormError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'heartbeats.error.action')
       return
     }
     reexecute({ requestPolicy: 'network-only' })

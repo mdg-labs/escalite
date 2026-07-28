@@ -16,6 +16,7 @@ import { CircleCheckIcon, HashIcon, LinkIcon } from 'lucide-react'
 import { appConfig } from '../lib/config'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 function slackInstallHref(oauthInstallUrl: string | null | undefined): string | null {
   if (!oauthInstallUrl) {
@@ -64,10 +65,11 @@ export function SlackSettingsPanel(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'slack.error.action')
       return
     }
 
+    notifyMutationSuccess('slack.toast.saved')
     setManualToken('')
     reexecuteQuery({ requestPolicy: 'network-only' })
   }

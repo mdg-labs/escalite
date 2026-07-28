@@ -47,6 +47,7 @@ import { AlertTriangleIcon, PlusIcon, SearchIcon } from 'lucide-react'
 import { AppShell } from '../components/app-shell'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 export function ServicesPage(): ReactElement {
   const [{ data, fetching, error }, reexecuteQuery] = useServicesQuery({
@@ -88,13 +89,14 @@ export function ServicesPage(): ReactElement {
     setCreating(false)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'services.error.action')
       return
     }
 
     setCreateOpen(false)
     setNewName('')
     setNewTeamId('')
+    notifyMutationSuccess('services.toast.created')
     reexecuteQuery({ requestPolicy: 'network-only' })
   }
 
@@ -105,7 +107,7 @@ export function ServicesPage(): ReactElement {
     setDeletingId(null)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'services.error.action')
       return
     }
 

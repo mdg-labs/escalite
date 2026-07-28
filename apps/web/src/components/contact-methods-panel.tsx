@@ -10,10 +10,11 @@ import {
   Button,
   Input,
 } from '@escalite/ui'
-import { BellIcon, CircleCheckIcon } from 'lucide-react'
+import { BellIcon } from 'lucide-react'
 
 import { formatGraphQLError } from '../lib/format'
 import { t, type MessageKey } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 import {
   buildConfigFromFormValues,
   buildFormFieldsFromConfigSchema,
@@ -56,7 +57,6 @@ function ContactMethodChannelForm({
   const [values, setValues] = useState<Record<string, string>>({})
   const [actionError, setActionError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
 
   const formFields = useMemo(
     () => buildFormFieldsFromConfigSchema(channel.configSchema),
@@ -65,13 +65,11 @@ function ContactMethodChannelForm({
 
   useEffect(() => {
     setValues(mergeConfigInitialValues(formFields, {}))
-    setSaved(false)
     setActionError(null)
   }, [formFields, channel.name])
 
   function handleConfigChange(name: string, value: string): void {
     setValues((current) => ({ ...current, [name]: value }))
-    setSaved(false)
   }
 
   async function handleSave(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -95,11 +93,11 @@ function ContactMethodChannelForm({
     setSaving(false)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'contactMethods.error.action')
       return
     }
 
-    setSaved(true)
+    notifyMutationSuccess('contactMethods.toast.saved')
   }
 
   const description = channelDescription(channel.name)
@@ -143,15 +141,6 @@ function ContactMethodChannelForm({
       {actionError ? (
         <Alert variant="error">
           <AlertDescription>{actionError}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      {saved ? (
-        <Alert variant="success">
-          <AlertDescription className="flex items-center gap-2">
-            <CircleCheckIcon className="size-4" />
-            {t('settings.contactMethods.saved')}
-          </AlertDescription>
         </Alert>
       ) : null}
 

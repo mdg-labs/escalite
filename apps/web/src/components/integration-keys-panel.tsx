@@ -45,9 +45,10 @@ import {
 import { AlertTriangleIcon, CircleCheckIcon, InfoIcon } from 'lucide-react'
 
 import { appConfig } from '../lib/config'
-import { formatDateTime, formatGraphQLError } from '../lib/format'
+import { formatDateTime } from '../lib/format'
 import { buildInboundWebhookURL } from '../lib/integration-presets'
 import { t } from '../lib/i18n'
+import { showMutationError } from '../lib/toast'
 import { CopyButton } from './copy-button'
 import { IntegrationPicker } from './integration-picker'
 
@@ -131,7 +132,7 @@ export function IntegrationKeysPanel({
     setActionKeyId(null)
 
     if (result.error) {
-      setError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'integrations.error.action')
       return
     }
 
@@ -145,13 +146,13 @@ export function IntegrationKeysPanel({
     setActionKeyId(null)
 
     if (result.error) {
-      setError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'integrations.error.action')
       return
     }
 
     const rotated = result.data?.rotateIntegrationKey
     if (!rotated?.token) {
-      setError(t('integrationKeys.error.rotateNoToken'))
+      showMutationError(t('integrationKeys.error.rotateNoToken'), 'integrations.error.action')
       reexecuteQuery({ requestPolicy: 'network-only' })
       return
     }

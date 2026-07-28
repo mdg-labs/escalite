@@ -16,6 +16,7 @@ import { Building2Icon } from 'lucide-react'
 
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 type OrganizationMembership = MyOrganizationsQuery['myOrganizations'][number]
 
@@ -55,8 +56,11 @@ export function OrgSwitcher(): ReactElement | null {
     setSwitching(false)
 
     if (result.error) {
-      setSwitchError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'org.switcher.error')
+      return
     }
+
+    notifyMutationSuccess('org.toast.switched')
   }
 
   const activeMembership =

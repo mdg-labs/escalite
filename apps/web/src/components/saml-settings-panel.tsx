@@ -14,6 +14,7 @@ import { CircleCheckIcon, ShieldIcon } from 'lucide-react'
 
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 export function SamlSettingsPanel(): ReactElement {
   const [{ data, fetching, error }, reexecuteQuery] = useSamlSettingsQuery({
@@ -47,10 +48,11 @@ export function SamlSettingsPanel(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'saml.error.action')
       return
     }
 
+    notifyMutationSuccess('saml.toast.saved')
     setMetadataXml('')
     reexecuteQuery({ requestPolicy: 'network-only' })
   }

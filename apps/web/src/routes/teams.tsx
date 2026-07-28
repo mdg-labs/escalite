@@ -29,6 +29,7 @@ import { AlertTriangleIcon, PlusIcon, SearchIcon, UsersIcon } from 'lucide-react
 import { AppShell } from '../components/app-shell'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 export function TeamsPage(): ReactElement {
   const [{ data, fetching, error }, reexecuteQuery] = useTeamsQuery({
@@ -67,12 +68,13 @@ export function TeamsPage(): ReactElement {
     setCreating(false)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'teams.error.action')
       return
     }
 
     setCreateOpen(false)
     setNewName('')
+    notifyMutationSuccess('teams.toast.created')
     reexecuteQuery({ requestPolicy: 'network-only' })
   }
 

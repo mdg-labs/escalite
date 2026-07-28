@@ -10,6 +10,7 @@ import { Building2Icon } from 'lucide-react'
 
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 export function OrgProfilePanel(): ReactElement {
   const [{ data: meData }] = useMeQuery({ requestPolicy: 'cache-first' })
@@ -52,10 +53,11 @@ export function OrgProfilePanel(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'settings.orgProfile.error.action')
       return
     }
 
+    notifyMutationSuccess('org.toast.updated')
     reexecuteQuery({ requestPolicy: 'network-only' })
   }
 

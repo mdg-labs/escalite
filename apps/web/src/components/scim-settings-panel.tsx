@@ -13,6 +13,7 @@ import { CircleCheckIcon, UsersIcon } from 'lucide-react'
 
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 export function ScimSettingsPanel(): ReactElement {
   const [{ data, fetching, error }, reexecuteQuery] = useScimSettingsQuery({
@@ -39,10 +40,11 @@ export function ScimSettingsPanel(): ReactElement {
     setRotating(false)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'scim.error.action')
       return
     }
 
+    notifyMutationSuccess('scim.toast.tokenRotated')
     setRevealedToken(result.data?.rotateScimToken.token ?? null)
     reexecuteQuery({ requestPolicy: 'network-only' })
   }

@@ -9,6 +9,7 @@ import {
 } from '../lib/integration-presets'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 import {
   buildConfigFromFormValues,
   buildFormFieldsFromConfigSchema,
@@ -132,16 +133,17 @@ export function IntegrationPicker({
     setLoading(false)
 
     if (result.error) {
-      setError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'integrationPicker.createErrorTitle')
       return
     }
 
     const key = result.data?.createIntegrationKey
     if (!key?.token) {
-      setError(t('integrationPicker.error.createNoToken'))
+      showMutationError(t('integrationPicker.error.createNoToken'), 'integrationPicker.createErrorTitle')
       return
     }
 
+    notifyMutationSuccess('integrations.toast.keyCreated')
     onCreated({
       pluginName: key.pluginName,
       token: key.token,

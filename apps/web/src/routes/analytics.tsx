@@ -36,6 +36,7 @@ import {
 } from '../lib/analytics'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 const ALL_TEAMS_VALUE = '__all__'
 const ALL_SERVICES_VALUE = '__all__'
@@ -105,10 +106,11 @@ export function AnalyticsPage(): ReactElement {
     setSavingSettings(false)
 
     if (result.error) {
-      setSettingsError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'analytics.error.settings')
       return
     }
 
+    notifyMutationSuccess('analytics.toast.saved')
     reexecuteAnalytics({ requestPolicy: 'network-only' })
   }
 

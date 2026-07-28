@@ -41,6 +41,7 @@ import { SettingsSectionNav } from '../components/settings-section-nav'
 import { SlackSettingsPanel } from '../components/slack-settings-panel'
 import { formatDateTime, formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { showMutationError } from '../lib/toast'
 
 type MobileDeviceRow = MobileDevicesQuery['mobileDevices'][number]
 
@@ -126,7 +127,7 @@ function SettingsDevicesSection(): ReactElement {
     setActionDeviceId(null)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'settings.devices.error.action')
       return
     }
 

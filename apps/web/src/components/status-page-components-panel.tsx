@@ -63,6 +63,7 @@ import {
 
 import { formatGraphQLError } from '../lib/format'
 import { t, type MessageKey } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 type ComponentRow = NonNullable<StatusPageQuery['statusPage']>['components'][number]
 
@@ -221,10 +222,13 @@ export function StatusPageComponentsPanel(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setFormError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'statusPage.error.action')
       return
     }
 
+    notifyMutationSuccess(
+      editing ? 'statusPage.toast.componentUpdated' : 'statusPage.toast.componentCreated',
+    )
     setFormOpen(false)
     refresh()
   }
@@ -237,7 +241,7 @@ export function StatusPageComponentsPanel(): ReactElement {
     setActionComponentId(null)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'statusPage.error.action')
       return
     }
 
@@ -268,7 +272,7 @@ export function StatusPageComponentsPanel(): ReactElement {
 
     if (firstResult.error) {
       setActionComponentId(null)
-      setActionError(formatGraphQLError(firstResult.error.message))
+      showMutationError(firstResult.error, 'statusPage.error.action')
       return
     }
 
@@ -286,7 +290,7 @@ export function StatusPageComponentsPanel(): ReactElement {
     setActionComponentId(null)
 
     if (secondResult.error) {
-      setActionError(formatGraphQLError(secondResult.error.message))
+      showMutationError(secondResult.error, 'statusPage.error.action')
       refresh()
       return
     }

@@ -50,6 +50,7 @@ import { AppShell } from '../components/app-shell'
 import { PageBreadcrumbs } from '../components/page-breadcrumbs'
 import { formatDateTime, formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 const SERVICE_TABS = [
   'general',
@@ -207,11 +208,12 @@ export function ServicePage(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setSaveError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'services.error.action')
       return
     }
 
     setSavedMessage(t('services.detail.saved'))
+    notifyMutationSuccess('services.toast.updated')
   }
 
   async function handleTeamChange(newTeamId: string | null): Promise<void> {
@@ -231,13 +233,14 @@ export function ServicePage(): ReactElement {
     setSavingTeam(false)
 
     if (result.error) {
-      setSaveError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'services.error.action')
       setTeamId(service?.teamId ?? '')
       return
     }
 
     setTeamId(newTeamId)
     setSavedMessage(t('services.detail.saved'))
+    notifyMutationSuccess('services.toast.updated')
     reexecuteService({ requestPolicy: 'network-only' })
   }
 
@@ -252,7 +255,7 @@ export function ServicePage(): ReactElement {
     setDeleting(false)
 
     if (result.error) {
-      setSaveError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'services.error.action')
       return
     }
 
@@ -266,7 +269,7 @@ export function ServicePage(): ReactElement {
     setDeletingPolicyId(null)
 
     if (result.error) {
-      setEscalationError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'services.error.action')
       return
     }
 

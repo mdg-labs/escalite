@@ -35,10 +35,11 @@ import {
   TableHeader,
   TableRow,
 } from '@escalite/ui'
-import { ArrowDownIcon, ArrowUpIcon, CircleCheckIcon, PlusIcon, UserCogIcon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, PlusIcon, UserCogIcon } from 'lucide-react'
 
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 type RoleDefinitionRow = IncidentRoleDefinitionsQuery['incidentRoleDefinitions'][number]
 
@@ -64,7 +65,6 @@ export function IncidentRolesPanel(): ReactElement {
   const [actionError, setActionError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [actionRoleId, setActionRoleId] = useState<string | null>(null)
-  const [saved, setSaved] = useState(false)
 
   const roles = useMemo(() => {
     const definitions = data?.incidentRoleDefinitions ?? []
@@ -83,7 +83,6 @@ export function IncidentRolesPanel(): ReactElement {
     setEditing(null)
     setName('')
     setFormError(null)
-    setSaved(false)
     setFormOpen(true)
   }
 
@@ -91,7 +90,6 @@ export function IncidentRolesPanel(): ReactElement {
     setEditing(role)
     setName(role.name)
     setFormError(null)
-    setSaved(false)
     setFormOpen(true)
   }
 
@@ -108,7 +106,6 @@ export function IncidentRolesPanel(): ReactElement {
 
     setSaving(true)
     setFormError(null)
-    setSaved(false)
 
     const result = editing
       ? await updateRoleDefinition({
@@ -128,12 +125,14 @@ export function IncidentRolesPanel(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setFormError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'incidentRoles.error.action')
       return
     }
 
+    notifyMutationSuccess(
+      editing ? 'incidentRoles.toast.updated' : 'incidentRoles.toast.created',
+    )
     setFormOpen(false)
-    setSaved(true)
     refresh()
   }
 
@@ -145,7 +144,7 @@ export function IncidentRolesPanel(): ReactElement {
     setActionRoleId(null)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'incidentRoles.error.action')
       return
     }
 
@@ -173,7 +172,7 @@ export function IncidentRolesPanel(): ReactElement {
 
     if (firstResult.error) {
       setActionRoleId(null)
-      setActionError(formatGraphQLError(firstResult.error.message))
+      showMutationError(firstResult.error, 'incidentRoles.error.action')
       return
     }
 
@@ -188,7 +187,7 @@ export function IncidentRolesPanel(): ReactElement {
     setActionRoleId(null)
 
     if (secondResult.error) {
-      setActionError(formatGraphQLError(secondResult.error.message))
+      showMutationError(secondResult.error, 'incidentRoles.error.action')
       refresh()
       return
     }
@@ -233,7 +232,6 @@ export function IncidentRolesPanel(): ReactElement {
                   id="incident-role-name"
                   onChange={(event) => {
                     setName(event.target.value)
-                    setSaved(false)
                   }}
                   placeholder={t('settings.incidentRoles.field.namePlaceholder')}
                   value={name}
@@ -261,15 +259,6 @@ export function IncidentRolesPanel(): ReactElement {
         <Alert className="mt-6" variant="error">
           <AlertDescription>
             {actionError ?? (error ? formatGraphQLError(error.message) : null)}
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
-      {saved ? (
-        <Alert className="mt-6" variant="success">
-          <AlertDescription className="flex items-center gap-2">
-            <CircleCheckIcon className="size-4" />
-            {t('settings.incidentRoles.saved')}
           </AlertDescription>
         </Alert>
       ) : null}

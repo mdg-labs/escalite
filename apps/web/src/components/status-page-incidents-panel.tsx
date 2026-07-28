@@ -32,6 +32,7 @@ import { formatDateTime, formatGraphQLError } from '../lib/format'
 import { incidentStatusLabel } from '../lib/incidents'
 import { t } from '../lib/i18n'
 import { statusPagePublicAppUrl } from '../lib/status-page'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 type IncidentRow = NonNullable<StatusPageQuery['statusPage']>['incidents'][number]
 
@@ -232,10 +233,11 @@ export function StatusPageIncidentsPanel(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setFormError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'statusPage.error.action')
       return
     }
 
+    notifyMutationSuccess('statusPage.toast.incidentUpdatePosted')
     setUpdateDialogOpen(false)
     refresh()
   }
@@ -259,10 +261,11 @@ export function StatusPageIncidentsPanel(): ReactElement {
     setActionIncidentId(null)
 
     if (result.error) {
-      setFormError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'statusPage.error.action')
       return
     }
 
+    notifyMutationSuccess('statusPage.toast.incidentStatusUpdated')
     setResolveDialogOpen(false)
     refresh()
   }

@@ -20,8 +20,8 @@ import {
   SelectValue,
 } from '@escalite/ui'
 
-import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 import { defaultIanaTimezone, isValidIanaTimezone } from '../lib/timezones'
 import { TimezoneCombobox } from './timezone-combobox'
 
@@ -123,7 +123,7 @@ export function ScheduleFormDialog({
 
       if (result.error) {
         setSaving(false)
-        setActionError(formatGraphQLError(result.error.message))
+        showMutationError(result.error, 'schedule.form.error.save')
         return
       }
 
@@ -139,7 +139,7 @@ export function ScheduleFormDialog({
 
       if (result.error) {
         setSaving(false)
-        setActionError(formatGraphQLError(result.error.message))
+        showMutationError(result.error, 'schedule.form.error.save')
         return
       }
 
@@ -149,10 +149,13 @@ export function ScheduleFormDialog({
     setSaving(false)
 
     if (!scheduleId) {
-      setActionError(t('schedule.form.error.save'))
+      showMutationError(t('schedule.form.error.save'), 'schedule.form.error.save')
       return
     }
 
+    notifyMutationSuccess(
+      mode === 'create' ? 'schedules.toast.created' : 'schedules.toast.updated',
+    )
     onOpenChange(false)
     onSuccess?.({ id: scheduleId })
   }

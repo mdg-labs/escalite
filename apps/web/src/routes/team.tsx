@@ -33,6 +33,7 @@ import { AppShell } from '../components/app-shell'
 import { PageBreadcrumbs } from '../components/page-breadcrumbs'
 import { formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 type TeamMemberRow = {
   membershipId: string
@@ -145,11 +146,12 @@ export function TeamPage(): ReactElement {
     setRenaming(false)
 
     if (result.error) {
-      setRenameError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'teams.error.action')
       setTeamName(team.name)
       return
     }
 
+    notifyMutationSuccess('teams.toast.updated')
     refresh()
   }
 
@@ -164,11 +166,12 @@ export function TeamPage(): ReactElement {
     setAdding(false)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'teams.error.action')
       return
     }
 
     setSelectedUserId(null)
+    notifyMutationSuccess('teams.toast.memberAdded')
     refresh()
   }
 
@@ -183,7 +186,7 @@ export function TeamPage(): ReactElement {
     setRemovingUserId(null)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'teams.error.action')
       return
     }
 

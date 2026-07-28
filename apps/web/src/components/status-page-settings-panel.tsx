@@ -20,6 +20,7 @@ import {
   statusPagePublicAppUrl,
   validateStatusPageSlug,
 } from '../lib/status-page'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 export function StatusPageSettingsPanel(): ReactElement {
   const [{ data, fetching, error }, reexecuteQuery] = useStatusPageQuery({
@@ -85,10 +86,11 @@ export function StatusPageSettingsPanel(): ReactElement {
     setSaving(false)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'statusPage.error.action')
       return
     }
 
+    notifyMutationSuccess('statusPage.toast.saved')
     reexecuteQuery({ requestPolicy: 'network-only' })
   }
 

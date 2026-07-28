@@ -38,7 +38,6 @@ import {
 import {
   ArrowDownIcon,
   ArrowUpIcon,
-  CircleCheckIcon,
   ListOrderedIcon,
   PlusIcon,
   TrashIcon,
@@ -46,6 +45,7 @@ import {
 
 import { formatGraphQLError } from '../lib/format'
 import { t, type MessageKey } from '../lib/i18n'
+import { notifyMutationSuccess, showMutationError } from '../lib/toast'
 
 type ChannelDefinition = NotificationChannelsQuery['notificationChannels'][number]
 type UserNotificationRule = NotificationRulesQuery['notificationRules'][number]
@@ -139,15 +139,11 @@ function PriorityRuleEditor({
   const [actionError, setActionError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [deleted, setDeleted] = useState(false)
 
   const defaultChannel = channels[0]?.name ?? ''
 
   useEffect(() => {
     setSteps(stepsFromRule(existingRule))
-    setSaved(false)
-    setDeleted(false)
     setActionError(null)
   }, [existingRule])
 
@@ -157,8 +153,7 @@ function PriorityRuleEditor({
         current.map((step) => (step.id === stepId ? { ...step, ...patch } : step)),
       ),
     )
-    setSaved(false)
-    setDeleted(false)
+    setActionError(null)
   }
 
   function addStep(): void {
@@ -171,14 +166,12 @@ function PriorityRuleEditor({
         ),
       ]),
     )
-    setSaved(false)
-    setDeleted(false)
+    setActionError(null)
   }
 
   function removeStep(stepId: string): void {
     setSteps((current) => normalizeSteps(current.filter((step) => step.id !== stepId)))
-    setSaved(false)
-    setDeleted(false)
+    setActionError(null)
   }
 
   function moveStep(stepId: string, direction: -1 | 1): void {
@@ -198,14 +191,11 @@ function PriorityRuleEditor({
       next.splice(targetIndex, 0, moved)
       return normalizeSteps(next)
     })
-    setSaved(false)
-    setDeleted(false)
+    setActionError(null)
   }
 
   async function handleSave(): Promise<void> {
     setActionError(null)
-    setSaved(false)
-    setDeleted(false)
 
     const validationError = validateSteps(steps)
     if (validationError) {
@@ -226,30 +216,27 @@ function PriorityRuleEditor({
     setSaving(false)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'notificationRules.error.action')
       return
     }
 
-    setSaved(true)
+    notifyMutationSuccess('notificationRules.toast.saved')
     onChanged()
   }
 
   async function handleDelete(): Promise<void> {
     setActionError(null)
-    setSaved(false)
-    setDeleted(false)
     setDeleting(true)
 
     const result = await deleteNotificationRule({ priority })
     setDeleting(false)
 
     if (result.error) {
-      setActionError(formatGraphQLError(result.error.message))
+      showMutationError(result.error, 'notificationRules.error.action')
       return
     }
 
     setSteps([])
-    setDeleted(true)
     onChanged()
   }
 
@@ -426,24 +413,6 @@ function PriorityRuleEditor({
       {actionError ? (
         <Alert variant="error">
           <AlertDescription>{actionError}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      {saved ? (
-        <Alert variant="success">
-          <AlertDescription className="flex items-center gap-2">
-            <CircleCheckIcon className="size-4" />
-            {t('settings.notificationRules.saved')}
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
-      {deleted ? (
-        <Alert variant="success">
-          <AlertDescription className="flex items-center gap-2">
-            <CircleCheckIcon className="size-4" />
-            {t('settings.notificationRules.deleted')}
-          </AlertDescription>
         </Alert>
       ) : null}
     </div>
