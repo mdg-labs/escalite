@@ -12,6 +12,10 @@ github.com/agnivade/levenshtein v1.2.1 h1:EHBY3UOn1gwdy/VbFwgo4cxecRznFk7fKWN1KO
 github.com/agnivade/levenshtein v1.2.1/go.mod h1:QVVI16kDrtSuwcpd0p1+xMC6Z/VfhtCyDIjcwga4/DU=
 github.com/alexedwards/argon2id v1.0.0 h1:wJzDx66hqWX7siL/SRUmgz3F8YMrd/nfX/xHHcQQP0w=
 github.com/alexedwards/argon2id v1.0.0/go.mod h1:tYKkqIjzXvZdzPvADMWOEZ+l6+BD6CtBXMj5fnJppiw=
+github.com/allure-framework/allure-go/commons v1.2.1 h1:eTRr1QFlI66A+/tyUWxpaJC5xZ7gO97kmJEY59QAztg=
+github.com/allure-framework/allure-go/commons v1.2.1/go.mod h1:h+DnKOe9nlqqZFi18LjWq6UVfj3uno5z8itU7+sysAE=
+github.com/allure-framework/allure-go/testify v1.2.1 h1:1Jvems0SsV+QToMO2VLM3gcidDMTC/Tn5yHZPHLet/o=
+github.com/allure-framework/allure-go/testify v1.2.1/go.mod h1:7qOZV1Ex1+iMQqSnbKiJ80XiMx5Aat0OK7DqRy7oG2c=
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig+0+Ap1h4unLjW6YQJpKZVmUzxsD4E/Q=
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/beevik/etree v1.6.0 h1:u8Kwy8pp9D9XeITj2Z0XtA5qqZEmtJtuXZRQi+j03eE=

@@ -3,6 +3,8 @@ module github.com/mdg-labs/escalite/services/engine
 go 1.26.5
 
 require (
+	github.com/allure-framework/allure-go/commons v1.2.1
+	github.com/allure-framework/allure-go/testify v1.2.1
 	github.com/go-chi/chi/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0

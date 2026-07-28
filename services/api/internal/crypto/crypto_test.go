@@ -4,8 +4,9 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+	"github.com/allure-framework/allure-go/testify/assert"
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/crypto"
 )
@@ -21,12 +22,16 @@ func testKey(t *testing.T) []byte {
 }
 
 func TestNewBoxRejectsInvalidKeyLength(t *testing.T) {
-	_, err := crypto.NewBox([]byte("too-short"))
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "32 bytes")
+	allure.Wrap(t, func(a *allure.Context) {
+		_, err := crypto.NewBox([]byte("too-short"))
+		require.Error(a, err)
+		assert.Contains(a, err.Error(), "32 bytes")
+	})
 }
 
 func TestSecretHint(t *testing.T) {
-	assert.Equal(t, "mnop", crypto.SecretHint("abcdefghijklmnop"))
-	assert.Equal(t, "abc", crypto.SecretHint("abc"))
+	allure.Wrap(t, func(a *allure.Context) {
+		assert.Equal(a, "mnop", crypto.SecretHint("abcdefghijklmnop"))
+		assert.Equal(a, "abc", crypto.SecretHint("abc"))
+	})
 }

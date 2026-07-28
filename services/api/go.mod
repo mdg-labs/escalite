@@ -5,6 +5,8 @@ go 1.26.5
 require (
 	github.com/99designs/gqlgen v0.17.94
 	github.com/alexedwards/argon2id v1.0.0
+	github.com/allure-framework/allure-go/commons v1.2.1
+	github.com/allure-framework/allure-go/testify v1.2.1
 	github.com/coder/websocket v1.8.15
 	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/crewjam/saml v0.5.1

@@ -146,6 +146,47 @@ Allure reporter (`--test-reporter allure-node-test/reporter`) and writes per-pac
 
 `packages/config` (noop) and `packages/schema` (lint-only) are intentionally excluded.
 
+### Go unit tests (`go test`)
+
+Go modules run through `scripts/go-test.sh`, which exports `ALLURE_RESULTS_DIR` (default:
+`allure-results/go`) before invoking `gotestsum`.
+
+Migrate `_test.go` files incrementally to [allure-go](https://github.com/allure-framework/allure-go):
+
+1. Add module dependencies:
+
+   ```bash
+   go get github.com/allure-framework/allure-go/commons/gotest \
+     github.com/allure-framework/allure-go/testify
+   ```
+
+2. Replace testify imports with the Allure proxy packages (same API):
+
+   ```diff
+   - "github.com/stretchr/testify/assert"
+   - "github.com/stretchr/testify/require"
+   + "github.com/allure-framework/allure-go/testify/assert"
+   + "github.com/allure-framework/allure-go/testify/require"
+   ```
+
+3. Wrap each test function with `allure.Wrap` (one Go test → one Allure result) or
+   `allure.Test` (one Go test → multiple named Allure results):
+
+   ```go
+   import allure "github.com/allure-framework/allure-go/commons/gotest"
+
+   func TestExample(t *testing.T) {
+       allure.Wrap(t, func(a *allure.Context) {
+           assert.Equal(a, expected, actual)
+           require.NoError(a, err)
+       })
+   }
+   ```
+
+   Pass the Allure context `a` to assertion calls so each assertion is reported as an Allure
+   step. Helpers that need `*testing.T` can call `a.T()`. Passing `t` or `a.T()` to assertions
+   keeps plain testify behavior without step reporting.
+
 ## Pull requests
 
 1. Branch from `dev` (or the integration branch named in the issue).
