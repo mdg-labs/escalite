@@ -9,7 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/engine/channels"
 	webhookchannel "github.com/mdg-labs/escalite/services/engine/channels/webhook"
@@ -22,132 +24,150 @@ func (fn roundTripFunc) Do(req *http.Request) (*http.Response, error) {
 }
 
 func TestSendPostsAlertPayload(t *testing.T) {
-	var received payload
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodPost, r.Method)
-		require.Equal(t, "application/json", r.Header.Get("Content-Type"))
-		require.Empty(t, r.Header.Get("X-Escalite-Signature"))
+	allure.Wrap(t, func(a *allure.Context) {
 
-		body, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
-		require.NoError(t, json.Unmarshal(body, &received))
-		w.WriteHeader(http.StatusOK)
-	}))
-	t.Cleanup(server.Close)
+		var received payload
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			require.Equal(a, http.MethodPost, r.Method)
+			require.Equal(a, "application/json", r.Header.Get("Content-Type"))
+			require.Empty(a, r.Header.Get("X-Escalite-Signature"))
 
-	webhookchannel.SetHTTPClient(server.Client())
-	t.Cleanup(func() { webhookchannel.SetHTTPClient(nil) })
+			body, err := io.ReadAll(r.Body)
+			require.NoError(a, err)
+			require.NoError(a, json.Unmarshal(body, &received))
+			w.WriteHeader(http.StatusOK)
+		}))
+		a.T().Cleanup(server.Close)
 
-	channel := webhookchannel.New()
-	err := channel.Send(context.Background(), channels.SendParams{
-		Target: channels.Target{
-			Type: "webhook",
-			URL:  server.URL,
-		},
-		Alert: channels.Alert{
-			ID:          "alert-1",
-			ServiceName: "checkout-api",
-			Status:      "triggered",
-			Summary:     "Disk full",
-			Description: "Volume /data is 99% full",
-		},
+		webhookchannel.SetHTTPClient(server.Client())
+		a.T().Cleanup(func() { webhookchannel.SetHTTPClient(nil) })
+
+		channel := webhookchannel.New()
+		err := channel.Send(context.Background(), channels.SendParams{
+			Target: channels.Target{
+				Type: "webhook",
+				URL:  server.URL,
+			},
+			Alert: channels.Alert{
+				ID:          "alert-1",
+				ServiceName: "checkout-api",
+				Status:      "triggered",
+				Summary:     "Disk full",
+				Description: "Volume /data is 99% full",
+			},
+		})
+		require.NoError(a, err)
+		require.Equal(a, payload{
+			AlertID: "alert-1",
+			Service: "checkout-api",
+			Status:  "triggered",
+			Title:   "Disk full",
+			Body:    "Volume /data is 99% full",
+		}, received)
 	})
-	require.NoError(t, err)
-	require.Equal(t, payload{
-		AlertID: "alert-1",
-		Service: "checkout-api",
-		Status:  "triggered",
-		Title:   "Disk full",
-		Body:    "Volume /data is 99% full",
-	}, received)
 }
 
 func TestSendSignsPayloadWhenSecretConfigured(t *testing.T) {
-	const secret = "top-secret"
-	var signature string
+	allure.Wrap(t, func(a *allure.Context) {
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		signature = r.Header.Get("X-Escalite-Signature")
-		w.WriteHeader(http.StatusAccepted)
-	}))
-	t.Cleanup(server.Close)
+		const secret = "top-secret"
+		var signature string
 
-	webhookchannel.SetHTTPClient(server.Client())
-	t.Cleanup(func() { webhookchannel.SetHTTPClient(nil) })
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			signature = r.Header.Get("X-Escalite-Signature")
+			w.WriteHeader(http.StatusAccepted)
+		}))
+		a.T().Cleanup(server.Close)
 
-	config, err := json.Marshal(map[string]string{
-		"url":            server.URL,
-		"signing_secret": secret,
+		webhookchannel.SetHTTPClient(server.Client())
+		a.T().Cleanup(func() { webhookchannel.SetHTTPClient(nil) })
+
+		config, err := json.Marshal(map[string]string{
+			"url":            server.URL,
+			"signing_secret": secret,
+		})
+		require.NoError(a, err)
+
+		channel := webhookchannel.New()
+		err = channel.Send(context.Background(), channels.SendParams{
+			Config: config,
+			Alert: channels.Alert{
+				ID:          "alert-1",
+				ServiceName: "checkout-api",
+				Status:      "triggered",
+				Summary:     "Disk full",
+			},
+		})
+		require.NoError(a, err)
+		require.True(a, strings.HasPrefix(signature, "sha256="))
 	})
-	require.NoError(t, err)
-
-	channel := webhookchannel.New()
-	err = channel.Send(context.Background(), channels.SendParams{
-		Config: config,
-		Alert: channels.Alert{
-			ID:          "alert-1",
-			ServiceName: "checkout-api",
-			Status:      "triggered",
-			Summary:     "Disk full",
-		},
-	})
-	require.NoError(t, err)
-	require.True(t, strings.HasPrefix(signature, "sha256="))
 }
 
 func TestSendFailsWithoutURL(t *testing.T) {
-	channel := webhookchannel.New()
-	err := channel.Send(context.Background(), channels.SendParams{
-		Alert: channels.Alert{
-			ID:      "alert-1",
-			Summary: "Disk full",
-			Status:  "triggered",
-		},
+	allure.Wrap(t, func(a *allure.Context) {
+
+		channel := webhookchannel.New()
+		err := channel.Send(context.Background(), channels.SendParams{
+			Alert: channels.Alert{
+				ID:      "alert-1",
+				Summary: "Disk full",
+				Status:  "triggered",
+			},
+		})
+		require.Error(a, err)
+		require.Contains(a, err.Error(), "webhook URL is required")
 	})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "webhook URL is required")
 }
 
 func TestSendFailsOnNonSuccessStatus(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		http.Error(w, "bad gateway", http.StatusBadGateway)
-	}))
-	t.Cleanup(server.Close)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	webhookchannel.SetHTTPClient(server.Client())
-	t.Cleanup(func() { webhookchannel.SetHTTPClient(nil) })
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			http.Error(w, "bad gateway", http.StatusBadGateway)
+		}))
+		a.T().Cleanup(server.Close)
 
-	channel := webhookchannel.New()
-	err := channel.Send(context.Background(), channels.SendParams{
-		Target: channels.Target{URL: server.URL},
-		Alert: channels.Alert{
-			ID:          "alert-1",
-			ServiceName: "checkout-api",
-			Summary:     "Disk full",
-			Status:      "triggered",
-		},
+		webhookchannel.SetHTTPClient(server.Client())
+		a.T().Cleanup(func() { webhookchannel.SetHTTPClient(nil) })
+
+		channel := webhookchannel.New()
+		err := channel.Send(context.Background(), channels.SendParams{
+			Target: channels.Target{URL: server.URL},
+			Alert: channels.Alert{
+				ID:          "alert-1",
+				ServiceName: "checkout-api",
+				Summary:     "Disk full",
+				Status:      "triggered",
+			},
+		})
+		require.Error(a, err)
+		require.Contains(a, err.Error(), "502")
+		require.Contains(a, err.Error(), "bad gateway")
 	})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "502")
-	require.Contains(t, err.Error(), "bad gateway")
 }
 
 func TestValidateConfigRequiresURL(t *testing.T) {
-	channel := webhookchannel.New()
-	err := channel.ValidateConfig(json.RawMessage(`{"url":"not-a-url"}`))
-	require.Error(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	err = channel.ValidateConfig(json.RawMessage(`{"url":"https://example.com/hooks/escalite"}`))
-	require.NoError(t, err)
+		channel := webhookchannel.New()
+		err := channel.ValidateConfig(json.RawMessage(`{"url":"not-a-url"}`))
+		require.Error(a, err)
+
+		err = channel.ValidateConfig(json.RawMessage(`{"url":"https://example.com/hooks/escalite"}`))
+		require.NoError(a, err)
+	})
 }
 
 func TestValidateConfigRejectsEmptySigningSecret(t *testing.T) {
-	channel := webhookchannel.New()
-	err := channel.ValidateConfig(json.RawMessage(`{
-		"url":"https://example.com/hooks/escalite",
-		"signing_secret":""
-	}`))
-	require.Error(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
+
+		channel := webhookchannel.New()
+		err := channel.ValidateConfig(json.RawMessage(`{
+			"url":"https://example.com/hooks/escalite",
+			"signing_secret":""
+		}`))
+		require.Error(a, err)
+	})
 }
 
 type payload struct {

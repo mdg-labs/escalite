@@ -8,7 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/outboundintegrations"
 	"github.com/mdg-labs/escalite/services/outboundintegrations/servicenow"
@@ -22,36 +24,39 @@ func (fn roundTripFunc) Do(req *http.Request) (*http.Response, error) {
 }
 
 func TestCreateTicketReturnsIncidentURL(t *testing.T) {
-	plugin, err := outboundintegrations.Get("servicenow")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	servicenow.SetHTTPClient(roundTripFunc(func(req *http.Request) (*http.Response, error) {
-		require.Equal(t, http.MethodPost, req.Method)
-		require.Equal(t, "https://example.service-now.com/api/now/table/incident", req.URL.String())
+		plugin, err := outboundintegrations.Get("servicenow")
+		require.NoError(a, err)
 
-		return &http.Response{
-			StatusCode: http.StatusCreated,
-			Body: io.NopCloser(strings.NewReader(`{
-				"result": {
-					"sys_id": "abc123",
-					"number": "INC0010001",
-					"link": "https://example.service-now.com/incident.do?sys_id=abc123"
-				}
-			}`)),
-			Header: make(http.Header),
-		}, nil
-	}))
-	t.Cleanup(func() { servicenow.SetHTTPClient(nil) })
+		servicenow.SetHTTPClient(roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			require.Equal(a, http.MethodPost, req.Method)
+			require.Equal(a, "https://example.service-now.com/api/now/table/incident", req.URL.String())
 
-	cfg := json.RawMessage(`{
-		"instance_url": "https://example.service-now.com",
-		"username": "integration.user"
-	}`)
+			return &http.Response{
+				StatusCode: http.StatusCreated,
+				Body: io.NopCloser(strings.NewReader(`{
+					"result": {
+						"sys_id": "abc123",
+						"number": "INC0010001",
+						"link": "https://example.service-now.com/incident.do?sys_id=abc123"
+					}
+				}`)),
+				Header: make(http.Header),
+			}, nil
+		}))
+		a.T().Cleanup(func() { servicenow.SetHTTPClient(nil) })
 
-	ticket, err := plugin.CreateTicket(context.Background(), outboundintegrations.Incident{
-		ID:    "01234567-89ab-cdef-0123-456789abcdef",
-		Title: "Checkout degradation",
-	}, cfg, "secret-password")
-	require.NoError(t, err)
-	require.Equal(t, "https://example.service-now.com/incident.do?sys_id=abc123", ticket.URL)
+		cfg := json.RawMessage(`{
+			"instance_url": "https://example.service-now.com",
+			"username": "integration.user"
+		}`)
+
+		ticket, err := plugin.CreateTicket(context.Background(), outboundintegrations.Incident{
+			ID:    "01234567-89ab-cdef-0123-456789abcdef",
+			Title: "Checkout degradation",
+		}, cfg, "secret-password")
+		require.NoError(a, err)
+		require.Equal(a, "https://example.service-now.com/incident.do?sys_id=abc123", ticket.URL)
+	})
 }

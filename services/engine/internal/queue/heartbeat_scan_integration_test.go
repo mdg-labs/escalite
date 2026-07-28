@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"log/slog"
 	"testing"
+
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/stretchr/testify/require"
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/engine/internal/db"
 	"github.com/mdg-labs/escalite/services/engine/internal/heartbeat"
@@ -18,98 +20,104 @@ import (
 )
 
 func TestHeartbeatScanTriggersOverdueMonitor(t *testing.T) {
-	ctx := context.Background()
-	databaseURL, cleanup, err := testutil.StartPostgres(ctx)
-	require.NoError(t, err)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
 
-	require.NoError(t, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+		ctx := context.Background()
+		databaseURL, cleanup, err := testutil.StartPostgres(ctx)
+		require.NoError(a, err)
+		defer cleanup()
 
-	queueClient, err := queue.New(ctx, queue.Options{
-		DatabaseURL: databaseURL,
-		Logger:      slog.Default(),
+		require.NoError(a, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+
+		queueClient, err := queue.New(ctx, queue.Options{
+			DatabaseURL: databaseURL,
+			Logger:      slog.Default(),
+		})
+		require.NoError(a, err)
+		defer queueClient.Close()
+
+		require.NoError(a, queueClient.Start(ctx))
+		defer func() {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_ = queueClient.Stop(stopCtx)
+		}()
+
+		queries := db.New(queueClient.Pool())
+		orgID, serviceID, monitorID := seedHeartbeatScanFixture(t, ctx, queries)
+
+		_, err = queueClient.Pool().Exec(ctx,
+			`UPDATE heartbeat_monitors
+			 SET last_ping_at = now() - interval '2 minutes',
+			     status = 'healthy'
+			 WHERE id = $1`,
+			monitorID,
+		)
+		require.NoError(a, err)
+
+		worker := queue.NewHeartbeatScanWorker(slog.Default(), queueClient.Pool(), queueClient)
+		require.NoError(a, worker.Work(ctx, nil))
+
+		alert, err := queries.GetAlertByServiceDedupKey(ctx, db.GetAlertByServiceDedupKeyParams{
+			ServiceID:      serviceID,
+			OrganizationID: orgID,
+			DedupKey:       monitorID.String(),
+		})
+		require.NoError(a, err)
+		require.Equal(a, "triggered", alert.Status)
+		require.Equal(a, monitorID.String(), alert.DedupKey)
+
+		source, err := heartbeat.AlertSourceFromState(alert.EscalationState)
+		require.NoError(a, err)
+		require.Equal(a, "heartbeat", source)
+
+		var status string
+		require.NoError(a, queueClient.Pool().QueryRow(ctx,
+			`SELECT status FROM heartbeat_monitors WHERE id = $1`, monitorID,
+		).Scan(&status))
+		require.Equal(a, "triggered", status)
 	})
-	require.NoError(t, err)
-	defer queueClient.Close()
-
-	require.NoError(t, queueClient.Start(ctx))
-	defer func() {
-		stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_ = queueClient.Stop(stopCtx)
-	}()
-
-	queries := db.New(queueClient.Pool())
-	orgID, serviceID, monitorID := seedHeartbeatScanFixture(t, ctx, queries)
-
-	_, err = queueClient.Pool().Exec(ctx,
-		`UPDATE heartbeat_monitors
-		 SET last_ping_at = now() - interval '2 minutes',
-		     status = 'healthy'
-		 WHERE id = $1`,
-		monitorID,
-	)
-	require.NoError(t, err)
-
-	worker := queue.NewHeartbeatScanWorker(slog.Default(), queueClient.Pool(), queueClient)
-	require.NoError(t, worker.Work(ctx, nil))
-
-	alert, err := queries.GetAlertByServiceDedupKey(ctx, db.GetAlertByServiceDedupKeyParams{
-		ServiceID:      serviceID,
-		OrganizationID: orgID,
-		DedupKey:       monitorID.String(),
-	})
-	require.NoError(t, err)
-	require.Equal(t, "triggered", alert.Status)
-	require.Equal(t, monitorID.String(), alert.DedupKey)
-
-	source, err := heartbeat.AlertSourceFromState(alert.EscalationState)
-	require.NoError(t, err)
-	require.Equal(t, "heartbeat", source)
-
-	var status string
-	require.NoError(t, queueClient.Pool().QueryRow(ctx,
-		`SELECT status FROM heartbeat_monitors WHERE id = $1`, monitorID,
-	).Scan(&status))
-	require.Equal(t, "triggered", status)
 }
 
 func TestHeartbeatScanMarksMonitorOverdueBeforeTrigger(t *testing.T) {
-	ctx := context.Background()
-	databaseURL, cleanup, err := testutil.StartPostgres(ctx)
-	require.NoError(t, err)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
 
-	require.NoError(t, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+		ctx := context.Background()
+		databaseURL, cleanup, err := testutil.StartPostgres(ctx)
+		require.NoError(a, err)
+		defer cleanup()
 
-	queueClient, err := queue.New(ctx, queue.Options{
-		DatabaseURL: databaseURL,
-		Logger:      slog.Default(),
+		require.NoError(a, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+
+		queueClient, err := queue.New(ctx, queue.Options{
+			DatabaseURL: databaseURL,
+			Logger:      slog.Default(),
+		})
+		require.NoError(a, err)
+		defer queueClient.Close()
+
+		queries := db.New(queueClient.Pool())
+		_, _, monitorID := seedHeartbeatScanFixture(t, ctx, queries)
+
+		_, err = queueClient.Pool().Exec(ctx,
+			`UPDATE heartbeat_monitors
+			 SET last_ping_at = now() - interval '45 seconds',
+			     status = 'healthy',
+			     interval_seconds = 30,
+			     grace_seconds = 60
+			 WHERE id = $1`,
+			monitorID,
+		)
+		require.NoError(a, err)
+
+		require.NoError(a, heartbeat.ScanOverdueMonitors(ctx, queueClient.Pool(), queueClient, slog.Default()))
+
+		var status string
+		require.NoError(a, queueClient.Pool().QueryRow(ctx,
+			`SELECT status FROM heartbeat_monitors WHERE id = $1`, monitorID,
+		).Scan(&status))
+		require.Equal(a, "overdue", status)
 	})
-	require.NoError(t, err)
-	defer queueClient.Close()
-
-	queries := db.New(queueClient.Pool())
-	_, _, monitorID := seedHeartbeatScanFixture(t, ctx, queries)
-
-	_, err = queueClient.Pool().Exec(ctx,
-		`UPDATE heartbeat_monitors
-		 SET last_ping_at = now() - interval '45 seconds',
-		     status = 'healthy',
-		     interval_seconds = 30,
-		     grace_seconds = 60
-		 WHERE id = $1`,
-		monitorID,
-	)
-	require.NoError(t, err)
-
-	require.NoError(t, heartbeat.ScanOverdueMonitors(ctx, queueClient.Pool(), queueClient, slog.Default()))
-
-	var status string
-	require.NoError(t, queueClient.Pool().QueryRow(ctx,
-		`SELECT status FROM heartbeat_monitors WHERE id = $1`, monitorID,
-	).Scan(&status))
-	require.Equal(t, "overdue", status)
 }
 
 func seedHeartbeatScanFixture(

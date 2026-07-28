@@ -9,10 +9,12 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/allure-framework/allure-go/testify/assert"
+	"github.com/allure-framework/allure-go/testify/require"
 	twiliogo "github.com/twilio/twilio-go"
 	twilioclient "github.com/twilio/twilio-go/client"
 
@@ -28,108 +30,123 @@ const (
 )
 
 func TestProviderName(t *testing.T) {
-	provider := twilioprovider.New(twilioprovider.Config{
-		AccountSID: testAccountSID,
-		AuthToken:  testAuthToken,
-		FromNumber: testFromNumber,
+	allure.Wrap(t, func(a *allure.Context) {
+
+		provider := twilioprovider.New(twilioprovider.Config{
+			AccountSID: testAccountSID,
+			AuthToken:  testAuthToken,
+			FromNumber: testFromNumber,
+		})
+		assert.Equal(a, smsprovider.ProviderTwilio, provider.Name())
 	})
-	assert.Equal(t, smsprovider.ProviderTwilio, provider.Name())
 }
 
 func TestSendSMSRequiresConfiguredProvider(t *testing.T) {
-	provider := twilioprovider.New(twilioprovider.Config{})
+	allure.Wrap(t, func(a *allure.Context) {
 
-	err := provider.SendSMS(context.Background(), smsprovider.SMSParams{
-		To:      testToNumber,
-		Message: "hello",
+		provider := twilioprovider.New(twilioprovider.Config{})
+
+		err := provider.SendSMS(context.Background(), smsprovider.SMSParams{
+			To:      testToNumber,
+			Message: "hello",
+		})
+		require.ErrorIs(a, err, smsprovider.ErrNotConfigured)
 	})
-	require.ErrorIs(t, err, smsprovider.ErrNotConfigured)
 }
 
 func TestSendSMSValidatesRecipient(t *testing.T) {
-	provider := twilioprovider.New(twilioprovider.Config{
-		AccountSID: testAccountSID,
-		AuthToken:  testAuthToken,
-		FromNumber: testFromNumber,
-	})
+	allure.Wrap(t, func(a *allure.Context) {
 
-	err := provider.SendSMS(context.Background(), smsprovider.SMSParams{
-		To:      "5551234567",
-		Message: "hello",
+		provider := twilioprovider.New(twilioprovider.Config{
+			AccountSID: testAccountSID,
+			AuthToken:  testAuthToken,
+			FromNumber: testFromNumber,
+		})
+
+		err := provider.SendSMS(context.Background(), smsprovider.SMSParams{
+			To:      "5551234567",
+			Message: "hello",
+		})
+		require.Error(a, err)
+		assert.Contains(a, err.Error(), "E.164")
 	})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "E.164")
 }
 
 func TestSendSMSIntegration(t *testing.T) {
-	const message = "Disk full on checkout-api"
+	allure.Wrap(t, func(a *allure.Context) {
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodPost, r.Method)
-		require.Equal(t, fmt.Sprintf("/2010-04-01/Accounts/%s/Messages.json", testAccountSID), r.URL.Path)
-		require.Equal(t, "application/x-www-form-urlencoded", r.Header.Get("Content-Type"))
+		const message = "Disk full on checkout-api"
 
-		body, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
-		values, err := url.ParseQuery(string(body))
-		require.NoError(t, err)
-		require.Equal(t, testToNumber, values.Get("To"))
-		require.Equal(t, testFromNumber, values.Get("From"))
-		require.Equal(t, message, values.Get("Body"))
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			require.Equal(a, http.MethodPost, r.Method)
+			require.Equal(a, fmt.Sprintf("/2010-04-01/Accounts/%s/Messages.json", testAccountSID), r.URL.Path)
+			require.Equal(a, "application/x-www-form-urlencoded", r.Header.Get("Content-Type"))
 
-		user, pass, ok := r.BasicAuth()
-		require.True(t, ok)
-		require.Equal(t, testAccountSID, user)
-		require.Equal(t, testAuthToken, pass)
+			body, err := io.ReadAll(r.Body)
+			require.NoError(a, err)
+			values, err := url.ParseQuery(string(body))
+			require.NoError(a, err)
+			require.Equal(a, testToNumber, values.Get("To"))
+			require.Equal(a, testFromNumber, values.Get("From"))
+			require.Equal(a, message, values.Get("Body"))
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		_, _ = w.Write([]byte(`{"sid":"SM123","status":"queued"}`))
-	}))
-	t.Cleanup(server.Close)
+			user, pass, ok := r.BasicAuth()
+			require.True(a, ok)
+			require.Equal(a, testAccountSID, user)
+			require.Equal(a, testAuthToken, pass)
 
-	provider := newTestProvider(t, server.URL)
-	err := provider.SendSMS(context.Background(), smsprovider.SMSParams{
-		To:      testToNumber,
-		Message: message,
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			_, _ = w.Write([]byte(`{"sid":"SM123","status":"queued"}`))
+		}))
+		a.T().Cleanup(server.Close)
+
+		provider := newTestProvider(t, server.URL)
+		err := provider.SendSMS(context.Background(), smsprovider.SMSParams{
+			To:      testToNumber,
+			Message: message,
+		})
+		require.NoError(a, err)
 	})
-	require.NoError(t, err)
 }
 
 func TestMakeVoiceCallIntegration(t *testing.T) {
-	const alertTitle = "Disk full"
-	const serviceName = "checkout-api"
-	const spokenMessage = alertTitle + " on " + serviceName
+	allure.Wrap(t, func(a *allure.Context) {
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodPost, r.Method)
-		require.Equal(t, fmt.Sprintf("/2010-04-01/Accounts/%s/Calls.json", testAccountSID), r.URL.Path)
-		require.Equal(t, "application/x-www-form-urlencoded", r.Header.Get("Content-Type"))
+		const alertTitle = "Disk full"
+		const serviceName = "checkout-api"
+		const spokenMessage = alertTitle + " on " + serviceName
 
-		body, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
-		values, err := url.ParseQuery(string(body))
-		require.NoError(t, err)
-		require.Equal(t, testToNumber, values.Get("To"))
-		require.Equal(t, testFromNumber, values.Get("From"))
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			require.Equal(a, http.MethodPost, r.Method)
+			require.Equal(a, fmt.Sprintf("/2010-04-01/Accounts/%s/Calls.json", testAccountSID), r.URL.Path)
+			require.Equal(a, "application/x-www-form-urlencoded", r.Header.Get("Content-Type"))
 
-		twiml := values.Get("Twiml")
-		require.Contains(t, twiml, "<Say>")
-		require.Contains(t, twiml, alertTitle)
-		require.Contains(t, twiml, serviceName)
+			body, err := io.ReadAll(r.Body)
+			require.NoError(a, err)
+			values, err := url.ParseQuery(string(body))
+			require.NoError(a, err)
+			require.Equal(a, testToNumber, values.Get("To"))
+			require.Equal(a, testFromNumber, values.Get("From"))
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		_, _ = w.Write([]byte(`{"sid":"CA123","status":"queued"}`))
-	}))
-	t.Cleanup(server.Close)
+			twiml := values.Get("Twiml")
+			require.Contains(a, twiml, "<Say>")
+			require.Contains(a, twiml, alertTitle)
+			require.Contains(a, twiml, serviceName)
 
-	provider := newTestProvider(t, server.URL)
-	err := provider.MakeVoiceCall(context.Background(), smsprovider.VoiceParams{
-		To:      testToNumber,
-		Message: spokenMessage,
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			_, _ = w.Write([]byte(`{"sid":"CA123","status":"queued"}`))
+		}))
+		a.T().Cleanup(server.Close)
+
+		provider := newTestProvider(t, server.URL)
+		err := provider.MakeVoiceCall(context.Background(), smsprovider.VoiceParams{
+			To:      testToNumber,
+			Message: spokenMessage,
+		})
+		require.NoError(a, err)
 	})
-	require.NoError(t, err)
 }
 
 func newTestProvider(t *testing.T, apiBase string) *twilioprovider.Provider {

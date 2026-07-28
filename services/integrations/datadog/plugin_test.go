@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/integrations"
 	"github.com/mdg-labs/escalite/services/integrations/internal/webhookauth"
@@ -15,102 +17,126 @@ import (
 )
 
 func TestPluginRegistered(t *testing.T) {
-	plugin, err := integrations.Get("datadog")
-	require.NoError(t, err)
-	require.Equal(t, "datadog", plugin.Name())
+	allure.Wrap(t, func(a *allure.Context) {
+
+		plugin, err := integrations.Get("datadog")
+		require.NoError(a, err)
+		require.Equal(a, "datadog", plugin.Name())
+	})
 }
 
 func TestParseTriggeredFixture(t *testing.T) {
-	raw := loadFixture(t, "triggered.json")
+	allure.Wrap(t, func(a *allure.Context) {
 
-	plugin, err := integrations.Get("datadog")
-	require.NoError(t, err)
+		raw := loadFixture(t, "triggered.json")
 
-	alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
-	require.NoError(t, err)
-	require.Len(t, alerts, 1)
+		plugin, err := integrations.Get("datadog")
+		require.NoError(a, err)
 
-	alert := alerts[0]
-	require.Equal(t, integrations.EventTriggered, alert.EventType)
-	require.Equal(t, "monitor:12345|tags:env:prod,service:api", alert.DedupKey)
-	require.Equal(t, "CPU usage above 90%", alert.Summary)
-	require.Equal(t, "CPU is at 94% on host web-01", alert.Description)
-	require.Equal(t, "low", alert.Priority)
-	require.Equal(t, "webhook:datadog", alert.Source)
+		alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
+		require.NoError(a, err)
+		require.Len(a, alerts, 1)
+
+		alert := alerts[0]
+		require.Equal(a, integrations.EventTriggered, alert.EventType)
+		require.Equal(a, "monitor:12345|tags:env:prod,service:api", alert.DedupKey)
+		require.Equal(a, "CPU usage above 90%", alert.Summary)
+		require.Equal(a, "CPU is at 94% on host web-01", alert.Description)
+		require.Equal(a, "low", alert.Priority)
+		require.Equal(a, "webhook:datadog", alert.Source)
+	})
 }
 
 func TestParseRecoveredFixture(t *testing.T) {
-	raw := loadFixture(t, "recovered.json")
+	allure.Wrap(t, func(a *allure.Context) {
 
-	plugin, err := integrations.Get("datadog")
-	require.NoError(t, err)
+		raw := loadFixture(t, "recovered.json")
 
-	alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
-	require.NoError(t, err)
-	require.Len(t, alerts, 1)
+		plugin, err := integrations.Get("datadog")
+		require.NoError(a, err)
 
-	alert := alerts[0]
-	require.Equal(t, integrations.EventResolved, alert.EventType)
-	require.Equal(t, "monitor:12345|tags:env:prod,service:api", alert.DedupKey)
+		alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
+		require.NoError(a, err)
+		require.Len(a, alerts, 1)
+
+		alert := alerts[0]
+		require.Equal(a, integrations.EventResolved, alert.EventType)
+		require.Equal(a, "monitor:12345|tags:env:prod,service:api", alert.DedupKey)
+	})
 }
 
 func TestAuthenticateRequestRejectsInvalidSignature(t *testing.T) {
-	plugin, err := integrations.Get("datadog")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	auth, ok := plugin.(integrations.AuthenticatableInboundPlugin)
-	require.True(t, ok)
+		plugin, err := integrations.Get("datadog")
+		require.NoError(a, err)
 
-	raw := loadFixture(t, "triggered.json")
-	cfg := json.RawMessage(`{"signature_secret":"top-secret"}`)
-	headers := http.Header{}
-	headers.Set("X-Escalite-Signature", "invalid")
+		auth, ok := plugin.(integrations.AuthenticatableInboundPlugin)
+		require.True(a, ok)
 
-	err = auth.AuthenticateRequest(raw, headers, cfg)
-	require.Error(t, err)
+		raw := loadFixture(t, "triggered.json")
+		cfg := json.RawMessage(`{"signature_secret":"top-secret"}`)
+		headers := http.Header{}
+		headers.Set("X-Escalite-Signature", "invalid")
 
-	var sigErr integrations.ErrInvalidSignature
-	require.ErrorAs(t, err, &sigErr)
+		err = auth.AuthenticateRequest(raw, headers, cfg)
+		require.Error(a, err)
+
+		var sigErr integrations.ErrInvalidSignature
+		require.ErrorAs(a, err, &sigErr)
+	})
 }
 
 func TestAuthenticateRequestAcceptsValidSignature(t *testing.T) {
-	plugin, err := integrations.Get("datadog")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	auth := plugin.(integrations.AuthenticatableInboundPlugin)
+		plugin, err := integrations.Get("datadog")
+		require.NoError(a, err)
 
-	raw := loadFixture(t, "triggered.json")
-	secret := "top-secret"
-	cfg := json.RawMessage(`{"signature_secret":"top-secret"}`)
-	headers := http.Header{}
-	headers.Set("X-Escalite-Signature", webhookauth.SignBody(secret, raw))
+		auth := plugin.(integrations.AuthenticatableInboundPlugin)
 
-	err = auth.AuthenticateRequest(raw, headers, cfg)
-	require.NoError(t, err)
+		raw := loadFixture(t, "triggered.json")
+		secret := "top-secret"
+		cfg := json.RawMessage(`{"signature_secret":"top-secret"}`)
+		headers := http.Header{}
+		headers.Set("X-Escalite-Signature", webhookauth.SignBody(secret, raw))
+
+		err = auth.AuthenticateRequest(raw, headers, cfg)
+		require.NoError(a, err)
+	})
 }
 
 func TestParseAlertRejectsInvalidJSON(t *testing.T) {
-	plugin, err := integrations.Get("datadog")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	_, err = plugin.ParseAlert([]byte(`{`), http.Header{})
-	require.Error(t, err)
+		plugin, err := integrations.Get("datadog")
+		require.NoError(a, err)
+
+		_, err = plugin.ParseAlert([]byte(`{`), http.Header{})
+		require.Error(a, err)
+	})
 }
 
 func TestParseAlertRejectsMissingMonitorID(t *testing.T) {
-	plugin, err := integrations.Get("datadog")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	_, err = plugin.ParseAlert([]byte(`{"title":"CPU high"}`), http.Header{})
-	require.Error(t, err)
+		plugin, err := integrations.Get("datadog")
+		require.NoError(a, err)
+
+		_, err = plugin.ParseAlert([]byte(`{"title":"CPU high"}`), http.Header{})
+		require.Error(a, err)
+	})
 }
 
 func TestValidateConfigRejectsUnknownField(t *testing.T) {
-	plugin, err := integrations.Get("datadog")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	err = plugin.ValidateConfig(json.RawMessage(`{"unknown":"x"}`))
-	require.Error(t, err)
+		plugin, err := integrations.Get("datadog")
+		require.NoError(a, err)
+
+		err = plugin.ValidateConfig(json.RawMessage(`{"unknown":"x"}`))
+		require.Error(a, err)
+	})
 }
 
 func loadFixture(t *testing.T, name string) []byte {

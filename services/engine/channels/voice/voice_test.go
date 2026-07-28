@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/engine/channels"
 	"github.com/mdg-labs/escalite/services/engine/channels/voice"
@@ -28,26 +30,29 @@ func (s *stubProvider) MakeVoiceCall(_ context.Context, params smsprovider.Voice
 }
 
 func TestSendBuildsVoiceMessageWithAlertTitleAndService(t *testing.T) {
-	provider := &stubProvider{}
-	voice.SetProvider(provider)
-	t.Cleanup(func() { voice.SetProvider(nil) })
+	allure.Wrap(t, func(a *allure.Context) {
 
-	channel := voice.New()
-	config, err := json.Marshal(map[string]string{
-		"phone_number": "+15551234567",
-	})
-	require.NoError(t, err)
+		provider := &stubProvider{}
+		voice.SetProvider(provider)
+		a.T().Cleanup(func() { voice.SetProvider(nil) })
 
-	err = channel.Send(context.Background(), channels.SendParams{
-		Alert: channels.Alert{
-			Summary:     "Disk full",
-			ServiceName: "checkout-api",
-		},
-		Config: config,
+		channel := voice.New()
+		config, err := json.Marshal(map[string]string{
+			"phone_number": "+15551234567",
+		})
+		require.NoError(a, err)
+
+		err = channel.Send(context.Background(), channels.SendParams{
+			Alert: channels.Alert{
+				Summary:     "Disk full",
+				ServiceName: "checkout-api",
+			},
+			Config: config,
+		})
+		require.NoError(a, err)
+		require.Equal(a, smsprovider.VoiceParams{
+			To:      "+15551234567",
+			Message: "Disk full on checkout-api",
+		}, provider.lastVoice)
 	})
-	require.NoError(t, err)
-	require.Equal(t, smsprovider.VoiceParams{
-		To:      "+15551234567",
-		Message: "Disk full on checkout-api",
-	}, provider.lastVoice)
 }

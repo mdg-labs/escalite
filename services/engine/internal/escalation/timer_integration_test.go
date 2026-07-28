@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"log/slog"
 	"testing"
+
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/stretchr/testify/require"
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/engine/internal/db"
 	"github.com/mdg-labs/escalite/services/engine/internal/escalation"
@@ -18,130 +20,136 @@ import (
 )
 
 func TestEscalationTimerAdvancesCurrentStep(t *testing.T) {
-	ctx := context.Background()
-	databaseURL, cleanup, err := testutil.StartPostgres(ctx)
-	require.NoError(t, err)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
 
-	require.NoError(t, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+		ctx := context.Background()
+		databaseURL, cleanup, err := testutil.StartPostgres(ctx)
+		require.NoError(a, err)
+		defer cleanup()
 
-	queueClient, err := queue.New(ctx, queue.Options{
-		DatabaseURL: databaseURL,
-		Logger:      slog.Default(),
-	})
-	require.NoError(t, err)
-	defer queueClient.Close()
+		require.NoError(a, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
 
-	require.NoError(t, queueClient.Start(ctx))
-	defer func() {
-		stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_ = queueClient.Stop(stopCtx)
-	}()
+		queueClient, err := queue.New(ctx, queue.Options{
+			DatabaseURL: databaseURL,
+			Logger:      slog.Default(),
+		})
+		require.NoError(a, err)
+		defer queueClient.Close()
 
-	queries := db.New(queueClient.Pool())
-	fixture := bootstrapTwoStepEscalation(t, ctx, queries, 0)
+		require.NoError(a, queueClient.Start(ctx))
+		defer func() {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_ = queueClient.Stop(stopCtx)
+		}()
 
-	alertID := uuid.Must(uuid.NewV7())
-	_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
-		AlertID:        alertID,
-		OrganizationID: fixture.orgID,
-		ServiceID:      fixture.serviceID,
-		DedupKey:       "disk-full",
-		Summary:        "Disk usage critical",
-		Priority:       "high",
-	})
-	require.NoError(t, err)
+		queries := db.New(queueClient.Pool())
+		fixture := bootstrapTwoStepEscalation(t, ctx, queries, 0)
 
-	waitForNotificationCount(t, ctx, queries, alertID, fixture.orgID, 1)
+		alertID := uuid.Must(uuid.NewV7())
+		_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
+			AlertID:        alertID,
+			OrganizationID: fixture.orgID,
+			ServiceID:      fixture.serviceID,
+			DedupKey:       "disk-full",
+			Summary:        "Disk usage critical",
+			Priority:       "high",
+		})
+		require.NoError(a, err)
 
-	deadline := time.Now().Add(10 * time.Second)
-	for {
-		alert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-			ID:             alertID,
+		waitForNotificationCount(t, ctx, queries, alertID, fixture.orgID, 1)
+
+		deadline := time.Now().Add(10 * time.Second)
+		for {
+			alert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+				ID:             alertID,
+				OrganizationID: fixture.orgID,
+			})
+			require.NoError(a, err)
+
+			var state escalation.State
+			require.NoError(a, json.Unmarshal(alert.EscalationState, &state))
+			if state.CurrentStep == 2 {
+				break
+			}
+			if time.Now().After(deadline) {
+				a.T().Fatalf("expected current_step=2 within 10s, got %d", state.CurrentStep)
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		attempts, err := queries.ListNotificationAttemptsByAlertID(ctx, db.ListNotificationAttemptsByAlertIDParams{
+			AlertID:        alertID,
 			OrganizationID: fixture.orgID,
 		})
-		require.NoError(t, err)
-
-		var state escalation.State
-		require.NoError(t, json.Unmarshal(alert.EscalationState, &state))
-		if state.CurrentStep == 2 {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("expected current_step=2 within 10s, got %d", state.CurrentStep)
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	attempts, err := queries.ListNotificationAttemptsByAlertID(ctx, db.ListNotificationAttemptsByAlertIDParams{
-		AlertID:        alertID,
-		OrganizationID: fixture.orgID,
+		require.NoError(a, err)
+		require.Len(a, attempts, 2)
+		require.Equal(a, fixture.step2ID, uuid.UUID(attempts[1].EscalationStepID.Bytes))
 	})
-	require.NoError(t, err)
-	require.Len(t, attempts, 2)
-	require.Equal(t, fixture.step2ID, uuid.UUID(attempts[1].EscalationStepID.Bytes))
 }
 
 func TestAcknowledgedAlertCancelsPendingEscalation(t *testing.T) {
-	ctx := context.Background()
-	databaseURL, cleanup, err := testutil.StartPostgres(ctx)
-	require.NoError(t, err)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
 
-	require.NoError(t, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+		ctx := context.Background()
+		databaseURL, cleanup, err := testutil.StartPostgres(ctx)
+		require.NoError(a, err)
+		defer cleanup()
 
-	queueClient, err := queue.New(ctx, queue.Options{
-		DatabaseURL: databaseURL,
-		Logger:      slog.Default(),
+		require.NoError(a, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+
+		queueClient, err := queue.New(ctx, queue.Options{
+			DatabaseURL: databaseURL,
+			Logger:      slog.Default(),
+		})
+		require.NoError(a, err)
+		defer queueClient.Close()
+
+		require.NoError(a, queueClient.Start(ctx))
+		defer func() {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_ = queueClient.Stop(stopCtx)
+		}()
+
+		queries := db.New(queueClient.Pool())
+		fixture := bootstrapTwoStepEscalation(t, ctx, queries, 30)
+
+		alertID := uuid.Must(uuid.NewV7())
+		_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
+			AlertID:        alertID,
+			OrganizationID: fixture.orgID,
+			ServiceID:      fixture.serviceID,
+			DedupKey:       "memory-high",
+			Summary:        "Memory above threshold",
+			Priority:       "high",
+		})
+		require.NoError(a, err)
+
+		waitForNotificationCount(t, ctx, queries, alertID, fixture.orgID, 1)
+
+		beforeAck := waitForPendingEscalationJob(t, ctx, queries, alertID, fixture.orgID)
+		require.NotNil(a, beforeAck.PendingEscalationJobID)
+
+		acknowledged, err := escalation.AcknowledgeAlert(ctx, queries, queueClient, alertID, fixture.orgID, fixture.adminID)
+		require.NoError(a, err)
+		require.Equal(a, "acknowledged", acknowledged.Status)
+		require.NotNil(a, acknowledged.AcknowledgedAt.Valid)
+
+		var afterAck escalation.State
+		require.NoError(a, json.Unmarshal(acknowledged.EscalationState, &afterAck))
+		require.Nil(a, afterAck.PendingEscalationJobID)
+		require.Nil(a, afterAck.NextEscalationAt)
+
+		time.Sleep(2 * time.Second)
+
+		count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+			AlertID:        alertID,
+			OrganizationID: fixture.orgID,
+		})
+		require.NoError(a, err)
+		require.Equal(a, int64(1), count)
 	})
-	require.NoError(t, err)
-	defer queueClient.Close()
-
-	require.NoError(t, queueClient.Start(ctx))
-	defer func() {
-		stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_ = queueClient.Stop(stopCtx)
-	}()
-
-	queries := db.New(queueClient.Pool())
-	fixture := bootstrapTwoStepEscalation(t, ctx, queries, 30)
-
-	alertID := uuid.Must(uuid.NewV7())
-	_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
-		AlertID:        alertID,
-		OrganizationID: fixture.orgID,
-		ServiceID:      fixture.serviceID,
-		DedupKey:       "memory-high",
-		Summary:        "Memory above threshold",
-		Priority:       "high",
-	})
-	require.NoError(t, err)
-
-	waitForNotificationCount(t, ctx, queries, alertID, fixture.orgID, 1)
-
-	beforeAck := waitForPendingEscalationJob(t, ctx, queries, alertID, fixture.orgID)
-	require.NotNil(t, beforeAck.PendingEscalationJobID)
-
-	acknowledged, err := escalation.AcknowledgeAlert(ctx, queries, queueClient, alertID, fixture.orgID, fixture.adminID)
-	require.NoError(t, err)
-	require.Equal(t, "acknowledged", acknowledged.Status)
-	require.NotNil(t, acknowledged.AcknowledgedAt.Valid)
-
-	var afterAck escalation.State
-	require.NoError(t, json.Unmarshal(acknowledged.EscalationState, &afterAck))
-	require.Nil(t, afterAck.PendingEscalationJobID)
-	require.Nil(t, afterAck.NextEscalationAt)
-
-	time.Sleep(2 * time.Second)
-
-	count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
-		AlertID:        alertID,
-		OrganizationID: fixture.orgID,
-	})
-	require.NoError(t, err)
-	require.Equal(t, int64(1), count)
 }
 
 type escalationFixture struct {
@@ -273,69 +281,72 @@ func bootstrapTwoStepEscalation(t *testing.T, ctx context.Context, queries *db.Q
 }
 
 func TestEscalationRepeatExhaustedAtMaxRepeats(t *testing.T) {
-	ctx := context.Background()
-	databaseURL, cleanup, err := testutil.StartPostgres(ctx)
-	require.NoError(t, err)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
 
-	require.NoError(t, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+		ctx := context.Background()
+		databaseURL, cleanup, err := testutil.StartPostgres(ctx)
+		require.NoError(a, err)
+		defer cleanup()
 
-	queueClient, err := queue.New(ctx, queue.Options{
-		DatabaseURL: databaseURL,
-		Logger:      slog.Default(),
-	})
-	require.NoError(t, err)
-	defer queueClient.Close()
+		require.NoError(a, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
 
-	require.NoError(t, queueClient.Start(ctx))
-	defer func() {
-		stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_ = queueClient.Stop(stopCtx)
-	}()
+		queueClient, err := queue.New(ctx, queue.Options{
+			DatabaseURL: databaseURL,
+			Logger:      slog.Default(),
+		})
+		require.NoError(a, err)
+		defer queueClient.Close()
 
-	queries := db.New(queueClient.Pool())
-	fixture := bootstrapSingleStepRepeatEscalation(t, ctx, queries, 0, 1)
+		require.NoError(a, queueClient.Start(ctx))
+		defer func() {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_ = queueClient.Stop(stopCtx)
+		}()
 
-	alertID := uuid.Must(uuid.NewV7())
-	_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
-		AlertID:        alertID,
-		OrganizationID: fixture.orgID,
-		ServiceID:      fixture.serviceID,
-		DedupKey:       "repeat-cap",
-		Summary:        "Repeat boundary",
-		Priority:       "high",
-	})
-	require.NoError(t, err)
+		queries := db.New(queueClient.Pool())
+		fixture := bootstrapSingleStepRepeatEscalation(t, ctx, queries, 0, 1)
 
-	waitForNotificationCount(t, ctx, queries, alertID, fixture.orgID, 1)
+		alertID := uuid.Must(uuid.NewV7())
+		_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
+			AlertID:        alertID,
+			OrganizationID: fixture.orgID,
+			ServiceID:      fixture.serviceID,
+			DedupKey:       "repeat-cap",
+			Summary:        "Repeat boundary",
+			Priority:       "high",
+		})
+		require.NoError(a, err)
 
-	deadline := time.Now().Add(10 * time.Second)
-	for {
-		alert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-			ID:             alertID,
+		waitForNotificationCount(t, ctx, queries, alertID, fixture.orgID, 1)
+
+		deadline := time.Now().Add(10 * time.Second)
+		for {
+			alert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+				ID:             alertID,
+				OrganizationID: fixture.orgID,
+			})
+			require.NoError(a, err)
+
+			var state escalation.State
+			require.NoError(a, json.Unmarshal(alert.EscalationState, &state))
+			if state.EscalatedExhausted {
+				require.Equal(a, 1, state.RepeatCount)
+				break
+			}
+			if time.Now().After(deadline) {
+				a.T().Fatalf("expected escalated_exhausted within 10s, got state %+v", state)
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+			AlertID:        alertID,
 			OrganizationID: fixture.orgID,
 		})
-		require.NoError(t, err)
-
-		var state escalation.State
-		require.NoError(t, json.Unmarshal(alert.EscalationState, &state))
-		if state.EscalatedExhausted {
-			require.Equal(t, 1, state.RepeatCount)
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("expected escalated_exhausted within 10s, got state %+v", state)
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
-		AlertID:        alertID,
-		OrganizationID: fixture.orgID,
+		require.NoError(a, err)
+		require.Equal(a, int64(2), count)
 	})
-	require.NoError(t, err)
-	require.Equal(t, int64(2), count)
 }
 
 func bootstrapSingleStepRepeatEscalation(

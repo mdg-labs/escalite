@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"log/slog"
 	"testing"
+
+	allure "github.com/allure-framework/allure-go/commons/gotest"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/require"
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/engine/internal/db"
 	"github.com/mdg-labs/escalite/services/engine/internal/escalation"
@@ -21,240 +23,249 @@ import (
 )
 
 func TestAutoPromoteCreatesIncidentWithoutDuplicate(t *testing.T) {
-	ctx := context.Background()
-	databaseURL, cleanup, err := testutil.StartPostgres(ctx)
-	require.NoError(t, err)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
 
-	require.NoError(t, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+		ctx := context.Background()
+		databaseURL, cleanup, err := testutil.StartPostgres(ctx)
+		require.NoError(a, err)
+		defer cleanup()
 
-	queueClient, err := queue.New(ctx, queue.Options{
-		DatabaseURL: databaseURL,
-		Logger:      slog.Default(),
-	})
-	require.NoError(t, err)
-	defer queueClient.Close()
+		require.NoError(a, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
 
-	require.NoError(t, queueClient.Start(ctx))
-	defer func() {
-		stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_ = queueClient.Stop(stopCtx)
-	}()
+		queueClient, err := queue.New(ctx, queue.Options{
+			DatabaseURL: databaseURL,
+			Logger:      slog.Default(),
+		})
+		require.NoError(a, err)
+		defer queueClient.Close()
 
-	queries := db.New(queueClient.Pool())
-	orgID, serviceID, _ := seedAutoPromoteService(t, ctx, queueClient.Pool(), queries, 3)
+		require.NoError(a, queueClient.Start(ctx))
+		defer func() {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_ = queueClient.Stop(stopCtx)
+		}()
 
-	for i := 0; i < 3; i++ {
-		_, err := escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
+		queries := db.New(queueClient.Pool())
+		orgID, serviceID, _ := seedAutoPromoteService(t, ctx, queueClient.Pool(), queries, 3)
+
+		for i := 0; i < 3; i++ {
+			_, err := escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
+				AlertID:        uuid.Must(uuid.NewV7()),
+				OrganizationID: orgID,
+				ServiceID:      serviceID,
+				DedupKey:       fmt.Sprintf("auto-promote-%d", i),
+				Summary:        "Checkout degradation",
+				Priority:       "high",
+			})
+			require.NoError(a, err)
+		}
+
+		var incidentCount int
+		err = queueClient.Pool().QueryRow(ctx, `
+			SELECT count(*)
+			FROM incidents
+			WHERE organization_id = $1
+			  AND status <> 'resolved'
+		`, orgID).Scan(&incidentCount)
+		require.NoError(a, err)
+		require.Equal(a, 1, incidentCount)
+
+		var attachedCount int
+		err = queueClient.Pool().QueryRow(ctx, `
+			SELECT count(*)
+			FROM alerts
+			WHERE organization_id = $1
+			  AND service_id = $2
+			  AND incident_id IS NOT NULL
+		`, orgID, serviceID).Scan(&attachedCount)
+		require.NoError(a, err)
+		require.Equal(a, 3, attachedCount)
+
+		_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
 			AlertID:        uuid.Must(uuid.NewV7()),
 			OrganizationID: orgID,
 			ServiceID:      serviceID,
-			DedupKey:       fmt.Sprintf("auto-promote-%d", i),
-			Summary:        "Checkout degradation",
+			DedupKey:       "auto-promote-d",
+			Summary:        "Disk full",
 			Priority:       "high",
 		})
-		require.NoError(t, err)
-	}
+		require.NoError(a, err)
 
-	var incidentCount int
-	err = queueClient.Pool().QueryRow(ctx, `
-		SELECT count(*)
-		FROM incidents
-		WHERE organization_id = $1
-		  AND status <> 'resolved'
-	`, orgID).Scan(&incidentCount)
-	require.NoError(t, err)
-	require.Equal(t, 1, incidentCount)
+		err = queueClient.Pool().QueryRow(ctx, `
+			SELECT count(*)
+			FROM incidents
+			WHERE organization_id = $1
+			  AND status <> 'resolved'
+		`, orgID).Scan(&incidentCount)
+		require.NoError(a, err)
+		require.Equal(a, 1, incidentCount)
 
-	var attachedCount int
-	err = queueClient.Pool().QueryRow(ctx, `
-		SELECT count(*)
-		FROM alerts
-		WHERE organization_id = $1
-		  AND service_id = $2
-		  AND incident_id IS NOT NULL
-	`, orgID, serviceID).Scan(&attachedCount)
-	require.NoError(t, err)
-	require.Equal(t, 3, attachedCount)
-
-	_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
-		AlertID:        uuid.Must(uuid.NewV7()),
-		OrganizationID: orgID,
-		ServiceID:      serviceID,
-		DedupKey:       "auto-promote-d",
-		Summary:        "Disk full",
-		Priority:       "high",
+		err = queueClient.Pool().QueryRow(ctx, `
+			SELECT count(*)
+			FROM alerts
+			WHERE organization_id = $1
+			  AND service_id = $2
+			  AND incident_id IS NOT NULL
+		`, orgID, serviceID).Scan(&attachedCount)
+		require.NoError(a, err)
+		require.Equal(a, 4, attachedCount)
 	})
-	require.NoError(t, err)
-
-	err = queueClient.Pool().QueryRow(ctx, `
-		SELECT count(*)
-		FROM incidents
-		WHERE organization_id = $1
-		  AND status <> 'resolved'
-	`, orgID).Scan(&incidentCount)
-	require.NoError(t, err)
-	require.Equal(t, 1, incidentCount)
-
-	err = queueClient.Pool().QueryRow(ctx, `
-		SELECT count(*)
-		FROM alerts
-		WHERE organization_id = $1
-		  AND service_id = $2
-		  AND incident_id IS NOT NULL
-	`, orgID, serviceID).Scan(&attachedCount)
-	require.NoError(t, err)
-	require.Equal(t, 4, attachedCount)
 }
 
 func TestAutoPromoteSuppressesEscalationForConfiguredPriorities(t *testing.T) {
-	ctx := context.Background()
-	databaseURL, cleanup, err := testutil.StartPostgres(ctx)
-	require.NoError(t, err)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
 
-	require.NoError(t, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+		ctx := context.Background()
+		databaseURL, cleanup, err := testutil.StartPostgres(ctx)
+		require.NoError(a, err)
+		defer cleanup()
 
-	queueClient, err := queue.New(ctx, queue.Options{
-		DatabaseURL: databaseURL,
-		Logger:      slog.Default(),
-	})
-	require.NoError(t, err)
-	defer queueClient.Close()
+		require.NoError(a, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
 
-	require.NoError(t, queueClient.Start(ctx))
-	defer func() {
-		stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_ = queueClient.Stop(stopCtx)
-	}()
+		queueClient, err := queue.New(ctx, queue.Options{
+			DatabaseURL: databaseURL,
+			Logger:      slog.Default(),
+		})
+		require.NoError(a, err)
+		defer queueClient.Close()
 
-	queries := db.New(queueClient.Pool())
-	orgID, serviceID, _ := seedAutoPromoteService(t, ctx, queueClient.Pool(), queries, 1)
+		require.NoError(a, queueClient.Start(ctx))
+		defer func() {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_ = queueClient.Stop(stopCtx)
+		}()
 
-	alertID := uuid.Must(uuid.NewV7())
-	_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
-		AlertID:        alertID,
-		OrganizationID: orgID,
-		ServiceID:      serviceID,
-		DedupKey:       "suppressed-alert",
-		Summary:        "Memory pressure",
-		Priority:       "high",
-	})
-	require.NoError(t, err)
+		queries := db.New(queueClient.Pool())
+		orgID, serviceID, _ := seedAutoPromoteService(t, ctx, queueClient.Pool(), queries, 1)
 
-	storedAlert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-		ID:             alertID,
-		OrganizationID: orgID,
-	})
-	require.NoError(t, err)
-	require.True(t, storedAlert.IncidentID.Valid)
-
-	deadline := time.Now().Add(5 * time.Second)
-	for {
-		count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+		alertID := uuid.Must(uuid.NewV7())
+		_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
 			AlertID:        alertID,
 			OrganizationID: orgID,
+			ServiceID:      serviceID,
+			DedupKey:       "suppressed-alert",
+			Summary:        "Memory pressure",
+			Priority:       "high",
 		})
-		require.NoError(t, err)
-		if count > 0 {
-			t.Fatalf("expected no notification attempts for incident-grouped alert, got %d", count)
+		require.NoError(a, err)
+
+		storedAlert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+			ID:             alertID,
+			OrganizationID: orgID,
+		})
+		require.NoError(a, err)
+		require.True(a, storedAlert.IncidentID.Valid)
+
+		deadline := time.Now().Add(5 * time.Second)
+		for {
+			count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+				AlertID:        alertID,
+				OrganizationID: orgID,
+			})
+			require.NoError(a, err)
+			if count > 0 {
+				a.T().Fatalf("expected no notification attempts for incident-grouped alert, got %d", count)
+			}
+			if time.Now().After(deadline) {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
 		}
-		if time.Now().After(deadline) {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
+	})
 }
 
 func TestIncidentCloseResumesEscalationForTriggeredAlerts(t *testing.T) {
-	ctx := context.Background()
-	databaseURL, cleanup, err := testutil.StartPostgres(ctx)
-	require.NoError(t, err)
-	defer cleanup()
+	allure.Wrap(t, func(a *allure.Context) {
 
-	require.NoError(t, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
+		ctx := context.Background()
+		databaseURL, cleanup, err := testutil.StartPostgres(ctx)
+		require.NoError(a, err)
+		defer cleanup()
 
-	queueClient, err := queue.New(ctx, queue.Options{
-		DatabaseURL: databaseURL,
-		Logger:      slog.Default(),
-	})
-	require.NoError(t, err)
-	defer queueClient.Close()
+		require.NoError(a, testutil.MigrateUp(ctx, databaseURL, slog.Default()))
 
-	require.NoError(t, queueClient.Start(ctx))
-	defer func() {
-		stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_ = queueClient.Stop(stopCtx)
-	}()
+		queueClient, err := queue.New(ctx, queue.Options{
+			DatabaseURL: databaseURL,
+			Logger:      slog.Default(),
+		})
+		require.NoError(a, err)
+		defer queueClient.Close()
 
-	queries := db.New(queueClient.Pool())
-	orgID, serviceID, _ := seedAutoPromoteService(t, ctx, queueClient.Pool(), queries, 1)
+		require.NoError(a, queueClient.Start(ctx))
+		defer func() {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_ = queueClient.Stop(stopCtx)
+		}()
 
-	alertID := uuid.Must(uuid.NewV7())
-	_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
-		AlertID:        alertID,
-		OrganizationID: orgID,
-		ServiceID:      serviceID,
-		DedupKey:       "resume-on-close",
-		Summary:        "Database latency",
-		Priority:       "high",
-	})
-	require.NoError(t, err)
+		queries := db.New(queueClient.Pool())
+		orgID, serviceID, _ := seedAutoPromoteService(t, ctx, queueClient.Pool(), queries, 1)
 
-	storedAlert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
-		ID:             alertID,
-		OrganizationID: orgID,
-	})
-	require.NoError(t, err)
-	require.True(t, storedAlert.IncidentID.Valid)
-
-	deadline := time.Now().Add(5 * time.Second)
-	for {
-		count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+		alertID := uuid.Must(uuid.NewV7())
+		_, err = escalation.CreateTriggeredAlert(ctx, queueClient.Pool(), queueClient, escalation.CreateTriggeredAlertParams{
 			AlertID:        alertID,
 			OrganizationID: orgID,
+			ServiceID:      serviceID,
+			DedupKey:       "resume-on-close",
+			Summary:        "Database latency",
+			Priority:       "high",
 		})
-		require.NoError(t, err)
-		if count > 0 {
-			t.Fatalf("expected no notification attempts while incident is open, got %d", count)
-		}
-		if time.Now().After(deadline) {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
+		require.NoError(a, err)
 
-	incidentID := uuid.UUID(storedAlert.IncidentID.Bytes)
-	_, err = queueClient.Pool().Exec(ctx, `
-		UPDATE incidents
-		SET status = 'resolved',
-		    resolved_at = now(),
-		    updated_at = now()
-		WHERE id = $1
-		  AND organization_id = $2
-	`, incidentID, orgID)
-	require.NoError(t, err)
-
-	require.NoError(t, escalation.ResumeEscalationOnIncidentClose(ctx, queries, queueClient, incidentID, orgID))
-
-	deadline = time.Now().Add(5 * time.Second)
-	for {
-		count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
-			AlertID:        alertID,
+		storedAlert, err := queries.GetAlertByID(ctx, db.GetAlertByIDParams{
+			ID:             alertID,
 			OrganizationID: orgID,
 		})
-		require.NoError(t, err)
-		if count > 0 {
-			return
+		require.NoError(a, err)
+		require.True(a, storedAlert.IncidentID.Valid)
+
+		deadline := time.Now().Add(5 * time.Second)
+		for {
+			count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+				AlertID:        alertID,
+				OrganizationID: orgID,
+			})
+			require.NoError(a, err)
+			if count > 0 {
+				a.T().Fatalf("expected no notification attempts while incident is open, got %d", count)
+			}
+			if time.Now().After(deadline) {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
 		}
-		if time.Now().After(deadline) {
-			t.Fatal("expected notification attempts after incident close")
+
+		incidentID := uuid.UUID(storedAlert.IncidentID.Bytes)
+		_, err = queueClient.Pool().Exec(ctx, `
+			UPDATE incidents
+			SET status = 'resolved',
+			    resolved_at = now(),
+			    updated_at = now()
+			WHERE id = $1
+			  AND organization_id = $2
+		`, incidentID, orgID)
+		require.NoError(a, err)
+
+		require.NoError(a, escalation.ResumeEscalationOnIncidentClose(ctx, queries, queueClient, incidentID, orgID))
+
+		deadline = time.Now().Add(5 * time.Second)
+		for {
+			count, err := queries.CountNotificationAttemptsByAlertID(ctx, db.CountNotificationAttemptsByAlertIDParams{
+				AlertID:        alertID,
+				OrganizationID: orgID,
+			})
+			require.NoError(a, err)
+			if count > 0 {
+				return
+			}
+			if time.Now().After(deadline) {
+				a.T().Fatal("expected notification attempts after incident close")
+			}
+			time.Sleep(100 * time.Millisecond)
 		}
-		time.Sleep(100 * time.Millisecond)
-	}
+	})
 }
 
 func seedAutoPromoteService(

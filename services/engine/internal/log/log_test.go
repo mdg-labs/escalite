@@ -6,22 +6,27 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
+	"github.com/allure-framework/allure-go/testify/assert"
+	"github.com/allure-framework/allure-go/testify/require"
 )
 
 func TestWithContextAddsAvailableKeys(t *testing.T) {
-	var buf bytes.Buffer
-	base := slog.New(slog.NewJSONHandler(&buf, nil)).With("service", "engine")
+	allure.Wrap(t, func(a *allure.Context) {
 
-	logger := WithContext(base, Context{
-		OrgID:     "org-abc",
-		ServiceID: "svc-def",
+		var buf bytes.Buffer
+		base := slog.New(slog.NewJSONHandler(&buf, nil)).With("service", "engine")
+
+		logger := WithContext(base, Context{
+			OrgID:     "org-abc",
+			ServiceID: "svc-def",
+		})
+		logger.Info("job started")
+
+		var entry map[string]any
+		require.NoError(a, json.Unmarshal(buf.Bytes(), &entry))
+		assert.Equal(a, "org-abc", entry["org_id"])
+		assert.Equal(a, "svc-def", entry["service_id"])
 	})
-	logger.Info("job started")
-
-	var entry map[string]any
-	require.NoError(t, json.Unmarshal(buf.Bytes(), &entry))
-	assert.Equal(t, "org-abc", entry["org_id"])
-	assert.Equal(t, "svc-def", entry["service_id"])
 }

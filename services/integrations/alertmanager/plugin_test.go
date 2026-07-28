@@ -6,101 +6,127 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/integrations"
 	_ "github.com/mdg-labs/escalite/services/integrations/alertmanager"
 )
 
 func TestPluginRegistered(t *testing.T) {
-	plugin, err := integrations.Get("prometheus-alertmanager")
-	require.NoError(t, err)
-	require.Equal(t, "prometheus-alertmanager", plugin.Name())
+	allure.Wrap(t, func(a *allure.Context) {
+
+		plugin, err := integrations.Get("prometheus-alertmanager")
+		require.NoError(a, err)
+		require.Equal(a, "prometheus-alertmanager", plugin.Name())
+	})
 }
 
 func TestParseFiringFixture(t *testing.T) {
-	raw := loadFixture(t, "firing_v4.json")
+	allure.Wrap(t, func(a *allure.Context) {
 
-	plugin, err := integrations.Get("prometheus-alertmanager")
-	require.NoError(t, err)
+		raw := loadFixture(t, "firing_v4.json")
 
-	alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
-	require.NoError(t, err)
-	require.Len(t, alerts, 1)
+		plugin, err := integrations.Get("prometheus-alertmanager")
+		require.NoError(a, err)
 
-	alert := alerts[0]
-	require.Equal(t, integrations.EventTriggered, alert.EventType)
-	require.Equal(t, "1a30ba71cca2921f", alert.DedupKey)
-	require.Equal(t, "BlackBox Probe Failure: https://server.example.org", alert.Summary)
-	require.Contains(t, alert.Description, "has been down for over 5m")
-	require.Equal(t, "high", alert.Priority)
-	require.Equal(t, "webhook:prometheus-alertmanager", alert.Source)
+		alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
+		require.NoError(a, err)
+		require.Len(a, alerts, 1)
+
+		alert := alerts[0]
+		require.Equal(a, integrations.EventTriggered, alert.EventType)
+		require.Equal(a, "1a30ba71cca2921f", alert.DedupKey)
+		require.Equal(a, "BlackBox Probe Failure: https://server.example.org", alert.Summary)
+		require.Contains(a, alert.Description, "has been down for over 5m")
+		require.Equal(a, "high", alert.Priority)
+		require.Equal(a, "webhook:prometheus-alertmanager", alert.Source)
+	})
 }
 
 func TestParseResolvedFixture(t *testing.T) {
-	raw := loadFixture(t, "resolved_v4.json")
+	allure.Wrap(t, func(a *allure.Context) {
 
-	plugin, err := integrations.Get("prometheus-alertmanager")
-	require.NoError(t, err)
+		raw := loadFixture(t, "resolved_v4.json")
 
-	alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
-	require.NoError(t, err)
-	require.Len(t, alerts, 1)
+		plugin, err := integrations.Get("prometheus-alertmanager")
+		require.NoError(a, err)
 
-	alert := alerts[0]
-	require.Equal(t, integrations.EventResolved, alert.EventType)
-	require.Equal(t, "1a30ba71cca2921f", alert.DedupKey)
+		alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
+		require.NoError(a, err)
+		require.Len(a, alerts, 1)
+
+		alert := alerts[0]
+		require.Equal(a, integrations.EventResolved, alert.EventType)
+		require.Equal(a, "1a30ba71cca2921f", alert.DedupKey)
+	})
 }
 
 func TestParseMultiAlertFixture(t *testing.T) {
-	raw := loadFixture(t, "multi_alert_v4.json")
+	allure.Wrap(t, func(a *allure.Context) {
 
-	plugin, err := integrations.Get("prometheus-alertmanager")
-	require.NoError(t, err)
+		raw := loadFixture(t, "multi_alert_v4.json")
 
-	alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
-	require.NoError(t, err)
-	require.Len(t, alerts, 2)
+		plugin, err := integrations.Get("prometheus-alertmanager")
+		require.NoError(a, err)
 
-	require.Equal(t, "a8c518a872e3149a", alerts[0].DedupKey)
-	require.Equal(t, integrations.EventTriggered, alerts[0].EventType)
-	require.Equal(t, "high", alerts[0].Priority)
+		alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
+		require.NoError(a, err)
+		require.Len(a, alerts, 2)
 
-	require.Equal(t, "8b581f60e6fd0de1", alerts[1].DedupKey)
-	require.Equal(t, integrations.EventTriggered, alerts[1].EventType)
-	require.Equal(t, "low", alerts[1].Priority)
+		require.Equal(a, "a8c518a872e3149a", alerts[0].DedupKey)
+		require.Equal(a, integrations.EventTriggered, alerts[0].EventType)
+		require.Equal(a, "high", alerts[0].Priority)
+
+		require.Equal(a, "8b581f60e6fd0de1", alerts[1].DedupKey)
+		require.Equal(a, integrations.EventTriggered, alerts[1].EventType)
+		require.Equal(a, "low", alerts[1].Priority)
+	})
 }
 
 func TestParseAlertRejectsInvalidJSON(t *testing.T) {
-	plugin, err := integrations.Get("prometheus-alertmanager")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	_, err = plugin.ParseAlert([]byte(`{`), http.Header{})
-	require.Error(t, err)
+		plugin, err := integrations.Get("prometheus-alertmanager")
+		require.NoError(a, err)
+
+		_, err = plugin.ParseAlert([]byte(`{`), http.Header{})
+		require.Error(a, err)
+	})
 }
 
 func TestParseAlertRejectsEmptyAlerts(t *testing.T) {
-	plugin, err := integrations.Get("prometheus-alertmanager")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	_, err = plugin.ParseAlert([]byte(`{"version":"4","alerts":[]}`), http.Header{})
-	require.Error(t, err)
+		plugin, err := integrations.Get("prometheus-alertmanager")
+		require.NoError(a, err)
+
+		_, err = plugin.ParseAlert([]byte(`{"version":"4","alerts":[]}`), http.Header{})
+		require.Error(a, err)
+	})
 }
 
 func TestParseAlertRejectsUnsupportedVersion(t *testing.T) {
-	plugin, err := integrations.Get("prometheus-alertmanager")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	_, err = plugin.ParseAlert([]byte(`{"version":"3","alerts":[{"status":"firing","fingerprint":"abc"}]}`), http.Header{})
-	require.Error(t, err)
+		plugin, err := integrations.Get("prometheus-alertmanager")
+		require.NoError(a, err)
+
+		_, err = plugin.ParseAlert([]byte(`{"version":"3","alerts":[{"status":"firing","fingerprint":"abc"}]}`), http.Header{})
+		require.Error(a, err)
+	})
 }
 
 func TestParseAlertRejectsMissingFingerprint(t *testing.T) {
-	plugin, err := integrations.Get("prometheus-alertmanager")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	_, err = plugin.ParseAlert([]byte(`{"version":"4","alerts":[{"status":"firing"}]}`), http.Header{})
-	require.Error(t, err)
+		plugin, err := integrations.Get("prometheus-alertmanager")
+		require.NoError(a, err)
+
+		_, err = plugin.ParseAlert([]byte(`{"version":"4","alerts":[{"status":"firing"}]}`), http.Header{})
+		require.Error(a, err)
+	})
 }
 
 func loadFixture(t *testing.T, name string) []byte {

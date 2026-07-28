@@ -8,7 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/engine/channels"
 	pushchannel "github.com/mdg-labs/escalite/services/engine/channels/push"
@@ -21,159 +23,174 @@ func (fn roundTripFunc) Do(req *http.Request) (*http.Response, error) {
 }
 
 func TestSendPostsExpoPushMessage(t *testing.T) {
-	var received expoMessage
-	pushchannel.SetHTTPClient(roundTripFunc(func(req *http.Request) (*http.Response, error) {
-		require.Equal(t, http.MethodPost, req.Method)
-		require.Equal(t, "application/json", req.Header.Get("Content-Type"))
+	allure.Wrap(t, func(a *allure.Context) {
 
-		body, err := io.ReadAll(req.Body)
-		require.NoError(t, err)
-		require.NoError(t, json.Unmarshal(body, &received))
+		var received expoMessage
+		pushchannel.SetHTTPClient(roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			require.Equal(a, http.MethodPost, req.Method)
+			require.Equal(a, "application/json", req.Header.Get("Content-Type"))
 
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(strings.NewReader(`{"data":[{"status":"ok","id":"ticket-1"}]}`)),
-			Header:     make(http.Header),
-		}, nil
-	}))
-	t.Cleanup(func() { pushchannel.SetHTTPClient(nil) })
+			body, err := io.ReadAll(req.Body)
+			require.NoError(a, err)
+			require.NoError(a, json.Unmarshal(body, &received))
 
-	config, err := json.Marshal(map[string]string{
-		"expo_push_token": "ExponentPushToken[abc123]",
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"data":[{"status":"ok","id":"ticket-1"}]}`)),
+				Header:     make(http.Header),
+			}, nil
+		}))
+		a.T().Cleanup(func() { pushchannel.SetHTTPClient(nil) })
+
+		config, err := json.Marshal(map[string]string{
+			"expo_push_token": "ExponentPushToken[abc123]",
+		})
+		require.NoError(a, err)
+
+		channel := pushchannel.New()
+		err = channel.Send(context.Background(), channels.SendParams{
+			Config: config,
+			Alert: channels.Alert{
+				ID:          "alert-1",
+				ServiceID:   "service-1",
+				ServiceName: "checkout-api",
+				Status:      "triggered",
+				Priority:    "high",
+				Summary:     "Disk full",
+				Description: "Volume /data is full",
+			},
+		})
+		require.NoError(a, err)
+		require.Equal(a, expoMessage{
+			To:                "ExponentPushToken[abc123]",
+			Title:             "Disk full",
+			Body:              "Volume /data is full",
+			Priority:          "high",
+			CategoryID:        "alert.triggered",
+			InterruptionLevel: "critical",
+			ChannelID:         "alerts-critical",
+			Data: alertData{
+				Type:      "alert.triggered",
+				AlertID:   "alert-1",
+				ServiceID: "service-1",
+				Priority:  "high",
+				Title:     "Disk full",
+				Body:      "Volume /data is full",
+				Actions:   []string{"ack", "escalate"},
+				Critical:  true,
+			},
+		}, received)
+
+		raw, err := json.Marshal(received.Data)
+		require.NoError(a, err)
+		require.Contains(a, string(raw), `"critical":true`)
 	})
-	require.NoError(t, err)
-
-	channel := pushchannel.New()
-	err = channel.Send(context.Background(), channels.SendParams{
-		Config: config,
-		Alert: channels.Alert{
-			ID:          "alert-1",
-			ServiceID:   "service-1",
-			ServiceName: "checkout-api",
-			Status:      "triggered",
-			Priority:    "high",
-			Summary:     "Disk full",
-			Description: "Volume /data is full",
-		},
-	})
-	require.NoError(t, err)
-	require.Equal(t, expoMessage{
-		To:                "ExponentPushToken[abc123]",
-		Title:             "Disk full",
-		Body:              "Volume /data is full",
-		Priority:          "high",
-		CategoryID:        "alert.triggered",
-		InterruptionLevel: "critical",
-		ChannelID:         "alerts-critical",
-		Data: alertData{
-			Type:      "alert.triggered",
-			AlertID:   "alert-1",
-			ServiceID: "service-1",
-			Priority:  "high",
-			Title:     "Disk full",
-			Body:      "Volume /data is full",
-			Actions:   []string{"ack", "escalate"},
-			Critical:  true,
-		},
-	}, received)
-
-	raw, err := json.Marshal(received.Data)
-	require.NoError(t, err)
-	require.Contains(t, string(raw), `"critical":true`)
 }
 
 func TestSendUsesTimeSensitiveFallbackWhenCriticalDisabled(t *testing.T) {
-	var received expoMessage
-	pushchannel.SetHTTPClient(roundTripFunc(func(req *http.Request) (*http.Response, error) {
-		body, err := io.ReadAll(req.Body)
-		require.NoError(t, err)
-		require.NoError(t, json.Unmarshal(body, &received))
+	allure.Wrap(t, func(a *allure.Context) {
 
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(strings.NewReader(`{"data":[{"status":"ok","id":"ticket-1"}]}`)),
-			Header:     make(http.Header),
-		}, nil
-	}))
-	t.Cleanup(func() { pushchannel.SetHTTPClient(nil) })
+		var received expoMessage
+		pushchannel.SetHTTPClient(roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			body, err := io.ReadAll(req.Body)
+			require.NoError(a, err)
+			require.NoError(a, json.Unmarshal(body, &received))
 
-	config, err := json.Marshal(map[string]any{
-		"expo_push_token":  "ExponentPushToken[abc123]",
-		"critical_enabled": false,
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"data":[{"status":"ok","id":"ticket-1"}]}`)),
+				Header:     make(http.Header),
+			}, nil
+		}))
+		a.T().Cleanup(func() { pushchannel.SetHTTPClient(nil) })
+
+		config, err := json.Marshal(map[string]any{
+			"expo_push_token":  "ExponentPushToken[abc123]",
+			"critical_enabled": false,
+		})
+		require.NoError(a, err)
+
+		channel := pushchannel.New()
+		err = channel.Send(context.Background(), channels.SendParams{
+			Config: config,
+			Alert: channels.Alert{
+				ID:          "alert-1",
+				ServiceID:   "service-1",
+				Priority:    "high",
+				Summary:     "Disk full",
+				Description: "Volume /data is full",
+			},
+		})
+		require.NoError(a, err)
+		require.Equal(a, "time-sensitive", received.InterruptionLevel)
+		require.Equal(a, "alerts", received.ChannelID)
+		require.False(a, received.Data.Critical)
 	})
-	require.NoError(t, err)
-
-	channel := pushchannel.New()
-	err = channel.Send(context.Background(), channels.SendParams{
-		Config: config,
-		Alert: channels.Alert{
-			ID:          "alert-1",
-			ServiceID:   "service-1",
-			Priority:    "high",
-			Summary:     "Disk full",
-			Description: "Volume /data is full",
-		},
-	})
-	require.NoError(t, err)
-	require.Equal(t, "time-sensitive", received.InterruptionLevel)
-	require.Equal(t, "alerts", received.ChannelID)
-	require.False(t, received.Data.Critical)
 }
 
 func TestSendFailsWithoutExpoPushToken(t *testing.T) {
-	channel := pushchannel.New()
-	err := channel.Send(context.Background(), channels.SendParams{
-		Alert: channels.Alert{
-			ID:      "alert-1",
-			Summary: "Disk full",
-			Status:  "triggered",
-		},
+	allure.Wrap(t, func(a *allure.Context) {
+
+		channel := pushchannel.New()
+		err := channel.Send(context.Background(), channels.SendParams{
+			Alert: channels.Alert{
+				ID:      "alert-1",
+				Summary: "Disk full",
+				Status:  "triggered",
+			},
+		})
+		require.Error(a, err)
+		require.Contains(a, err.Error(), "expo_push_token is required")
 	})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "expo_push_token is required")
 }
 
 func TestSendFailsOnInvalidExpoToken(t *testing.T) {
-	pushchannel.SetHTTPClient(roundTripFunc(func(_ *http.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body: io.NopCloser(strings.NewReader(`{
-				"data": [{
-					"status": "error",
-					"message": "\"ExponentPushToken[invalid]\" is not a registered push notification recipient",
-					"details": { "error": "DeviceNotRegistered" }
-				}]
-			}`)),
-			Header: make(http.Header),
-		}, nil
-	}))
-	t.Cleanup(func() { pushchannel.SetHTTPClient(nil) })
+	allure.Wrap(t, func(a *allure.Context) {
 
-	config, err := json.Marshal(map[string]string{
-		"expo_push_token": "ExponentPushToken[invalid]",
-	})
-	require.NoError(t, err)
+		pushchannel.SetHTTPClient(roundTripFunc(func(_ *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body: io.NopCloser(strings.NewReader(`{
+					"data": [{
+						"status": "error",
+						"message": "\"ExponentPushToken[invalid]\" is not a registered push notification recipient",
+						"details": { "error": "DeviceNotRegistered" }
+					}]
+				}`)),
+				Header: make(http.Header),
+			}, nil
+		}))
+		a.T().Cleanup(func() { pushchannel.SetHTTPClient(nil) })
 
-	channel := pushchannel.New()
-	err = channel.Send(context.Background(), channels.SendParams{
-		Config: config,
-		Alert: channels.Alert{
-			ID:      "alert-1",
-			Summary: "Disk full",
-			Status:  "triggered",
-		},
+		config, err := json.Marshal(map[string]string{
+			"expo_push_token": "ExponentPushToken[invalid]",
+		})
+		require.NoError(a, err)
+
+		channel := pushchannel.New()
+		err = channel.Send(context.Background(), channels.SendParams{
+			Config: config,
+			Alert: channels.Alert{
+				ID:      "alert-1",
+				Summary: "Disk full",
+				Status:  "triggered",
+			},
+		})
+		require.Error(a, err)
+		require.Contains(a, err.Error(), "DeviceNotRegistered")
 	})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "DeviceNotRegistered")
 }
 
 func TestValidateConfigRequiresExpoPushToken(t *testing.T) {
-	channel := pushchannel.New()
-	err := channel.ValidateConfig(json.RawMessage(`{"expo_push_token":""}`))
-	require.Error(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	err = channel.ValidateConfig(json.RawMessage(`{"expo_push_token":"ExponentPushToken[abc]"}`))
-	require.NoError(t, err)
+		channel := pushchannel.New()
+		err := channel.ValidateConfig(json.RawMessage(`{"expo_push_token":""}`))
+		require.Error(a, err)
+
+		err = channel.ValidateConfig(json.RawMessage(`{"expo_push_token":"ExponentPushToken[abc]"}`))
+		require.NoError(a, err)
+	})
 }
 
 type expoMessage struct {

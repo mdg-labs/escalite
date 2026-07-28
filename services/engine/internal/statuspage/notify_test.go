@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/stretchr/testify/require"
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/engine/internal/db"
 	engineemail "github.com/mdg-labs/escalite/services/engine/internal/email"
@@ -23,58 +25,64 @@ func (r *recordingSender) Send(_ context.Context, msg engineemail.Message) error
 }
 
 func TestNotifySubscribersSendsIncidentUpdateEmail(t *testing.T) {
-	ctx := context.Background()
-	sender := &recordingSender{}
+	allure.Wrap(t, func(a *allure.Context) {
 
-	orgID := uuid.Must(uuid.NewV7())
-	pageID := uuid.Must(uuid.NewV7())
-	incidentID := uuid.Must(uuid.NewV7())
-	updateID := uuid.Must(uuid.NewV7())
+		ctx := context.Background()
+		sender := &recordingSender{}
 
-	queries := db.New(testQueries(ctx, t, orgID, pageID, incidentID, updateID))
+		orgID := uuid.Must(uuid.NewV7())
+		pageID := uuid.Must(uuid.NewV7())
+		incidentID := uuid.Must(uuid.NewV7())
+		updateID := uuid.Must(uuid.NewV7())
 
-	err := statuspage.NotifySubscribers(ctx, queries, sender, statuspage.NotifyConfig{
-		SigningKey: []byte("0123456789abcdef0123456789abcdef"),
-	}, statuspage.NotifyParams{
-		OrganizationID:       orgID,
-		StatusPageIncidentID: incidentID,
-		UpdateID:             updateID,
+		queries := db.New(testQueries(ctx, t, orgID, pageID, incidentID, updateID))
+
+		err := statuspage.NotifySubscribers(ctx, queries, sender, statuspage.NotifyConfig{
+			SigningKey: []byte("0123456789abcdef0123456789abcdef"),
+		}, statuspage.NotifyParams{
+			OrganizationID:       orgID,
+			StatusPageIncidentID: incidentID,
+			UpdateID:             updateID,
+		})
+		require.NoError(a, err)
+		require.Len(a, sender.messages, 2)
+
+		for _, msg := range sender.messages {
+			require.Equal(a, "[Investigating] API outage", msg.Subject)
+			require.Contains(a, msg.TextBody, "Acme Status")
+			require.Contains(a, msg.TextBody, "API outage")
+			require.Contains(a, msg.TextBody, "We are investigating elevated errors.")
+			require.Contains(a, msg.TextBody, "Unsubscribe from incident emails:")
+			require.Contains(a, msg.TextBody, "/unsubscribe?token=")
+			require.Contains(a, msg.HTMLBody, "We are investigating elevated errors.")
+			require.Contains(a, msg.HTMLBody, "Unsubscribe from incident emails")
+			require.Contains(a, msg.HTMLBody, "/unsubscribe?token=")
+		}
+
+		require.Equal(a, "subscriber-a@example.com", sender.messages[0].To)
+		require.Equal(a, "subscriber-b@example.com", sender.messages[1].To)
 	})
-	require.NoError(t, err)
-	require.Len(t, sender.messages, 2)
-
-	for _, msg := range sender.messages {
-		require.Equal(t, "[Investigating] API outage", msg.Subject)
-		require.Contains(t, msg.TextBody, "Acme Status")
-		require.Contains(t, msg.TextBody, "API outage")
-		require.Contains(t, msg.TextBody, "We are investigating elevated errors.")
-		require.Contains(t, msg.TextBody, "Unsubscribe from incident emails:")
-		require.Contains(t, msg.TextBody, "/unsubscribe?token=")
-		require.Contains(t, msg.HTMLBody, "We are investigating elevated errors.")
-		require.Contains(t, msg.HTMLBody, "Unsubscribe from incident emails")
-		require.Contains(t, msg.HTMLBody, "/unsubscribe?token=")
-	}
-
-	require.Equal(t, "subscriber-a@example.com", sender.messages[0].To)
-	require.Equal(t, "subscriber-b@example.com", sender.messages[1].To)
 }
 
 func TestNotifySubscribersSkipsWhenSMTPUnset(t *testing.T) {
-	ctx := context.Background()
+	allure.Wrap(t, func(a *allure.Context) {
 
-	orgID := uuid.Must(uuid.NewV7())
-	pageID := uuid.Must(uuid.NewV7())
-	incidentID := uuid.Must(uuid.NewV7())
-	updateID := uuid.Must(uuid.NewV7())
+		ctx := context.Background()
 
-	queries := db.New(testQueries(ctx, t, orgID, pageID, incidentID, updateID))
+		orgID := uuid.Must(uuid.NewV7())
+		pageID := uuid.Must(uuid.NewV7())
+		incidentID := uuid.Must(uuid.NewV7())
+		updateID := uuid.Must(uuid.NewV7())
 
-	err := statuspage.NotifySubscribers(ctx, queries, nil, statuspage.NotifyConfig{}, statuspage.NotifyParams{
-		OrganizationID:       orgID,
-		StatusPageIncidentID: incidentID,
-		UpdateID:             updateID,
+		queries := db.New(testQueries(ctx, t, orgID, pageID, incidentID, updateID))
+
+		err := statuspage.NotifySubscribers(ctx, queries, nil, statuspage.NotifyConfig{}, statuspage.NotifyParams{
+			OrganizationID:       orgID,
+			StatusPageIncidentID: incidentID,
+			UpdateID:             updateID,
+		})
+		require.NoError(a, err)
 	})
-	require.NoError(t, err)
 }
 
 func testQueries(

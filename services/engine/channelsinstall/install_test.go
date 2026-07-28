@@ -4,7 +4,9 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/engine/channels"
 	"github.com/mdg-labs/escalite/services/engine/channelsinstall"
@@ -12,7 +14,9 @@ import (
 )
 
 func TestConfigureSMS(t *testing.T) {
-	t.Run("leaves channels disabled without credentials", func(t *testing.T) {
+
+	allure.Test(t, "leaves channels disabled without credentials", func(a *allure.Context) {
+
 		channelsinstall.ConfigureSMS(slog.Default(), smsprovider.Config{
 			ProviderName: smsprovider.ProviderTwilio,
 			Twilio: &smsprovider.TwilioConfig{
@@ -21,12 +25,14 @@ func TestConfigureSMS(t *testing.T) {
 		})
 
 		_, err := channels.Get("sms")
-		require.Error(t, err)
+		require.Error(a, err)
 		_, err = channels.Get("voice")
-		require.Error(t, err)
+		require.Error(a, err)
+	
 	})
 
-	t.Run("registers channels when twilio configured", func(t *testing.T) {
+	allure.Test(t, "registers channels when twilio configured", func(a *allure.Context) {
+
 		channelsinstall.ConfigureSMS(slog.Default(), smsprovider.Config{
 			ProviderName: smsprovider.ProviderTwilio,
 			Twilio: &smsprovider.TwilioConfig{
@@ -37,8 +43,10 @@ func TestConfigureSMS(t *testing.T) {
 		})
 
 		_, err := channels.Get("sms")
-		require.NoError(t, err)
+		require.NoError(a, err)
 		_, err = channels.Get("voice")
-		require.NoError(t, err)
+		require.NoError(a, err)
+	
 	})
+
 }

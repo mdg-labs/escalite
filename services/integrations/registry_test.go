@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/integrations"
 	_ "github.com/mdg-labs/escalite/services/integrations/datadog"
@@ -14,49 +16,70 @@ import (
 )
 
 func TestEventTypeConstants(t *testing.T) {
-	require.Equal(t, integrations.EventType("triggered"), integrations.EventTriggered)
-	require.Equal(t, integrations.EventType("resolved"), integrations.EventResolved)
+	allure.Wrap(t, func(a *allure.Context) {
+
+		require.Equal(a, integrations.EventType("triggered"), integrations.EventTriggered)
+		require.Equal(a, integrations.EventType("resolved"), integrations.EventResolved)
+	})
 }
 
 func TestGetUnknownPlugin(t *testing.T) {
-	_, err := integrations.Get("nonexistent-plugin")
-	require.Error(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	var unknown integrations.ErrUnknownPlugin
-	require.ErrorAs(t, err, &unknown)
-	require.Equal(t, "nonexistent-plugin", unknown.Name)
+		_, err := integrations.Get("nonexistent-plugin")
+		require.Error(a, err)
+
+		var unknown integrations.ErrUnknownPlugin
+		require.ErrorAs(a, err, &unknown)
+		require.Equal(a, "nonexistent-plugin", unknown.Name)
+	})
 }
 
 func TestValidateConfigUnknownPlugin(t *testing.T) {
-	err := integrations.ValidateConfig("newrelic", json.RawMessage(`{}`))
-	require.Error(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	var unknown integrations.ErrUnknownPlugin
-	require.ErrorAs(t, err, &unknown)
-	require.Equal(t, "newrelic", unknown.Name)
+		err := integrations.ValidateConfig("newrelic", json.RawMessage(`{}`))
+		require.Error(a, err)
+
+		var unknown integrations.ErrUnknownPlugin
+		require.ErrorAs(a, err, &unknown)
+		require.Equal(a, "newrelic", unknown.Name)
+	})
 }
 
 func TestValidateConfigGrafana(t *testing.T) {
-	err := integrations.ValidateConfig("grafana", json.RawMessage(`{}`))
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
+
+		err := integrations.ValidateConfig("grafana", json.RawMessage(`{}`))
+		require.NoError(a, err)
+	})
 }
 
 func TestValidateConfigUptimeKuma(t *testing.T) {
-	err := integrations.ValidateConfig("uptime-kuma", json.RawMessage(`{}`))
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
+
+		err := integrations.ValidateConfig("uptime-kuma", json.RawMessage(`{}`))
+		require.NoError(a, err)
+	})
 }
 
 func TestConfigSchemaDatadogPlugin(t *testing.T) {
-	schema, err := integrations.ConfigSchema("datadog")
-	require.NoError(t, err)
-	require.Contains(t, string(schema), "signature_secret")
+	allure.Wrap(t, func(a *allure.Context) {
+
+		schema, err := integrations.ConfigSchema("datadog")
+		require.NoError(a, err)
+		require.Contains(a, string(schema), "signature_secret")
+	})
 }
 
 func TestInboundPluginInterfaceDocumentsResolvedEvents(t *testing.T) {
-	var plugin integrations.InboundPlugin = stubPlugin{}
-	alert, err := plugin.ParseAlert([]byte(`{}`), http.Header{})
-	require.NoError(t, err)
-	require.Equal(t, integrations.EventResolved, alert.EventType)
+	allure.Wrap(t, func(a *allure.Context) {
+
+		var plugin integrations.InboundPlugin = stubPlugin{}
+		alert, err := plugin.ParseAlert([]byte(`{}`), http.Header{})
+		require.NoError(a, err)
+		require.Equal(a, integrations.EventResolved, alert.EventType)
+	})
 }
 
 type stubPlugin struct{}

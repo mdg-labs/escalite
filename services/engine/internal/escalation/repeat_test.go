@@ -3,21 +3,26 @@ package escalation
 import (
 	"testing"
 
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/stretchr/testify/require"
+	"github.com/allure-framework/allure-go/testify/require"
 )
 
 func TestCanRepeatLastStep_RepeatBoundary(t *testing.T) {
-	t.Parallel()
+	allure.Wrap(t, func(a *allure.Context) {
 
-	maxOne := pgtype.Int4{Int32: 1, Valid: true}
-	maxTwo := pgtype.Int4{Int32: 2, Valid: true}
+		a.T().Parallel()
 
-	require.True(t, canRepeatLastStep(true, maxOne, 0))
-	require.False(t, canRepeatLastStep(true, maxOne, 1))
-	require.True(t, canRepeatLastStep(true, maxTwo, 1))
-	require.False(t, canRepeatLastStep(true, maxTwo, 2))
+		maxOne := pgtype.Int4{Int32: 1, Valid: true}
+		maxTwo := pgtype.Int4{Int32: 2, Valid: true}
 
-	require.False(t, canRepeatLastStep(false, maxOne, 0))
-	require.False(t, canRepeatLastStep(true, pgtype.Int4{}, 0))
+		require.True(a, canRepeatLastStep(true, maxOne, 0))
+		require.False(a, canRepeatLastStep(true, maxOne, 1))
+		require.True(a, canRepeatLastStep(true, maxTwo, 1))
+		require.False(a, canRepeatLastStep(true, maxTwo, 2))
+
+		require.False(a, canRepeatLastStep(false, maxOne, 0))
+		require.False(a, canRepeatLastStep(true, pgtype.Int4{}, 0))
+	})
 }

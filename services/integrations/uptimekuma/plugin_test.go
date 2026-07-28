@@ -6,79 +6,102 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/integrations"
 	_ "github.com/mdg-labs/escalite/services/integrations/uptimekuma"
 )
 
 func TestPluginRegistered(t *testing.T) {
-	plugin, err := integrations.Get("uptime-kuma")
-	require.NoError(t, err)
-	require.Equal(t, "uptime-kuma", plugin.Name())
+	allure.Wrap(t, func(a *allure.Context) {
+
+		plugin, err := integrations.Get("uptime-kuma")
+		require.NoError(a, err)
+		require.Equal(a, "uptime-kuma", plugin.Name())
+	})
 }
 
 func TestParseDownFixture(t *testing.T) {
-	raw := loadFixture(t, "down.json")
+	allure.Wrap(t, func(a *allure.Context) {
 
-	plugin, err := integrations.Get("uptime-kuma")
-	require.NoError(t, err)
+		raw := loadFixture(t, "down.json")
 
-	alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
-	require.NoError(t, err)
-	require.Len(t, alerts, 1)
+		plugin, err := integrations.Get("uptime-kuma")
+		require.NoError(a, err)
 
-	alert := alerts[0]
-	require.Equal(t, integrations.EventTriggered, alert.EventType)
-	require.Equal(t, "42", alert.DedupKey)
-	require.Equal(t, "checkout-api", alert.Summary)
-	require.Contains(t, alert.Description, "Request failed with status code 502")
-	require.Equal(t, "high", alert.Priority)
-	require.Equal(t, "webhook:uptime-kuma", alert.Source)
+		alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
+		require.NoError(a, err)
+		require.Len(a, alerts, 1)
+
+		alert := alerts[0]
+		require.Equal(a, integrations.EventTriggered, alert.EventType)
+		require.Equal(a, "42", alert.DedupKey)
+		require.Equal(a, "checkout-api", alert.Summary)
+		require.Contains(a, alert.Description, "Request failed with status code 502")
+		require.Equal(a, "high", alert.Priority)
+		require.Equal(a, "webhook:uptime-kuma", alert.Source)
+	})
 }
 
 func TestParseUpFixture(t *testing.T) {
-	raw := loadFixture(t, "up.json")
+	allure.Wrap(t, func(a *allure.Context) {
 
-	plugin, err := integrations.Get("uptime-kuma")
-	require.NoError(t, err)
+		raw := loadFixture(t, "up.json")
 
-	alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
-	require.NoError(t, err)
-	require.Len(t, alerts, 1)
+		plugin, err := integrations.Get("uptime-kuma")
+		require.NoError(a, err)
 
-	alert := alerts[0]
-	require.Equal(t, integrations.EventResolved, alert.EventType)
-	require.Equal(t, "42", alert.DedupKey)
+		alerts, err := integrations.ParseAll(plugin, raw, http.Header{}, nil)
+		require.NoError(a, err)
+		require.Len(a, alerts, 1)
+
+		alert := alerts[0]
+		require.Equal(a, integrations.EventResolved, alert.EventType)
+		require.Equal(a, "42", alert.DedupKey)
+	})
 }
 
 func TestParseAlertRejectsInvalidJSON(t *testing.T) {
-	plugin, err := integrations.Get("uptime-kuma")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	_, err = plugin.ParseAlert([]byte(`{`), http.Header{})
-	require.Error(t, err)
+		plugin, err := integrations.Get("uptime-kuma")
+		require.NoError(a, err)
+
+		_, err = plugin.ParseAlert([]byte(`{`), http.Header{})
+		require.Error(a, err)
+	})
 }
 
 func TestParseAlertRejectsMissingMonitorID(t *testing.T) {
-	plugin, err := integrations.Get("uptime-kuma")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	_, err = plugin.ParseAlert([]byte(`{"heartbeat":{"status":0},"monitor":{}}`), http.Header{})
-	require.Error(t, err)
+		plugin, err := integrations.Get("uptime-kuma")
+		require.NoError(a, err)
+
+		_, err = plugin.ParseAlert([]byte(`{"heartbeat":{"status":0},"monitor":{}}`), http.Header{})
+		require.Error(a, err)
+	})
 }
 
 func TestParseAlertRejectsMissingHeartbeatStatus(t *testing.T) {
-	plugin, err := integrations.Get("uptime-kuma")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	_, err = plugin.ParseAlert([]byte(`{"heartbeat":{},"monitor":{"id":1}}`), http.Header{})
-	require.Error(t, err)
+		plugin, err := integrations.Get("uptime-kuma")
+		require.NoError(a, err)
+
+		_, err = plugin.ParseAlert([]byte(`{"heartbeat":{},"monitor":{"id":1}}`), http.Header{})
+		require.Error(a, err)
+	})
 }
 
 func TestValidateConfigAcceptsEmptyObject(t *testing.T) {
-	err := integrations.ValidateConfig("uptime-kuma", []byte(`{}`))
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
+
+		err := integrations.ValidateConfig("uptime-kuma", []byte(`{}`))
+		require.NoError(a, err)
+	})
 }
 
 func loadFixture(t *testing.T, name string) []byte {

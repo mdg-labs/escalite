@@ -5,124 +5,150 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	allure "github.com/allure-framework/allure-go/commons/gotest"
+
+	"github.com/allure-framework/allure-go/testify/require"
 
 	"github.com/mdg-labs/escalite/services/integrations"
 	_ "github.com/mdg-labs/escalite/services/integrations/genericwebhook"
 )
 
 func TestPluginRegistered(t *testing.T) {
-	plugin, err := integrations.Get("generic-webhook")
-	require.NoError(t, err)
-	require.Equal(t, "generic-webhook", plugin.Name())
+	allure.Wrap(t, func(a *allure.Context) {
+
+		plugin, err := integrations.Get("generic-webhook")
+		require.NoError(a, err)
+		require.Equal(a, "generic-webhook", plugin.Name())
+	})
 }
 
 func TestValidateConfigRequiresMappingPaths(t *testing.T) {
-	plugin, err := integrations.Get("generic-webhook")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	err = plugin.ValidateConfig(json.RawMessage(`{}`))
-	require.Error(t, err)
+		plugin, err := integrations.Get("generic-webhook")
+		require.NoError(a, err)
 
-	err = plugin.ValidateConfig(json.RawMessage(`{"title":"title","dedup_key":"id"}`))
-	require.NoError(t, err)
+		err = plugin.ValidateConfig(json.RawMessage(`{}`))
+		require.Error(a, err)
 
-	err = plugin.ValidateConfig(json.RawMessage(`{"title":"title","dedup_key":"id","unknown":"x"}`))
-	require.Error(t, err)
+		err = plugin.ValidateConfig(json.RawMessage(`{"title":"title","dedup_key":"id"}`))
+		require.NoError(a, err)
+
+		err = plugin.ValidateConfig(json.RawMessage(`{"title":"title","dedup_key":"id","unknown":"x"}`))
+		require.Error(a, err)
+	})
 }
 
 func TestParseAlertWithConfigMapsFields(t *testing.T) {
-	plugin, err := integrations.Get("generic-webhook")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	configurable, ok := plugin.(integrations.ConfigurableInboundPlugin)
-	require.True(t, ok)
+		plugin, err := integrations.Get("generic-webhook")
+		require.NoError(a, err)
 
-	cfg := json.RawMessage(`{
-		"title": "title",
-		"body": "message",
-		"dedup_key": "id",
-		"priority": "severity",
-		"event_type": "status"
-	}`)
-	payload := []byte(`{
-		"title": "Disk usage high",
-		"message": "Volume /data is 95% full",
-		"id": "host-1-disk",
-		"severity": "low",
-		"status": "firing"
-	}`)
+		configurable, ok := plugin.(integrations.ConfigurableInboundPlugin)
+		require.True(a, ok)
 
-	alert, err := configurable.ParseAlertWithConfig(payload, http.Header{}, cfg)
-	require.NoError(t, err)
-	require.Equal(t, integrations.EventTriggered, alert.EventType)
-	require.Equal(t, "host-1-disk", alert.DedupKey)
-	require.Equal(t, "Disk usage high", alert.Summary)
-	require.Equal(t, "Volume /data is 95% full", alert.Description)
-	require.Equal(t, "low", alert.Priority)
-	require.Equal(t, "webhook:generic-webhook", alert.Source)
+		cfg := json.RawMessage(`{
+			"title": "title",
+			"body": "message",
+			"dedup_key": "id",
+			"priority": "severity",
+			"event_type": "status"
+		}`)
+		payload := []byte(`{
+			"title": "Disk usage high",
+			"message": "Volume /data is 95% full",
+			"id": "host-1-disk",
+			"severity": "low",
+			"status": "firing"
+		}`)
+
+		alert, err := configurable.ParseAlertWithConfig(payload, http.Header{}, cfg)
+		require.NoError(a, err)
+		require.Equal(a, integrations.EventTriggered, alert.EventType)
+		require.Equal(a, "host-1-disk", alert.DedupKey)
+		require.Equal(a, "Disk usage high", alert.Summary)
+		require.Equal(a, "Volume /data is 95% full", alert.Description)
+		require.Equal(a, "low", alert.Priority)
+		require.Equal(a, "webhook:generic-webhook", alert.Source)
+	})
 }
 
 func TestParseAlertWithConfigResolvesNestedPaths(t *testing.T) {
-	plugin, err := integrations.Get("generic-webhook")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	configurable := plugin.(integrations.ConfigurableInboundPlugin)
-	cfg := json.RawMessage(`{"title":"alert.summary","dedup_key":"alert.id"}`)
-	payload := []byte(`{"alert":{"summary":"CPU high","id":"cpu-42"}}`)
+		plugin, err := integrations.Get("generic-webhook")
+		require.NoError(a, err)
 
-	alert, err := configurable.ParseAlertWithConfig(payload, http.Header{}, cfg)
-	require.NoError(t, err)
-	require.Equal(t, "CPU high", alert.Summary)
-	require.Equal(t, "cpu-42", alert.DedupKey)
+		configurable := plugin.(integrations.ConfigurableInboundPlugin)
+		cfg := json.RawMessage(`{"title":"alert.summary","dedup_key":"alert.id"}`)
+		payload := []byte(`{"alert":{"summary":"CPU high","id":"cpu-42"}}`)
+
+		alert, err := configurable.ParseAlertWithConfig(payload, http.Header{}, cfg)
+		require.NoError(a, err)
+		require.Equal(a, "CPU high", alert.Summary)
+		require.Equal(a, "cpu-42", alert.DedupKey)
+	})
 }
 
 func TestParseAlertWithConfigMissingMappedField(t *testing.T) {
-	plugin, err := integrations.Get("generic-webhook")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	configurable := plugin.(integrations.ConfigurableInboundPlugin)
-	cfg := json.RawMessage(`{"title":"title","dedup_key":"id"}`)
-	payload := []byte(`{"title":"Only title present"}`)
+		plugin, err := integrations.Get("generic-webhook")
+		require.NoError(a, err)
 
-	_, err = configurable.ParseAlertWithConfig(payload, http.Header{}, cfg)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "dedup_key")
+		configurable := plugin.(integrations.ConfigurableInboundPlugin)
+		cfg := json.RawMessage(`{"title":"title","dedup_key":"id"}`)
+		payload := []byte(`{"title":"Only title present"}`)
+
+		_, err = configurable.ParseAlertWithConfig(payload, http.Header{}, cfg)
+		require.Error(a, err)
+		require.Contains(a, err.Error(), "dedup_key")
+	})
 }
 
 func TestParseAlertWithConfigRejectsInvalidJSON(t *testing.T) {
-	plugin, err := integrations.Get("generic-webhook")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	configurable := plugin.(integrations.ConfigurableInboundPlugin)
-	cfg := json.RawMessage(`{"title":"title","dedup_key":"id"}`)
+		plugin, err := integrations.Get("generic-webhook")
+		require.NoError(a, err)
 
-	_, err = configurable.ParseAlertWithConfig([]byte(`{`), http.Header{}, cfg)
-	require.Error(t, err)
+		configurable := plugin.(integrations.ConfigurableInboundPlugin)
+		cfg := json.RawMessage(`{"title":"title","dedup_key":"id"}`)
+
+		_, err = configurable.ParseAlertWithConfig([]byte(`{`), http.Header{}, cfg)
+		require.Error(a, err)
+	})
 }
 
 func TestParseAlertWithConfigMapsResolvedEvent(t *testing.T) {
-	plugin, err := integrations.Get("generic-webhook")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	configurable := plugin.(integrations.ConfigurableInboundPlugin)
-	cfg := json.RawMessage(`{"title":"title","dedup_key":"id","event_type":"status"}`)
-	payload := []byte(`{"title":"Recovered","id":"cpu-42","status":"resolved"}`)
+		plugin, err := integrations.Get("generic-webhook")
+		require.NoError(a, err)
 
-	alert, err := configurable.ParseAlertWithConfig(payload, http.Header{}, cfg)
-	require.NoError(t, err)
-	require.Equal(t, integrations.EventResolved, alert.EventType)
+		configurable := plugin.(integrations.ConfigurableInboundPlugin)
+		cfg := json.RawMessage(`{"title":"title","dedup_key":"id","event_type":"status"}`)
+		payload := []byte(`{"title":"Recovered","id":"cpu-42","status":"resolved"}`)
+
+		alert, err := configurable.ParseAlertWithConfig(payload, http.Header{}, cfg)
+		require.NoError(a, err)
+		require.Equal(a, integrations.EventResolved, alert.EventType)
+	})
 }
 
 func TestParseAllUsesIntegrationKeyConfig(t *testing.T) {
-	plugin, err := integrations.Get("generic-webhook")
-	require.NoError(t, err)
+	allure.Wrap(t, func(a *allure.Context) {
 
-	cfg := json.RawMessage(`{"title":"title","dedup_key":"id"}`)
-	payload := []byte(`{"title":"Hello","id":"abc"}`)
+		plugin, err := integrations.Get("generic-webhook")
+		require.NoError(a, err)
 
-	alerts, err := integrations.ParseAll(plugin, payload, http.Header{}, cfg)
-	require.NoError(t, err)
-	require.Len(t, alerts, 1)
-	require.Equal(t, "Hello", alerts[0].Summary)
+		cfg := json.RawMessage(`{"title":"title","dedup_key":"id"}`)
+		payload := []byte(`{"title":"Hello","id":"abc"}`)
+
+		alerts, err := integrations.ParseAll(plugin, payload, http.Header{}, cfg)
+		require.NoError(a, err)
+		require.Len(a, alerts, 1)
+		require.Equal(a, "Hello", alerts[0].Summary)
+	})
 }
