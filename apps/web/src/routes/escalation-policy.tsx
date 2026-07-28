@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router'
+import { useParams, useSearchParams } from 'react-router'
 import {
   useCreateEscalationPolicyMutation,
   useEscalationPolicyQuery,
@@ -16,6 +16,7 @@ import {
   type EscalationPolicySavePayload,
 } from '@escalite/ui/domain/EscalationPolicyEditor'
 
+import { AppShell } from '../components/app-shell'
 import { PageBreadcrumbs } from '../components/page-breadcrumbs'
 import {
   buildEscalationEditorOptions,
@@ -174,19 +175,8 @@ export function EscalationPolicyPage(): ReactElement {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <Link className="text-sm font-semibold tracking-wide text-foreground" to="/dashboard">
-              Escalite
-            </Link>
-            <span className="text-sm text-muted-foreground">Escalation policy</span>
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
+    <AppShell title={policyLabel}>
+      <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
           <PageBreadcrumbs items={breadcrumbItems} />
           <h1 className="mt-2 text-xl font-semibold text-foreground">
             {isCreateMode ? t('services.escalation.create') : policyLabel}
@@ -249,8 +239,7 @@ export function EscalationPolicyPage(): ReactElement {
               policy for a service.
             </p>
           ) : null}
-        </section>
-      </main>
-    </div>
+      </section>
+    </AppShell>
   )
 }
