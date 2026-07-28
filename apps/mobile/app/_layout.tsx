@@ -21,12 +21,10 @@ function RootNavigation() {
 
   if (status === 'unconfigured') {
     return (
-      <TamaguiProvider config={tamaguiConfig} defaultTheme={DEFAULT_THEME}>
-        <Theme name={DEFAULT_THEME}>
-          <StatusBar style="light" />
-          <ServerSetupScreen />
-        </Theme>
-      </TamaguiProvider>
+      <>
+        <StatusBar style="light" />
+        <ServerSetupScreen />
+      </>
     )
   }
 
@@ -51,8 +49,12 @@ function RootNavigation() {
 
 export default function RootLayout() {
   return (
-    <ServerConfigProvider>
-      <RootNavigation />
-    </ServerConfigProvider>
+    <TamaguiProvider config={tamaguiConfig} defaultTheme={DEFAULT_THEME}>
+      <Theme name={DEFAULT_THEME}>
+        <ServerConfigProvider>
+          <RootNavigation />
+        </ServerConfigProvider>
+      </Theme>
+    </TamaguiProvider>
   )
 }

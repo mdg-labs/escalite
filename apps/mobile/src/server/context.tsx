@@ -50,26 +50,38 @@ export function ServerConfigProvider({ children }: ServerConfigProviderProps) {
     let cancelled = false
 
     void (async () => {
-      const storedOrigin = await getStoredServerOrigin()
-      if (cancelled) {
-        return
-      }
-
-      if (!storedOrigin) {
-        resetActiveServerEndpoints()
-        setEndpoints(null)
-        setStatus('unconfigured')
-        return
-      }
-
       try {
-        const nextEndpoints = deriveServerEndpoints(storedOrigin)
-        applyEndpoints(nextEndpoints)
+        const storedOrigin = await getStoredServerOrigin()
+        if (cancelled) {
+          return
+        }
+
+        if (!storedOrigin) {
+          resetActiveServerEndpoints()
+          setEndpoints(null)
+          setStatus('unconfigured')
+          return
+        }
+
+        try {
+          const nextEndpoints = deriveServerEndpoints(storedOrigin)
+          applyEndpoints(nextEndpoints)
+        } catch {
+          await clearStoredServerOrigin()
+          resetActiveServerEndpoints()
+          setEndpoints(null)
+          setStatus('unconfigured')
+        }
       } catch {
-        await clearStoredServerOrigin()
-        resetActiveServerEndpoints()
-        setEndpoints(null)
-        setStatus('unconfigured')
+        if (!cancelled) {
+          resetActiveServerEndpoints()
+          setEndpoints(null)
+          setStatus('unconfigured')
+        }
+      } finally {
+        if (!cancelled) {
+          setStatus((current) => (current === 'loading' ? 'unconfigured' : current))
+        }
       }
     })()
 
