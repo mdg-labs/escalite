@@ -182,8 +182,8 @@ export function EscalationPolicyPage(): ReactElement {
             {isCreateMode ? t('services.escalation.create') : policyLabel}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Configure ordered steps, delays, and notification targets. Drag steps to reorder; save
-            persists step order to the API.
+            Configure ordered steps, delays, notification targets, and optional repeat settings on
+            the final step. Drag steps to reorder; save persists step order to the API.
           </p>
 
           {fetching ? (

@@ -56,6 +56,26 @@ export function validateEscalationPolicySteps(
     }
   })
 
+  const lastStep = steps[steps.length - 1]
+  if (lastStep.repeatLastStep) {
+    if (lastStep.maxRepeats == null || !Number.isInteger(lastStep.maxRepeats)) {
+      issues.push({
+        stepId: lastStep.id,
+        message: 'Max repeat count is required when repeat is enabled.',
+      })
+    } else if (lastStep.maxRepeats < 1) {
+      issues.push({
+        stepId: lastStep.id,
+        message: 'Max repeat count must be at least 1 when repeat is enabled.',
+      })
+    }
+  } else if (lastStep.maxRepeats != null && lastStep.maxRepeats < 1) {
+    issues.push({
+      stepId: lastStep.id,
+      message: 'Max repeat count must be at least 1 when set.',
+    })
+  }
+
   return issues
 }
 
@@ -98,7 +118,7 @@ export function toEscalationPolicySavePayload(
       stepOrder: index + 1,
       delayMinutes: index === 0 ? 0 : step.delayMinutes,
       repeatLastStep: step.repeatLastStep,
-      maxRepeats: step.maxRepeats ?? undefined,
+      maxRepeats: step.repeatLastStep ? step.maxRepeats ?? undefined : undefined,
       targets: step.targets.map(toTargetInputPayload),
     })),
   }

@@ -81,6 +81,7 @@ export type EscalationPolicyEditorProps = {
 function SortableStepCard({
   step,
   index,
+  isLastStep,
   options,
   validationMessages,
   onChange,
@@ -88,6 +89,7 @@ function SortableStepCard({
 }: {
   step: EscalationEditorStep
   index: number
+  isLastStep: boolean
   options: EscalationEditorOptions
   validationMessages: string[]
   onChange: (step: EscalationEditorStep) => void
@@ -309,6 +311,58 @@ function SortableStepCard({
                   ))}
                 </div>
 
+                {isLastStep ? (
+                  <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Repeat escalation</p>
+                      <p className="text-sm text-muted-foreground">
+                        After the final step, loop back to step 1 until the max repeat count is
+                        reached.
+                      </p>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-foreground">
+                      <input
+                        checked={step.repeatLastStep}
+                        onChange={(event) => {
+                          const repeatLastStep = event.target.checked
+                          onChange({
+                            ...step,
+                            repeatLastStep,
+                            maxRepeats: repeatLastStep
+                              ? (step.maxRepeats ?? 1)
+                              : null,
+                          })
+                        }}
+                        type="checkbox"
+                      />
+                      Repeat from step 1 after final step
+                    </label>
+                    {step.repeatLastStep ? (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">
+                          Max repeat count
+                        </label>
+                        <NumberField
+                          min={1}
+                          onValueChange={(value) =>
+                            onChange({
+                              ...step,
+                              maxRepeats: value ?? null,
+                            })
+                          }
+                          value={step.maxRepeats ?? undefined}
+                        >
+                          <NumberFieldGroup>
+                            <NumberFieldDecrement />
+                            <NumberFieldInput aria-invalid={step.maxRepeats == null} />
+                            <NumberFieldIncrement />
+                          </NumberFieldGroup>
+                        </NumberField>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 {validationMessages.length > 0 ? (
                   <div className="space-y-1" role="alert">
                     {validationMessages.map((message) => (
@@ -438,6 +492,7 @@ export function EscalationPolicyEditor({
                 <SortableStepCard
                   key={step.id}
                   index={index}
+                  isLastStep={index === policy.steps.length - 1}
                   onChange={(nextStep) =>
                     updateSteps(
                       policy.steps.map((current) =>

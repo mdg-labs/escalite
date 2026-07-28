@@ -71,6 +71,49 @@ test('canSaveEscalationPolicy returns false when any step is invalid', () => {
   assert.equal(canSaveEscalationPolicy([makeStep()]), true)
 })
 
+test('validateEscalationPolicySteps rejects repeat without max repeat count', () => {
+  const issues = validateEscalationPolicySteps([
+    makeStep({ repeatLastStep: true, maxRepeats: null }),
+  ])
+
+  assert.equal(issues.length, 1)
+  assert.match(issues[0]?.message ?? '', /max repeat count is required/i)
+})
+
+test('validateEscalationPolicySteps rejects max repeat count below 1', () => {
+  const issues = validateEscalationPolicySteps([
+    makeStep({ repeatLastStep: true, maxRepeats: 0 }),
+  ])
+
+  assert.equal(issues.length, 1)
+  assert.match(issues[0]?.message ?? '', /at least 1/i)
+})
+
+test('validateEscalationPolicySteps accepts repeat with valid max repeat count', () => {
+  const issues = validateEscalationPolicySteps([
+    makeStep({ repeatLastStep: true, maxRepeats: 2 }),
+  ])
+
+  assert.equal(issues.length, 0)
+})
+
+test('toEscalationPolicySavePayload omits maxRepeats when repeat is disabled', () => {
+  const payload = toEscalationPolicySavePayload('On-call', [
+    makeStep({ repeatLastStep: false, maxRepeats: 3 }),
+  ])
+
+  assert.equal(payload.steps[0]?.maxRepeats, undefined)
+})
+
+test('toEscalationPolicySavePayload includes maxRepeats when repeat is enabled', () => {
+  const payload = toEscalationPolicySavePayload('On-call', [
+    makeStep({ repeatLastStep: true, maxRepeats: 3 }),
+  ])
+
+  assert.equal(payload.steps[0]?.repeatLastStep, true)
+  assert.equal(payload.steps[0]?.maxRepeats, 3)
+})
+
 test('toEscalationPolicySavePayload normalizes order after reorder', () => {
   const payload = toEscalationPolicySavePayload('On-call', [
     makeStep({ id: 'b', stepOrder: 2, delayMinutes: 15 }),
