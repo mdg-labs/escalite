@@ -12,6 +12,7 @@ import { IntegrationsPage } from './routes/integrations'
 import { LoginPage } from './routes/login'
 import { LoginMobilePage } from './routes/login-mobile'
 import { SchedulePage } from './routes/schedule'
+import { SchedulesPage } from './routes/schedules'
 import { ServicePage } from './routes/service'
 import { ServicesPage } from './routes/services'
 import { SettingsPage } from './routes/settings'
@@ -132,6 +133,14 @@ export function App(): ReactElement {
         element={
           <ProtectedRoute>
             <ServicePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/schedules"
+        element={
+          <ProtectedRoute>
+            <SchedulesPage />
           </ProtectedRoute>
         }
       />
