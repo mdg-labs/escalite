@@ -1,10 +1,7 @@
-.agents/project/agent-memory/active/*
-!.agents/project/agent-memory/active/.gitkeep
-.agents/project/agent-memory/archive/*
-!.agents/project/agent-memory/archive/.gitkeep
 .agents/project/phasical-intake/plans/
 .env
 .env.local
+.agents/project/agent-memory/
 
 # Dependencies
 node_modules/
@@ -39,3 +36,4 @@ apps/web/playwright-report/index.html
 # test results
 apps/web/playwright-report/
 apps/web/test-results/
+
