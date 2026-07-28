@@ -180,7 +180,7 @@ export function App(): ReactElement {
         }
       />
       <Route
-        path="/settings"
+        path="/settings/*"
         element={
           <ProtectedRoute>
             <SettingsPage />

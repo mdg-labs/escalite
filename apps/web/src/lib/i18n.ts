@@ -352,6 +352,11 @@ const messages = {
   'schedule.rotations.describe.single': '{frequency}',
   'schedule.rotations.describe.interval': 'Every {interval} · {frequency}',
   'settings.title': 'Settings',
+  'settings.nav.label': 'Settings sections',
+  'settings.nav.enterprise': 'Enterprise',
+  'settings.nav.notifications': 'Notifications',
+  'settings.nav.devices': 'Devices',
+  'settings.nav.roles': 'Roles',
   'settings.slack.title': 'Slack workspace',
   'settings.slack.description':
     'Connect your Slack workspace so Escalite can post incidents and alerts. OAuth installs store the bot token encrypted at rest.',
