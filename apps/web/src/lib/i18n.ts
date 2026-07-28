@@ -732,6 +732,9 @@ const messages = {
   'analytics.loading': 'Loading analytics…',
   'analytics.maintenanceExcluded':
     'Alerts during maintenance windows are excluded from these metrics.',
+  'analytics.settings.excludeMaintenance': 'Exclude maintenance window alerts',
+  'analytics.settings.excludeMaintenanceDescription':
+    'When enabled, alerts fired during active maintenance windows are omitted from MTTA, MTTR, and volume metrics.',
   'analytics.filter.team': 'Team',
   'analytics.filter.teamPlaceholder': 'All teams',
   'analytics.filter.allTeams': 'All teams',

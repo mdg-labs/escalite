@@ -3,7 +3,9 @@ import { useMemo, useState } from 'react'
 import {
   UserRole,
   useAlertAnalyticsQuery,
+  useAnalyticsSettingsQuery,
   useMeQuery,
+  useSaveAnalyticsSettingsMutation,
   useServicesQuery,
   useTeamsQuery,
 } from '@escalite/ts-types'
@@ -52,6 +54,14 @@ export function AnalyticsPage(): ReactElement {
 
   const [teamId, setTeamId] = useState<string>(ALL_TEAMS_VALUE)
   const [serviceId, setServiceId] = useState<string>(ALL_SERVICES_VALUE)
+  const [settingsError, setSettingsError] = useState<string | null>(null)
+  const [savingSettings, setSavingSettings] = useState(false)
+
+  const [{ data: settingsData, fetching: settingsFetching }] = useAnalyticsSettingsQuery({
+    pause: !isAdmin,
+    requestPolicy: 'cache-first',
+  })
+  const [, saveAnalyticsSettings] = useSaveAnalyticsSettingsMutation()
 
   const effectiveTeamId = useMemo(() => {
     if (isAdmin) {
@@ -73,7 +83,7 @@ export function AnalyticsPage(): ReactElement {
     return services.filter((service) => service.teamId === effectiveTeamId)
   }, [effectiveTeamId, services])
 
-  const [{ data, fetching, error }] = useAlertAnalyticsQuery({
+  const [{ data, fetching, error }, reexecuteAnalytics] = useAlertAnalyticsQuery({
     variables: {
       teamId: effectiveTeamId,
       serviceId: effectiveServiceId,
@@ -81,6 +91,26 @@ export function AnalyticsPage(): ReactElement {
     pause: !isAdmin && !effectiveTeamId,
     requestPolicy: 'network-only',
   })
+
+  const excludeMaintenance =
+    settingsData?.analyticsSettings.excludeMaintenanceWindowAlerts ?? false
+
+  async function handleExcludeMaintenanceChange(checked: boolean): Promise<void> {
+    setSettingsError(null)
+    setSavingSettings(true)
+
+    const result = await saveAnalyticsSettings({
+      input: { excludeMaintenanceWindowAlerts: checked },
+    })
+    setSavingSettings(false)
+
+    if (result.error) {
+      setSettingsError(formatGraphQLError(result.error.message))
+      return
+    }
+
+    reexecuteAnalytics({ requestPolicy: 'network-only' })
+  }
 
   const rollups = data?.alertAnalytics.rollups ?? []
   const rollup7d = rollupByWindowDays(rollups, 7)
@@ -154,6 +184,31 @@ export function AnalyticsPage(): ReactElement {
             </div>
           </div>
         </div>
+
+        {isAdmin ? (
+          <div className="rounded-lg border border-border bg-card p-4">
+            <label className="flex items-start gap-3 text-sm text-foreground">
+              <input
+                checked={excludeMaintenance}
+                className="mt-0.5 size-4 rounded border border-input"
+                disabled={settingsFetching || savingSettings}
+                onChange={(event) => void handleExcludeMaintenanceChange(event.target.checked)}
+                type="checkbox"
+              />
+              <span>
+                <span className="font-medium">{t('analytics.settings.excludeMaintenance')}</span>
+                <span className="mt-1 block text-muted-foreground">
+                  {t('analytics.settings.excludeMaintenanceDescription')}
+                </span>
+              </span>
+            </label>
+            {settingsError ? (
+              <Alert className="mt-4" variant="error">
+                <AlertDescription>{settingsError}</AlertDescription>
+              </Alert>
+            ) : null}
+          </div>
+        ) : null}
 
         {data?.alertAnalytics.excludeMaintenanceWindowAlerts ? (
           <Alert>
