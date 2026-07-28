@@ -1,5 +1,6 @@
 import { useState, type ReactElement } from 'react'
 import {
+  UserRole,
   useMeQuery,
   useMobileDevicesQuery,
   useMyOrganizationsQuery,
@@ -30,6 +31,7 @@ import { AlertTriangleIcon, CircleCheckIcon, SmartphoneIcon } from 'lucide-react
 
 import { AppShell } from '../components/app-shell'
 import { ContactMethodsPanel } from '../components/contact-methods-panel'
+import { IncidentRolesPanel } from '../components/incident-roles-panel'
 import { NotificationRulesPanel } from '../components/notification-rules-panel'
 import { SamlSettingsPanel } from '../components/saml-settings-panel'
 import { ScimSettingsPanel } from '../components/scim-settings-panel'
@@ -78,6 +80,7 @@ export function SettingsPage(): ReactElement {
   const [actionDeviceId, setActionDeviceId] = useState<string | null>(null)
 
   const devices = data?.mobileDevices ?? []
+  const isAdmin = meData?.me?.role === UserRole.Admin
   const activeOrganizationId = meData?.me?.organizationId ?? ''
   const activeOrganizationName =
     orgData?.myOrganizations.find(
@@ -112,6 +115,7 @@ export function SettingsPage(): ReactElement {
         <SlackSettingsPanel />
         <ContactMethodsPanel />
         <NotificationRulesPanel />
+        {isAdmin ? <IncidentRolesPanel /> : null}
 
         <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
         <div className="flex items-start gap-3">
