@@ -7,17 +7,8 @@ import { AppShell } from '../components/app-shell'
 import { StatusPageComponentsPanel } from '../components/status-page-components-panel'
 import { StatusPageIncidentsPanel } from '../components/status-page-incidents-panel'
 import { StatusPageSettingsPanel } from '../components/status-page-settings-panel'
-import { t, type MessageKey } from '../lib/i18n'
-
-type StatusPagePlaceholderKey = Extract<MessageKey, 'statusPages.placeholder.subscriptions'>
-
-function StatusPagePlaceholderPanel({ messageKey }: { messageKey: StatusPagePlaceholderKey }): ReactElement {
-  return (
-    <section className="rounded-xl border border-border bg-card p-6 shadow-xs/5">
-      <p className="text-sm text-muted-foreground">{t(messageKey)}</p>
-    </section>
-  )
-}
+import { StatusPageSubscriptionsPanel } from '../components/status-page-subscriptions-panel'
+import { t } from '../lib/i18n'
 
 export function StatusPagesPage(): ReactElement {
   const [{ data: meData, fetching: meFetching }] = useMeQuery({ requestPolicy: 'cache-first' })
@@ -53,7 +44,7 @@ export function StatusPagesPage(): ReactElement {
           </TabsPanel>
 
           <TabsPanel className="mt-6" value="subscriptions">
-            <StatusPagePlaceholderPanel messageKey="statusPages.placeholder.subscriptions" />
+            <StatusPageSubscriptionsPanel />
           </TabsPanel>
         </Tabs>
       </div>

@@ -578,7 +578,16 @@ const messages = {
   'statusPages.tabs.components': 'Components',
   'statusPages.tabs.incidents': 'Incidents',
   'statusPages.tabs.subscriptions': 'Subscriptions',
-  'statusPages.placeholder.subscriptions': 'Subscription management will be available in a future update.',
+  'statusPages.subscriptions.title': 'Email subscriptions',
+  'statusPages.subscriptions.description':
+    'View email addresses subscribed to incident updates on your public status page.',
+  'statusPages.subscriptions.loading': 'Loading subscriptions…',
+  'statusPages.subscriptions.empty': 'No subscribers yet. Visitors can subscribe from the public status page.',
+  'statusPages.subscriptions.notConfigured':
+    'Configure a status page before viewing subscriptions.',
+  'statusPages.subscriptions.count': '{count} subscribers',
+  'statusPages.subscriptions.column.email': 'Email',
+  'statusPages.subscriptions.column.subscribed': 'Subscribed',
   'statusPages.settings.title': 'Status page settings',
   'statusPages.settings.description':
     'Set the public URL slug, page title, and whether the status page is visible.',
