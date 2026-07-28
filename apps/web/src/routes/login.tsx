@@ -62,8 +62,8 @@ export function LoginPage(): ReactElement {
 
   return (
     <AuthLayout
-      title="Sign in"
-      description="Use your organization email and password to access Escalite."
+      description={t('login.description')}
+      title={t('login.title')}
     >
       {showAlternateSignIn ? (
         <div className="space-y-3">
@@ -83,7 +83,7 @@ export function LoginPage(): ReactElement {
       <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)}>
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground" htmlFor="email">
-            Email
+            {t('login.emailLabel')}
           </label>
           <Input
             autoComplete="email"
@@ -98,7 +98,7 @@ export function LoginPage(): ReactElement {
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <label className="text-sm font-medium text-foreground" htmlFor="password">
-              Password
+              {t('login.passwordLabel')}
             </label>
             <Link
               className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
@@ -123,13 +123,13 @@ export function LoginPage(): ReactElement {
           </p>
         ) : null}
         <Button className="w-full" loading={loading} type="submit">
-          Sign in
+          {t('login.submit')}
         </Button>
       </form>
       <p className="mt-4 text-center text-sm text-muted-foreground">
-        First install?{' '}
+        {t('login.firstInstall')}{' '}
         <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/setup">
-          Create the first admin account
+          {t('login.createAdmin')}
         </Link>
       </p>
     </AuthLayout>

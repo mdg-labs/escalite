@@ -4,6 +4,7 @@ import { useSetupMutation } from '@escalite/ts-types'
 import { Button, Input } from '@escalite/ui'
 
 import { AuthLayout } from '../components/auth-layout'
+import { t } from '../lib/i18n'
 
 function formatGraphQLError(message: string): string {
   return message.replace(/^(\[GraphQL\]\s*)+/, '')
@@ -42,14 +43,11 @@ export function SetupPage(): ReactElement {
   }
 
   return (
-    <AuthLayout
-      title="Set up Escalite"
-      description="Create your organization and the first admin account."
-    >
+    <AuthLayout description={t('setup.description')} title={t('setup.title')}>
       <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)}>
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground" htmlFor="organizationName">
-            Organization name
+            {t('setup.organizationNameLabel')}
           </label>
           <Input
             autoComplete="organization"
@@ -62,7 +60,7 @@ export function SetupPage(): ReactElement {
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground" htmlFor="email">
-            Admin email
+            {t('setup.adminEmailLabel')}
           </label>
           <Input
             autoComplete="email"
@@ -76,7 +74,7 @@ export function SetupPage(): ReactElement {
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground" htmlFor="password">
-            Password
+            {t('setup.passwordLabel')}
           </label>
           <Input
             autoComplete="new-password"
@@ -95,13 +93,13 @@ export function SetupPage(): ReactElement {
           </p>
         ) : null}
         <Button className="w-full" loading={loading} type="submit">
-          Create organization
+          {t('setup.submit')}
         </Button>
       </form>
       <p className="mt-4 text-center text-sm text-muted-foreground">
-        Already set up?{' '}
+        {t('setup.alreadySetUp')}{' '}
         <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/login">
-          Sign in
+          {t('setup.signIn')}
         </Link>
       </p>
     </AuthLayout>

@@ -564,7 +564,7 @@ export function AlertsPage(): ReactElement {
                     {selectedAlert.escalationState.escalatedExhausted ? (
                       <div className="flex justify-between gap-4">
                         <dt className="text-muted-foreground">{t('alerts.detail.escalationExhausted')}</dt>
-                        <dd>Yes</dd>
+                        <dd>{t('common.yes')}</dd>
                       </div>
                     ) : null}
                   </dl>

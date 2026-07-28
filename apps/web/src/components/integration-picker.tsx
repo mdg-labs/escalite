@@ -8,6 +8,7 @@ import {
   type IntegrationPreset,
 } from '../lib/integration-presets'
 import { formatGraphQLError } from '../lib/format'
+import { t } from '../lib/i18n'
 import {
   buildConfigFromFormValues,
   buildFormFieldsFromConfigSchema,
@@ -91,18 +92,18 @@ export function IntegrationPicker({
 
   async function handleCreate(): Promise<void> {
     if (!selectedPreset) {
-      setError('Select an integration preset.')
+      setError(t('integrationPicker.error.selectPreset'))
       return
     }
 
     const trimmedServiceId = serviceId.trim()
     if (!trimmedServiceId) {
-      setError('Service ID is required.')
+      setError(t('integrationPicker.error.serviceIdRequired'))
       return
     }
 
     if (!configSchema) {
-      setError('Integration config schema is not available yet.')
+      setError(t('integrationPicker.error.schemaUnavailable'))
       return
     }
 
@@ -137,7 +138,7 @@ export function IntegrationPicker({
 
     const key = result.data?.createIntegrationKey
     if (!key?.token) {
-      setError('Integration key was created but the token was not returned.')
+      setError(t('integrationPicker.error.createNoToken'))
       return
     }
 
@@ -152,7 +153,7 @@ export function IntegrationPicker({
   return (
     <div className="space-y-6">
       <fieldset className="space-y-3">
-        <legend className="text-sm font-medium text-foreground">Integration preset</legend>
+        <legend className="text-sm font-medium text-foreground">{t('integrationPicker.presetLegend')}</legend>
         {INTEGRATION_PRESETS.map((preset) => (
           <PresetOption
             key={preset.id}
@@ -165,7 +166,7 @@ export function IntegrationPicker({
 
       {selectedPreset ? (
         <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-4">
-          <p className="text-sm font-medium text-foreground">Setup snippet</p>
+          <p className="text-sm font-medium text-foreground">{t('integrationPicker.setupSnippet')}</p>
           <pre className="overflow-x-auto whitespace-pre-wrap text-xs text-muted-foreground">
             {selectedPreset.buildDocsSnippet('https://your-escalite.example.com/webhook/<plugin>/<token>')}
           </pre>
@@ -173,23 +174,21 @@ export function IntegrationPicker({
       ) : null}
 
       {schemasFetching ? (
-        <p className="text-sm text-muted-foreground">Loading integration config schema…</p>
+        <p className="text-sm text-muted-foreground">{t('integrationPicker.loadingSchema')}</p>
       ) : null}
 
       {schemasError ? (
         <Alert variant="error">
           <AlertTriangleIcon />
-          <AlertTitle>Could not load config schema</AlertTitle>
+          <AlertTitle>{t('integrationPicker.schemaErrorTitle')}</AlertTitle>
           <AlertDescription>{formatGraphQLError(schemasError.message)}</AlertDescription>
         </Alert>
       ) : null}
 
       {formFields.length > 0 ? (
         <fieldset className="space-y-4">
-          <legend className="text-sm font-medium text-foreground">Field mapping</legend>
-          <p className="text-sm text-muted-foreground">
-            JSON paths in the inbound webhook payload for each alert field.
-          </p>
+          <legend className="text-sm font-medium text-foreground">{t('integrationPicker.fieldMappingLegend')}</legend>
+          <p className="text-sm text-muted-foreground">{t('integrationPicker.fieldMappingDescription')}</p>
           {formFields.map((field) => (
             <div className="space-y-2" key={field.name}>
               <label className="text-sm font-medium text-foreground" htmlFor={field.name}>
@@ -212,7 +211,7 @@ export function IntegrationPicker({
       {error ? (
         <Alert variant="error">
           <AlertTriangleIcon />
-          <AlertTitle>Could not create key</AlertTitle>
+          <AlertTitle>{t('integrationPicker.createErrorTitle')}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}
@@ -222,7 +221,7 @@ export function IntegrationPicker({
         onClick={() => void handleCreate()}
         type="button"
       >
-        {loading ? 'Creating…' : 'Create integration key'}
+        {loading ? t('integrationPicker.action.creating') : t('integrationPicker.action.create')}
       </Button>
     </div>
   )

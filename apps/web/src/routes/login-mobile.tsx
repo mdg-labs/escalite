@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactElement } from 'react'
 import { useLocation } from 'react-router'
 
 import { appConfig } from '../lib/config'
+import { t } from '../lib/i18n'
 
 const mobileDeepLinkScheme = 'escalite://auth'
 
@@ -29,12 +30,12 @@ export function LoginMobilePage(): ReactElement {
 
         if (!response.ok) {
           const body = (await response.json().catch(() => null)) as { error?: string } | null
-          throw new Error(body?.error ?? 'Unable to start mobile sign-in')
+          throw new Error(body?.error ?? t('loginMobile.error.start'))
         }
 
         const body = (await response.json()) as { code: string }
         if (!body.code) {
-          throw new Error('Missing mobile auth code')
+          throw new Error(t('loginMobile.error.missingCode'))
         }
 
         if (!cancelled) {
@@ -42,7 +43,7 @@ export function LoginMobilePage(): ReactElement {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Unable to start mobile sign-in')
+          setError(err instanceof Error ? err.message : t('loginMobile.error.start'))
         }
       }
     }
@@ -64,7 +65,7 @@ export function LoginMobilePage(): ReactElement {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 text-center text-sm text-muted-foreground">
-      Returning to the Escalite app…
+      {t('loginMobile.returning')}
     </div>
   )
 }

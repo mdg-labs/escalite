@@ -112,11 +112,31 @@ export function AnalyticsPage(): ReactElement {
     reexecuteAnalytics({ requestPolicy: 'network-only' })
   }
 
-  const rollups = data?.alertAnalytics.rollups ?? []
+  const rollups = useMemo(() => data?.alertAnalytics.rollups ?? [], [data?.alertAnalytics.rollups])
   const rollup7d = rollupByWindowDays(rollups, 7)
   const rollup30d = rollupByWindowDays(rollups, 30)
-  const responseRows = responseTimeChartData(rollups)
-  const volumeRows = volumeChartData(rollups)
+  const mttaCategory = t('analytics.chart.category.mtta')
+  const mttrCategory = t('analytics.chart.category.mttr')
+  const acknowledgedCategory = t('analytics.chart.category.acknowledged')
+  const resolvedCategory = t('analytics.chart.category.resolved')
+  const responseRows = useMemo(
+    () =>
+      responseTimeChartData(rollups).map((row) => ({
+        window: row.window,
+        [mttaCategory]: row.MTTA,
+        [mttrCategory]: row.MTTR,
+      })),
+    [mttaCategory, mttrCategory, rollups],
+  )
+  const volumeRows = useMemo(
+    () =>
+      volumeChartData(rollups).map((row) => ({
+        window: row.window,
+        [acknowledgedCategory]: row.Acknowledged,
+        [resolvedCategory]: row.Resolved,
+      })),
+    [acknowledgedCategory, resolvedCategory, rollups],
+  )
 
   const needsTeamSelection = !isAdmin && teams.length === 0 && !teamsFetching
 
@@ -315,7 +335,7 @@ export function AnalyticsPage(): ReactElement {
                     </FrameDescription>
                   </FrameHeader>
                   <BarChart
-                    categories={['MTTA', 'MTTR']}
+                    categories={[mttaCategory, mttrCategory]}
                     data={responseRows}
                     index="window"
                     showAnimation={false}
@@ -337,7 +357,7 @@ export function AnalyticsPage(): ReactElement {
                     </FrameDescription>
                   </FrameHeader>
                   <BarChart
-                    categories={['Acknowledged', 'Resolved']}
+                    categories={[acknowledgedCategory, resolvedCategory]}
                     colors={['blue', 'emerald']}
                     data={volumeRows}
                     index="window"

@@ -42,6 +42,7 @@ import { AlertTriangleIcon, CircleCheckIcon, InfoIcon, PlusIcon } from 'lucide-r
 
 import { appConfig } from '../lib/config'
 import { formatDateTime, formatGraphQLError } from '../lib/format'
+import { t } from '../lib/i18n'
 import { CopyButton } from './copy-button'
 
 type HeartbeatMonitorRow = HeartbeatMonitorsQuery['heartbeatMonitors'][number]
@@ -81,21 +82,21 @@ function heartbeatStatusBadge(status: HeartbeatMonitorStatus): ReactElement {
       return (
         <Badge variant="warning">
           <AlertTriangleIcon />
-          Overdue
+          {t('heartbeats.status.overdue')}
         </Badge>
       )
     case HeartbeatMonitorStatus.Triggered:
       return (
         <Badge variant="error">
           <AlertTriangleIcon />
-          Triggered
+          {t('heartbeats.status.triggered')}
         </Badge>
       )
     default:
       return (
         <Badge variant="success">
           <CircleCheckIcon />
-          Healthy
+          {t('heartbeats.status.healthy')}
         </Badge>
       )
   }
@@ -153,19 +154,19 @@ export function HeartbeatMonitorsPanel({ serviceId }: HeartbeatMonitorsPanelProp
   async function handleSave(): Promise<void> {
     const name = form.name.trim()
     if (!name) {
-      setFormError('Name is required.')
+      setFormError(t('heartbeats.error.nameRequired'))
       return
     }
 
     const intervalSeconds = Number.parseInt(form.intervalSeconds, 10)
     if (!Number.isFinite(intervalSeconds) || intervalSeconds < 1) {
-      setFormError('Interval must be at least 1 second.')
+      setFormError(t('heartbeats.error.interval'))
       return
     }
 
     const graceSeconds = Number.parseInt(form.graceSeconds, 10)
     if (!Number.isFinite(graceSeconds) || graceSeconds < 0) {
-      setFormError('Grace period must be zero or more seconds.')
+      setFormError(t('heartbeats.error.grace'))
       return
     }
 
@@ -213,14 +214,13 @@ export function HeartbeatMonitorsPanel({ serviceId }: HeartbeatMonitorsPanelProp
 
     const created = result.data?.createHeartbeatMonitor
     if (!created?.token) {
-      setFormError('Monitor was created but the ping token was not returned.')
+      setFormError(t('heartbeats.error.createNoToken'))
       return
     }
 
     setRevealPingUrl({
-      title: 'Heartbeat monitor created',
-      description:
-        'Save the ping URL below. After you close this dialog, only the token prefix remains visible.',
+      title: t('heartbeats.reveal.createdTitle'),
+      description: t('heartbeats.reveal.createdDescription'),
       tokenPrefix: created.tokenPrefix,
       pingURL: buildHeartbeatPingURL(appConfig.apiPublicUrl, created.token),
     })
@@ -239,27 +239,25 @@ export function HeartbeatMonitorsPanel({ serviceId }: HeartbeatMonitorsPanelProp
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Heartbeat monitors</h2>
-          <p className="text-sm text-muted-foreground">
-            Dead man&apos;s switch monitors that alert when expected pings stop arriving.
-          </p>
+          <h2 className="text-lg font-semibold text-foreground">{t('heartbeats.title')}</h2>
+          <p className="text-sm text-muted-foreground">{t('heartbeats.description')}</p>
         </div>
         <Dialog onOpenChange={setFormOpen} open={formOpen}>
           <DialogTrigger render={<Button onClick={openCreate} type="button" />}>
             <PlusIcon />
-            Add monitor
+            {t('heartbeats.add')}
           </DialogTrigger>
           <DialogPopup>
             <DialogHeader>
-              <DialogTitle>{editing ? 'Edit heartbeat monitor' : 'Add heartbeat monitor'}</DialogTitle>
-              <DialogDescription>
-                Configure how often a ping is expected and how long to wait before alerting.
-              </DialogDescription>
+              <DialogTitle>
+                {editing ? t('heartbeats.editTitle') : t('heartbeats.createTitle')}
+              </DialogTitle>
+              <DialogDescription>{t('heartbeats.formDescription')}</DialogDescription>
             </DialogHeader>
             <DialogPanel className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground" htmlFor="heartbeat-name">
-                  Name
+                  {t('common.name')}
                 </label>
                 <Input
                   id="heartbeat-name"
@@ -270,7 +268,7 @@ export function HeartbeatMonitorsPanel({ serviceId }: HeartbeatMonitorsPanelProp
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground" htmlFor="heartbeat-interval">
-                    Interval (seconds)
+                    {t('heartbeats.field.interval')}
                   </label>
                   <Input
                     id="heartbeat-interval"
@@ -285,7 +283,7 @@ export function HeartbeatMonitorsPanel({ serviceId }: HeartbeatMonitorsPanelProp
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground" htmlFor="heartbeat-grace">
-                    Grace (seconds)
+                    {t('heartbeats.field.grace')}
                   </label>
                   <Input
                     id="heartbeat-grace"
@@ -307,16 +305,20 @@ export function HeartbeatMonitorsPanel({ serviceId }: HeartbeatMonitorsPanelProp
               ) : null}
             </DialogPanel>
             <DialogFooter>
-              <DialogClose render={<Button type="button" variant="ghost" />}>Cancel</DialogClose>
+              <DialogClose render={<Button type="button" variant="ghost" />}>{t('common.cancel')}</DialogClose>
               <Button disabled={saving} onClick={() => void handleSave()} type="button">
-                {saving ? 'Saving…' : editing ? 'Save changes' : 'Create monitor'}
+                {saving
+                  ? t('heartbeats.action.saving')
+                  : editing
+                    ? t('heartbeats.action.saveChanges')
+                    : t('heartbeats.action.create')}
               </Button>
             </DialogFooter>
           </DialogPopup>
         </Dialog>
       </div>
 
-      {fetching ? <p className="text-sm text-muted-foreground">Loading heartbeat monitors…</p> : null}
+      {fetching ? <p className="text-sm text-muted-foreground">{t('heartbeats.loading')}</p> : null}
 
       {error ? (
         <Alert variant="error">
@@ -333,20 +335,20 @@ export function HeartbeatMonitorsPanel({ serviceId }: HeartbeatMonitorsPanelProp
       ) : null}
 
       {!fetching && !error && monitors.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No heartbeat monitors configured.</p>
+        <p className="text-sm text-muted-foreground">{t('heartbeats.empty')}</p>
       ) : null}
 
       {monitors.length > 0 ? (
         <Table variant="card">
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Interval</TableHead>
-              <TableHead>Grace</TableHead>
-              <TableHead>Token prefix</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Last ping</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t('common.name')}</TableHead>
+              <TableHead>{t('heartbeats.column.interval')}</TableHead>
+              <TableHead>{t('heartbeats.column.grace')}</TableHead>
+              <TableHead>{t('heartbeats.column.tokenPrefix')}</TableHead>
+              <TableHead>{t('common.status')}</TableHead>
+              <TableHead>{t('heartbeats.column.lastPing')}</TableHead>
+              <TableHead className="text-right">{t('common.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -365,32 +367,30 @@ export function HeartbeatMonitorsPanel({ serviceId }: HeartbeatMonitorsPanelProp
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button onClick={() => openEdit(monitor)} size="sm" type="button" variant="outline">
-                      Edit
+                      {t('heartbeats.action.edit')}
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger
                         render={<Button size="sm" type="button" variant="destructive-outline" />}
                       >
-                        Delete
+                        {t('heartbeats.action.delete')}
                       </AlertDialogTrigger>
                       <AlertDialogPopup>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete heartbeat monitor?</AlertDialogTitle>
+                          <AlertDialogTitle>{t('heartbeats.delete.title')}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Pings to token prefix{' '}
-                            <span className="font-mono text-foreground">{monitor.tokenPrefix}</span> will
-                            stop updating this monitor.
+                            {t('heartbeats.delete.description', { prefix: monitor.tokenPrefix })}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogClose render={<Button type="button" variant="ghost" />}>
-                            Cancel
+                            {t('common.cancel')}
                           </AlertDialogClose>
                           <AlertDialogClose
                             onClick={() => void handleDelete(monitor.id)}
                             render={<Button type="button" variant="destructive" />}
                           >
-                            Delete monitor
+                            {t('heartbeats.delete.confirm')}
                           </AlertDialogClose>
                         </AlertDialogFooter>
                       </AlertDialogPopup>
@@ -414,23 +414,21 @@ export function HeartbeatMonitorsPanel({ serviceId }: HeartbeatMonitorsPanelProp
               <DialogPanel className="space-y-4">
                 <Alert variant="warning">
                   <InfoIcon />
-                  <AlertTitle>Shown once</AlertTitle>
+                  <AlertTitle>{t('common.shownOnce')}</AlertTitle>
                   <AlertDescription>
-                    Token prefix{' '}
-                    <span className="font-mono text-foreground">{revealPingUrl.tokenPrefix}</span> will
-                    remain visible in the monitor list after you close this dialog.
+                    {t('heartbeats.reveal.shownOnceDescription', { prefix: revealPingUrl.tokenPrefix })}
                   </AlertDescription>
                 </Alert>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-foreground">Ping URL</p>
+                  <p className="text-sm font-medium text-foreground">{t('heartbeats.reveal.pingUrl')}</p>
                   <code className="block overflow-x-auto rounded-md bg-muted p-3 text-xs text-foreground">
                     {revealPingUrl.pingURL}
                   </code>
-                  <CopyButton label="Copy URL" value={revealPingUrl.pingURL} />
+                  <CopyButton label={t('common.copyUrl')} value={revealPingUrl.pingURL} />
                 </div>
               </DialogPanel>
               <DialogFooter>
-                <DialogClose render={<Button type="button" />}>I saved the URL</DialogClose>
+                <DialogClose render={<Button type="button" />}>{t('common.savedUrl')}</DialogClose>
               </DialogFooter>
             </>
           ) : null}

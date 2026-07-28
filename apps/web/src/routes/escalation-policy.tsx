@@ -108,7 +108,7 @@ export function EscalationPolicyPage(): ReactElement {
 
   async function handleSave(payload: EscalationPolicySavePayload): Promise<void> {
     if (!canSaveEscalationPolicy(editorPolicy?.steps ?? [])) {
-      setSaveError('Each step must include at least one complete target before saving.')
+      setSaveError(t('escalationPolicy.error.incompleteTargets'))
       return
     }
 
@@ -119,7 +119,7 @@ export function EscalationPolicyPage(): ReactElement {
     if (isCreateMode) {
       if (!serviceId.trim()) {
         setSaving(false)
-        setSaveError('A serviceId query parameter is required to create a policy.')
+        setSaveError(t('escalationPolicy.error.missingServiceId'))
         return
       }
 
@@ -142,13 +142,13 @@ export function EscalationPolicyPage(): ReactElement {
         setPolicy(mapApiPolicyToEditor(result.data.createEscalationPolicy))
       }
 
-      setSavedMessage('Escalation policy created. Step order was saved to the API.')
+      setSavedMessage(t('escalationPolicy.success.created'))
       return
     }
 
     if (!policyId) {
       setSaving(false)
-      setSaveError('Policy ID is missing.')
+      setSaveError(t('escalationPolicy.error.missingPolicyId'))
       return
     }
 
@@ -171,7 +171,7 @@ export function EscalationPolicyPage(): ReactElement {
       setPolicy(mapApiPolicyToEditor(result.data.updateEscalationPolicy))
     }
 
-    setSavedMessage('Escalation policy updated. Step order was saved to the API.')
+    setSavedMessage(t('escalationPolicy.success.updated'))
   }
 
   return (
@@ -181,13 +181,10 @@ export function EscalationPolicyPage(): ReactElement {
           <h1 className="mt-2 text-xl font-semibold text-foreground">
             {isCreateMode ? t('services.escalation.create') : policyLabel}
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Configure ordered steps, delays, notification targets, and optional repeat settings on
-            the final step. Drag steps to reorder; save persists step order to the API.
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{t('escalationPolicy.description')}</p>
 
           {fetching ? (
-            <p className="mt-6 text-sm text-muted-foreground">Loading policy…</p>
+            <p className="mt-6 text-sm text-muted-foreground">{t('escalationPolicy.loading')}</p>
           ) : null}
 
           {error ? (
@@ -198,7 +195,7 @@ export function EscalationPolicyPage(): ReactElement {
 
           {!isCreateMode && !fetching && !data?.escalationPolicy ? (
             <p className="mt-6 text-sm text-destructive-foreground" role="alert">
-              Escalation policy not found.
+              {t('escalationPolicy.notFound')}
             </p>
           ) : null}
 
@@ -206,8 +203,7 @@ export function EscalationPolicyPage(): ReactElement {
             <div className="mt-6">
               {!isCreateMode && editorPolicy.steps.every((step) => step.targets.length === 0) ? (
                 <p className="mb-4 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning-foreground">
-                  Loaded steps from the API do not include targets yet. Add at least one target per
-                  step before saving.
+                  {t('escalationPolicy.warning.noTargets')}
                 </p>
               ) : null}
 
@@ -235,8 +231,7 @@ export function EscalationPolicyPage(): ReactElement {
 
           {isCreateMode && !serviceId ? (
             <p className="mt-4 text-sm text-destructive-foreground" role="alert">
-              Add <code className="font-mono">?serviceId=&lt;uuid&gt;</code> to the URL to create a
-              policy for a service.
+              {t('escalationPolicy.error.serviceIdHint')}
             </p>
           ) : null}
       </section>

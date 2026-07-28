@@ -47,6 +47,7 @@ import { AlertTriangleIcon, CircleCheckIcon, InfoIcon } from 'lucide-react'
 import { appConfig } from '../lib/config'
 import { formatDateTime, formatGraphQLError } from '../lib/format'
 import { buildInboundWebhookURL } from '../lib/integration-presets'
+import { t } from '../lib/i18n'
 import { CopyButton } from './copy-button'
 import { IntegrationPicker } from './integration-picker'
 
@@ -69,7 +70,7 @@ function keyStatusBadge(key: IntegrationKeyRow): ReactElement {
     return (
       <Badge variant="error">
         <AlertTriangleIcon />
-        Revoked
+        {t('integrationKeys.status.revoked')}
       </Badge>
     )
   }
@@ -77,7 +78,7 @@ function keyStatusBadge(key: IntegrationKeyRow): ReactElement {
   return (
     <Badge variant="success">
       <CircleCheckIcon />
-      Active
+      {t('integrationKeys.status.active')}
     </Badge>
   )
 }
@@ -150,15 +151,14 @@ export function IntegrationKeysPanel({
 
     const rotated = result.data?.rotateIntegrationKey
     if (!rotated?.token) {
-      setError('Rotated key was created but the token was not returned.')
+      setError(t('integrationKeys.error.rotateNoToken'))
       reexecuteQuery({ requestPolicy: 'network-only' })
       return
     }
 
     setRevealSecret({
-      title: 'Integration key rotated',
-      description:
-        'The previous key is revoked. Save the new webhook URL below — the full token is shown once.',
+      title: t('integrationKeys.reveal.rotatedTitle'),
+      description: t('integrationKeys.reveal.rotatedDescription'),
       tokenPrefix: rotated.tokenPrefix,
       webhookURL: buildInboundWebhookURL(appConfig.apiPublicUrl, rotated.pluginName, rotated.token),
     })
@@ -173,9 +173,8 @@ export function IntegrationKeysPanel({
   }): void {
     setCreateOpen(false)
     setRevealSecret({
-      title: `${payload.presetLabel} integration key created`,
-      description:
-        'Save the webhook URL below. After you close this dialog, only the token prefix remains visible.',
+      title: t('integrationKeys.reveal.createdTitle', { preset: payload.presetLabel }),
+      description: t('integrationKeys.reveal.createdDescription'),
       tokenPrefix: payload.tokenPrefix,
       webhookURL: buildInboundWebhookURL(
         appConfig.apiPublicUrl,
@@ -191,18 +190,18 @@ export function IntegrationKeysPanel({
       {!embedded ? (
         <div className="max-w-md space-y-2">
           <label className="text-sm font-medium text-foreground" htmlFor="integration-service-picker">
-            Service
+            {t('integrationKeys.serviceLabel')}
           </label>
           <Combobox onValueChange={handleServiceSelect} value={serviceId || null}>
             <ComboboxInput
               id="integration-service-picker"
-              placeholder="Select a service"
+              placeholder={t('integrationKeys.servicePlaceholder')}
               showClear
             />
             <ComboboxPopup>
               <ComboboxList>
                 <ComboboxEmpty>
-                  {servicesFetching ? 'Loading services…' : 'No services found.'}
+                  {servicesFetching ? t('integrationKeys.loadingServices') : t('integrationKeys.noServices')}
                 </ComboboxEmpty>
                 {services.map((service) => (
                   <ComboboxItem key={service.id} value={service.id}>
@@ -218,7 +217,7 @@ export function IntegrationKeysPanel({
       {error ? (
         <Alert variant="error">
           <AlertTriangleIcon />
-          <AlertTitle>Action failed</AlertTitle>
+          <AlertTitle>{t('common.actionFailed')}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}
@@ -227,19 +226,15 @@ export function IntegrationKeysPanel({
         <section className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Integration keys</h2>
-              <p className="text-sm text-muted-foreground">
-                Prefix-only display after creation. Revoked keys stop accepting webhooks immediately.
-              </p>
+              <h2 className="text-lg font-semibold text-foreground">{t('integrationKeys.title')}</h2>
+              <p className="text-sm text-muted-foreground">{t('integrationKeys.description')}</p>
             </div>
             <Dialog onOpenChange={setCreateOpen} open={createOpen}>
-              <DialogTrigger render={<Button type="button" />}>Create key</DialogTrigger>
+              <DialogTrigger render={<Button type="button" />}>{t('integrationKeys.create')}</DialogTrigger>
               <DialogPopup>
                 <DialogHeader>
-                  <DialogTitle>Create integration key</DialogTitle>
-                  <DialogDescription>
-                    Choose a preset to create an inbound integration key with pre-filled field mapping.
-                  </DialogDescription>
+                  <DialogTitle>{t('integrationKeys.createTitle')}</DialogTitle>
+                  <DialogDescription>{t('integrationKeys.createDescription')}</DialogDescription>
                 </DialogHeader>
                 <DialogPanel>
                   <IntegrationPicker
@@ -248,7 +243,7 @@ export function IntegrationKeysPanel({
                   />
                 </DialogPanel>
                 <DialogFooter variant="bare">
-                  <DialogClose render={<Button type="button" variant="ghost" />}>Close</DialogClose>
+                  <DialogClose render={<Button type="button" variant="ghost" />}>{t('common.close')}</DialogClose>
                 </DialogFooter>
               </DialogPopup>
             </Dialog>
@@ -257,24 +252,24 @@ export function IntegrationKeysPanel({
           <Table variant="card">
             <TableHeader>
               <TableRow>
-                <TableHead>Plugin</TableHead>
-                <TableHead>Token prefix</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('integrationKeys.column.plugin')}</TableHead>
+                <TableHead>{t('integrationKeys.column.tokenPrefix')}</TableHead>
+                <TableHead>{t('common.status')}</TableHead>
+                <TableHead>{t('common.created')}</TableHead>
+                <TableHead className="text-right">{t('common.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {fetching ? (
                 <TableRow>
                   <TableCell className="text-muted-foreground" colSpan={5}>
-                    Loading integration keys…
+                    {t('integrationKeys.loading')}
                   </TableCell>
                 </TableRow>
               ) : keys.length === 0 ? (
                 <TableRow>
                   <TableCell className="text-muted-foreground" colSpan={5}>
-                    No integration keys for this service yet.
+                    {t('integrationKeys.empty')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -300,32 +295,30 @@ export function IntegrationKeysPanel({
                             type="button"
                             variant="outline"
                           >
-                            Rotate
+                            {t('integrationKeys.action.rotate')}
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger
                               render={<Button size="sm" type="button" variant="destructive-outline" />}
                             >
-                              Revoke
+                              {t('integrationKeys.action.revoke')}
                             </AlertDialogTrigger>
                             <AlertDialogPopup>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Revoke integration key?</AlertDialogTitle>
+                                <AlertDialogTitle>{t('integrationKeys.revoke.title')}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Webhook requests using prefix{' '}
-                                  <span className="font-mono text-foreground">{key.tokenPrefix}</span>{' '}
-                                  will return 404 immediately after revocation.
+                                  {t('integrationKeys.revoke.description', { prefix: key.tokenPrefix })}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogClose render={<Button type="button" variant="ghost" />}>
-                                  Cancel
+                                  {t('common.cancel')}
                                 </AlertDialogClose>
                                 <AlertDialogClose
                                   onClick={() => void handleRevoke(key)}
                                   render={<Button type="button" variant="destructive" />}
                                 >
-                                  Revoke key
+                                  {t('integrationKeys.revoke.confirm')}
                                 </AlertDialogClose>
                               </AlertDialogFooter>
                             </AlertDialogPopup>
@@ -352,22 +345,21 @@ export function IntegrationKeysPanel({
               <DialogPanel className="space-y-4">
                 <Alert variant="warning">
                   <InfoIcon />
-                  <AlertTitle>Shown once</AlertTitle>
+                  <AlertTitle>{t('common.shownOnce')}</AlertTitle>
                   <AlertDescription>
-                    Token prefix <span className="font-mono text-foreground">{revealSecret.tokenPrefix}</span>{' '}
-                    will remain visible in the key list after you close this dialog.
+                    {t('integrationKeys.reveal.shownOnceDescription', { prefix: revealSecret.tokenPrefix })}
                   </AlertDescription>
                 </Alert>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-foreground">Webhook URL</p>
+                  <p className="text-sm font-medium text-foreground">{t('integrationKeys.reveal.webhookUrl')}</p>
                   <code className="block overflow-x-auto rounded-md bg-muted p-3 text-xs text-foreground">
                     {revealSecret.webhookURL}
                   </code>
-                  <CopyButton label="Copy URL" value={revealSecret.webhookURL} />
+                  <CopyButton label={t('common.copyUrl')} value={revealSecret.webhookURL} />
                 </div>
               </DialogPanel>
               <DialogFooter>
-                <DialogClose render={<Button type="button" />}>I saved the URL</DialogClose>
+                <DialogClose render={<Button type="button" />}>{t('common.savedUrl')}</DialogClose>
               </DialogFooter>
             </>
           ) : null}

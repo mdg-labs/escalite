@@ -2,14 +2,16 @@ import { useState, type ReactElement } from 'react'
 import { CheckIcon, CopyIcon } from 'lucide-react'
 
 import { Button } from '@escalite/ui'
+import { t } from '../lib/i18n'
 
 type CopyButtonProps = {
   value: string
   label?: string
 }
 
-export function CopyButton({ value, label = 'Copy' }: CopyButtonProps): ReactElement {
+export function CopyButton({ value, label }: CopyButtonProps): ReactElement {
   const [copied, setCopied] = useState(false)
+  const buttonLabel = label ?? t('common.copy')
 
   async function handleCopy(): Promise<void> {
     await navigator.clipboard.writeText(value)
@@ -22,12 +24,12 @@ export function CopyButton({ value, label = 'Copy' }: CopyButtonProps): ReactEle
       {copied ? (
         <>
           <CheckIcon />
-          Copied
+          {t('common.copied')}
         </>
       ) : (
         <>
           <CopyIcon />
-          {label}
+          {buttonLabel}
         </>
       )}
     </Button>

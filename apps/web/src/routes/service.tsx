@@ -329,7 +329,7 @@ export function ServicePage(): ReactElement {
                 <TabsTab value="escalation">{t('services.tabs.escalation')}</TabsTab>
                 <TabsTab value="integrations">{t('services.tabs.integrations')}</TabsTab>
                 <TabsTab value="maintenance">{t('services.tabs.maintenance')}</TabsTab>
-                <TabsTab value="heartbeats">Heartbeats</TabsTab>
+                <TabsTab value="heartbeats">{t('services.tabs.heartbeats')}</TabsTab>
                 <TabsTab value="schedules">{t('services.tabs.schedules')}</TabsTab>
               </TabsList>
 
