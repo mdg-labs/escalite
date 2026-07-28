@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -11,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/mdg-labs/escalite/services/api/internal/db"
@@ -30,11 +32,14 @@ func NewPublicStatusPageHandler(pool *pgxpool.Pool, logger *slog.Logger) *Public
 	}
 }
 
+const publicStatusPageResolvedWindowDays = 30
+
 type publicStatusPageResponse struct {
-	Title         string                       `json:"title"`
-	OverallStatus string                       `json:"overallStatus"`
-	Components    []publicStatusPageComponent  `json:"components"`
-	Incidents     []publicStatusPageIncident   `json:"incidents"`
+	Title              string                       `json:"title"`
+	OverallStatus      string                       `json:"overallStatus"`
+	Components         []publicStatusPageComponent  `json:"components"`
+	Incidents          []publicStatusPageIncident   `json:"incidents"`
+	ResolvedIncidents  []publicStatusPageIncident   `json:"resolvedIncidents"`
 }
 
 type publicStatusPageComponent struct {
@@ -134,67 +139,39 @@ func (h *PublicStatusPageHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	publicIncidents := make([]publicStatusPageIncident, 0, len(incidents))
-	for _, incident := range incidents {
-		componentIDs, err := queries.ListStatusPageIncidentComponentIDs(ctx, db.ListStatusPageIncidentComponentIDsParams{
-			StatusPageIncidentID: incident.ID,
-			OrganizationID:       page.OrganizationID,
-		})
-		if err != nil {
-			h.logger.Error("list public status page incident components failed", "error", err)
-			WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
-			return
-		}
+	publicIncidents, err := h.buildPublicStatusPageIncidents(ctx, queries, page.OrganizationID, publicStatusPageIncidentSourcesFromActive(incidents))
+	if err != nil {
+		h.logger.Error("build public status page incidents failed", "error", err)
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
+	}
 
-		affected := make([]string, 0, len(componentIDs))
-		for _, id := range componentIDs {
-			affected = append(affected, id.String())
-		}
+	resolvedIncidents, err := queries.ListPublicStatusPageResolvedIncidents(ctx, db.ListPublicStatusPageResolvedIncidentsParams{
+		StatusPageID:       page.ID,
+		OrganizationID:     page.OrganizationID,
+		ResolvedWindowDays: publicStatusPageResolvedWindowDays,
+	})
+	if err != nil {
+		h.logger.Error("list public status page resolved incidents failed", "error", err)
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
+	}
 
-		updates, err := queries.ListPublicStatusPageIncidentUpdates(ctx, db.ListPublicStatusPageIncidentUpdatesParams{
-			StatusPageIncidentID: incident.ID,
-			OrganizationID:       page.OrganizationID,
-		})
-		if err != nil {
-			h.logger.Error("list public status page incident updates failed", "error", err)
-			WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
-			return
-		}
-
-		publicUpdates := make([]publicStatusPageIncidentUpdate, 0, len(updates))
-		for _, update := range updates {
-			publicUpdates = append(publicUpdates, publicStatusPageIncidentUpdate{
-				ID:        update.ID.String(),
-				Body:      update.Body,
-				Status:    update.Status,
-				CreatedAt: update.CreatedAt.Time.UTC(),
-			})
-		}
-
-		var resolvedAt *time.Time
-		if incident.ResolvedAt.Valid {
-			t := incident.ResolvedAt.Time.UTC()
-			resolvedAt = &t
-		}
-
-		publicIncidents = append(publicIncidents, publicStatusPageIncident{
-			ID:                   incident.ID.String(),
-			Title:                incident.Title,
-			Status:               incident.Status,
-			AffectedComponentIDs: affected,
-			Updates:              publicUpdates,
-			CreatedAt:            incident.CreatedAt.Time.UTC(),
-			ResolvedAt:           resolvedAt,
-		})
+	publicResolvedIncidents, err := h.buildPublicStatusPageIncidents(ctx, queries, page.OrganizationID, publicStatusPageIncidentSourcesFromResolved(resolvedIncidents))
+	if err != nil {
+		h.logger.Error("build public status page resolved incidents failed", "error", err)
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(publicStatusPageResponse{
-		Title:         page.Title,
-		OverallStatus: overallStatus,
-		Components:    publicComponents,
-		Incidents:     publicIncidents,
+		Title:             page.Title,
+		OverallStatus:     overallStatus,
+		Components:        publicComponents,
+		Incidents:         publicIncidents,
+		ResolvedIncidents: publicResolvedIncidents,
 	})
 }
 
@@ -255,6 +232,100 @@ func (h *PublicStatusPageHandler) Subscribe(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(publicStatusPageSubscribeResponse{Subscribed: true})
+}
+
+type publicStatusPageIncidentSource struct {
+	ID         uuid.UUID
+	Title      string
+	Status     string
+	ResolvedAt pgtype.Timestamptz
+	CreatedAt  pgtype.Timestamptz
+}
+
+func publicStatusPageIncidentSourcesFromActive(rows []db.ListPublicStatusPageIncidentsRow) []publicStatusPageIncidentSource {
+	sources := make([]publicStatusPageIncidentSource, 0, len(rows))
+	for _, row := range rows {
+		sources = append(sources, publicStatusPageIncidentSource{
+			ID:         row.ID,
+			Title:      row.Title,
+			Status:     row.Status,
+			ResolvedAt: row.ResolvedAt,
+			CreatedAt:  row.CreatedAt,
+		})
+	}
+	return sources
+}
+
+func publicStatusPageIncidentSourcesFromResolved(rows []db.ListPublicStatusPageResolvedIncidentsRow) []publicStatusPageIncidentSource {
+	sources := make([]publicStatusPageIncidentSource, 0, len(rows))
+	for _, row := range rows {
+		sources = append(sources, publicStatusPageIncidentSource{
+			ID:         row.ID,
+			Title:      row.Title,
+			Status:     row.Status,
+			ResolvedAt: row.ResolvedAt,
+			CreatedAt:  row.CreatedAt,
+		})
+	}
+	return sources
+}
+
+func (h *PublicStatusPageHandler) buildPublicStatusPageIncidents(
+	ctx context.Context,
+	queries *db.Queries,
+	orgID uuid.UUID,
+	sources []publicStatusPageIncidentSource,
+) ([]publicStatusPageIncident, error) {
+	publicIncidents := make([]publicStatusPageIncident, 0, len(sources))
+	for _, incident := range sources {
+		componentIDs, err := queries.ListStatusPageIncidentComponentIDs(ctx, db.ListStatusPageIncidentComponentIDsParams{
+			StatusPageIncidentID: incident.ID,
+			OrganizationID:       orgID,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		affected := make([]string, 0, len(componentIDs))
+		for _, id := range componentIDs {
+			affected = append(affected, id.String())
+		}
+
+		updates, err := queries.ListPublicStatusPageIncidentUpdates(ctx, db.ListPublicStatusPageIncidentUpdatesParams{
+			StatusPageIncidentID: incident.ID,
+			OrganizationID:       orgID,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		publicUpdates := make([]publicStatusPageIncidentUpdate, 0, len(updates))
+		for _, update := range updates {
+			publicUpdates = append(publicUpdates, publicStatusPageIncidentUpdate{
+				ID:        update.ID.String(),
+				Body:      update.Body,
+				Status:    update.Status,
+				CreatedAt: update.CreatedAt.Time.UTC(),
+			})
+		}
+
+		var resolvedAt *time.Time
+		if incident.ResolvedAt.Valid {
+			t := incident.ResolvedAt.Time.UTC()
+			resolvedAt = &t
+		}
+
+		publicIncidents = append(publicIncidents, publicStatusPageIncident{
+			ID:                   incident.ID.String(),
+			Title:                incident.Title,
+			Status:               incident.Status,
+			AffectedComponentIDs: affected,
+			Updates:              publicUpdates,
+			CreatedAt:            incident.CreatedAt.Time.UTC(),
+			ResolvedAt:           resolvedAt,
+		})
+	}
+	return publicIncidents, nil
 }
 
 func worstComponentStatus(current, candidate string) string {

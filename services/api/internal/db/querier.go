@@ -164,6 +164,7 @@ type Querier interface {
 	ListPublicStatusPageComponents(ctx context.Context, arg ListPublicStatusPageComponentsParams) ([]ListPublicStatusPageComponentsRow, error)
 	ListPublicStatusPageIncidentUpdates(ctx context.Context, arg ListPublicStatusPageIncidentUpdatesParams) ([]StatusPageIncidentUpdate, error)
 	ListPublicStatusPageIncidents(ctx context.Context, arg ListPublicStatusPageIncidentsParams) ([]ListPublicStatusPageIncidentsRow, error)
+	ListPublicStatusPageResolvedIncidents(ctx context.Context, arg ListPublicStatusPageResolvedIncidentsParams) ([]ListPublicStatusPageResolvedIncidentsRow, error)
 	ListRecentUnassignedAlertsByService(ctx context.Context, arg ListRecentUnassignedAlertsByServiceParams) ([]Alert, error)
 	ListRotationsByScheduleID(ctx context.Context, arg ListRotationsByScheduleIDParams) ([]Rotation, error)
 	ListSchedulesByTeamID(ctx context.Context, arg ListSchedulesByTeamIDParams) ([]Schedule, error)

@@ -604,6 +604,62 @@ func (q *Queries) ListPublicStatusPageIncidents(ctx context.Context, arg ListPub
 	return items, nil
 }
 
+const listPublicStatusPageResolvedIncidents = `-- name: ListPublicStatusPageResolvedIncidents :many
+SELECT id, status_page_id, organization_id, title, status, resolved_at, created_at, updated_at
+FROM status_page_incidents
+WHERE status_page_id = $1
+  AND organization_id = $2
+  AND status = 'resolved'
+  AND resolved_at >= now() - ($3::integer * interval '1 day')
+ORDER BY resolved_at DESC
+`
+
+type ListPublicStatusPageResolvedIncidentsParams struct {
+	StatusPageID       uuid.UUID `json:"status_page_id"`
+	OrganizationID     uuid.UUID `json:"organization_id"`
+	ResolvedWindowDays int32     `json:"resolved_window_days"`
+}
+
+type ListPublicStatusPageResolvedIncidentsRow struct {
+	ID             uuid.UUID          `json:"id"`
+	StatusPageID   uuid.UUID          `json:"status_page_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	Title          string             `json:"title"`
+	Status         string             `json:"status"`
+	ResolvedAt     pgtype.Timestamptz `json:"resolved_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) ListPublicStatusPageResolvedIncidents(ctx context.Context, arg ListPublicStatusPageResolvedIncidentsParams) ([]ListPublicStatusPageResolvedIncidentsRow, error) {
+	rows, err := q.db.Query(ctx, listPublicStatusPageResolvedIncidents, arg.StatusPageID, arg.OrganizationID, arg.ResolvedWindowDays)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPublicStatusPageResolvedIncidentsRow{}
+	for rows.Next() {
+		var i ListPublicStatusPageResolvedIncidentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.StatusPageID,
+			&i.OrganizationID,
+			&i.Title,
+			&i.Status,
+			&i.ResolvedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStatusPageComponents = `-- name: ListStatusPageComponents :many
 SELECT id, status_page_id, organization_id, name, description, status, position, service_id, created_at, updated_at
 FROM status_page_components

@@ -218,3 +218,134 @@ func TestPublicStatusPageComponentStatusEnumValues(t *testing.T) {
 	require.True(t, seen["partial_outage"])
 	require.True(t, seen["major_outage"])
 }
+
+func TestPublicStatusPageResolvedIncidentsWindow(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	adminCookie := bootstrapAdmin(t, handler)
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+
+	saveRec := postGraphQL(t, handler, `mutation {
+		saveStatusPage(input: {
+			slug: "resolved-history"
+			title: "Resolved History"
+			enabled: true
+		}) {
+			id
+		}
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, saveRec.Code, saveRec.Body.String())
+
+	componentRec := postGraphQL(t, handler, `mutation {
+		createStatusPageComponent(input: {
+			name: "API"
+			status: OPERATIONAL
+			position: 0
+		}) {
+			id
+		}
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, componentRec.Code, componentRec.Body.String())
+
+	var componentResp struct {
+		Data struct {
+			CreateStatusPageComponent struct {
+				ID string `json:"id"`
+			} `json:"createStatusPageComponent"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(componentRec.Body.Bytes(), &componentResp))
+	componentID := componentResp.Data.CreateStatusPageComponent.ID
+
+	incidentRec := postGraphQL(t, handler, `mutation {
+		createIncident(input: {
+			teamId: "`+team.ID.String()+`"
+			title: "Past outage"
+		}) {
+			id
+		}
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, incidentRec.Code, incidentRec.Body.String())
+
+	var incidentResp struct {
+		Data struct {
+			CreateIncident struct {
+				ID string `json:"id"`
+			} `json:"createIncident"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(incidentRec.Body.Bytes(), &incidentResp))
+	internalIncidentID := incidentResp.Data.CreateIncident.ID
+
+	publishRec := postGraphQL(t, handler, `mutation {
+		publishIncidentToStatusPage(input: {
+			incidentId: "`+internalIncidentID+`"
+			affectedComponentIds: ["`+componentID+`"]
+			body: "We are investigating elevated API errors."
+		}) {
+			id
+			title
+		}
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, publishRec.Code, publishRec.Body.String())
+
+	var publishResp struct {
+		Data struct {
+			PublishIncidentToStatusPage struct {
+				ID    string `json:"id"`
+				Title string `json:"title"`
+			} `json:"publishIncidentToStatusPage"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(publishRec.Body.Bytes(), &publishResp))
+	statusPageIncidentID := publishResp.Data.PublishIncidentToStatusPage.ID
+
+	activeReq := httptest.NewRequest(http.MethodGet, "/api/v1/public/status/resolved-history", nil)
+	activeRec := httptest.NewRecorder()
+	handler.ServeHTTP(activeRec, activeReq)
+	require.Equal(t, http.StatusOK, activeRec.Code, activeRec.Body.String())
+
+	var activePayload struct {
+		Incidents         []map[string]any `json:"incidents"`
+		ResolvedIncidents []map[string]any `json:"resolvedIncidents"`
+	}
+	require.NoError(t, json.Unmarshal(activeRec.Body.Bytes(), &activePayload))
+	require.Len(t, activePayload.Incidents, 1)
+	require.Empty(t, activePayload.ResolvedIncidents)
+
+	resolveRec := postGraphQL(t, handler, `mutation {
+		updateStatusPageIncidentStatus(input: {
+			id: "`+statusPageIncidentID+`"
+			status: RESOLVED
+			body: "The incident has been resolved."
+		}) {
+			id
+			status
+		}
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, resolveRec.Code, resolveRec.Body.String())
+
+	resolvedReq := httptest.NewRequest(http.MethodGet, "/api/v1/public/status/resolved-history", nil)
+	resolvedRec := httptest.NewRecorder()
+	handler.ServeHTTP(resolvedRec, resolvedReq)
+	require.Equal(t, http.StatusOK, resolvedRec.Code, resolvedRec.Body.String())
+
+	var resolvedPayload struct {
+		Incidents         []map[string]any `json:"incidents"`
+		ResolvedIncidents []map[string]any `json:"resolvedIncidents"`
+	}
+	require.NoError(t, json.Unmarshal(resolvedRec.Body.Bytes(), &resolvedPayload))
+	require.Empty(t, resolvedPayload.Incidents)
+	require.Len(t, resolvedPayload.ResolvedIncidents, 1)
+
+	firstResolved := resolvedPayload.ResolvedIncidents[0]
+	require.Equal(t, "Past outage", firstResolved["title"])
+	require.Equal(t, "resolved", firstResolved["status"])
+	require.NotNil(t, firstResolved["resolvedAt"])
+}

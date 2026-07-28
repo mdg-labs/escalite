@@ -6,13 +6,16 @@ import {
   AlertDescription,
   AlertTitle,
   Badge,
+  Collapsible,
+  CollapsiblePanel,
+  CollapsibleTrigger,
   Frame,
   FrameDescription,
   FrameHeader,
   FramePanel,
   FrameTitle,
 } from '@escalite/ui'
-import { AlertCircleIcon } from 'lucide-react'
+import { AlertCircleIcon, ChevronDownIcon } from 'lucide-react'
 
 import { ComponentStatusBadge } from '../components/component-status-badge'
 import { SubscribeForm } from '../components/subscribe-form'
@@ -54,9 +57,11 @@ function StatusPageMessage({ title, description }: { title: string; description?
 function IncidentCard({
   incident,
   componentNamesById,
+  showResolvedAt = false,
 }: {
   incident: PublicStatusPagePayload['incidents'][number]
   componentNamesById: Map<string, string>
+  showResolvedAt?: boolean
 }): ReactElement {
   const affectedNames = incident.affectedComponentIds
     .map((componentId) => componentNamesById.get(componentId))
@@ -69,6 +74,11 @@ function IncidentCard({
           <div className="space-y-1">
             <h3 className="text-base font-semibold text-foreground">{incident.title}</h3>
             <p className="text-sm text-muted-foreground">{formatDateTime(incident.createdAt)}</p>
+            {showResolvedAt && incident.resolvedAt ? (
+              <p className="text-sm text-muted-foreground">
+                {t('statusPage.incidents.resolvedAt', { date: formatDateTime(incident.resolvedAt) })}
+              </p>
+            ) : null}
           </div>
           <Badge variant={incidentStatusBadgeVariant(incident.status)}>
             {t(incidentStatusLabel(incident.status))}
@@ -258,6 +268,45 @@ export function StatusPageRoute(): ReactElement {
               ))}
             </div>
           )}
+        </section>
+
+        <section aria-labelledby="resolved-incidents-heading" className="space-y-4">
+          <Collapsible>
+            <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 text-left">
+              <h2 className="text-lg font-semibold text-foreground" id="resolved-incidents-heading">
+                {t('statusPage.incidents.resolved.title')}
+              </h2>
+              <div className="flex items-center gap-2">
+                {payload.resolvedIncidents.length > 0 ? (
+                  <span className="text-sm text-muted-foreground">
+                    {t('statusPage.incidents.resolved.count', {
+                      count: String(payload.resolvedIncidents.length),
+                    })}
+                  </span>
+                ) : null}
+                <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground transition-transform in-data-panel-open:rotate-180" />
+              </div>
+            </CollapsibleTrigger>
+
+            <CollapsiblePanel className="pt-4">
+              {payload.resolvedIncidents.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t('statusPage.incidents.resolved.empty')}
+                </p>
+              ) : (
+                <div className="grid gap-4">
+                  {payload.resolvedIncidents.map((incident) => (
+                    <IncidentCard
+                      componentNamesById={componentNamesById}
+                      incident={incident}
+                      key={incident.id}
+                      showResolvedAt
+                    />
+                  ))}
+                </div>
+              )}
+            </CollapsiblePanel>
+          </Collapsible>
         </section>
 
         <SubscribeForm apiPublicUrl={statusPageConfig.apiPublicUrl} slug={normalizedSlug} />

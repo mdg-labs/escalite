@@ -47,6 +47,7 @@ export type PublicStatusPagePayload = {
   overallStatus: ComponentStatus
   components: PublicStatusPageComponent[]
   incidents: PublicStatusPageIncident[]
+  resolvedIncidents: PublicStatusPageIncident[]
 }
 
 export type PublicStatusPageError = {

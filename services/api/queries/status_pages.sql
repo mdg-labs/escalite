@@ -147,6 +147,15 @@ WHERE status_page_id = $1
   AND status <> 'resolved'
 ORDER BY created_at DESC;
 
+-- name: ListPublicStatusPageResolvedIncidents :many
+SELECT id, status_page_id, organization_id, title, status, resolved_at, created_at, updated_at
+FROM status_page_incidents
+WHERE status_page_id = $1
+  AND organization_id = $2
+  AND status = 'resolved'
+  AND resolved_at >= now() - (sqlc.arg(resolved_window_days)::integer * interval '1 day')
+ORDER BY resolved_at DESC;
+
 -- name: CreateStatusPageIncident :one
 INSERT INTO status_page_incidents (
     id,
