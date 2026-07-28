@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "allure": "^3.14.3",
+    "allure-node-test": "^3.10.2",
     "husky": "^9.1.7",
     "turbo": "^2.5.4"
   },

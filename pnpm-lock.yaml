@@ -31,6 +31,9 @@ importers:
       allure:
         specifier: ^3.14.3
         version: 3.14.3(preact@10.29.7)(typescript@5.9.3)
+      allure-node-test:
+        specifier: ^3.10.2
+        version: 3.10.2
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -3492,6 +3495,17 @@ packages:
 
   ajv@8.20.0:
     resolution: {integrity: sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==}
+
+  allure-js-commons@3.10.2:
+    resolution: {integrity: sha512-5nAjUF1iNPSQMwKtEsadclSta8C3L705/k/pIzGb9M6P9krgfRaCyaEHt8pkLlCP9NFj5xk3grjtnAhiLeT+Kg==}
+    peerDependencies:
+      allure-playwright: 3.10.2
+    peerDependenciesMeta:
+      allure-playwright:
+        optional: true
+
+  allure-node-test@3.10.2:
+    resolution: {integrity: sha512-DJXcsVzpQu5B9U0hR4RJh6KffOu8yTWd2Ra9s+0UHkPx8ghPDQSpdAaJUvdUuE/48c7ntgo2/OOl0QJ8/fhV8Q==}
 
   allure@3.14.3:
     resolution: {integrity: sha512-wHoEDWWDpiqjd6UaNlbCc619pwKkx6J1aJsmB7lCnrrEbaSNyvbw6yd67VI931B0GEkP+dORHRy21Rsuc4l7IQ==}
@@ -12448,6 +12462,16 @@ snapshots:
       fast-uri: 3.1.4
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
+
+  allure-js-commons@3.10.2:
+    dependencies:
+      md5: 2.3.0
+
+  allure-node-test@3.10.2:
+    dependencies:
+      allure-js-commons: 3.10.2
+    transitivePeerDependencies:
+      - allure-playwright
 
   allure@3.14.3(preact@10.29.7)(typescript@5.9.3):
     dependencies:

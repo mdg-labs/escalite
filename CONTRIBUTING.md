@@ -133,6 +133,19 @@ npx allure --version
 pnpm report:allure   # succeeds even when allure-results/ is empty
 ```
 
+### Node.js unit tests (`node:test`)
+
+JS workspace packages run unit tests through `scripts/node-test-allure.mjs`, which enables the
+Allure reporter (`--test-reporter allure-node-test/reporter`) and writes per-package results to
+`allure-results/js/<package>/` (for example `apps/web/allure-results/js/web/`).
+
+| Node.js version | Mode | Behavior |
+| --------------- | ---- | -------- |
+| **22** (CI default) | Reporter-only | Pass, fail, skip, and todo results; no `--import allure-node-test/setup` |
+| **26.1+** | Full Runtime API | Also preloads `allure-node-test/setup` for `allure-js-commons` steps, labels, and attachments |
+
+`packages/config` (noop) and `packages/schema` (lint-only) are intentionally excluded.
+
 ## Pull requests
 
 1. Branch from `dev` (or the integration branch named in the issue).
