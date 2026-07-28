@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   AlertPriority,
+  type UpdateServiceInput,
   useDeleteEscalationPolicyMutation,
   useDeleteServiceMutation,
   useEscalationPoliciesQuery,
@@ -25,6 +26,11 @@ import {
   AlertTitle,
   Button,
   Input,
+  Select,
+  SelectItem,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
   Tabs,
   TabsList,
   TabsPanel,
@@ -44,7 +50,7 @@ export function ServicePage(): ReactElement {
   const { serviceId } = useParams()
   const navigate = useNavigate()
 
-  const [{ data, fetching, error }] = useServiceQuery({
+  const [{ data, fetching, error }, reexecuteService] = useServiceQuery({
     pause: !serviceId,
     variables: { id: serviceId ?? '' },
     requestPolicy: 'network-only',
@@ -66,6 +72,7 @@ export function ServicePage(): ReactElement {
   const [, deleteEscalationPolicy] = useDeleteEscalationPolicyMutation()
 
   const [name, setName] = useState('')
+  const [teamId, setTeamId] = useState('')
   const [autoPromoteEnabled, setAutoPromoteEnabled] = useState(false)
   const [autoPromoteAlertThreshold, setAutoPromoteAlertThreshold] = useState('3')
   const [autoPromoteWindowSeconds, setAutoPromoteWindowSeconds] = useState('300')
@@ -74,6 +81,7 @@ export function ServicePage(): ReactElement {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [savedMessage, setSavedMessage] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [savingTeam, setSavingTeam] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deletingPolicyId, setDeletingPolicyId] = useState<string | null>(null)
   const [escalationError, setEscalationError] = useState<string | null>(null)
@@ -81,6 +89,9 @@ export function ServicePage(): ReactElement {
   useEffect(() => {
     if (service?.name) {
       setName(service.name)
+    }
+    if (service?.teamId) {
+      setTeamId(service.teamId)
     }
     if (service?.autoPromoteRule) {
       setAutoPromoteEnabled(service.autoPromoteRule.enabled)
@@ -93,15 +104,9 @@ export function ServicePage(): ReactElement {
         service.autoPromoteRule.suppressEscalationPriorities.includes(AlertPriority.Low),
       )
     }
-  }, [service?.autoPromoteRule, service?.name])
+  }, [service?.autoPromoteRule, service?.name, service?.teamId])
 
-  const teamName = useMemo(() => {
-    if (!service) {
-      return ''
-    }
-    return teamsData?.teams.find((team) => team.id === service.teamId)?.name ?? service.teamId
-  }, [service, teamsData?.teams])
-
+  const teams = teamsData?.teams ?? []
   const policies = policiesData?.escalationPolicies ?? []
   const schedules = schedulesData?.schedules ?? []
   const activeMaintenance = service?.activeMaintenanceWindows ?? []
@@ -170,6 +175,33 @@ export function ServicePage(): ReactElement {
     }
 
     setSavedMessage(t('services.detail.saved'))
+  }
+
+  async function handleTeamChange(newTeamId: string | null): Promise<void> {
+    if (!serviceId || !newTeamId || newTeamId === service?.teamId) {
+      return
+    }
+
+    setSaveError(null)
+    setSavedMessage(null)
+    setSavingTeam(true)
+    const result = await updateService({
+      input: {
+        id: serviceId,
+        teamId: newTeamId,
+      } as UpdateServiceInput,
+    })
+    setSavingTeam(false)
+
+    if (result.error) {
+      setSaveError(formatGraphQLError(result.error.message))
+      setTeamId(service?.teamId ?? '')
+      return
+    }
+
+    setTeamId(newTeamId)
+    setSavedMessage(t('services.detail.saved'))
+    reexecuteService({ requestPolicy: 'network-only' })
   }
 
   async function handleDelete(): Promise<void> {
@@ -277,8 +309,25 @@ export function ServicePage(): ReactElement {
                     />
                   </div>
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-foreground">{t('services.field.team')}</p>
-                    <p className="text-sm text-muted-foreground">{teamName}</p>
+                    <label className="text-sm font-medium text-foreground" htmlFor="service-edit-team">
+                      {t('services.field.team')}
+                    </label>
+                    <Select
+                      disabled={savingTeam || teams.length === 0}
+                      onValueChange={(value) => void handleTeamChange(value)}
+                      value={teamId}
+                    >
+                      <SelectTrigger id="service-edit-team">
+                        <SelectValue placeholder={t('services.field.teamPlaceholder')} />
+                      </SelectTrigger>
+                      <SelectPopup>
+                        {teams.map((team) => (
+                          <SelectItem key={team.id} value={team.id}>
+                            {team.name}
+                          </SelectItem>
+                        ))}
+                      </SelectPopup>
+                    </Select>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button disabled={saving} onClick={() => void handleSave()} type="button">
