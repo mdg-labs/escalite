@@ -8,6 +8,7 @@ import {
   useDeleteRotationMutation,
   useMeQuery,
   useOnCallNowQuery,
+  useOnCallUpdatedSubscription,
   useOrganizationUsersQuery,
   useOverridesQuery,
   useScheduleQuery,
@@ -37,6 +38,7 @@ export function SchedulePage(): ReactElement {
 
   const [{ data: meData }] = useMeQuery()
   const viewerRole = meData?.me?.role ?? 'MEMBER'
+  const organizationId = meData?.me?.organizationId ?? ''
 
   const [{ data, fetching, error }, reexecuteSchedule] = useScheduleQuery({
     pause: !scheduleId,
@@ -45,10 +47,24 @@ export function SchedulePage(): ReactElement {
   const [{ data: teamsData }] = useTeamsQuery({ requestPolicy: 'cache-first' })
   const [{ data: usersData }] = useOrganizationUsersQuery({ requestPolicy: 'cache-first' })
 
-  const [{ data: onCallData }] = useOnCallNowQuery({
+  const [{ data: onCallData }, reexecuteOnCall] = useOnCallNowQuery({
     pause: !scheduleId,
     variables: { scheduleId: scheduleId ?? '' },
   })
+
+  useOnCallUpdatedSubscription(
+    {
+      variables: { orgId: organizationId },
+      pause: !organizationId || !scheduleId,
+    },
+    (_previous, response) => {
+      const updatedScheduleId = response.onCallUpdated?.scheduleId
+      if (updatedScheduleId && updatedScheduleId === scheduleId) {
+        reexecuteOnCall({ requestPolicy: 'network-only' })
+      }
+      return response
+    },
+  )
 
   const [{ data: overridesData }, reexecuteOverrides] = useOverridesQuery({
     pause: !scheduleId,
