@@ -32,6 +32,7 @@ import {
 } from '@escalite/ui'
 import { AlertTriangleIcon, SettingsIcon } from 'lucide-react'
 
+import { HeartbeatMonitorsPanel } from '../components/heartbeat-monitors-panel'
 import { IntegrationKeysPanel } from '../components/integration-keys-panel'
 import { MaintenanceWindowsPanel } from '../components/maintenance-windows-panel'
 import { AppShell } from '../components/app-shell'
@@ -259,6 +260,7 @@ export function ServicePage(): ReactElement {
                 <TabsTab value="escalation">{t('services.tabs.escalation')}</TabsTab>
                 <TabsTab value="integrations">{t('services.tabs.integrations')}</TabsTab>
                 <TabsTab value="maintenance">{t('services.tabs.maintenance')}</TabsTab>
+                <TabsTab value="heartbeats">Heartbeats</TabsTab>
                 <TabsTab value="schedules">{t('services.tabs.schedules')}</TabsTab>
               </TabsList>
 
@@ -496,6 +498,10 @@ export function ServicePage(): ReactElement {
 
               <TabsPanel className="mt-6" value="maintenance">
                 <MaintenanceWindowsPanel serviceId={service.id} />
+              </TabsPanel>
+
+              <TabsPanel className="mt-6" value="heartbeats">
+                <HeartbeatMonitorsPanel serviceId={service.id} />
               </TabsPanel>
 
               <TabsPanel className="mt-6" value="schedules">
