@@ -9,8 +9,10 @@ import { DashboardPage } from './routes/dashboard'
 import { EscalationPolicyPage } from './routes/escalation-policy'
 import { IncidentsPage } from './routes/incidents'
 import { IntegrationsPage } from './routes/integrations'
+import { ForgotPasswordPage } from './routes/forgot-password'
 import { LoginPage } from './routes/login'
 import { LoginMobilePage } from './routes/login-mobile'
+import { ResetPasswordPage } from './routes/reset-password'
 import { SchedulePage } from './routes/schedule'
 import { SchedulesPage } from './routes/schedules'
 import { ServicePage } from './routes/service'
@@ -78,6 +80,22 @@ export function App(): ReactElement {
         element={
           <GuestRoute>
             <SetupPage />
+          </GuestRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <GuestRoute>
+            <ForgotPasswordPage />
+          </GuestRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <GuestRoute>
+            <ResetPasswordPage />
           </GuestRoute>
         }
       />

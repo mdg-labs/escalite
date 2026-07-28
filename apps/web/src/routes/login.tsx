@@ -96,9 +96,17 @@ export function LoginPage(): ReactElement {
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground" htmlFor="password">
-            Password
-          </label>
+          <div className="flex items-center justify-between gap-2">
+            <label className="text-sm font-medium text-foreground" htmlFor="password">
+              Password
+            </label>
+            <Link
+              className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              to="/forgot-password"
+            >
+              {t('auth.forgotPassword.link')}
+            </Link>
+          </div>
           <Input
             autoComplete="current-password"
             id="password"

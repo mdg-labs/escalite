@@ -384,6 +384,26 @@ const messages = {
   'settings.saml.enabled.label': 'Enable SAML login',
   'settings.saml.action.save': 'Save SAML settings',
   'settings.saml.action.saving': 'Saving…',
+  'auth.forgotPassword.link': 'Forgot password?',
+  'auth.forgotPassword.title': 'Reset your password',
+  'auth.forgotPassword.description':
+    'Enter your email address and we will send you a link to choose a new password.',
+  'auth.forgotPassword.emailLabel': 'Email',
+  'auth.forgotPassword.submit': 'Send reset link',
+  'auth.forgotPassword.success':
+    'If an account exists for that email, you will receive a password reset link shortly.',
+  'auth.forgotPassword.backToLogin': 'Back to sign in',
+  'auth.resetPassword.title': 'Choose a new password',
+  'auth.resetPassword.description': 'Enter and confirm your new password below.',
+  'auth.resetPassword.passwordLabel': 'New password',
+  'auth.resetPassword.confirmPasswordLabel': 'Confirm new password',
+  'auth.resetPassword.submit': 'Update password',
+  'auth.resetPassword.backToLogin': 'Back to sign in',
+  'auth.resetPassword.missingToken': 'This reset link is invalid.',
+  'auth.resetPassword.missingTokenHelp':
+    'Request a new password reset link or return to sign in.',
+  'auth.resetPassword.requestNewLink': 'Request a new link',
+  'auth.resetPassword.error.mismatch': 'Passwords do not match.',
   'login.saml.button': 'Sign in with SAML',
   'settings.scim.title': 'SCIM provisioning',
   'settings.scim.description':
