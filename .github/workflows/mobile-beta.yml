@@ -115,4 +115,4 @@ jobs:
             --prerelease \
             --title '${{ steps.target.outputs.tag }}' \
             --notes 'Android beta APK for Escalite mobile. Configure your server URL in the app after install.' \
-            '${{ steps.build.outputs.apk }}'
+            '../../${{ steps.build.outputs.apk }}'
