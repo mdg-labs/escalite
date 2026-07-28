@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import {
   AlertPriority,
   useDeleteEscalationPolicyMutation,
@@ -51,9 +51,41 @@ import { PageBreadcrumbs } from '../components/page-breadcrumbs'
 import { formatDateTime, formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
 
+const SERVICE_TABS = [
+  'general',
+  'escalation',
+  'integrations',
+  'maintenance',
+  'heartbeats',
+  'schedules',
+] as const
+
+type ServiceTab = (typeof SERVICE_TABS)[number]
+
+function isServiceTab(value: string | null): value is ServiceTab {
+  return value !== null && (SERVICE_TABS as readonly string[]).includes(value)
+}
+
 export function ServicePage(): ReactElement {
   const { serviceId } = useParams()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabFromUrl = searchParams.get('tab')
+  const activeTab: ServiceTab = isServiceTab(tabFromUrl) ? tabFromUrl : 'general'
+
+  function handleTabChange(value: string): void {
+    if (!isServiceTab(value)) {
+      return
+    }
+
+    const next = new URLSearchParams(searchParams)
+    if (value === 'general') {
+      next.delete('tab')
+    } else {
+      next.set('tab', value)
+    }
+    setSearchParams(next, { replace: true })
+  }
 
   const [{ data, fetching, error }, reexecuteService] = useServiceQuery({
     pause: !serviceId,
@@ -291,7 +323,7 @@ export function ServicePage(): ReactElement {
               </Alert>
             ) : null}
 
-            <Tabs defaultValue="general">
+            <Tabs onValueChange={handleTabChange} value={activeTab}>
               <TabsList variant="underline">
                 <TabsTab value="general">{t('services.tabs.general')}</TabsTab>
                 <TabsTab value="escalation">{t('services.tabs.escalation')}</TabsTab>

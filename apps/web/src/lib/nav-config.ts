@@ -34,7 +34,6 @@ export const SIDEBAR_NAV_CONFIG: NavGroup[] = [
       { path: '/teams', labelKey: 'nav.teams' },
       { path: '/services', labelKey: 'nav.services' },
       { path: '/schedules', labelKey: 'nav.schedules' },
-      { path: '/integrations', labelKey: 'nav.integrations' },
       { path: '/analytics', labelKey: 'nav.analytics' },
       { path: '/settings', labelKey: 'nav.settings' },
     ],
