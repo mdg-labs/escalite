@@ -34,6 +34,50 @@ import {
   type PublicStatusPagePayload,
 } from '../lib/status-page'
 
+const DEFAULT_DOCUMENT_TITLE = 'Status'
+const META_DESCRIPTION_SELECTOR = 'meta[name="description"]'
+
+function formatStatusPageDocumentTitle(pageTitle: string): string {
+  const trimmed = pageTitle.trim()
+  return trimmed ? `${trimmed} Status` : DEFAULT_DOCUMENT_TITLE
+}
+
+function setMetaDescription(content: string | undefined): void {
+  const existing = document.querySelector<HTMLMetaElement>(META_DESCRIPTION_SELECTOR)
+
+  if (!content) {
+    existing?.remove()
+    return
+  }
+
+  const meta = existing ?? document.createElement('meta')
+  meta.name = 'description'
+  meta.content = content
+
+  if (!existing) {
+    document.head.appendChild(meta)
+  }
+}
+
+function useStatusPageDocumentMeta(pageTitle: string | undefined, enabled: boolean): void {
+  useEffect(() => {
+    if (!enabled || !pageTitle) {
+      return undefined
+    }
+
+    const previousTitle = document.title
+    const trimmedTitle = pageTitle.trim()
+
+    document.title = formatStatusPageDocumentTitle(pageTitle)
+    setMetaDescription(trimmedTitle || undefined)
+
+    return () => {
+      document.title = previousTitle
+      setMetaDescription(undefined)
+    }
+  }, [enabled, pageTitle])
+}
+
 function StatusPageLoading(): ReactElement {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
@@ -197,6 +241,8 @@ export function StatusPageRoute(): ReactElement {
     }
     return map
   }, [sortedComponents])
+
+  useStatusPageDocumentMeta(payload?.title, !loading && !notFound && !error && payload !== null)
 
   if (loading) {
     return <StatusPageLoading />
