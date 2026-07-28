@@ -4,7 +4,6 @@ import { Alert, AlertDescription, AlertTitle, Button, Input } from '@escalite/ui
 import { AlertTriangleIcon } from 'lucide-react'
 
 import {
-  BESZEL_PRESET,
   INTEGRATION_PRESETS,
   type IntegrationPreset,
 } from '../lib/integration-presets'
@@ -37,7 +36,7 @@ export function IntegrationPicker({
       requestPolicy: 'cache-first',
     })
 
-  const [selectedPresetId, setSelectedPresetId] = useState(BESZEL_PRESET.id)
+  const [selectedPresetId, setSelectedPresetId] = useState(INTEGRATION_PRESETS[0]?.id ?? '')
   const [configValues, setConfigValues] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -77,11 +76,11 @@ export function IntegrationPicker({
 
     setConfigValues(
       mergeConfigInitialValues(formFields, {
-        title: selectedPreset.mapping.title,
-        body: selectedPreset.mapping.body,
-        dedup_key: selectedPreset.mapping.dedup_key,
-        priority: selectedPreset.mapping.priority,
-        event_type: selectedPreset.mapping.event_type,
+        title: selectedPreset.mapping?.title,
+        body: selectedPreset.mapping?.body,
+        dedup_key: selectedPreset.mapping?.dedup_key,
+        priority: selectedPreset.mapping?.priority,
+        event_type: selectedPreset.mapping?.event_type,
       }),
     )
   }, [formFields, selectedPreset])
@@ -107,20 +106,25 @@ export function IntegrationPicker({
       return
     }
 
-    const validationError = validateConfigFormValues(formFields, configValues)
-    if (validationError) {
-      setError(validationError)
-      return
+    if (formFields.length > 0) {
+      const validationError = validateConfigFormValues(formFields, configValues)
+      if (validationError) {
+        setError(validationError)
+        return
+      }
     }
 
     setError(null)
     setLoading(true)
 
+    const config =
+      formFields.length > 0 ? buildConfigFromFormValues(formFields, configValues) : {}
+
     const result = await createIntegrationKey({
       input: {
         serviceId: trimmedServiceId,
         pluginName: selectedPreset.pluginName,
-        config: buildConfigFromFormValues(formFields, configValues),
+        config,
       },
     })
 
@@ -158,6 +162,15 @@ export function IntegrationPicker({
           />
         ))}
       </fieldset>
+
+      {selectedPreset ? (
+        <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-4">
+          <p className="text-sm font-medium text-foreground">Setup snippet</p>
+          <pre className="overflow-x-auto whitespace-pre-wrap text-xs text-muted-foreground">
+            {selectedPreset.buildDocsSnippet('https://your-escalite.example.com/webhook/<plugin>/<token>')}
+          </pre>
+        </div>
+      ) : null}
 
       {schemasFetching ? (
         <p className="text-sm text-muted-foreground">Loading integration config schema…</p>
@@ -205,7 +218,7 @@ export function IntegrationPicker({
       ) : null}
 
       <Button
-        disabled={loading || schemasFetching || formFields.length === 0}
+        disabled={loading || schemasFetching || !configSchema}
         onClick={() => void handleCreate()}
         type="button"
       >
@@ -235,10 +248,8 @@ function PresetOption({
       <span>
         <span className="block text-sm font-medium text-foreground">{preset.label}</span>
         <span className="mt-1 block text-sm text-muted-foreground">{preset.description}</span>
-        {preset.id === BESZEL_PRESET.id ? (
-          <span className="mt-2 block text-xs text-muted-foreground">
-            Beszel Shoutrrr URL is available after the key is created.
-          </span>
+        {preset.pickerHint ? (
+          <span className="mt-2 block text-xs text-muted-foreground">{preset.pickerHint}</span>
         ) : null}
       </span>
     </button>
