@@ -1,5 +1,6 @@
 const messages = {
   'alerts.title': 'Alerts',
+  'alerts.loading': 'Loading alerts…',
   'alerts.empty': 'No alerts match this filter.',
   'alerts.filter.all': 'All',
   'alerts.filter.triggered': 'Triggered',

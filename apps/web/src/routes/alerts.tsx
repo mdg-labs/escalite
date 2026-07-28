@@ -337,7 +337,7 @@ export function AlertsPage(): ReactElement {
                 {fetching && visibleAlerts.length === 0 ? (
                   <TableRow>
                     <TableCell className="text-muted-foreground" colSpan={5}>
-                      Loading…
+                      {t('alerts.loading')}
                     </TableCell>
                   </TableRow>
                 ) : null}
