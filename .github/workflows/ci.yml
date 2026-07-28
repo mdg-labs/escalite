@@ -107,6 +107,7 @@ jobs:
     env:
       ESCALITE_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
       ESCALITE_APP_ORIGIN: http://localhost:5173
+      ESCALITE_STATUS_PAGE_ORIGIN: http://localhost:5174
       ESCALITE_API_URL: http://localhost:8080
       CI: true
     steps:
@@ -124,8 +125,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        working-directory: apps/web
-        run: pnpm e2e:install
+        run: pnpm --filter @escalite/web e2e:install
 
       - name: Compose up, E2E smoke, tear down
         run: bash scripts/ci-compose-e2e.sh
@@ -138,6 +138,8 @@ jobs:
           path: |
             apps/web/playwright-report/
             apps/web/test-results/
+            apps/status-page/playwright-report/
+            apps/status-page/test-results/
           retention-days: 7
 
   security:

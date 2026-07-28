@@ -14,7 +14,12 @@
     },
     "e2e": {
       "cache": false,
-      "env": ["CI", "ESCALITE_API_URL", "ESCALITE_APP_ORIGIN"]
+      "env": [
+        "CI",
+        "ESCALITE_API_URL",
+        "ESCALITE_APP_ORIGIN",
+        "ESCALITE_STATUS_PAGE_ORIGIN"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]

@@ -10,7 +10,9 @@ COMPOSE_FILES=(-f docker-compose.yml -f docker-compose.prod.yml)
 export ESCALITE_ENCRYPTION_KEY="${ESCALITE_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}"
 export ESCALITE_API_PORT="${ESCALITE_API_PORT:-8080}"
 export ESCALITE_WEB_PORT="${ESCALITE_WEB_PORT:-5173}"
+export ESCALITE_STATUS_PAGE_PORT="${ESCALITE_STATUS_PAGE_PORT:-5174}"
 export ESCALITE_APP_ORIGIN="http://localhost:${ESCALITE_WEB_PORT}"
+export ESCALITE_STATUS_PAGE_ORIGIN="http://localhost:${ESCALITE_STATUS_PAGE_PORT}"
 export ESCALITE_API_URL="http://localhost:${ESCALITE_API_PORT}"
 export ESCALITE_DOCKER_TARGET=prod
 export CI="${CI:-true}"
@@ -33,6 +35,7 @@ ESCALITE_ENCRYPTION_KEY=${ESCALITE_ENCRYPTION_KEY}
 ESCALITE_APP_ORIGIN=${ESCALITE_APP_ORIGIN}
 ESCALITE_API_PORT=${ESCALITE_API_PORT}
 ESCALITE_WEB_PORT=${ESCALITE_WEB_PORT}
+ESCALITE_STATUS_PAGE_PORT=${ESCALITE_STATUS_PAGE_PORT}
 ESCALITE_LOG_LEVEL=info
 EOF
 
@@ -44,3 +47,4 @@ docker compose "${COMPOSE_FILES[@]}" --profile prod up -d --build --wait
 echo "Running E2E smoke tests against compose stack..."
 cd "${REPO_ROOT}"
 pnpm --filter @escalite/web e2e
+pnpm --filter @escalite/status-page e2e

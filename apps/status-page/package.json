@@ -6,6 +6,8 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install --with-deps chromium",
     "lint": "eslint .",
     "test:unit": "node --test test/*.test.mjs",
     "typecheck": "tsc --noEmit",
@@ -21,6 +23,7 @@
   },
   "devDependencies": {
     "@escalite/config": "workspace:*",
+    "@playwright/test": "^1.52.0",
     "@tailwindcss/vite": "^4.1.17",
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
