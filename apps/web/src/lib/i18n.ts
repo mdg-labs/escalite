@@ -240,6 +240,7 @@ const messages = {
   'services.maintenance.error.required': 'Description is required.',
   'services.escalation.title': 'Escalation policies',
   'services.escalation.description': 'Assign ordered escalation steps for this service.',
+  'services.escalation.column.steps': 'Steps',
   'services.escalation.create': 'Create policy',
   'services.escalation.empty': 'No escalation policies yet.',
   'services.escalation.delete.title': 'Delete escalation policy?',

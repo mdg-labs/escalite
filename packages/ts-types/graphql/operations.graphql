@@ -134,6 +134,7 @@ query EscalationPolicies($serviceId: ID!) {
   escalationPolicies(serviceId: $serviceId) {
     id
     name
+    updatedAt
     steps {
       id
       stepOrder

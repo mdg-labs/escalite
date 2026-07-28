@@ -30,6 +30,12 @@ import {
   SelectPopup,
   SelectTrigger,
   SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   Tabs,
   TabsList,
   TabsPanel,
@@ -42,7 +48,7 @@ import { IntegrationKeysPanel } from '../components/integration-keys-panel'
 import { MaintenanceWindowsPanel } from '../components/maintenance-windows-panel'
 import { AppShell } from '../components/app-shell'
 import { PageBreadcrumbs } from '../components/page-breadcrumbs'
-import { formatGraphQLError } from '../lib/format'
+import { formatDateTime, formatGraphQLError } from '../lib/format'
 import { t } from '../lib/i18n'
 
 export function ServicePage(): ReactElement {
@@ -487,54 +493,80 @@ export function ServicePage(): ReactElement {
                   {policies.length === 0 ? (
                     <p className="text-sm text-muted-foreground">{t('services.escalation.empty')}</p>
                   ) : (
-                    <ul className="space-y-2">
-                      {policies.map((policy) => (
-                        <li
-                          className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
-                          key={policy.id}
-                        >
-                          <Link
-                            className="text-sm font-medium text-foreground hover:underline"
-                            to={`/services/${service.id}/escalation-policies/${policy.id}`}
-                          >
-                            {policy.name}
-                          </Link>
-                          <AlertDialog>
-                            <AlertDialogTrigger
-                              render={
+                    <Table variant="card">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t('services.column.name')}</TableHead>
+                          <TableHead>{t('services.escalation.column.steps')}</TableHead>
+                          <TableHead>{t('services.column.updated')}</TableHead>
+                          <TableHead className="text-right">{t('services.column.actions')}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {policies.map((policy) => (
+                          <TableRow key={policy.id}>
+                            <TableCell className="font-medium text-foreground">{policy.name}</TableCell>
+                            <TableCell>{policy.steps.length}</TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {formatDateTime(policy.updatedAt)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
                                 <Button
-                                  disabled={deletingPolicyId === policy.id}
+                                  render={
+                                    <Link
+                                      to={`/services/${service.id}/escalation-policies/${policy.id}`}
+                                    />
+                                  }
                                   size="sm"
                                   type="button"
-                                  variant="destructive-outline"
-                                />
-                              }
-                            >
-                              {t('services.action.delete')}
-                            </AlertDialogTrigger>
-                            <AlertDialogPopup>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>{t('services.escalation.delete.title')}</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {t('services.escalation.delete.description', { name: policy.name })}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogClose render={<Button type="button" variant="ghost" />}>
-                                  {t('services.action.cancel')}
-                                </AlertDialogClose>
-                                <AlertDialogClose
-                                  onClick={() => void handleDeletePolicy(policy.id)}
-                                  render={<Button type="button" variant="destructive" />}
+                                  variant="outline"
                                 >
-                                  {t('services.action.deleteConfirm')}
-                                </AlertDialogClose>
-                              </AlertDialogFooter>
-                            </AlertDialogPopup>
-                          </AlertDialog>
-                        </li>
-                      ))}
-                    </ul>
+                                  {t('services.maintenance.edit')}
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger
+                                    render={
+                                      <Button
+                                        disabled={deletingPolicyId === policy.id}
+                                        size="sm"
+                                        type="button"
+                                        variant="destructive-outline"
+                                      />
+                                    }
+                                  >
+                                    {t('services.action.delete')}
+                                  </AlertDialogTrigger>
+                                  <AlertDialogPopup>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>
+                                        {t('services.escalation.delete.title')}
+                                      </AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        {t('services.escalation.delete.description', {
+                                          name: policy.name,
+                                        })}
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogClose render={<Button type="button" variant="ghost" />}>
+                                        {t('services.action.cancel')}
+                                      </AlertDialogClose>
+                                      <AlertDialogClose
+                                        onClick={() => void handleDeletePolicy(policy.id)}
+                                        render={<Button type="button" variant="destructive" />}
+                                      >
+                                        {t('services.action.deleteConfirm')}
+                                      </AlertDialogClose>
+                                    </AlertDialogFooter>
+                                  </AlertDialogPopup>
+                                </AlertDialog>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   )}
                 </div>
                 </div>
