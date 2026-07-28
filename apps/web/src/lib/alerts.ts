@@ -19,19 +19,21 @@ export function alertPriorityLabel(priority: AlertPriority): string {
 
 export function alertStatusBadgeVariant(
   status: AlertStatus,
-): 'warning' | 'info' | 'success' {
+): 'severity-high' | 'severity-info' | 'severity-resolved' {
   switch (status) {
     case AlertStatus.Acknowledged:
-      return 'info'
+      return 'severity-info'
     case AlertStatus.Closed:
-      return 'success'
+      return 'severity-resolved'
     default:
-      return 'warning'
+      return 'severity-high'
   }
 }
 
-export function alertPriorityBadgeVariant(priority: AlertPriority): 'error' | 'secondary' {
-  return priority === AlertPriority.High ? 'error' : 'secondary'
+export function alertPriorityBadgeVariant(
+  priority: AlertPriority,
+): 'severity-critical' | 'severity-low' {
+  return priority === AlertPriority.High ? 'severity-critical' : 'severity-low'
 }
 
 export function formatAlertTimestamp(value: string | null | undefined): string {

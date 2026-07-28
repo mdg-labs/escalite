@@ -26,3 +26,7 @@ The palette in `severity.css` is based on the [Okabe–Ito colorblind-safe set](
 | `--severity-info` | Blue (`#0072B2`) | Informational; shared with medium for consistency |
 
 These hues remain distinguishable under deuteranopia and protanopia when combined with icons (triangle, circle, dash patterns) and text labels.
+
+## Badge variants
+
+Alert status and priority badges use the `severity-*` Badge variants (`severity-critical`, `severity-high`, `severity-low`, `severity-resolved`, `severity-info`) so foreground/background hues always come from this file — never generic `warning` / `success` / `error` theme colors.

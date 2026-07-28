@@ -14,15 +14,15 @@ test('alertStatusIndicatorClass maps status to severity token classes', () => {
   assert.equal(alertStatusIndicatorClass('Closed'), 'bg-severity-resolved')
 })
 
-test('alertStatusBadgeVariant maps status to badge variants', () => {
-  assert.equal(alertStatusBadgeVariant('Triggered'), 'warning')
-  assert.equal(alertStatusBadgeVariant('Acknowledged'), 'info')
-  assert.equal(alertStatusBadgeVariant('Closed'), 'success')
+test('alertStatusBadgeVariant maps status to severity badge variants', () => {
+  assert.equal(alertStatusBadgeVariant('Triggered'), 'severity-high')
+  assert.equal(alertStatusBadgeVariant('Acknowledged'), 'severity-info')
+  assert.equal(alertStatusBadgeVariant('Closed'), 'severity-resolved')
 })
 
-test('alertPriorityBadgeVariant maps priority to badge variants', () => {
-  assert.equal(alertPriorityBadgeVariant('High'), 'error')
-  assert.equal(alertPriorityBadgeVariant('Low'), 'secondary')
+test('alertPriorityBadgeVariant maps priority to severity badge variants', () => {
+  assert.equal(alertPriorityBadgeVariant('High'), 'severity-critical')
+  assert.equal(alertPriorityBadgeVariant('Low'), 'severity-low')
 })
 
 test('formatAlertCardTimestamp returns em dash for empty values', () => {

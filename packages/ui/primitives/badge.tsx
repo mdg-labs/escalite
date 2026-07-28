@@ -30,6 +30,14 @@ export const badgeVariants = cva(
         secondary: 'bg-secondary text-secondary-foreground [button&,a&]:hover:bg-secondary/90',
         success: 'bg-success/8 text-success-foreground dark:bg-success/16',
         warning: 'bg-warning/8 text-warning-foreground dark:bg-warning/16',
+        'severity-critical':
+          'bg-severity-critical/8 text-severity-critical-foreground dark:bg-severity-critical/16',
+        'severity-high':
+          'bg-severity-high/8 text-severity-high-foreground dark:bg-severity-high/16',
+        'severity-low': 'bg-severity-low/8 text-severity-low-foreground dark:bg-severity-low/16',
+        'severity-resolved':
+          'bg-severity-resolved/8 text-severity-resolved-foreground dark:bg-severity-resolved/16',
+        'severity-info': 'bg-severity-info/8 text-severity-info-foreground dark:bg-severity-info/16',
       },
     },
   },

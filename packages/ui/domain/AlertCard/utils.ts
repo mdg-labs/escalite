@@ -15,21 +15,23 @@ export function alertStatusIndicatorClass(status: AlertCardStatus): string {
 
 export function alertStatusBadgeVariant(
   status: AlertCardStatus,
-): 'warning' | 'info' | 'success' {
+): 'severity-high' | 'severity-info' | 'severity-resolved' {
   switch (status) {
     case 'Acknowledged':
-      return 'info'
+      return 'severity-info'
     case 'Closed':
-      return 'success'
+      return 'severity-resolved'
     case 'Triggered':
-      return 'warning'
+      return 'severity-high'
     default:
-      return 'warning'
+      return 'severity-high'
   }
 }
 
-export function alertPriorityBadgeVariant(priority: AlertCardPriority): 'error' | 'secondary' {
-  return priority === 'High' ? 'error' : 'secondary'
+export function alertPriorityBadgeVariant(
+  priority: AlertCardPriority,
+): 'severity-critical' | 'severity-low' {
+  return priority === 'High' ? 'severity-critical' : 'severity-low'
 }
 
 export function formatAlertCardTimestamp(value: string | null | undefined): string {
