@@ -11,3 +11,8 @@ export function canCreateScheduleOverride(
 
   return role === 'MEMBER' && hasTeamAccess
 }
+
+/** Rotation CRUD is restricted to organization admins. */
+export function canManageRotations(role: ViewerRole): boolean {
+  return role === 'ADMIN'
+}

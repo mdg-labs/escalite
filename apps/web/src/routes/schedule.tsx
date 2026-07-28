@@ -3,12 +3,16 @@ import { useMemo, useState } from 'react'
 import { useParams } from 'react-router'
 import {
   useCreateOverrideMutation,
+  useCreateRotationMutation,
   useDeleteOverrideMutation,
+  useDeleteRotationMutation,
   useMeQuery,
   useOnCallNowQuery,
+  useOrganizationUsersQuery,
   useOverridesQuery,
   useScheduleQuery,
   useTeamsQuery,
+  useUpdateRotationMutation,
 } from '@escalite/ts-types'
 import { Button } from '@escalite/ui'
 import { PencilIcon } from 'lucide-react'
@@ -20,6 +24,7 @@ import { ScheduleFormDialog } from '../components/schedule-form-dialog'
 import {
   collectScheduleUsers,
   formatGraphQLError,
+  mapOrganizationUsersToScheduleUsers,
   scheduleCalendarLabels,
 } from '../lib/schedule'
 import { t } from '../lib/i18n'
@@ -36,6 +41,7 @@ export function SchedulePage(): ReactElement {
     variables: { id: scheduleId ?? '' },
   })
   const [{ data: teamsData }] = useTeamsQuery({ requestPolicy: 'cache-first' })
+  const [{ data: usersData }] = useOrganizationUsersQuery({ requestPolicy: 'cache-first' })
 
   const [{ data: onCallData }] = useOnCallNowQuery({
     pause: !scheduleId,
@@ -49,6 +55,9 @@ export function SchedulePage(): ReactElement {
 
   const [, createOverride] = useCreateOverrideMutation()
   const [, deleteOverride] = useDeleteOverrideMutation()
+  const [, createRotation] = useCreateRotationMutation()
+  const [, updateRotation] = useUpdateRotationMutation()
+  const [, deleteRotation] = useDeleteRotationMutation()
 
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -87,9 +96,20 @@ export function SchedulePage(): ReactElement {
     const participantIds = schedule.rotations.flatMap((rotation) => rotation.participantIds)
     const onCallUserIds = onCallLayers.map((layer) => layer.userId)
     const overrideUserIds = overrides.map((override) => override.userId)
+    const organizationUsers = usersData?.organizationUsers ?? []
 
-    return collectScheduleUsers(participantIds, onCallUserIds, overrideUserIds)
-  }, [onCallLayers, overrides, schedule])
+    return collectScheduleUsers(
+      organizationUsers,
+      participantIds,
+      onCallUserIds,
+      overrideUserIds,
+    )
+  }, [onCallLayers, overrides, schedule, usersData?.organizationUsers])
+
+  const participantOptions = useMemo(
+    () => mapOrganizationUsersToScheduleUsers(usersData?.organizationUsers ?? []),
+    [usersData?.organizationUsers],
+  )
 
   const hasTeamAccess =
     viewerRole === 'ADMIN' || (viewerRole === 'MEMBER' && Boolean(schedule) && !error)
@@ -140,6 +160,84 @@ export function SchedulePage(): ReactElement {
     }
 
     reexecuteOverrides({ requestPolicy: 'network-only' })
+  }
+
+  async function handleCreateRotation(payload: {
+    name: string
+    layer: number
+    rrule: string
+    participantIds: string[]
+  }): Promise<void> {
+    if (!scheduleId) {
+      return
+    }
+
+    setSaveError(null)
+    setSaving(true)
+
+    const result = await createRotation({
+      input: {
+        scheduleId,
+        name: payload.name,
+        layer: payload.layer,
+        rrule: payload.rrule,
+        participantIds: payload.participantIds,
+      },
+    })
+
+    setSaving(false)
+
+    if (result.error) {
+      setSaveError(formatGraphQLError(result.error.message))
+      return
+    }
+
+    reexecuteSchedule({ requestPolicy: 'network-only' })
+  }
+
+  async function handleUpdateRotation(payload: {
+    id: string
+    name: string
+    layer: number
+    rrule: string
+    participantIds: string[]
+  }): Promise<void> {
+    setSaveError(null)
+    setSaving(true)
+
+    const result = await updateRotation({
+      input: {
+        id: payload.id,
+        name: payload.name,
+        layer: payload.layer,
+        rrule: payload.rrule,
+        participantIds: payload.participantIds,
+      },
+    })
+
+    setSaving(false)
+
+    if (result.error) {
+      setSaveError(formatGraphQLError(result.error.message))
+      return
+    }
+
+    reexecuteSchedule({ requestPolicy: 'network-only' })
+  }
+
+  async function handleDeleteRotation(id: string): Promise<void> {
+    setSaveError(null)
+    setSaving(true)
+
+    const result = await deleteRotation({ id })
+    setSaving(false)
+
+    if (result.error) {
+      setSaveError(formatGraphQLError(result.error.message))
+      return
+    }
+
+    reexecuteSchedule({ requestPolicy: 'network-only' })
   }
 
   return (
@@ -204,8 +302,12 @@ export function SchedulePage(): ReactElement {
               labels={labels}
               onCallLayers={onCallLayers}
               onCreateOverride={handleCreateOverride}
+              onCreateRotation={handleCreateRotation}
               onDeleteOverride={handleDeleteOverride}
+              onDeleteRotation={handleDeleteRotation}
+              onUpdateRotation={handleUpdateRotation}
               overrides={overrides}
+              participantOptions={participantOptions}
               saving={saving}
               schedule={schedule}
               users={users}

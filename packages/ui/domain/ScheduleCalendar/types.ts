@@ -44,6 +44,17 @@ export type CreateOverridePayload = {
   endsAt: string
 }
 
+export type CreateRotationPayload = {
+  name: string
+  layer: number
+  rrule: string
+  participantIds: string[]
+}
+
+export type UpdateRotationPayload = CreateRotationPayload & {
+  id: string
+}
+
 export type ScheduleCalendarLabels = {
   title: string
   timezoneLabel: string
@@ -61,4 +72,29 @@ export type ScheduleCalendarLabels = {
   delete: string
   loading: string
   computedAt: string
+  rotationsTitle: string
+  rotationsEmpty: string
+  createRotation: string
+  editRotation: string
+  deleteRotation: string
+  deleteRotationConfirm: string
+  rotationName: string
+  rotationLayer: string
+  rotationLayerPrimary: string
+  rotationLayerSecondary: string
+  rotationParticipants: string
+  rotationParticipantsEmpty: string
+  rotationFrequency: string
+  rotationFrequencyHourly: string
+  rotationFrequencyDaily: string
+  rotationFrequencyWeekly: string
+  rotationInterval: string
+  rotationCustomRrule: string
+  rotationRrulePreview: string
+  rotationForbidden: string
+  rotationErrorName: string
+  rotationErrorParticipants: string
+  rotationErrorRrule: string
+  rotationErrorLayer: string
+  describeRrule: (frequency: string, interval: number) => string
 }

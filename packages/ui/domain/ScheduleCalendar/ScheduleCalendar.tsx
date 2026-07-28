@@ -1,10 +1,19 @@
 'use client'
 
 import { addDays } from 'date-fns'
-import { CalendarIcon, PlusIcon, TrashIcon } from 'lucide-react'
+import { CalendarIcon, PencilIcon, PlusIcon, TrashIcon } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactElement } from 'react'
 import type { DateRange } from 'react-day-picker'
 
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogPopup,
+  AlertDialogTitle,
+} from '../../primitives/alert-dialog'
 import { Alert, AlertDescription } from '../../primitives/alert'
 import { Avatar, AvatarFallback } from '../../primitives/avatar'
 import { Badge } from '../../primitives/badge'
@@ -46,15 +55,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../primitives/select'
-import { canCreateScheduleOverride } from './permissions'
+import { canCreateScheduleOverride, canManageRotations } from './permissions'
+import {
+  describeRotationRrule,
+  layerLabel,
+} from './rotation-display'
+import {
+  RotationForm,
+  type RotationFormInitialValues,
+} from './RotationForm'
 import { formatViewerLocalDateRange, formatViewerLocalTime } from './timezone'
 import type {
   CreateOverridePayload,
+  CreateRotationPayload,
   ScheduleCalendarData,
   ScheduleCalendarLabels,
   ScheduleCalendarOnCallLayer,
   ScheduleCalendarOverride,
   ScheduleCalendarUser,
+  UpdateRotationPayload,
   ViewerRole,
 } from './types'
 
@@ -127,6 +146,10 @@ export type ScheduleCalendarProps = {
   saving?: boolean
   onCreateOverride?: (payload: CreateOverridePayload) => void | Promise<void>
   onDeleteOverride?: (overrideId: string) => void | Promise<void>
+  participantOptions?: ScheduleCalendarUser[]
+  onCreateRotation?: (payload: CreateRotationPayload) => void | Promise<void>
+  onUpdateRotation?: (payload: UpdateRotationPayload) => void | Promise<void>
+  onDeleteRotation?: (rotationId: string) => void | Promise<void>
 }
 
 type OverrideFormProps = {
@@ -331,6 +354,75 @@ function OverrideForm({
   )
 }
 
+type RotationDialogProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  mode: 'create' | 'edit'
+  labels: ScheduleCalendarLabels
+  participantOptions: ScheduleCalendarUser[]
+  usedLayers: number[]
+  initialValues?: RotationFormInitialValues
+  saving?: boolean
+  onSubmit: (payload: CreateRotationPayload | UpdateRotationPayload) => void | Promise<void>
+}
+
+function RotationDialog({
+  open,
+  onOpenChange,
+  mode,
+  labels,
+  participantOptions,
+  usedLayers,
+  initialValues,
+  saving,
+  onSubmit,
+}: RotationDialogProps): ReactElement {
+  const isMobile = useMediaQuery('(max-width: 767px)')
+  const title = mode === 'create' ? labels.createRotation : labels.editRotation
+
+  const form = (
+    <RotationForm
+      initialValues={initialValues}
+      labels={labels}
+      mode={mode}
+      onCancel={() => onOpenChange(false)}
+      onSubmit={async (payload) => {
+        await onSubmit(payload)
+        onOpenChange(false)
+      }}
+      participantOptions={participantOptions}
+      saving={saving}
+      usedLayers={usedLayers}
+    />
+  )
+
+  if (isMobile) {
+    return (
+      <Drawer onOpenChange={onOpenChange} open={open}>
+        <DrawerPopup showBar>
+          <DrawerHeader>
+            <DrawerTitle>{title}</DrawerTitle>
+          </DrawerHeader>
+          <DrawerPanel>{form}</DrawerPanel>
+        </DrawerPopup>
+      </Drawer>
+    )
+  }
+
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogPopup>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <DialogPanel>{form}</DialogPanel>
+        <DialogFooter className="hidden" />
+        <DialogClose />
+      </DialogPopup>
+    </Dialog>
+  )
+}
+
 export function ScheduleCalendar({
   schedule,
   onCallLayers,
@@ -343,6 +435,10 @@ export function ScheduleCalendar({
   saving = false,
   onCreateOverride,
   onDeleteOverride,
+  participantOptions = [],
+  onCreateRotation,
+  onUpdateRotation,
+  onDeleteRotation,
 }: ScheduleCalendarProps): ReactElement {
   const today = useMemo(() => new Date(), [])
   const [month, setMonth] = useState<Date>(today)
@@ -351,9 +447,67 @@ export function ScheduleCalendar({
     to: addDays(today, 25),
   })
   const [overrideFormOpen, setOverrideFormOpen] = useState(false)
+  const [rotationFormOpen, setRotationFormOpen] = useState(false)
+  const [rotationFormMode, setRotationFormMode] = useState<'create' | 'edit'>('create')
+  const [editingRotation, setEditingRotation] = useState<RotationFormInitialValues | undefined>()
+  const [rotationToDelete, setRotationToDelete] = useState<string | null>(null)
 
   const viewerTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const allowOverrideCreate = canCreateScheduleOverride(viewerRole, hasTeamAccess)
+  const allowRotationManage = canManageRotations(viewerRole)
+
+  const usedLayers = useMemo(
+    () =>
+      schedule.rotations
+        .filter((rotation) => rotation.id !== editingRotation?.id)
+        .map((rotation) => rotation.layer),
+    [editingRotation?.id, schedule.rotations],
+  )
+
+  function openCreateRotation(): void {
+    setRotationFormMode('create')
+    setEditingRotation(undefined)
+    setRotationFormOpen(true)
+  }
+
+  function openEditRotation(rotationId: string): void {
+    const rotation = schedule.rotations.find((item) => item.id === rotationId)
+    if (!rotation) {
+      return
+    }
+
+    setRotationFormMode('edit')
+    setEditingRotation({
+      id: rotation.id,
+      name: rotation.name,
+      layer: rotation.layer,
+      rrule: rotation.rrule,
+      participantIds: [...rotation.participantIds],
+    })
+    setRotationFormOpen(true)
+  }
+
+  async function handleRotationSubmit(
+    payload: CreateRotationPayload | UpdateRotationPayload,
+  ): Promise<void> {
+    if ('id' in payload && onUpdateRotation) {
+      await onUpdateRotation(payload)
+      return
+    }
+
+    if (onCreateRotation) {
+      await onCreateRotation(payload)
+    }
+  }
+
+  async function handleConfirmDeleteRotation(): Promise<void> {
+    if (!rotationToDelete || !onDeleteRotation) {
+      return
+    }
+
+    await onDeleteRotation(rotationToDelete)
+    setRotationToDelete(null)
+  }
 
   const overrideDays = useMemo(() => {
     const days = new Set<string>()
@@ -459,6 +613,82 @@ export function ScheduleCalendar({
       </Frame>
 
       <Frame>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <FrameTitle>{labels.rotationsTitle}</FrameTitle>
+            <FrameDescription>{labels.rotationsTitle}</FrameDescription>
+          </div>
+          {allowRotationManage && onCreateRotation ? (
+            <Button onClick={openCreateRotation} type="button" variant="outline">
+              <PlusIcon />
+              {labels.createRotation}
+            </Button>
+          ) : null}
+        </div>
+        <FramePanel>
+          {!allowRotationManage ? (
+            <Alert className="mb-4" variant="warning">
+              <AlertDescription>{labels.rotationForbidden}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          {schedule.rotations.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{labels.rotationsEmpty}</p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {schedule.rotations.map((rotation) => (
+                <li
+                  className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border p-3"
+                  key={rotation.id}
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">{rotation.name}</span>
+                      <Badge variant="outline">{layerLabel(labels, rotation.layer)}</Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {describeRotationRrule(labels, rotation.rrule)}
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {rotation.participantIds
+                        .map((participantId) => userLabel(users, participantId))
+                        .join(', ')}
+                    </p>
+                  </div>
+                  {allowRotationManage && (onUpdateRotation || onDeleteRotation) ? (
+                    <div className="flex items-center gap-2">
+                      {onUpdateRotation ? (
+                        <Button
+                          aria-label={labels.editRotation}
+                          onClick={() => openEditRotation(rotation.id)}
+                          size="icon-sm"
+                          type="button"
+                          variant="outline"
+                        >
+                          <PencilIcon />
+                        </Button>
+                      ) : null}
+                      {onDeleteRotation ? (
+                        <Button
+                          aria-label={labels.deleteRotation}
+                          onClick={() => setRotationToDelete(rotation.id)}
+                          size="icon-sm"
+                          type="button"
+                          variant="destructive-outline"
+                        >
+                          <TrashIcon />
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </FramePanel>
+      </Frame>
+
+      <Frame>
         <FrameTitle>{labels.title}</FrameTitle>
         <FrameDescription>{labels.timezoneLabel}</FrameDescription>
         <FramePanel>
@@ -548,6 +778,44 @@ export function ScheduleCalendar({
           saving={saving}
           users={users}
         />
+      ) : null}
+
+      {allowRotationManage && (onCreateRotation || onUpdateRotation) ? (
+        <RotationDialog
+          initialValues={editingRotation}
+          labels={labels}
+          mode={rotationFormMode}
+          onOpenChange={setRotationFormOpen}
+          onSubmit={handleRotationSubmit}
+          open={rotationFormOpen}
+          participantOptions={participantOptions}
+          saving={saving}
+          usedLayers={usedLayers}
+        />
+      ) : null}
+
+      {allowRotationManage && onDeleteRotation ? (
+        <AlertDialog onOpenChange={(open) => !open && setRotationToDelete(null)} open={Boolean(rotationToDelete)}>
+          <AlertDialogPopup>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{labels.deleteRotation}</AlertDialogTitle>
+              <AlertDialogDescription>{labels.deleteRotationConfirm}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogClose render={<Button type="button" variant="outline" />}>
+                {labels.cancel}
+              </AlertDialogClose>
+              <Button
+                disabled={saving}
+                onClick={() => void handleConfirmDeleteRotation()}
+                type="button"
+                variant="destructive"
+              >
+                {labels.deleteRotation}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogPopup>
+        </AlertDialog>
       ) : null}
     </div>
   )
