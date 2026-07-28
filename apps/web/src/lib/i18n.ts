@@ -551,6 +551,26 @@ const messages = {
   'incidents.field.linkedAlertsEmpty': 'No linkable alerts for this team.',
   'incidents.error.requiredTitle': 'Incident title is required.',
   'incidents.error.requiredTeam': 'Select a team.',
+  'incidents.statusPage.title': 'Publish to status page',
+  'incidents.statusPage.description':
+    'Share this incident on your public status page. Visitors will see the title, affected components, and your initial update.',
+  'incidents.statusPage.publish': 'Publish to status page',
+  'incidents.statusPage.publishing': 'Publishing…',
+  'incidents.statusPage.published': 'Published on the status page.',
+  'incidents.statusPage.viewPublic': 'View public status page',
+  'incidents.statusPage.field.publicTitle': 'Public title',
+  'incidents.statusPage.field.publicTitleDescription':
+    'Optional. Defaults to the incident title when left blank.',
+  'incidents.statusPage.field.components': 'Affected components',
+  'incidents.statusPage.field.componentsDescription':
+    'Select every component impacted by this incident.',
+  'incidents.statusPage.field.componentsEmpty':
+    'Add components in Status pages settings before publishing.',
+  'incidents.statusPage.field.body': 'Initial update',
+  'incidents.statusPage.field.bodyPlaceholder':
+    'We are investigating elevated error rates on the API.',
+  'incidents.statusPage.error.requiredBody': 'Initial update message is required.',
+  'incidents.statusPage.error.requiredComponents': 'Select at least one affected component.',
   'alerts.detail.viewIncident': 'View incident',
   'analytics.title': 'Analytics',
   'analytics.description':

@@ -17,9 +17,12 @@ import {
   useIncidentsQuery,
   useMeQuery,
   usePromoteAlertToIncidentMutation,
+  usePublishIncidentToStatusPageMutation,
   useServicesQuery,
+  useStatusPageQuery,
   useTeamsQuery,
   useUpdateIncidentStatusMutation,
+  UserRole,
 } from '@escalite/ts-types'
 import {
   Alert,
@@ -53,7 +56,7 @@ import {
   TableRow,
   Textarea,
 } from '@escalite/ui'
-import { AlertCircleIcon, DownloadIcon, PlusIcon } from 'lucide-react'
+import { AlertCircleIcon, DownloadIcon, ExternalLinkIcon, PlusIcon } from 'lucide-react'
 
 import { AppShell } from '../components/app-shell'
 import { formatDateTime, formatGraphQLError } from '../lib/format'
@@ -74,6 +77,14 @@ const INCIDENT_STATUSES: IncidentStatus[] = [
   IncidentStatus.Monitoring,
   IncidentStatus.Resolved,
 ]
+
+function statusPagePublicAppUrl(slug: string): string {
+  const configured = import.meta.env.VITE_STATUS_PAGE_PUBLIC_URL?.trim()
+  const base =
+    configured ||
+    (import.meta.env.DEV ? 'http://localhost:5174' : window.location.origin)
+  return `${base.replace(/\/$/, '')}/${encodeURIComponent(slug.trim().toLowerCase())}`
+}
 
 function IncidentStatusBadge({ status }: { status: IncidentStatus }): ReactElement {
   const variant =
@@ -388,6 +399,247 @@ function CreateIncidentDialog({
   )
 }
 
+function PublishToStatusPageDialog({
+  incidentId,
+  incidentTitle,
+  isAdmin,
+}: {
+  incidentId: string
+  incidentTitle: string
+  isAdmin: boolean
+}): ReactElement | null {
+  const [open, setOpen] = useState(false)
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+  const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>([])
+  const [formError, setFormError] = useState<string | null>(null)
+  const [publishing, setPublishing] = useState(false)
+  const [published, setPublished] = useState(false)
+
+  const [{ data: statusPageData }] = useStatusPageQuery({
+    requestPolicy: 'cache-first',
+    pause: !isAdmin,
+  })
+  const [, publishIncidentToStatusPage] = usePublishIncidentToStatusPageMutation()
+
+  const statusPage = statusPageData?.statusPage
+  const slug = statusPage?.slug
+  const enabled = statusPage?.enabled ?? false
+  const components = statusPage?.components ?? []
+
+  const existingPublication = useMemo(() => {
+    return (
+      statusPage?.incidents.find((statusPageIncident) => statusPageIncident.incidentId === incidentId) ??
+      null
+    )
+  }, [incidentId, statusPage?.incidents])
+
+  const isPublished = existingPublication != null || published
+  const publicUrl = slug ? statusPagePublicAppUrl(slug) : null
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    setTitle(incidentTitle)
+    setBody('')
+    setSelectedComponentIds([])
+    setFormError(null)
+  }, [incidentTitle, open])
+
+  function resetForm(): void {
+    setTitle('')
+    setBody('')
+    setSelectedComponentIds([])
+    setFormError(null)
+  }
+
+  function toggleComponentSelection(componentId: string): void {
+    setSelectedComponentIds((current) =>
+      current.includes(componentId)
+        ? current.filter((id) => id !== componentId)
+        : [...current, componentId],
+    )
+  }
+
+  async function handlePublish(): Promise<void> {
+    const trimmedBody = body.trim()
+    if (!trimmedBody) {
+      setFormError(t('incidents.statusPage.error.requiredBody'))
+      return
+    }
+    if (selectedComponentIds.length === 0) {
+      setFormError(t('incidents.statusPage.error.requiredComponents'))
+      return
+    }
+
+    setFormError(null)
+    setPublishing(true)
+
+    const result = await publishIncidentToStatusPage({
+      input: {
+        incidentId,
+        title: title.trim() || undefined,
+        affectedComponentIds: selectedComponentIds,
+        body: trimmedBody,
+      },
+    })
+
+    setPublishing(false)
+
+    if (result.error || !result.data?.publishIncidentToStatusPage) {
+      setFormError(
+        result.error ? formatGraphQLError(result.error.message) : t('incidents.error.action'),
+      )
+      return
+    }
+
+    setPublished(true)
+    setOpen(false)
+    resetForm()
+  }
+
+  if (!isAdmin || !enabled || !slug) {
+    return null
+  }
+
+  return (
+    <div className="space-y-2">
+      {isPublished && publicUrl ? (
+        <p className="text-sm text-muted-foreground">
+          {t('incidents.statusPage.published')}{' '}
+          <a
+            className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
+            href={publicUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            {t('incidents.statusPage.viewPublic')}
+            <ExternalLinkIcon className="size-3.5" />
+          </a>
+        </p>
+      ) : null}
+      {!isPublished ? (
+        <Dialog
+          onOpenChange={(nextOpen) => {
+            setOpen(nextOpen)
+            if (!nextOpen) {
+              resetForm()
+            }
+          }}
+          open={open}
+        >
+          <DialogTrigger render={<Button size="sm" type="button" variant="outline" />}>
+            {t('incidents.statusPage.publish')}
+          </DialogTrigger>
+          <DialogPopup>
+            <DialogHeader>
+              <DialogTitle>{t('incidents.statusPage.title')}</DialogTitle>
+              <DialogDescription>{t('incidents.statusPage.description')}</DialogDescription>
+            </DialogHeader>
+            <DialogPanel className="space-y-4">
+              {formError ? (
+                <Alert variant="error">
+                  <AlertCircleIcon />
+                  <AlertTitle>{t('incidents.error.action')}</AlertTitle>
+                  <AlertDescription>{formError}</AlertDescription>
+                </Alert>
+              ) : null}
+              <div className="space-y-2">
+                <div>
+                  <label
+                    className="text-sm font-medium text-foreground"
+                    htmlFor="status-page-title"
+                  >
+                    {t('incidents.statusPage.field.publicTitle')}
+                  </label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('incidents.statusPage.field.publicTitleDescription')}
+                  </p>
+                </div>
+                <Input
+                  id="status-page-title"
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder={incidentTitle}
+                  value={title}
+                />
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {t('incidents.statusPage.field.components')}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {t('incidents.statusPage.field.componentsDescription')}
+                  </p>
+                </div>
+                <ScrollArea className="h-36 rounded-lg border border-border">
+                  <div className="space-y-1 p-2">
+                    {components.length === 0 ? (
+                      <p className="px-2 py-3 text-sm text-muted-foreground">
+                        {t('incidents.statusPage.field.componentsEmpty')}
+                      </p>
+                    ) : (
+                      components.map((component) => (
+                        <label
+                          key={component.id}
+                          className="flex cursor-pointer items-start gap-3 rounded-md px-2 py-2 hover:bg-muted/50"
+                        >
+                          <input
+                            checked={selectedComponentIds.includes(component.id)}
+                            className="mt-1"
+                            onChange={() => toggleComponentSelection(component.id)}
+                            type="checkbox"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium text-foreground">
+                              {component.name}
+                            </span>
+                            {component.description ? (
+                              <span className="block truncate text-xs text-muted-foreground">
+                                {component.description}
+                              </span>
+                            ) : null}
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground" htmlFor="status-page-body">
+                  {t('incidents.statusPage.field.body')}
+                </label>
+                <Textarea
+                  id="status-page-body"
+                  onChange={(event) => setBody(event.target.value)}
+                  placeholder={t('incidents.statusPage.field.bodyPlaceholder')}
+                  value={body}
+                />
+              </div>
+            </DialogPanel>
+            <DialogFooter>
+              <DialogClose render={<Button type="button" variant="ghost" />}>
+                {t('incidents.action.cancel')}
+              </DialogClose>
+              <Button
+                disabled={publishing || components.length === 0}
+                onClick={() => {
+                  void handlePublish()
+                }}
+                type="button"
+              >
+                {publishing ? t('incidents.statusPage.publishing') : t('incidents.statusPage.publish')}
+              </Button>
+            </DialogFooter>
+          </DialogPopup>
+        </Dialog>
+      ) : null}
+    </div>
+  )
+}
+
 function TimelineFeed({ events }: { events: TimelineEventFieldsFragment[] }): ReactElement {
   if (events.length === 0) {
     return <p className="text-sm text-muted-foreground">{t('incidents.timeline.empty')}</p>
@@ -428,6 +680,7 @@ export function IncidentsPage(): ReactElement {
 
   const [{ data: meData }] = useMeQuery({ requestPolicy: 'cache-first' })
   const currentUserId = meData?.me?.id ?? ''
+  const isAdmin = meData?.me?.role === UserRole.Admin
 
   const [{ data: incidentsData, fetching: incidentsFetching }, reexecuteIncidentsQuery] =
     useIncidentsQuery({
@@ -697,6 +950,12 @@ export function IncidentsPage(): ReactElement {
                   {statusLoading ? t('incidents.status.updating') : t('incidents.status.update')}
                 </Button>
               </div>
+
+              <PublishToStatusPageDialog
+                incidentId={incident.id}
+                incidentTitle={incident.title}
+                isAdmin={isAdmin}
+              />
 
               <div className="space-y-3">
                 <h3 className="text-sm font-medium text-foreground">{t('incidents.roles.title')}</h3>
