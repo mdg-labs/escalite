@@ -571,6 +571,43 @@ const messages = {
     'We are investigating elevated error rates on the API.',
   'incidents.statusPage.error.requiredBody': 'Initial update message is required.',
   'incidents.statusPage.error.requiredComponents': 'Select at least one affected component.',
+  'statusPages.title': 'Status pages',
+  'statusPages.description':
+    'Configure your organization public status page, components, and incident updates.',
+  'statusPages.tabs.settings': 'Settings',
+  'statusPages.tabs.components': 'Components',
+  'statusPages.tabs.incidents': 'Incidents',
+  'statusPages.tabs.subscriptions': 'Subscriptions',
+  'statusPages.placeholder.components': 'Component management will be available in a future update.',
+  'statusPages.placeholder.incidents': 'Incident publishing will be available in a future update.',
+  'statusPages.placeholder.subscriptions': 'Subscription management will be available in a future update.',
+  'statusPages.settings.title': 'Status page settings',
+  'statusPages.settings.description':
+    'Set the public URL slug, page title, and whether the status page is visible.',
+  'statusPages.settings.loading': 'Loading status page settings…',
+  'statusPages.settings.status.enabled': 'Status page enabled',
+  'statusPages.settings.status.disabled': 'Status page disabled',
+  'statusPages.settings.status.notConfigured': 'No status page configured yet. Save settings to create one.',
+  'statusPages.settings.preview.title': 'Public preview',
+  'statusPages.settings.preview.description':
+    'Open the public status page in a new tab. The page must be enabled to serve traffic.',
+  'statusPages.settings.field.slug': 'URL slug',
+  'statusPages.settings.field.slugPlaceholder': 'acme-status',
+  'statusPages.settings.field.slugHelp':
+    'Lowercase letters, numbers, and hyphens. Used in the public status page URL.',
+  'statusPages.settings.field.title': 'Page title',
+  'statusPages.settings.field.titlePlaceholder': 'Acme Status',
+  'statusPages.settings.field.enabled': 'Enable public status page',
+  'statusPages.settings.field.frameAncestorsCsp': 'Frame ancestors (CSP)',
+  'statusPages.settings.field.frameAncestorsCspPlaceholder': "https://status.example.com https://*.example.com",
+  'statusPages.settings.field.frameAncestorsCspHelp':
+    'Optional Content-Security-Policy frame-ancestors directive for embedding the status page.',
+  'statusPages.settings.action.save': 'Save settings',
+  'statusPages.settings.action.saving': 'Saving…',
+  'statusPages.error.requiredSlug': 'URL slug is required.',
+  'statusPages.error.invalidSlug':
+    'Slug must be lowercase alphanumeric with optional hyphens (max 63 characters).',
+  'statusPages.error.requiredTitle': 'Page title is required.',
   'alerts.detail.viewIncident': 'View incident',
   'analytics.title': 'Analytics',
   'analytics.description':

@@ -16,6 +16,7 @@ import { SchedulesPage } from './routes/schedules'
 import { ServicePage } from './routes/service'
 import { ServicesPage } from './routes/services'
 import { SettingsPage } from './routes/settings'
+import { StatusPagesPage } from './routes/status-pages'
 import { TeamPage } from './routes/team'
 import { TeamsPage } from './routes/teams'
 import { UsersPage } from './routes/users'
@@ -189,6 +190,14 @@ export function App(): ReactElement {
         element={
           <ProtectedRoute>
             <UsersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/status-pages"
+        element={
+          <ProtectedRoute>
+            <StatusPagesPage />
           </ProtectedRoute>
         }
       />
