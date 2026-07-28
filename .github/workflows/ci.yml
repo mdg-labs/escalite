@@ -28,6 +28,18 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
+      - name: Upload JS Allure results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: allure-results-js
+          path: |
+            apps/*/allure-results/
+            packages/*/allure-results/
+            services/*/allure-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
   go:
     name: Go
     runs-on: ubuntu-latest
@@ -59,6 +71,15 @@ jobs:
         with:
           name: go-test-results
           path: /tmp/go-test-results.xml
+          retention-days: 7
+
+      - name: Upload Go Allure results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: allure-results-go
+          path: allure-results/go/
+          if-no-files-found: ignore
           retention-days: 7
 
   schema-drift:
@@ -142,6 +163,15 @@ jobs:
             apps/status-page/test-results/
           retention-days: 7
 
+      - name: Upload E2E Allure results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: allure-results-e2e
+          path: allure-results/e2e/
+          if-no-files-found: ignore
+          retention-days: 7
+
   security:
     name: Security
     runs-on: ubuntu-latest
@@ -172,3 +202,151 @@ jobs:
 
       - name: pnpm audit (high)
         run: pnpm audit --audit-level=high
+
+  allure-report:
+    name: Allure report
+    runs-on: ubuntu-latest
+    needs: [js, go, e2e]
+    if: always()
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Download JS Allure results
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@v5
+        with:
+          name: allure-results-js
+          path: .
+
+      - name: Download Go Allure results
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@v5
+        with:
+          name: allure-results-go
+          path: .allure-staging/go
+
+      - name: Download E2E Allure results
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@v5
+        with:
+          name: allure-results-e2e
+          path: .allure-staging/e2e
+
+      - name: Merge Allure results
+        if: always()
+        run: |
+          node scripts/allure/merge-results.mjs
+          if [ -d .allure-staging/go ]; then
+            mkdir -p allure-results/go
+            cp -a .allure-staging/go/. allure-results/go/
+          fi
+          if [ -d .allure-staging/e2e ]; then
+            mkdir -p allure-results/e2e
+            cp -a .allure-staging/e2e/. allure-results/e2e/
+          fi
+
+      - name: Load report history from gh-pages
+        if: always()
+        continue-on-error: true
+        uses: actions/checkout@v5
+        with:
+          ref: gh-pages
+          path: .gh-pages
+
+      - name: Generate Allure report
+        if: always()
+        run: |
+          mkdir -p allure-report
+          if [ -f .gh-pages/history.jsonl ]; then
+            cp .gh-pages/history.jsonl allure-report/history.jsonl
+          fi
+          ALLURE_HISTORY_PATH=./allure-report/history.jsonl \
+            pnpm exec allure generate --config ./allurerc.mjs ./allure-results
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: allure-report
+          path: allure-report/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Bootstrap gh-pages branch
+        if: always() && github.ref == 'refs/heads/dev'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/gh-pages" &>/dev/null; then
+            echo "gh-pages branch already exists"
+            exit 0
+          fi
+          echo "Bootstrapping gh-pages branch..."
+          BLOB_SHA="$(
+            gh api "repos/${GITHUB_REPOSITORY}/git/blobs" \
+              -f content='<!DOCTYPE html><html><body><p>Allure reports pending.</p></body></html>' \
+              -f encoding=utf-8 \
+              --jq .sha
+          )"
+          TREE_SHA="$(
+            gh api "repos/${GITHUB_REPOSITORY}/git/trees" \
+              -f "tree[][path]=index.html" \
+              -f "tree[][mode]=100644" \
+              -f "tree[][type]=blob" \
+              -f "tree[][sha]=${BLOB_SHA}" \
+              --jq .sha
+          )"
+          COMMIT_SHA="$(
+            gh api "repos/${GITHUB_REPOSITORY}/git/commits" \
+              -f message='chore(ci): bootstrap gh-pages for Allure reports' \
+              -f tree="${TREE_SHA}" \
+              --jq .sha
+          )"
+          gh api "repos/${GITHUB_REPOSITORY}/git/refs" \
+            -f ref='refs/heads/gh-pages' \
+            -f sha="${COMMIT_SHA}"
+
+      - name: Configure GitHub Pages
+        if: always() && github.ref == 'refs/heads/dev'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/${GITHUB_REPOSITORY}/pages" &>/dev/null; then
+            gh api --method PUT "repos/${GITHUB_REPOSITORY}/pages" \
+              -f build_type=legacy \
+              -f 'source[branch]=gh-pages' \
+              -f 'source[path]=/'
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/pages" \
+              -f 'source[branch]=gh-pages' \
+              -f 'source[path]=/'
+          fi
+
+      - name: Publish Allure report to GitHub Pages
+        if: always() && github.ref == 'refs/heads/dev'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./allure-report
+          keep_files: false

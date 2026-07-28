@@ -187,6 +187,28 @@ Migrate `_test.go` files incrementally to [allure-go](https://github.com/allure-
    step. Helpers that need `*testing.T` can call `a.T()`. Passing `t` or `a.T()` to assertions
    keeps plain testify behavior without step reporting.
 
+### CI reports and GitHub Pages
+
+Every CI run (PR and branch pushes) uploads an **`allure-report`** workflow artifact you can
+download from the GitHub Actions run summary. Report generation uses `if: always()` so results
+are collected even when test jobs fail.
+
+| Workflow | Allure artifact | gh-pages publish |
+| -------- | --------------- | ---------------- |
+| **PR** (`pr.yml`) | Yes — download from the run | No — artifact only |
+| **`dev` push** (`dev.yml`) | Yes | Yes — updates canonical history |
+| **`main` push** (`main.yml`) | Yes | No |
+
+On pushes to `dev`, CI merges `allure-results` from the JavaScript, Go, and E2E jobs, loads
+trend history from the `gh-pages` branch, generates the report, and publishes it via
+[`peaceiris/actions-gh-pages`](https://github.com/peaceiris/actions-gh-pages). GitHub Pages
+source is configured automatically (`gh-pages` branch, `/` root).
+
+**Published report:** [https://mdg-labs.github.io/escalite/](https://mdg-labs.github.io/escalite/)
+
+In CI, `allurerc.mjs` reads history from the checked-out `gh-pages` tree via the
+`ALLURE_HISTORY_PATH` environment variable (default locally: `./.allure/history.jsonl`).
+
 ## Pull requests
 
 1. Branch from `dev` (or the integration branch named in the issue).
