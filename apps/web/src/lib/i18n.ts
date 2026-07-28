@@ -381,6 +381,8 @@ const messages = {
   'settings.slack.manual.placeholder': 'xoxb-…',
   'settings.slack.manual.help':
     'Paste a bot token from your Slack app when OAuth is not configured on this instance.',
+  'settings.slack.manual.helpDev':
+    'Development fallback: paste a bot token to override the OAuth install without leaving settings.',
   'settings.slack.oauth.connected': 'Slack workspace connected successfully.',
   'settings.slack.oauth.error': 'Slack authorization failed. Try again or contact your administrator.',
   'settings.saml.title': 'SAML single sign-on',

@@ -1,5 +1,5 @@
 import { useState, type ReactElement, type ReactNode } from 'react'
-import { Navigate, Route, Routes } from 'react-router'
+import { Navigate, Route, Routes, useLocation } from 'react-router'
 import {
   UserRole,
   useMeQuery,
@@ -81,6 +81,11 @@ function AdminOnlySection({ children }: { children: ReactNode }): ReactElement {
   }
 
   return <>{children}</>
+}
+
+function SettingsIndexRedirect(): ReactElement {
+  const location = useLocation()
+  return <Navigate replace to={{ pathname: 'enterprise', search: location.search }} />
 }
 
 function SettingsEnterpriseSection(): ReactElement {
@@ -258,7 +263,7 @@ export function SettingsPage(): ReactElement {
 
           <div className="min-w-0 flex-1">
             <Routes>
-              <Route index element={<Navigate replace to="enterprise" />} />
+              <Route element={<SettingsIndexRedirect />} index />
               <Route element={<SettingsEnterpriseSection />} path="enterprise" />
               <Route element={<SettingsNotificationsSection />} path="notifications" />
               <Route element={<SettingsDevicesSection />} path="devices" />

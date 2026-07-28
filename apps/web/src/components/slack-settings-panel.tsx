@@ -135,27 +135,29 @@ export function SlackSettingsPanel(): ReactElement {
                 : t('settings.slack.action.addToSlack')}
             </Button>
           </div>
-        ) : (
-          <form className="space-y-4" onSubmit={(event) => void handleManualSave(event)}>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="slack-bot-token">
-                {t('settings.slack.manual.label')}
-              </label>
-              <Input
-                autoComplete="off"
-                id="slack-bot-token"
-                onChange={(event) => setManualToken(event.target.value)}
-                placeholder={t('settings.slack.manual.placeholder')}
-                type="password"
-                value={manualToken}
-              />
-              <p className="text-xs text-muted-foreground">{t('settings.slack.manual.help')}</p>
-            </div>
-            <Button disabled={saving || manualToken.trim() === ''} type="submit">
-              {saving ? t('settings.slack.action.saving') : t('settings.slack.action.saveToken')}
-            </Button>
-          </form>
-        )}
+        ) : null}
+
+        <form className="space-y-4" onSubmit={(event) => void handleManualSave(event)}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground" htmlFor="slack-bot-token">
+              {t('settings.slack.manual.label')}
+            </label>
+            <Input
+              autoComplete="off"
+              id="slack-bot-token"
+              onChange={(event) => setManualToken(event.target.value)}
+              placeholder={t('settings.slack.manual.placeholder')}
+              type="password"
+              value={manualToken}
+            />
+            <p className="text-xs text-muted-foreground">
+              {installHref ? t('settings.slack.manual.helpDev') : t('settings.slack.manual.help')}
+            </p>
+          </div>
+          <Button disabled={saving || manualToken.trim() === ''} type="submit">
+            {saving ? t('settings.slack.action.saving') : t('settings.slack.action.saveToken')}
+          </Button>
+        </form>
       </div>
     </section>
   )
