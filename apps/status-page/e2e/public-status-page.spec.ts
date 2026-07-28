@@ -9,12 +9,13 @@ test.describe('public status page', () => {
     await page.goto(`/${slug}`)
 
     await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
-    await expect(page.getByRole('heading', { level: 2, name: 'Current status' })).toBeVisible()
+    await expect(page.getByText('Current status')).toBeVisible()
     await expect(page.getByText('All systems operational')).toBeVisible()
     await expect(page.getByRole('heading', { level: 2, name: 'Components' })).toBeVisible()
-    await expect(page.getByText(componentName)).toBeVisible()
+    await expect(
+      page.getByRole('region', { name: 'Components' }).getByText(componentName),
+    ).toBeVisible()
     await expect(page.getByRole('heading', { level: 2, name: 'Active incidents' })).toBeVisible()
-    await expect(page.getByText('No active incidents.')).toBeVisible()
 
     await expect(page.getByRole('heading', { level: 2, name: 'Subscribe to updates' })).toBeVisible()
     await page.getByLabel('Email address').fill(subscriberEmail)

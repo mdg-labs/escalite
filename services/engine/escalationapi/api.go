@@ -11,6 +11,7 @@ import (
 
 	"github.com/mdg-labs/escalite/services/engine/internal/db"
 	"github.com/mdg-labs/escalite/services/engine/internal/escalation"
+	enginejobs "github.com/mdg-labs/escalite/services/engine/internal/jobs"
 )
 
 // TriggeredAlertParams configures a new triggered alert.
@@ -71,6 +72,22 @@ func CreateTriggeredAlert(
 		Description:    params.Description,
 		Priority:       params.Priority,
 	})
+	return err
+}
+
+// ScheduleEscalationTrigger enqueues step-1 escalation processing for a triggered alert.
+func ScheduleEscalationTrigger(
+	ctx context.Context,
+	jobs JobProducer,
+	alertID, organizationID uuid.UUID,
+) error {
+	if jobs == nil {
+		return nil
+	}
+	_, err := jobs.Insert(ctx, enginejobs.EscalationTriggerArgs{
+		AlertID:        alertID,
+		OrganizationID: organizationID,
+	}, nil)
 	return err
 }
 

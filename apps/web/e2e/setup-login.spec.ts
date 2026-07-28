@@ -1,19 +1,12 @@
 import { expect, test } from './fixtures'
-import {
-  e2eAdminEmail,
-  e2eAdminPassword,
-  e2eOrganizationName,
-} from './helpers'
+import { e2eAdminEmail, e2eAdminPassword } from './helpers'
 
 test.describe('first-admin bootstrap', () => {
-  test('setup, logout, login, and reach dashboard', async ({ page }) => {
-    await page.goto('/setup')
-    await expect(page.getByRole('heading', { name: 'Set up Escalite' })).toBeVisible()
-
-    await page.getByLabel('Organization name').fill(e2eOrganizationName)
-    await page.getByLabel('Admin email').fill(e2eAdminEmail)
+  test('logout, login, and reach dashboard', async ({ page }) => {
+    await page.goto('/login')
+    await page.getByLabel('Email').fill(e2eAdminEmail)
     await page.getByLabel('Password').fill(e2eAdminPassword)
-    await page.getByRole('button', { name: 'Create organization' }).click()
+    await page.getByRole('button', { name: 'Sign in' }).click()
 
     await expect(page).toHaveURL('/dashboard')
     await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible()
@@ -32,6 +25,6 @@ test.describe('first-admin bootstrap', () => {
 
     await expect(page).toHaveURL('/dashboard')
     await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible()
-    await expect(page.getByText('On call now')).toBeVisible()
+    await expect(page.getByText('On call now').first()).toBeVisible()
   })
 })

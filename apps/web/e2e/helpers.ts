@@ -5,13 +5,39 @@ export const e2eAdminPassword = 'correct-horse-battery-staple'
 export const e2eOrganizationName = 'E2E Test Org'
 export const e2eDefaultTeamName = 'Default'
 
+export const appOrigin = process.env.ESCALITE_APP_ORIGIN ?? 'http://localhost:5173'
 export const apiBaseUrl = process.env.ESCALITE_API_URL ?? 'http://localhost:8080'
 
+export async function ensureE2EAdminSession(request: APIRequestContext): Promise<void> {
+  const loginResponse = await request.post(`${appOrigin.replace(/\/$/, '')}/api/v1/login`, {
+    data: {
+      email: e2eAdminEmail,
+      password: e2eAdminPassword,
+    },
+  })
+
+  if (loginResponse.ok()) {
+    return
+  }
+
+  const setupResponse = await request.post(`${appOrigin.replace(/\/$/, '')}/api/v1/setup`, {
+    data: {
+      organizationName: e2eOrganizationName,
+      email: e2eAdminEmail,
+      password: e2eAdminPassword,
+    },
+  })
+
+  if (!setupResponse.ok()) {
+    throw new Error(
+      `Failed to bootstrap E2E organization (login ${loginResponse.status()}, setup ${setupResponse.status()})`,
+    )
+  }
+}
+
 export async function loginAsE2EAdmin(page: Page): Promise<void> {
-  await page.goto('/login')
-  await page.getByLabel('Email').fill(e2eAdminEmail)
-  await page.getByLabel('Password').fill(e2eAdminPassword)
-  await page.getByRole('button', { name: 'Sign in' }).click()
+  await ensureE2EAdminSession(page.request)
+  await page.goto('/dashboard')
   await page.waitForURL('/dashboard')
 }
 

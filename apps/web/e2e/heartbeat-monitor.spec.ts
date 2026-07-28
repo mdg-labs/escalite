@@ -29,7 +29,9 @@ test.describe('heartbeat monitors', () => {
     await page.getByLabel('Name').fill(monitorName)
     await page.getByRole('button', { name: 'Create monitor' }).click()
 
-    await expect(page.getByRole('heading', { name: 'Heartbeat monitor created' })).toBeVisible()
+    await expect(
+      page.getByRole('dialog').getByRole('heading', { name: 'Heartbeat monitor created', exact: true }),
+    ).toBeVisible()
     await expect(page.getByText(/\/heartbeat\//)).toBeVisible()
     await page.getByRole('button', { name: 'I saved the URL' }).click()
 

@@ -147,6 +147,17 @@ func (h *SetupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err = txQueries.CreateTeam(ctx, db.CreateTeamParams{
+		ID:             uuid.Must(uuid.NewV7()),
+		OrganizationID: orgID,
+		Name:           "Default",
+	})
+	if err != nil {
+		h.logger.Error("create default team failed", "error", err)
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
+	}
+
 	_, err = txQueries.CreateSession(ctx, db.CreateSessionParams{
 		ID:             sessionID,
 		UserID:         userID,

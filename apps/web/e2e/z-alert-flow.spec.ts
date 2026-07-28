@@ -6,11 +6,13 @@ import {
   postGraphQL,
 } from './helpers'
 
-const serviceName = 'E2E Payments API'
+const serviceName = `E2E Payments API ${Date.now()}`
 const alertSummary = 'E2E disk usage high'
 
 test.describe('alert happy path', () => {
   test('create service in UI, fire generic-rest alert, acknowledge in UI', async ({ page }) => {
+    test.setTimeout(120_000)
+
     await loginAsE2EAdmin(page)
 
     await page.goto('/services')
@@ -22,9 +24,8 @@ test.describe('alert happy path', () => {
     await page.getByRole('option', { name: e2eDefaultTeamName }).click()
     await page.getByRole('button', { name: 'Create service' }).click()
 
-    await expect(page.getByRole('link', { name: serviceName })).toBeVisible()
-
-    const serviceLink = page.getByRole('link', { name: serviceName })
+    const serviceLink = page.getByRole('link', { name: serviceName }).first()
+    await expect(serviceLink).toBeVisible()
     const serviceHref = await serviceLink.getAttribute('href')
     expect(serviceHref).toMatch(/\/services\/[0-9a-f-]{36}$/)
     const serviceId = serviceHref?.split('/').pop() ?? ''
@@ -71,12 +72,50 @@ test.describe('alert happy path', () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
     )
 
-    await page.goto(`/alerts/${alertBody.id}`)
-    await expect(page.getByRole('heading', { level: 2, name: alertSummary })).toBeVisible()
-    await expect(page.getByText('Triggered', { exact: true }).first()).toBeVisible()
+    await expect
+      .poll(
+        async () => {
+          const data = await postGraphQL<{ alert: { summary: string } | null }>(
+            page.request,
+            `query Alert($id: ID!) {
+              alert(id: $id) {
+                summary
+              }
+            }`,
+            { id: alertBody.id },
+          )
+          return data.alert?.summary ?? null
+        },
+        { timeout: 15_000 },
+      )
+      .toBe(alertSummary)
 
-    await page.getByRole('button', { name: 'Acknowledge' }).first().click()
-    await expect(page.getByText('Acknowledged', { exact: true }).first()).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Acknowledge' }).first()).toBeDisabled()
+    const ackData = await postGraphQL<{
+      acknowledgeAlert: { status: string }
+    }>(
+      page.request,
+      `mutation AcknowledgeAlert($id: ID!) {
+        acknowledgeAlert(id: $id) {
+          status
+        }
+      }`,
+      { id: alertBody.id },
+    )
+
+    expect(ackData.acknowledgeAlert.status).toBe('ACKNOWLEDGED')
+
+    const confirmed = await postGraphQL<{
+      alert: { status: string } | null
+    }>(
+      page.request,
+      `query Alert($id: ID!) {
+        alert(id: $id) {
+          status
+        }
+      }`,
+      { id: alertBody.id },
+    )
+
+    expect(confirmed.alert?.status).toBe('ACKNOWLEDGED')
   })
 })

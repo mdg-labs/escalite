@@ -115,6 +115,13 @@ func createTriggered(
 	if err != nil {
 		return uuid.Nil, err
 	}
+
+	if deps != nil && deps.Jobs != nil {
+		if err := escalationapi.ScheduleEscalationTrigger(ctx, deps.Jobs, alert.ID, alert.OrganizationID); err != nil {
+			return uuid.Nil, err
+		}
+	}
+
 	return alert.ID, nil
 }
 

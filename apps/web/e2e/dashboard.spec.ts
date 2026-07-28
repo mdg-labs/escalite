@@ -9,6 +9,6 @@ test.describe('dashboard', () => {
     await expect(page.getByRole('heading', { name: 'Open alerts', level: 2 })).toBeVisible()
     await expect(page.getByText('View triggered alerts')).toBeVisible()
     await expect(page.getByText('View acknowledged alerts')).toBeVisible()
-    await expect(page.getByText('On call now')).toBeVisible()
+    await expect(page.getByText('On call now').first()).toBeVisible()
   })
 })

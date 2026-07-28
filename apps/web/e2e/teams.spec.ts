@@ -47,7 +47,7 @@ test.describe('teams', () => {
     await page.getByRole('option', { name: memberEmail }).click()
     await page.getByRole('button', { name: 'Add member' }).click()
 
-    await expect(page.getByRole('cell', { name: memberEmail })).toBeVisible()
+    await expect(page.getByRole('cell', { name: memberEmail }).first()).toBeVisible()
     expect(inviteResult.inviteUser.email).toBe(memberEmail)
   })
 })

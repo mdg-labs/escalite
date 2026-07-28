@@ -146,12 +146,13 @@ export function AlertsPage(): ReactElement {
 
   const [{ data, fetching }] = useAlertsQuery({
     variables: { limit: 100 },
+    pause: !organizationId,
     requestPolicy: 'network-only',
   })
 
   const [{ data: selectedData }] = useAlertQuery({
     variables: { id: alertId ?? '' },
-    pause: !alertId,
+    pause: !alertId || !organizationId,
     requestPolicy: 'network-only',
   })
 
