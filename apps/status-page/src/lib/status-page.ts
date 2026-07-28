@@ -183,6 +183,32 @@ export function publicStatusPageSubscribeUrl(slug: string, apiPublicUrl: string)
   return `${publicStatusPageUrl(slug, apiPublicUrl)}/subscribe`
 }
 
+export function publicStatusPageUnsubscribeUrl(apiPublicUrl: string): string {
+  return `${apiPublicUrl.replace(/\/$/, '')}/api/v1/public/status/unsubscribe`
+}
+
+export async function confirmStatusPageUnsubscribe(
+  token: string,
+  apiPublicUrl: string,
+): Promise<void> {
+  const response = await fetch(publicStatusPageUnsubscribeUrl(apiPublicUrl), {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ token }),
+  })
+
+  if (response.status === 400) {
+    throw new StatusPageUnsubscribeInvalidTokenError()
+  }
+
+  if (!response.ok) {
+    throw new StatusPageUnsubscribeError()
+  }
+}
+
 export async function fetchPublicStatusPage(
   slug: string,
   apiPublicUrl: string,
@@ -241,5 +267,19 @@ export class StatusPageSubscribeError extends Error {
   constructor() {
     super('subscribe failed')
     this.name = 'StatusPageSubscribeError'
+  }
+}
+
+export class StatusPageUnsubscribeError extends Error {
+  constructor() {
+    super('unsubscribe failed')
+    this.name = 'StatusPageUnsubscribeError'
+  }
+}
+
+export class StatusPageUnsubscribeInvalidTokenError extends Error {
+  constructor() {
+    super('invalid unsubscribe token')
+    this.name = 'StatusPageUnsubscribeInvalidTokenError'
   }
 }

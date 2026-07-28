@@ -37,6 +37,22 @@ const messages = {
   'statusPage.landing.title': 'Escalite status page',
   'statusPage.landing.description':
     'Open a status page by slug, for example /acme-status.',
+  'statusPage.unsubscribe.documentTitle': 'Unsubscribe',
+  'statusPage.unsubscribe.title': 'Unsubscribe from incident emails',
+  'statusPage.unsubscribe.description':
+    'Confirm below to stop receiving email updates for this status page.',
+  'statusPage.unsubscribe.confirm': 'Confirm unsubscribe',
+  'statusPage.unsubscribe.confirming': 'Unsubscribing…',
+  'statusPage.unsubscribe.successTitle': 'You are unsubscribed',
+  'statusPage.unsubscribe.successDescription':
+    'You will no longer receive incident email updates for this status page.',
+  'statusPage.unsubscribe.invalidTitle': 'Invalid unsubscribe link',
+  'statusPage.unsubscribe.invalidDescription':
+    'This unsubscribe link is invalid or expired.',
+  'statusPage.unsubscribe.errorTitle': 'Unable to unsubscribe',
+  'statusPage.unsubscribe.errorDescription':
+    'Something went wrong while processing your request. Try again.',
+  'statusPage.unsubscribe.retry': 'Try again',
 } as const
 
 export type MessageKey = keyof typeof messages

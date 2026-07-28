@@ -202,6 +202,7 @@ type Querier interface {
 	SessionsSchemaReady(ctx context.Context) (bool, error)
 	SoftDeleteOverride(ctx context.Context, arg SoftDeleteOverrideParams) (Override, error)
 	SoftDeleteService(ctx context.Context, arg SoftDeleteServiceParams) (Service, error)
+	UnsubscribeStatusPageSubscription(ctx context.Context, arg UnsubscribeStatusPageSubscriptionParams) (StatusPageSubscription, error)
 	UpdateAccountPasswordHash(ctx context.Context, arg UpdateAccountPasswordHashParams) error
 	UpdateAlertEscalationState(ctx context.Context, arg UpdateAlertEscalationStateParams) (Alert, error)
 	UpdateEscalationPolicy(ctx context.Context, arg UpdateEscalationPolicyParams) (EscalationPolicy, error)

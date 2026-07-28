@@ -8,15 +8,22 @@ import (
 
 	"github.com/mdg-labs/escalite/services/engine/internal/crypto"
 	"github.com/mdg-labs/escalite/services/engine/internal/escalation"
+	"github.com/mdg-labs/escalite/services/engine/internal/statuspage"
 )
 
 // NewWorkers registers engine workers on a River workers bundle.
-func NewWorkers(logger *slog.Logger, pool *pgxpool.Pool, inserter escalation.JobInserter, secrets *crypto.Box) *river.Workers {
+func NewWorkers(
+	logger *slog.Logger,
+	pool *pgxpool.Pool,
+	inserter escalation.JobInserter,
+	secrets *crypto.Box,
+	statusPageNotify statuspage.NotifyConfig,
+) *river.Workers {
 	workers := river.NewWorkers()
 	river.AddWorker(workers, NewHeartbeatScanWorker(logger, pool, inserter))
 	river.AddWorker(workers, NewEscalationTriggerWorker(logger, pool, inserter))
 	river.AddWorker(workers, NewEscalationStepWorker(logger, pool, inserter))
 	river.AddWorker(workers, NewNotifyWorker(logger, pool, secrets))
-	river.AddWorker(workers, NewStatusPageIncidentNotifyWorker(logger, pool))
+	river.AddWorker(workers, NewStatusPageIncidentNotifyWorker(logger, pool, statusPageNotify))
 	return workers
 }

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router'
 
 import { t } from './lib/i18n'
 import { StatusPageRoute } from './routes/status-page'
+import { UnsubscribeRoute } from './routes/unsubscribe'
 
 function LandingPage(): ReactElement {
   return (
@@ -19,6 +20,7 @@ export function App(): ReactElement {
   return (
     <Routes>
       <Route element={<LandingPage />} path="/" />
+      <Route element={<UnsubscribeRoute />} path="/unsubscribe" />
       <Route element={<StatusPageRoute />} path="/:slug" />
       <Route element={<Navigate replace to="/" />} path="*" />
     </Routes>

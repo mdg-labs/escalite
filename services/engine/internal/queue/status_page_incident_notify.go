@@ -19,13 +19,18 @@ type StatusPageIncidentNotifyWorker struct {
 	river.WorkerDefaults[jobs.StatusPageIncidentNotifyArgs]
 	logger *slog.Logger
 	pool   *pgxpool.Pool
+	cfg    statuspage.NotifyConfig
 }
 
-func NewStatusPageIncidentNotifyWorker(logger *slog.Logger, pool *pgxpool.Pool) *StatusPageIncidentNotifyWorker {
+func NewStatusPageIncidentNotifyWorker(
+	logger *slog.Logger,
+	pool *pgxpool.Pool,
+	cfg statuspage.NotifyConfig,
+) *StatusPageIncidentNotifyWorker {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &StatusPageIncidentNotifyWorker{logger: logger, pool: pool}
+	return &StatusPageIncidentNotifyWorker{logger: logger, pool: pool, cfg: cfg}
 }
 
 func (w *StatusPageIncidentNotifyWorker) Work(ctx context.Context, job *river.Job[jobs.StatusPageIncidentNotifyArgs]) error {
@@ -40,7 +45,7 @@ func (w *StatusPageIncidentNotifyWorker) Work(ctx context.Context, job *river.Jo
 	}
 
 	queries := db.New(w.pool)
-	if err := statuspage.NotifySubscribers(ctx, queries, sender, statuspage.NotifyParams{
+	if err := statuspage.NotifySubscribers(ctx, queries, sender, w.cfg, statuspage.NotifyParams{
 		OrganizationID:       job.Args.OrganizationID,
 		StatusPageIncidentID: job.Args.StatusPageIncidentID,
 		UpdateID:             job.Args.UpdateID,

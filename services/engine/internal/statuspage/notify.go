@@ -10,7 +10,14 @@ import (
 
 	"github.com/mdg-labs/escalite/services/engine/internal/db"
 	engineemail "github.com/mdg-labs/escalite/services/engine/internal/email"
+	"github.com/mdg-labs/escalite/services/engine/statuspageapi"
 )
+
+// NotifyConfig controls signed unsubscribe links in subscriber emails.
+type NotifyConfig struct {
+	SigningKey        []byte
+	StatusPagePublicURL string
+}
 
 // NotifyParams identifies a status page incident update to email subscribers about.
 type NotifyParams struct {
@@ -25,6 +32,7 @@ func NotifySubscribers(
 	ctx context.Context,
 	queries *db.Queries,
 	sender engineemail.Sender,
+	cfg NotifyConfig,
 	params NotifyParams,
 ) error {
 	if sender == nil {
@@ -67,14 +75,21 @@ func NotifySubscribers(
 	}
 
 	subject := fmt.Sprintf("[%s] %s", formatIncidentStatus(update.Status), incident.Title)
-	textBody := buildTextBody(page.Title, incident.Title, update.Status, update.Body)
-	htmlBody := buildHTMLBody(page.Title, incident.Title, update.Status, update.Body)
 
 	for _, subscriber := range subscribers {
 		email := strings.TrimSpace(subscriber.Email)
 		if email == "" {
 			continue
 		}
+
+		unsubscribeURL, err := buildUnsubscribeURL(cfg, subscriber.ID, subscriber.OrganizationID)
+		if err != nil {
+			return fmt.Errorf("build unsubscribe link for %s: %w", email, err)
+		}
+
+		textBody := buildTextBody(page.Title, incident.Title, update.Status, update.Body, unsubscribeURL)
+		htmlBody := buildHTMLBody(page.Title, incident.Title, update.Status, update.Body, unsubscribeURL)
+
 		if err := sender.Send(ctx, engineemail.Message{
 			To:       email,
 			Subject:  subject,
@@ -86,6 +101,22 @@ func NotifySubscribers(
 	}
 
 	return nil
+}
+
+func buildUnsubscribeURL(cfg NotifyConfig, subscriptionID, organizationID uuid.UUID) (string, error) {
+	if len(cfg.SigningKey) == 0 {
+		return "", fmt.Errorf("signing key is required")
+	}
+
+	token, err := statuspageapi.SignUnsubscribeToken(cfg.SigningKey, statuspageapi.UnsubscribeClaims{
+		SubscriptionID: subscriptionID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return statuspageapi.BuildUnsubscribeURL(cfg.StatusPagePublicURL, token), nil
 }
 
 func formatIncidentStatus(status string) string {
@@ -101,7 +132,7 @@ func formatIncidentStatus(status string) string {
 	}
 }
 
-func buildTextBody(pageTitle, incidentTitle, status, body string) string {
+func buildTextBody(pageTitle, incidentTitle, status, body, unsubscribeURL string) string {
 	var text strings.Builder
 	text.WriteString(pageTitle)
 	text.WriteString("\n\n")
@@ -110,10 +141,13 @@ func buildTextBody(pageTitle, incidentTitle, status, body string) string {
 	text.WriteString(formatIncidentStatus(status))
 	text.WriteString("\n\n")
 	text.WriteString(body)
+	text.WriteString("\n\n")
+	text.WriteString("Unsubscribe from incident emails:\n")
+	text.WriteString(unsubscribeURL)
 	return text.String()
 }
 
-func buildHTMLBody(pageTitle, incidentTitle, status, body string) string {
+func buildHTMLBody(pageTitle, incidentTitle, status, body, unsubscribeURL string) string {
 	var htmlBody strings.Builder
 	htmlBody.WriteString("<!DOCTYPE html><html><body>")
 	htmlBody.WriteString("<p><strong>")
@@ -128,6 +162,9 @@ func buildHTMLBody(pageTitle, incidentTitle, status, body string) string {
 	htmlBody.WriteString("<p>")
 	htmlBody.WriteString(html.EscapeString(body))
 	htmlBody.WriteString("</p>")
+	htmlBody.WriteString("<p><a href=\"")
+	htmlBody.WriteString(html.EscapeString(unsubscribeURL))
+	htmlBody.WriteString("\">Unsubscribe from incident emails</a></p>")
 	htmlBody.WriteString("</body></html>")
 	return htmlBody.String()
 }

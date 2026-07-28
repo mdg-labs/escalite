@@ -16,19 +16,27 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/mdg-labs/escalite/services/api/internal/db"
+	"github.com/mdg-labs/escalite/services/engine/statuspageapi"
 )
+
+// PublicStatusPageConfig controls signed unsubscribe tokens for public status pages.
+type PublicStatusPageConfig struct {
+	SigningKey []byte
+}
 
 // PublicStatusPageHandler serves unauthenticated status page data.
 type PublicStatusPageHandler struct {
 	pool   *pgxpool.Pool
 	logger *slog.Logger
+	cfg    PublicStatusPageConfig
 }
 
 // NewPublicStatusPageHandler returns a handler for public status page routes.
-func NewPublicStatusPageHandler(pool *pgxpool.Pool, logger *slog.Logger) *PublicStatusPageHandler {
+func NewPublicStatusPageHandler(pool *pgxpool.Pool, logger *slog.Logger, cfg PublicStatusPageConfig) *PublicStatusPageHandler {
 	return &PublicStatusPageHandler{
 		pool:   pool,
 		logger: logger,
+		cfg:    cfg,
 	}
 }
 
@@ -73,6 +81,14 @@ type publicStatusPageSubscribeRequest struct {
 
 type publicStatusPageSubscribeResponse struct {
 	Subscribed bool `json:"subscribed"`
+}
+
+type publicStatusPageUnsubscribeRequest struct {
+	Token string `json:"token"`
+}
+
+type publicStatusPageUnsubscribeResponse struct {
+	Unsubscribed bool `json:"unsubscribed"`
 }
 
 // Get serves GET /api/v1/public/status/{slug}.
@@ -232,6 +248,52 @@ func (h *PublicStatusPageHandler) Subscribe(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(publicStatusPageSubscribeResponse{Subscribed: true})
+}
+
+// Unsubscribe serves POST /api/v1/public/status/unsubscribe.
+func (h *PublicStatusPageHandler) Unsubscribe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		WriteAPIError(w, http.StatusMethodNotAllowed, CodeMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	var payload publicStatusPageUnsubscribeRequest
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		WriteAPIError(w, http.StatusBadRequest, CodeValidation, "invalid request body")
+		return
+	}
+
+	token := strings.TrimSpace(payload.Token)
+	if token == "" {
+		WriteAPIError(w, http.StatusBadRequest, CodeValidation, "token is required")
+		return
+	}
+
+	claims, err := statuspageapi.ParseUnsubscribeToken(h.cfg.SigningKey, token)
+	if err != nil {
+		WriteAPIError(w, http.StatusBadRequest, CodeValidation, "invalid unsubscribe token")
+		return
+	}
+
+	ctx := r.Context()
+	queries := db.New(h.pool)
+
+	if _, err := queries.UnsubscribeStatusPageSubscription(ctx, db.UnsubscribeStatusPageSubscriptionParams{
+		ID:             claims.SubscriptionID,
+		OrganizationID: claims.OrganizationID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			WriteAPIError(w, http.StatusBadRequest, CodeValidation, "invalid unsubscribe token")
+			return
+		}
+		h.logger.Error("unsubscribe status page subscription failed", "error", err)
+		WriteAPIError(w, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(publicStatusPageUnsubscribeResponse{Unsubscribed: true})
 }
 
 type publicStatusPageIncidentSource struct {

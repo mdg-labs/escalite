@@ -42,6 +42,7 @@ type Config struct {
 	HeartbeatScanInterval              time.Duration
 	SMTP                             *SMTPConfig
 	SlackIncidentChannelNameTemplate string
+	StatusPagePublicURL              string
 }
 
 // Load reads and validates configuration from the environment.
@@ -82,6 +83,7 @@ func Load(opts Options) (Config, error) {
 	}
 	cfg.SMTP = smtpCfg
 	cfg.SlackIncidentChannelNameTemplate = loadSlackIncidentChannelNameTemplate()
+	cfg.StatusPagePublicURL = strings.TrimSpace(os.Getenv("ESCALITE_STATUS_PAGE_PUBLIC_URL"))
 
 	if strings.TrimSpace(cfg.ListenAddr) == "" {
 		return Config{}, fmt.Errorf("ESCALITE_HTTP_ADDR must not be empty")

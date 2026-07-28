@@ -3,16 +3,21 @@ package handlers_test
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
 	"github.com/mdg-labs/escalite/services/api/internal/db"
+	"github.com/mdg-labs/escalite/services/engine/statuspageapi"
 )
+
+const publicStatusPageTestEncryptionKeyHex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
 func TestPublicStatusPageExcludesInternalAlertFields(t *testing.T) {
 	handler, pool, cleanup := newTestHandler(t)
@@ -348,4 +353,100 @@ func TestPublicStatusPageResolvedIncidentsWindow(t *testing.T) {
 	require.Equal(t, "Past outage", firstResolved["title"])
 	require.Equal(t, "resolved", firstResolved["status"])
 	require.NotNil(t, firstResolved["resolvedAt"])
+}
+
+func TestPublicStatusPageUnsubscribeTokenIsIdempotent(t *testing.T) {
+	handler, pool, cleanup := newTestHandler(t)
+	defer cleanup()
+
+	adminCookie := bootstrapAdmin(t, handler)
+
+	saveRec := postGraphQL(t, handler, `mutation {
+		saveStatusPage(input: {
+			slug: "unsubscribe-status"
+			title: "Unsubscribe Status"
+			enabled: true
+		}) {
+			id
+		}
+	}`, adminCookie)
+	require.Equal(t, http.StatusOK, saveRec.Code, saveRec.Body.String())
+
+	subscribeBody, err := json.Marshal(map[string]string{"email": "subscriber@example.com"})
+	require.NoError(t, err)
+
+	subscribeReq := httptest.NewRequest(http.MethodPost, "/api/v1/public/status/unsubscribe-status/subscribe", bytes.NewReader(subscribeBody))
+	subscribeReq.Header.Set("Content-Type", "application/json")
+	subscribeRec := httptest.NewRecorder()
+	handler.ServeHTTP(subscribeRec, subscribeReq)
+	require.Equal(t, http.StatusOK, subscribeRec.Code, subscribeRec.Body.String())
+
+	queries := db.New(pool)
+	admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+	require.NoError(t, err)
+
+	page, err := queries.GetStatusPageByOrganizationID(context.Background(), admin.OrganizationID)
+	require.NoError(t, err)
+
+	subscriptions, err := queries.ListStatusPageSubscriptions(context.Background(), db.ListStatusPageSubscriptionsParams{
+		StatusPageID:   page.ID,
+		OrganizationID: admin.OrganizationID,
+	})
+	require.NoError(t, err)
+	require.Len(t, subscriptions, 1)
+
+	signingKey, err := hex.DecodeString(publicStatusPageTestEncryptionKeyHex)
+	require.NoError(t, err)
+
+	token, err := statuspageapi.SignUnsubscribeToken(signingKey, statuspageapi.UnsubscribeClaims{
+		SubscriptionID: subscriptions[0].ID,
+		OrganizationID: admin.OrganizationID,
+	})
+	require.NoError(t, err)
+
+	unsubscribeBody, err := json.Marshal(map[string]string{"token": token})
+	require.NoError(t, err)
+
+	for range 2 {
+		unsubscribeReq := httptest.NewRequest(http.MethodPost, "/api/v1/public/status/unsubscribe", bytes.NewReader(unsubscribeBody))
+		unsubscribeReq.Header.Set("Content-Type", "application/json")
+		unsubscribeRec := httptest.NewRecorder()
+		handler.ServeHTTP(unsubscribeRec, unsubscribeReq)
+		require.Equal(t, http.StatusOK, unsubscribeRec.Code, unsubscribeRec.Body.String())
+
+		var unsubscribeResp struct {
+			Unsubscribed bool `json:"unsubscribed"`
+		}
+		require.NoError(t, json.Unmarshal(unsubscribeRec.Body.Bytes(), &unsubscribeResp))
+		require.True(t, unsubscribeResp.Unsubscribed)
+	}
+
+	updated, err := queries.UnsubscribeStatusPageSubscription(context.Background(), db.UnsubscribeStatusPageSubscriptionParams{
+		ID:             subscriptions[0].ID,
+		OrganizationID: admin.OrganizationID,
+	})
+	require.NoError(t, err)
+	require.True(t, updated.UnsubscribedAt.Valid)
+
+	active, err := queries.ListStatusPageSubscriptions(context.Background(), db.ListStatusPageSubscriptionsParams{
+		StatusPageID:   page.ID,
+		OrganizationID: admin.OrganizationID,
+	})
+	require.NoError(t, err)
+	require.Empty(t, active)
+
+	invalidToken, err := statuspageapi.SignUnsubscribeToken(signingKey, statuspageapi.UnsubscribeClaims{
+		SubscriptionID: uuid.Must(uuid.NewV7()),
+		OrganizationID: admin.OrganizationID,
+	})
+	require.NoError(t, err)
+
+	invalidBody, err := json.Marshal(map[string]string{"token": invalidToken})
+	require.NoError(t, err)
+
+	invalidReq := httptest.NewRequest(http.MethodPost, "/api/v1/public/status/unsubscribe", bytes.NewReader(invalidBody))
+	invalidReq.Header.Set("Content-Type", "application/json")
+	invalidRec := httptest.NewRecorder()
+	handler.ServeHTTP(invalidRec, invalidReq)
+	require.Equal(t, http.StatusBadRequest, invalidRec.Code, invalidRec.Body.String())
 }

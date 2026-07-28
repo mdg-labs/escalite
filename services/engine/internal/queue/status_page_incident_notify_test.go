@@ -2,6 +2,7 @@ package queue_test
 
 import (
 	"context"
+	"encoding/hex"
 	"log/slog"
 	"testing"
 	"time"
@@ -16,8 +17,18 @@ import (
 	engineemail "github.com/mdg-labs/escalite/services/engine/internal/email"
 	"github.com/mdg-labs/escalite/services/engine/internal/jobs"
 	"github.com/mdg-labs/escalite/services/engine/internal/queue"
+	"github.com/mdg-labs/escalite/services/engine/internal/statuspage"
 	"github.com/mdg-labs/escalite/services/engine/internal/testutil"
 )
+
+const testStatusPageEncryptionKeyHex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+func testStatusPageNotifyConfig(t *testing.T) statuspage.NotifyConfig {
+	t.Helper()
+	key, err := hex.DecodeString(testStatusPageEncryptionKeyHex)
+	require.NoError(t, err)
+	return statuspage.NotifyConfig{SigningKey: key}
+}
 
 type recordingStatusPageSender struct {
 	messages []engineemail.Message
@@ -41,8 +52,9 @@ func TestStatusPageIncidentNotifyWorkerSendsSubscriberEmails(t *testing.T) {
 	t.Cleanup(func() { emailchannel.SetSender(nil) })
 
 	queueClient, err := queue.New(ctx, queue.Options{
-		DatabaseURL: databaseURL,
-		Logger:      slog.Default(),
+		DatabaseURL:   databaseURL,
+		Logger:        slog.Default(),
+		EncryptionKey: mustDecodeStatusPageEncryptionKey(t),
 	})
 	require.NoError(t, err)
 	defer queueClient.Close()
@@ -95,7 +107,7 @@ func TestStatusPageIncidentNotifyWorkerSendsSubscriberEmails(t *testing.T) {
 	`, uuid.Must(uuid.NewV7()), pageID, orgID)
 	require.NoError(t, err)
 
-	worker := queue.NewStatusPageIncidentNotifyWorker(slog.Default(), queueClient.Pool())
+	worker := queue.NewStatusPageIncidentNotifyWorker(slog.Default(), queueClient.Pool(), testStatusPageNotifyConfig(t))
 	err = worker.Work(ctx, &river.Job[jobs.StatusPageIncidentNotifyArgs]{
 		Args: jobs.StatusPageIncidentNotifyArgs{
 			OrganizationID:       orgID,
@@ -108,6 +120,14 @@ func TestStatusPageIncidentNotifyWorkerSendsSubscriberEmails(t *testing.T) {
 	require.Equal(t, "subscriber@example.com", sender.messages[0].To)
 	require.Equal(t, "[Investigating] API outage", sender.messages[0].Subject)
 	require.Contains(t, sender.messages[0].TextBody, "We are investigating elevated errors.")
+	require.Contains(t, sender.messages[0].TextBody, "/unsubscribe?token=")
+}
+
+func mustDecodeStatusPageEncryptionKey(t *testing.T) []byte {
+	t.Helper()
+	key, err := hex.DecodeString(testStatusPageEncryptionKeyHex)
+	require.NoError(t, err)
+	return key
 }
 
 func TestStatusPageIncidentNotifyWorkerSkipsWhenSMTPUnset(t *testing.T) {
@@ -121,13 +141,14 @@ func TestStatusPageIncidentNotifyWorkerSkipsWhenSMTPUnset(t *testing.T) {
 	emailchannel.SetSender(nil)
 
 	queueClient, err := queue.New(ctx, queue.Options{
-		DatabaseURL: databaseURL,
-		Logger:      slog.Default(),
+		DatabaseURL:   databaseURL,
+		Logger:        slog.Default(),
+		EncryptionKey: mustDecodeStatusPageEncryptionKey(t),
 	})
 	require.NoError(t, err)
 	defer queueClient.Close()
 
-	worker := queue.NewStatusPageIncidentNotifyWorker(slog.Default(), queueClient.Pool())
+	worker := queue.NewStatusPageIncidentNotifyWorker(slog.Default(), queueClient.Pool(), testStatusPageNotifyConfig(t))
 	err = worker.Work(ctx, &river.Job[jobs.StatusPageIncidentNotifyArgs]{
 		Args: jobs.StatusPageIncidentNotifyArgs{
 			OrganizationID:       uuid.Must(uuid.NewV7()),

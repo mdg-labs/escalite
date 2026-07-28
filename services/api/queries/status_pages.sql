@@ -124,6 +124,13 @@ WHERE status_page_id = $1
   AND unsubscribed_at IS NULL
 ORDER BY created_at ASC;
 
+-- name: UnsubscribeStatusPageSubscription :one
+UPDATE status_page_subscriptions
+SET unsubscribed_at = COALESCE(unsubscribed_at, now())
+WHERE id = $1
+  AND organization_id = $2
+RETURNING *;
+
 -- name: GetStatusPageIncidentByID :one
 SELECT *
 FROM status_page_incidents

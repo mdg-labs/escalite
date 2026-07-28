@@ -834,6 +834,33 @@ func (q *Queries) ReplaceStatusPageIncidentComponents(ctx context.Context, arg R
 	return err
 }
 
+const unsubscribeStatusPageSubscription = `-- name: UnsubscribeStatusPageSubscription :one
+UPDATE status_page_subscriptions
+SET unsubscribed_at = COALESCE(unsubscribed_at, now())
+WHERE id = $1
+  AND organization_id = $2
+RETURNING id, status_page_id, organization_id, email, unsubscribed_at, created_at
+`
+
+type UnsubscribeStatusPageSubscriptionParams struct {
+	ID             uuid.UUID `json:"id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+func (q *Queries) UnsubscribeStatusPageSubscription(ctx context.Context, arg UnsubscribeStatusPageSubscriptionParams) (StatusPageSubscription, error) {
+	row := q.db.QueryRow(ctx, unsubscribeStatusPageSubscription, arg.ID, arg.OrganizationID)
+	var i StatusPageSubscription
+	err := row.Scan(
+		&i.ID,
+		&i.StatusPageID,
+		&i.OrganizationID,
+		&i.Email,
+		&i.UnsubscribedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const updateStatusPage = `-- name: UpdateStatusPage :one
 UPDATE status_pages
 SET slug = $3,

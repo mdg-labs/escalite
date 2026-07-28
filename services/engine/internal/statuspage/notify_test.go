@@ -33,7 +33,9 @@ func TestNotifySubscribersSendsIncidentUpdateEmail(t *testing.T) {
 
 	queries := db.New(testQueries(ctx, t, orgID, pageID, incidentID, updateID))
 
-	err := statuspage.NotifySubscribers(ctx, queries, sender, statuspage.NotifyParams{
+	err := statuspage.NotifySubscribers(ctx, queries, sender, statuspage.NotifyConfig{
+		SigningKey: []byte("0123456789abcdef0123456789abcdef"),
+	}, statuspage.NotifyParams{
 		OrganizationID:       orgID,
 		StatusPageIncidentID: incidentID,
 		UpdateID:             updateID,
@@ -46,7 +48,11 @@ func TestNotifySubscribersSendsIncidentUpdateEmail(t *testing.T) {
 		require.Contains(t, msg.TextBody, "Acme Status")
 		require.Contains(t, msg.TextBody, "API outage")
 		require.Contains(t, msg.TextBody, "We are investigating elevated errors.")
+		require.Contains(t, msg.TextBody, "Unsubscribe from incident emails:")
+		require.Contains(t, msg.TextBody, "/unsubscribe?token=")
 		require.Contains(t, msg.HTMLBody, "We are investigating elevated errors.")
+		require.Contains(t, msg.HTMLBody, "Unsubscribe from incident emails")
+		require.Contains(t, msg.HTMLBody, "/unsubscribe?token=")
 	}
 
 	require.Equal(t, "subscriber-a@example.com", sender.messages[0].To)
@@ -63,7 +69,7 @@ func TestNotifySubscribersSkipsWhenSMTPUnset(t *testing.T) {
 
 	queries := db.New(testQueries(ctx, t, orgID, pageID, incidentID, updateID))
 
-	err := statuspage.NotifySubscribers(ctx, queries, nil, statuspage.NotifyParams{
+	err := statuspage.NotifySubscribers(ctx, queries, nil, statuspage.NotifyConfig{}, statuspage.NotifyParams{
 		OrganizationID:       orgID,
 		StatusPageIncidentID: incidentID,
 		UpdateID:             updateID,

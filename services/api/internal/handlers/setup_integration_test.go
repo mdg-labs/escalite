@@ -50,6 +50,13 @@ func testSecretsBox(t *testing.T) *crypto.Box {
 	return box
 }
 
+func mustDecodeTestEncryptionKey(t *testing.T) []byte {
+	t.Helper()
+	key, err := hex.DecodeString(testEncryptionKeyHex)
+	require.NoError(t, err)
+	return key
+}
+
 func newTestHandler(t *testing.T) (http.Handler, *pgxpool.Pool, func()) {
 	return newTestHandlerWithOptions(t, testServerOptions{})
 }
@@ -86,6 +93,7 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 		Pool:             pool,
 		Jobs:             jobs,
 		Secrets:          secrets,
+		EncryptionKey:    mustDecodeTestEncryptionKey(t),
 		Mail:             opts.Mail,
 		PublicURL:        publicURL,
 		PasswordReset:    opts.PasswordReset,
