@@ -34,7 +34,10 @@ export function SubscribeForm({ slug, apiPublicUrl }: SubscribeFormProps): React
   }
 
   return (
-    <section aria-labelledby="subscribe-heading" className="space-y-3">
+    <section
+      aria-labelledby="subscribe-heading"
+      className="space-y-3 rounded-lg border border-border bg-brand-muted p-4 sm:p-5"
+    >
       <div>
         <h2 className="text-lg font-semibold text-foreground" id="subscribe-heading">
           {t('statusPage.subscribe.title')}

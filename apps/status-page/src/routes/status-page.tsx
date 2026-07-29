@@ -14,6 +14,7 @@ import {
   FrameHeader,
   FramePanel,
   FrameTitle,
+  EscaliteLogo,
 } from '@escalite/ui'
 import { AlertCircleIcon, ChevronDownIcon } from 'lucide-react'
 
@@ -258,8 +259,13 @@ export function StatusPageRoute(): ReactElement {
 
   return (
     <div className="min-h-screen bg-background">
+      <div aria-hidden className="h-0.5 shrink-0 bg-brand" />
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-10 sm:px-6">
-        <header className="space-y-2">
+        <header className="space-y-4">
+          <div className="flex items-center gap-2.5">
+            <EscaliteLogo variant="mark" />
+            <span className="text-sm font-semibold tracking-wide text-brand">Escalite</span>
+          </div>
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">{payload.title}</h1>
         </header>
 
