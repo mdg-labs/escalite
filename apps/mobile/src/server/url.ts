@@ -1,10 +1,20 @@
+import {
+  resolveApiPublicUrlFrom,
+  resolveGraphqlUrlFrom,
+  type EscaliteRuntimeConfig,
+} from '@escalite/runtime-config'
+
 import type { ServerEndpoints } from '@/server/types'
 
 const defaultWebBaseUrl = process.env.EXPO_PUBLIC_ESCALITE_WEB_URL ?? 'http://localhost:5173'
+const defaultApiBaseUrl = process.env.EXPO_PUBLIC_ESCALITE_API_URL?.trim()
 
 export function defaultDevEndpoints(): ServerEndpoints {
-  const origin = defaultWebBaseUrl.replace(/\/$/, '')
-  return deriveServerEndpoints(origin)
+  const webOrigin = defaultWebBaseUrl.replace(/\/$/, '')
+  return resolveServerEndpoints(webOrigin, {
+    apiPublicUrl: defaultApiBaseUrl ?? '',
+    graphqlUrl: defaultApiBaseUrl ? `${defaultApiBaseUrl.replace(/\/$/, '')}/graphql` : '/graphql',
+  })
 }
 
 export function normalizeServerOrigin(input: string): string {
@@ -32,15 +42,32 @@ export function normalizeServerOrigin(input: string): string {
   return `${parsed.protocol}//${parsed.host}`
 }
 
-// API and web share one origin here. Split-host deployments (API on a different
-// public host than the frontend) require the frontend to proxy /api and /graphql,
-// or a future server-setup field for a separate API URL.
-export function deriveServerEndpoints(origin: string): ServerEndpoints {
-  const normalizedOrigin = normalizeServerOrigin(origin)
+export function resolveServerEndpoints(
+  webOrigin: string,
+  runtime?: EscaliteRuntimeConfig,
+): ServerEndpoints {
+  const normalizedWebOrigin = normalizeServerOrigin(webOrigin)
+  const apiPublicUrl = resolveApiPublicUrlFrom(
+    runtime,
+    defaultApiBaseUrl,
+    normalizedWebOrigin,
+  ).replace(/\/$/, '')
+  const rawGraphqlUrl = resolveGraphqlUrlFrom(runtime, undefined)
+  const graphqlUrl = resolveAbsoluteGraphqlUrl(rawGraphqlUrl, normalizedWebOrigin)
+
   return {
-    origin: normalizedOrigin,
-    apiBaseUrl: normalizedOrigin,
-    webBaseUrl: normalizedOrigin,
-    graphqlUrl: `${normalizedOrigin}/graphql`,
+    origin: normalizedWebOrigin,
+    webBaseUrl: normalizedWebOrigin,
+    apiBaseUrl: apiPublicUrl,
+    graphqlUrl,
   }
+}
+
+function resolveAbsoluteGraphqlUrl(rawGraphqlUrl: string, webOrigin: string): string {
+  if (/^https?:\/\//i.test(rawGraphqlUrl)) {
+    return rawGraphqlUrl.replace(/\/$/, '')
+  }
+
+  const path = rawGraphqlUrl.startsWith('/') ? rawGraphqlUrl : `/${rawGraphqlUrl}`
+  return `${webOrigin}${path}`
 }

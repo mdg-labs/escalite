@@ -16,7 +16,8 @@ import {
   setStoredServerOrigin,
 } from '@/server/store'
 import type { ServerEndpoints } from '@/server/types'
-import { deriveServerEndpoints, normalizeServerOrigin } from '@/server/url'
+import { fetchEscaliteRuntimeConfig } from '@/server/runtime-config'
+import { normalizeServerOrigin, resolveServerEndpoints } from '@/server/url'
 
 type ServerConfigStatus = 'loading' | 'configured' | 'unconfigured'
 
@@ -64,7 +65,8 @@ export function ServerConfigProvider({ children }: ServerConfigProviderProps) {
         }
 
         try {
-          const nextEndpoints = deriveServerEndpoints(storedOrigin)
+          const runtime = await fetchEscaliteRuntimeConfig(storedOrigin).catch(() => undefined)
+          const nextEndpoints = resolveServerEndpoints(storedOrigin, runtime)
           applyEndpoints(nextEndpoints)
         } catch {
           await clearStoredServerOrigin()
@@ -93,8 +95,9 @@ export function ServerConfigProvider({ children }: ServerConfigProviderProps) {
   const setServerOrigin = useCallback(
     async (input: string) => {
       const origin = normalizeServerOrigin(input)
-      await probeServerHealth(origin)
-      const nextEndpoints = deriveServerEndpoints(origin)
+      const runtime = await fetchEscaliteRuntimeConfig(origin)
+      const nextEndpoints = resolveServerEndpoints(origin, runtime)
+      await probeServerHealth(nextEndpoints.apiBaseUrl)
       await setStoredServerOrigin(origin)
       applyEndpoints(nextEndpoints)
     },

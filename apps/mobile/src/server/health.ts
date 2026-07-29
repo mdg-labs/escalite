@@ -1,5 +1,5 @@
-export async function probeServerHealth(origin: string): Promise<void> {
-  const healthUrl = `${origin.replace(/\/$/, '')}/healthz`
+export async function probeServerHealth(apiBaseUrl: string): Promise<void> {
+  const healthUrl = `${apiBaseUrl.replace(/\/$/, '')}/healthz`
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 10_000)
 
