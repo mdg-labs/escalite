@@ -138,6 +138,7 @@ func run() int {
 			MaxDepth:                         cfg.GraphQL.MaxDepth,
 			MaxComplexity:                    cfg.GraphQL.MaxComplexity,
 			PublicURL:                        cfg.PublicURL,
+			AppOrigin:                        cfg.AppOrigin,
 			OIDCEnabled:                      cfg.OIDC != nil,
 			SlackIncidentChannelNameTemplate: cfg.SlackIncidentChannelNameTemplate,
 		},
