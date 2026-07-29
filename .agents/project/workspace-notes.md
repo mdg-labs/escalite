@@ -31,6 +31,11 @@ Verification agents must **never** run `task schema:diff`, `SCHEMA_DIFF_EPHEMERA
 _added: 2026-07-26_
 
 
+## Lane P `best-of-n-runner` background stalls
+
+Several `run_in_background: true` best-of-n-runner dispatches (EL-245, batch 3) produced transcript files with only the user prompt — no assistant turns. Recovery: re-dispatch as Lane S `generalPurpose` (serial on `dev`). EL-243/EL-244 Lane P succeeded when agents started promptly.
+_added: 2026-07-28_
+
 ## <topic>
 
 <2-4 lines>
