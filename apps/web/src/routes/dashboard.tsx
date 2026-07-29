@@ -9,6 +9,7 @@ import {
   UserRole,
   useAlertsQuery,
   useMeQuery,
+  useMyOnCallStatusQuery,
   useOnCallUpdatedSubscription,
   useOrganizationUsersQuery,
   useTeamsQuery,
@@ -29,7 +30,12 @@ import { BellIcon } from 'lucide-react'
 
 import { AppShell } from '../components/app-shell'
 import { formatAlertTimestamp } from '../lib/alerts'
-import { mapOnCallSchedules, updateOnCallSchedule } from '../lib/dashboard-oncall'
+import {
+  buildUntilByScheduleLayer,
+  mapOnCallSchedules,
+  updateOnCallSchedule,
+  viewerIsOnCall,
+} from '../lib/dashboard-oncall'
 import { t } from '../lib/i18n'
 
 function onCallWidgetLabels(): OnCallWidgetLabels {
@@ -41,6 +47,8 @@ function onCallWidgetLabels(): OnCallWidgetLabels {
     primaryLayer: t('dashboard.onCall.primaryLayer'),
     secondaryLayer: t('dashboard.onCall.secondaryLayer'),
     computedAt: t('schedule.computedAt'),
+    youAreOnCall: t('dashboard.onCall.youAreOnCall'),
+    until: (until) => t('dashboard.onCall.until', { until }),
   }
 }
 
@@ -66,6 +74,15 @@ export function DashboardPage(): ReactElement {
   const [{ data: usersData }] = useOrganizationUsersQuery({
     requestPolicy: 'cache-first',
   })
+
+  const [{ data: myOnCallData }, reexecuteMyOnCallStatus] = useMyOnCallStatusQuery({
+    requestPolicy: 'cache-and-network',
+  })
+
+  const myOnCallAssignments = useMemo(
+    () => myOnCallData?.myOnCallStatus ?? [],
+    [myOnCallData?.myOnCallStatus],
+  )
 
   const alertCounts = useMemo(() => {
     const counts = {
@@ -139,6 +156,10 @@ export function DashboardPage(): ReactElement {
     [client],
   )
 
+  const refreshMyOnCallStatus = useCallback((): void => {
+    reexecuteMyOnCallStatus({ requestPolicy: 'network-only' })
+  }, [reexecuteMyOnCallStatus])
+
   useOnCallUpdatedSubscription(
     {
       variables: { orgId: organizationId },
@@ -149,6 +170,7 @@ export function DashboardPage(): ReactElement {
       if (scheduleId) {
         void refreshScheduleOnCall(scheduleId)
       }
+      refreshMyOnCallStatus()
       return response
     },
   )
@@ -211,6 +233,16 @@ export function DashboardPage(): ReactElement {
     }
   }, [client, teamIds])
 
+  const untilByScheduleLayer = useMemo(
+    () => buildUntilByScheduleLayer(myOnCallAssignments, formatAlertTimestamp),
+    [myOnCallAssignments],
+  )
+
+  const viewerOnCall = useMemo(
+    () => viewerIsOnCall(currentUser?.id, onCallSchedules, myOnCallAssignments),
+    [currentUser?.id, myOnCallAssignments, onCallSchedules],
+  )
+
   return (
     <AppShell title={t('nav.dashboard')}>
       <div className="space-y-6">
@@ -271,10 +303,13 @@ export function DashboardPage(): ReactElement {
         </section>
 
         <OnCallWidget
+          highlighted={viewerOnCall}
           labels={onCallLabels}
           loading={onCallLoading}
           schedules={onCallSchedules}
+          untilByScheduleLayer={untilByScheduleLayer}
           users={onCallUsers}
+          viewerUserId={currentUser?.id}
         />
       </div>
     </AppShell>

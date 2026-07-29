@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   initialsFromLabel,
   layerRoleLabel,
+  scheduleLayerKey,
   sortOnCallLayers,
   userLabel,
 } from '../domain/OnCallWidget/utils.ts'
@@ -49,4 +50,8 @@ test('layerRoleLabel maps layer numbers to primary and secondary labels', () => 
   assert.equal(layerRoleLabel(1, labels), 'Primary')
   assert.equal(layerRoleLabel(2, labels), 'Secondary')
   assert.equal(layerRoleLabel(3, labels), 'Layer 3')
+})
+
+test('scheduleLayerKey combines schedule id and layer number', () => {
+  assert.equal(scheduleLayerKey('sched-1', 2), 'sched-1:2')
 })

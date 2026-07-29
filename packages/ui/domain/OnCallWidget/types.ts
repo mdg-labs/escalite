@@ -26,4 +26,8 @@ export type OnCallWidgetLabels = {
   primaryLayer: string
   secondaryLayer: string
   computedAt?: string
+  youAreOnCall?: string
+  until?: (until: string) => string
 }
+
+export type OnCallWidgetUntilByScheduleLayer = Record<string, string>

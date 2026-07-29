@@ -1,5 +1,9 @@
 import type { OnCallWidgetLabels, OnCallWidgetLayer, OnCallWidgetUser } from './types'
 
+export function scheduleLayerKey(scheduleId: string, layer: number): string {
+  return `${scheduleId}:${layer}`
+}
+
 export function initialsFromLabel(label: string): string {
   const parts = label.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) {

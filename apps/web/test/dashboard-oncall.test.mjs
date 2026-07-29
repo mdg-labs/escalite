@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { mapOnCallSchedules, updateOnCallSchedule } from '../src/lib/dashboard-oncall.ts'
+import {
+  buildUntilByScheduleLayer,
+  mapOnCallSchedules,
+  onCallScheduleLayerKey,
+  updateOnCallSchedule,
+  viewerIsOnCall,
+} from '../src/lib/dashboard-oncall.ts'
 
 describe('dashboard on-call helpers', () => {
   it('maps schedule and on-call layers into widget shape', () => {
@@ -70,5 +76,51 @@ describe('dashboard on-call helpers', () => {
 
     assert.equal(updated.length, 1)
     assert.equal(updated[0]?.id, 'sched-1')
+  })
+
+  it('builds until labels keyed by schedule and layer', () => {
+    const untilByLayer = buildUntilByScheduleLayer(
+      [
+        {
+          scheduleId: 'sched-1',
+          scheduleName: 'Primary',
+          teamName: 'Platform',
+          layer: 1,
+          until: '2026-07-29T18:00:00.000Z',
+        },
+      ],
+      (value) => `until ${value}`,
+    )
+
+    assert.equal(untilByLayer[onCallScheduleLayerKey('sched-1', 1)], 'until 2026-07-29T18:00:00.000Z')
+  })
+
+  it('detects when the viewer is on call from assignments or schedule layers', () => {
+    const schedules = [
+      {
+        id: 'sched-1',
+        name: 'Primary',
+        layers: [{ layer: 1, rotationId: 'rot-1', userId: 'user-1' }],
+      },
+    ]
+
+    assert.equal(viewerIsOnCall('user-1', schedules, []), true)
+    assert.equal(viewerIsOnCall('user-2', schedules, []), false)
+    assert.equal(
+      viewerIsOnCall(
+        'user-2',
+        [],
+        [
+          {
+            scheduleId: 'sched-2',
+            scheduleName: 'Secondary',
+            teamName: 'Platform',
+            layer: 2,
+            until: '2026-07-29T18:00:00.000Z',
+          },
+        ],
+      ),
+      true,
+    )
   })
 })

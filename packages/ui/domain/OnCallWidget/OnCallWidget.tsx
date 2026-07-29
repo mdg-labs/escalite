@@ -7,10 +7,16 @@ import { Badge } from '../../primitives/badge'
 import { Frame, FrameDescription, FramePanel, FrameTitle } from '../../primitives/frame'
 import { Group } from '../../primitives/group'
 import { cn } from '../../lib/utils'
-import type { OnCallWidgetLabels, OnCallWidgetSchedule, OnCallWidgetUser } from './types'
+import type {
+  OnCallWidgetLabels,
+  OnCallWidgetSchedule,
+  OnCallWidgetUntilByScheduleLayer,
+  OnCallWidgetUser,
+} from './types'
 import {
   initialsFromLabel,
   layerRoleLabel,
+  scheduleLayerKey,
   sortOnCallLayers,
   userAvatarUrl,
   userLabel,
@@ -21,24 +27,41 @@ export type OnCallWidgetProps = {
   users: OnCallWidgetUser[]
   labels: OnCallWidgetLabels
   loading?: boolean
+  highlighted?: boolean
+  viewerUserId?: string
+  untilByScheduleLayer?: OnCallWidgetUntilByScheduleLayer
   className?: string
 }
 
 function OnCallLayerRow({
   layer,
   labels,
+  scheduleId,
+  untilByScheduleLayer,
   users,
+  viewerUserId,
 }: {
   layer: OnCallWidgetSchedule['layers'][number]
   labels: OnCallWidgetLabels
+  scheduleId: string
+  untilByScheduleLayer?: OnCallWidgetUntilByScheduleLayer
   users: OnCallWidgetUser[]
+  viewerUserId?: string
 }): ReactElement {
   const displayName = userLabel(users, layer.userId)
   const avatarUrl = userAvatarUrl(users, layer.userId)
+  const isViewerLayer = viewerUserId != null && layer.userId === viewerUserId
+  const until =
+    isViewerLayer && untilByScheduleLayer
+      ? untilByScheduleLayer[scheduleLayerKey(scheduleId, layer.layer)]
+      : undefined
 
   return (
     <div
-      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background p-3"
+      className={cn(
+        'flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background p-3',
+        isViewerLayer && until && 'border-primary/40 bg-primary/5 ring-1 ring-primary/20',
+      )}
       key={`${layer.layer}-${layer.rotationId}`}
     >
       <div className="min-w-0 space-y-1">
@@ -50,6 +73,9 @@ function OnCallLayerRow({
         </div>
         {layer.rotationName ? (
           <p className="truncate text-xs text-muted-foreground">{layer.rotationName}</p>
+        ) : null}
+        {until && labels.until ? (
+          <p className="text-xs text-muted-foreground">{labels.until(until)}</p>
         ) : null}
       </div>
       <Group className="-space-x-2">
@@ -66,11 +92,15 @@ function OnCallLayerRow({
 function OnCallSchedulePanel({
   labels,
   schedule,
+  untilByScheduleLayer,
   users,
+  viewerUserId,
 }: {
   labels: OnCallWidgetLabels
   schedule: OnCallWidgetSchedule
+  untilByScheduleLayer?: OnCallWidgetUntilByScheduleLayer
   users: OnCallWidgetUser[]
+  viewerUserId?: string
 }): ReactElement {
   const layers = sortOnCallLayers(schedule.layers)
 
@@ -89,7 +119,15 @@ function OnCallSchedulePanel({
       ) : (
         <div className="flex flex-col gap-3">
           {layers.map((layer) => (
-            <OnCallLayerRow key={`${layer.layer}-${layer.rotationId}`} labels={labels} layer={layer} users={users} />
+            <OnCallLayerRow
+              key={`${layer.layer}-${layer.rotationId}`}
+              labels={labels}
+              layer={layer}
+              scheduleId={schedule.id}
+              untilByScheduleLayer={untilByScheduleLayer}
+              users={users}
+              viewerUserId={viewerUserId}
+            />
           ))}
         </div>
       )}
@@ -99,17 +137,30 @@ function OnCallSchedulePanel({
 
 export function OnCallWidget({
   className,
+  highlighted = false,
   labels,
   loading = false,
   schedules,
+  untilByScheduleLayer,
   users,
+  viewerUserId,
 }: OnCallWidgetProps): ReactElement {
   const hasSchedules = schedules.length > 0
 
   return (
-    <Frame className={cn(className)}>
-      <FrameTitle>{labels.title}</FrameTitle>
-      <FrameDescription>{labels.title}</FrameDescription>
+    <Frame
+      className={cn(className, highlighted && 'ring-2 ring-primary/50')}
+      data-on-call-highlighted={highlighted ? 'true' : undefined}
+    >
+      <div className="flex flex-wrap items-center gap-2 px-5 pt-4">
+        <FrameTitle>{labels.title}</FrameTitle>
+        {highlighted && labels.youAreOnCall ? (
+          <Badge size="sm" variant="default">
+            {labels.youAreOnCall}
+          </Badge>
+        ) : null}
+      </div>
+      <FrameDescription className="px-5">{labels.title}</FrameDescription>
       <FramePanel>
         {loading ? (
           <p className="text-sm text-muted-foreground">{labels.loading}</p>
@@ -122,7 +173,9 @@ export function OnCallWidget({
                 key={schedule.id}
                 labels={labels}
                 schedule={schedule}
+                untilByScheduleLayer={untilByScheduleLayer}
                 users={users}
+                viewerUserId={viewerUserId}
               />
             ))}
           </div>

@@ -304,6 +304,16 @@ query OnCallNow($scheduleId: ID!, $at: DateTime) {
   }
 }
 
+query MyOnCallStatus {
+  myOnCallStatus {
+    scheduleId
+    scheduleName
+    teamName
+    layer
+    until
+  }
+}
+
 query Overrides($scheduleId: ID!) {
   overrides(scheduleId: $scheduleId) {
     id

@@ -135,6 +135,8 @@ const messages = {
   'dashboard.onCall.empty': 'No on-call schedules for your teams.',
   'dashboard.onCall.primaryLayer': 'Primary',
   'dashboard.onCall.secondaryLayer': 'Secondary',
+  'dashboard.onCall.youAreOnCall': 'You are on call',
+  'dashboard.onCall.until': 'On call until {until}',
   'nav.analytics': 'Analytics',
   'nav.alerts': 'Alerts',
   'nav.integrations': 'Integrations',
