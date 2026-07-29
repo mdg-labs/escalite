@@ -623,7 +623,11 @@ type ComplexityRoot struct {
 // region    ************************** generated!.gotpl **************************
 
 type AlertResolver interface {
+	Service(ctx context.Context, obj *model.Alert) (*model.Service, error)
+
 	Incident(ctx context.Context, obj *model.Alert) (*model.Incident, error)
+	EscalationState(ctx context.Context, obj *model.Alert) (*model.AlertEscalationState, error)
+	NotificationAttempts(ctx context.Context, obj *model.Alert) ([]*model.NotificationAttempt, error)
 }
 type IncidentResolver interface {
 	CreatedBy(ctx context.Context, obj *model.Incident) (*model.User, error)
@@ -7777,7 +7781,7 @@ func (ec *executionContext) _Alert_service(ctx context.Context, field graphql.Co
 			return ec.fieldContext_Alert_service(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.Service, nil
+			return ec.Resolvers.Alert().Service(ctx, obj)
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *model.Service) graphql.Marshaler {
@@ -7791,8 +7795,8 @@ func (ec *executionContext) fieldContext_Alert_service(_ context.Context, field 
 	fc = &graphql.FieldContext{
 		Object:     "Alert",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_Service(ctx, field)
 		},
@@ -8080,7 +8084,7 @@ func (ec *executionContext) _Alert_escalationState(ctx context.Context, field gr
 			return ec.fieldContext_Alert_escalationState(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.EscalationState, nil
+			return ec.Resolvers.Alert().EscalationState(ctx, obj)
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *model.AlertEscalationState) graphql.Marshaler {
@@ -8094,8 +8098,8 @@ func (ec *executionContext) fieldContext_Alert_escalationState(_ context.Context
 	fc = &graphql.FieldContext{
 		Object:     "Alert",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_AlertEscalationState(ctx, field)
 		},
@@ -8112,7 +8116,7 @@ func (ec *executionContext) _Alert_notificationAttempts(ctx context.Context, fie
 			return ec.fieldContext_Alert_notificationAttempts(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.NotificationAttempts, nil
+			return ec.Resolvers.Alert().NotificationAttempts(ctx, obj)
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v []*model.NotificationAttempt) graphql.Marshaler {
@@ -8126,8 +8130,8 @@ func (ec *executionContext) fieldContext_Alert_notificationAttempts(_ context.Co
 	fc = &graphql.FieldContext{
 		Object:     "Alert",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_NotificationAttempt(ctx, field)
 		},
@@ -22501,10 +22505,43 @@ func (ec *executionContext) _Alert(ctx context.Context, sel ast.SelectionSet, ob
 				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "service":
-			out.Values[i] = ec._Alert_service(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Alert_service(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "status":
 			out.Values[i] = ec._Alert_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -22594,15 +22631,81 @@ func (ec *executionContext) _Alert(ctx context.Context, sel ast.SelectionSet, ob
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "escalationState":
-			out.Values[i] = ec._Alert_escalationState(ctx, field, obj)
-			if out.Values[i] == graphql.RequiredNull {
-				atomic.AddUint32(&out.Invalids, 1)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Alert_escalationState(ctx, field, obj)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "notificationAttempts":
-			out.Values[i] = ec._Alert_notificationAttempts(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Alert_notificationAttempts(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "createdAt":
 			out.Values[i] = ec._Alert_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

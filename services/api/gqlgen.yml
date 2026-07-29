@@ -46,6 +46,12 @@ models:
     fields:
       incident:
         resolver: true
+      service:
+        resolver: true
+      escalationState:
+        resolver: true
+      notificationAttempts:
+        resolver: true
   TimelineEvent:
     fields:
       actor:
