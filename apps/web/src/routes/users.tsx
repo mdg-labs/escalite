@@ -30,6 +30,8 @@ import {
   SelectPopup,
   SelectTrigger,
   SelectValue,
+  selectOptionsFromEntities,
+  selectOptionsWithSentinel,
   Table,
   TableBody,
   TableCell,
@@ -84,6 +86,26 @@ export function UsersPage(): ReactElement {
     }
     return map
   }, [teamsData?.teams])
+
+  const inviteRoleItems = useMemo(
+    () => [
+      { label: t('org.switcher.role.admin'), value: UserRole.Admin },
+      { label: t('org.switcher.role.member'), value: UserRole.Member },
+    ],
+    [],
+  )
+
+  const inviteTeamItems = useMemo(
+    () =>
+      selectOptionsWithSentinel(
+        t('users.field.teamNone'),
+        NO_TEAM_VALUE,
+        selectOptionsFromEntities(teamsData?.teams ?? []),
+      ),
+    [teamsData?.teams],
+  )
+
+  const roleItems = inviteRoleItems
 
   const users = useMemo(() => {
     const items = data?.organizationUsers ?? []
@@ -215,6 +237,7 @@ export function UsersPage(): ReactElement {
               {t('users.field.role')}
             </label>
             <Select
+              items={inviteRoleItems}
               onValueChange={(value) => setInviteRole((value as UserRole) ?? UserRole.Member)}
               value={inviteRole}
             >
@@ -222,8 +245,11 @@ export function UsersPage(): ReactElement {
                 <SelectValue />
               </SelectTrigger>
               <SelectPopup>
-                <SelectItem value={UserRole.Admin}>{t('org.switcher.role.admin')}</SelectItem>
-                <SelectItem value={UserRole.Member}>{t('org.switcher.role.member')}</SelectItem>
+                {inviteRoleItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
               </SelectPopup>
             </Select>
           </div>
@@ -232,15 +258,18 @@ export function UsersPage(): ReactElement {
             <label className="text-sm font-medium text-foreground" htmlFor="invite-team">
               {t('users.field.team')}
             </label>
-            <Select onValueChange={(value) => setInviteTeamId(value ?? NO_TEAM_VALUE)} value={inviteTeamId}>
+            <Select
+              items={inviteTeamItems}
+              onValueChange={(value) => setInviteTeamId(value ?? NO_TEAM_VALUE)}
+              value={inviteTeamId}
+            >
               <SelectTrigger id="invite-team">
                 <SelectValue placeholder={t('users.field.teamPlaceholder')} />
               </SelectTrigger>
               <SelectPopup>
-                <SelectItem value={NO_TEAM_VALUE}>{t('users.field.teamNone')}</SelectItem>
-                {(teamsData?.teams ?? []).map((team) => (
-                  <SelectItem key={team.id} value={team.id}>
-                    {team.name}
+                {inviteTeamItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectPopup>
@@ -349,6 +378,7 @@ export function UsersPage(): ReactElement {
                         <TableCell>
                           <Select
                             disabled={isCurrentUser || updatingUserId === user.id}
+                            items={roleItems}
                             onValueChange={(value) => void handleRoleChange(user.id, value as UserRole)}
                             value={user.role}
                           >
@@ -360,12 +390,11 @@ export function UsersPage(): ReactElement {
                               <SelectValue>{roleLabel(user.role)}</SelectValue>
                             </SelectTrigger>
                             <SelectPopup>
-                              <SelectItem value={UserRole.Admin}>
-                                {t('org.switcher.role.admin')}
-                              </SelectItem>
-                              <SelectItem value={UserRole.Member}>
-                                {t('org.switcher.role.member')}
-                              </SelectItem>
+                              {roleItems.map((item) => (
+                                <SelectItem key={item.value} value={item.value}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
                             </SelectPopup>
                           </Select>
                         </TableCell>

@@ -22,6 +22,8 @@ import {
   SelectPopup,
   SelectTrigger,
   SelectValue,
+  selectOptionsFromEntities,
+  selectOptionsWithSentinel,
 } from '@escalite/ui'
 import { BarChart, Metric } from '@escalite/ui/charts'
 import { BarChart3Icon, ClockIcon, TimerIcon } from 'lucide-react'
@@ -83,6 +85,24 @@ export function AnalyticsPage(): ReactElement {
     }
     return services.filter((service) => service.teamId === effectiveTeamId)
   }, [effectiveTeamId, services])
+
+  const teamItems = useMemo(() => {
+    const teamOptions = selectOptionsFromEntities(teams)
+    if (isAdmin) {
+      return selectOptionsWithSentinel(t('analytics.filter.allTeams'), ALL_TEAMS_VALUE, teamOptions)
+    }
+    return teamOptions
+  }, [isAdmin, teams])
+
+  const serviceItems = useMemo(
+    () =>
+      selectOptionsWithSentinel(
+        t('analytics.filter.allServices'),
+        ALL_SERVICES_VALUE,
+        selectOptionsFromEntities(filteredServices),
+      ),
+    [filteredServices],
+  )
 
   const [{ data, fetching, error }, reexecuteAnalytics] = useAlertAnalyticsQuery({
     variables: {
@@ -157,6 +177,7 @@ export function AnalyticsPage(): ReactElement {
               </label>
               <Select
                 disabled={!isAdmin && teams.length <= 1}
+                items={teamItems}
                 onValueChange={(value) => {
                   setTeamId(value ?? ALL_TEAMS_VALUE)
                   setServiceId(ALL_SERVICES_VALUE)
@@ -167,12 +188,9 @@ export function AnalyticsPage(): ReactElement {
                   <SelectValue placeholder={t('analytics.filter.teamPlaceholder')} />
                 </SelectTrigger>
                 <SelectPopup>
-                  {isAdmin ? (
-                    <SelectItem value={ALL_TEAMS_VALUE}>{t('analytics.filter.allTeams')}</SelectItem>
-                  ) : null}
-                  {teams.map((team) => (
-                    <SelectItem key={team.id} value={team.id}>
-                      {team.name}
+                  {teamItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectPopup>
@@ -186,6 +204,7 @@ export function AnalyticsPage(): ReactElement {
                 {t('analytics.filter.service')}
               </label>
               <Select
+                items={serviceItems}
                 onValueChange={(value) => setServiceId(value ?? ALL_SERVICES_VALUE)}
                 value={serviceId}
               >
@@ -193,12 +212,9 @@ export function AnalyticsPage(): ReactElement {
                   <SelectValue placeholder={t('analytics.filter.servicePlaceholder')} />
                 </SelectTrigger>
                 <SelectPopup>
-                  <SelectItem value={ALL_SERVICES_VALUE}>
-                    {t('analytics.filter.allServices')}
-                  </SelectItem>
-                  {filteredServices.map((service) => (
-                    <SelectItem key={service.id} value={service.id}>
-                      {service.name}
+                  {serviceItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectPopup>

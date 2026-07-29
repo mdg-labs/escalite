@@ -30,6 +30,7 @@ import {
   SelectPopup,
   SelectTrigger,
   SelectValue,
+  selectOptionsFromEntities,
   Table,
   TableBody,
   TableCell,
@@ -144,7 +145,10 @@ export function ServicePage(): ReactElement {
     }
   }, [service?.autoPromoteRule, service?.name, service?.teamId])
 
-  const teams = teamsData?.teams ?? []
+  const teamItems = useMemo(
+    () => selectOptionsFromEntities(teamsData?.teams ?? []),
+    [teamsData?.teams],
+  )
   const policies = policiesData?.escalationPolicies ?? []
   const schedules = schedulesData?.schedules ?? []
   const activeMaintenance = service?.activeMaintenanceWindows ?? []
@@ -353,7 +357,8 @@ export function ServicePage(): ReactElement {
                       {t('services.field.team')}
                     </label>
                     <Select
-                      disabled={savingTeam || teams.length === 0}
+                      disabled={savingTeam || (teamsData?.teams ?? []).length === 0}
+                      items={teamItems}
                       onValueChange={(value) => void handleTeamChange(value)}
                       value={teamId}
                     >
@@ -361,9 +366,9 @@ export function ServicePage(): ReactElement {
                         <SelectValue placeholder={t('services.field.teamPlaceholder')} />
                       </SelectTrigger>
                       <SelectPopup>
-                        {teams.map((team) => (
-                          <SelectItem key={team.id} value={team.id}>
-                            {team.name}
+                        {teamItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
                           </SelectItem>
                         ))}
                       </SelectPopup>

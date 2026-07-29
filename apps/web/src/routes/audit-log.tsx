@@ -18,6 +18,7 @@ import {
   SelectPopup,
   SelectTrigger,
   SelectValue,
+  selectOptionsWithSentinel,
   Table,
   TableBody,
   TableCell,
@@ -74,6 +75,18 @@ export function AuditLogPage(): ReactElement {
   })
 
   const actions = useMemo(() => actionsData?.auditEventActions ?? [], [actionsData?.auditEventActions])
+  const actionItems = useMemo(
+    () =>
+      selectOptionsWithSentinel(
+        t('auditLog.filter.allActions'),
+        ALL_ACTIONS_VALUE,
+        actions.map((actionOption) => ({
+          label: formatAuditActionLabel(actionOption),
+          value: actionOption,
+        })),
+      ),
+    [actions],
+  )
   const items = data?.auditEvents.items ?? []
   const totalCount = data?.auditEvents.totalCount ?? 0
   const totalPages = Math.max(1, Math.ceil(totalCount / AUDIT_LOG_PAGE_SIZE))
@@ -124,6 +137,7 @@ export function AuditLogPage(): ReactElement {
               {t('auditLog.filter.action')}
             </label>
             <Select
+              items={actionItems}
               onValueChange={(value) => {
                 setAction(value ?? ALL_ACTIONS_VALUE)
                 resetPage()
@@ -134,10 +148,9 @@ export function AuditLogPage(): ReactElement {
                 <SelectValue placeholder={t('auditLog.filter.actionPlaceholder')} />
               </SelectTrigger>
               <SelectPopup>
-                <SelectItem value={ALL_ACTIONS_VALUE}>{t('auditLog.filter.allActions')}</SelectItem>
-                {actions.map((actionOption) => (
-                  <SelectItem key={actionOption} value={actionOption}>
-                    {formatAuditActionLabel(actionOption)}
+                {actionItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectPopup>

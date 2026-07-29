@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useCreateScheduleMutation, useUpdateScheduleMutation } from '@escalite/ts-types'
 import {
   Button,
@@ -18,6 +18,7 @@ import {
   SelectPopup,
   SelectTrigger,
   SelectValue,
+  selectOptionsFromEntities,
 } from '@escalite/ui'
 
 import { t } from '../lib/i18n'
@@ -68,6 +69,8 @@ export function ScheduleFormDialog({
   const [actionError, setActionError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [showTimezoneError, setShowTimezoneError] = useState(false)
+
+  const teamItems = useMemo(() => selectOptionsFromEntities(teams), [teams])
 
   useEffect(() => {
     if (!open) {
@@ -195,6 +198,7 @@ export function ScheduleFormDialog({
               </label>
               <Select
                 disabled={teams.length === 0}
+                items={teamItems}
                 onValueChange={(value) => setTeamId(value ?? '')}
                 value={teamId}
               >
@@ -202,9 +206,9 @@ export function ScheduleFormDialog({
                   <SelectValue placeholder={t('schedule.form.field.teamPlaceholder')} />
                 </SelectTrigger>
                 <SelectPopup>
-                  {teams.map((team) => (
-                    <SelectItem key={team.id} value={team.id}>
-                      {team.name}
+                  {teamItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectPopup>

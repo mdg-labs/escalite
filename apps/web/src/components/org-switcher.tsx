@@ -67,10 +67,16 @@ export function OrgSwitcher(): ReactElement | null {
     memberships.find((membership) => membership.organization.id === activeOrganizationId) ??
     memberships[0]
 
+  const organizationItems = memberships.map((membership) => ({
+    label: membership.organization.name,
+    value: membership.organization.id,
+  }))
+
   return (
     <div className="flex flex-col items-end gap-1">
       <Select
         disabled={switching || memberships.length <= 1}
+        items={organizationItems}
         onValueChange={(value) => void handleOrganizationChange(value)}
         value={activeMembership.organization.id}
       >
@@ -87,16 +93,25 @@ export function OrgSwitcher(): ReactElement | null {
           </SelectValue>
         </SelectTrigger>
         <SelectPopup>
-          {memberships.map((membership) => (
-            <SelectItem key={membership.organization.id} value={membership.organization.id}>
-              <span className="flex min-w-0 flex-col">
-                <span className="truncate font-medium">{membership.organization.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {membershipRoleLabel(membership.role)}
+          {organizationItems.map((item) => {
+            const membership = memberships.find(
+              (entry) => entry.organization.id === item.value,
+            )
+            if (!membership) {
+              return null
+            }
+
+            return (
+              <SelectItem key={item.value} value={item.value}>
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate font-medium">{membership.organization.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {membershipRoleLabel(membership.role)}
+                  </span>
                 </span>
-              </span>
-            </SelectItem>
-          ))}
+              </SelectItem>
+            )
+          })}
         </SelectPopup>
       </Select>
       {(switchError || error) && (

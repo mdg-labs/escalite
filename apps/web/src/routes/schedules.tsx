@@ -27,6 +27,8 @@ import {
   SelectPopup,
   SelectTrigger,
   SelectValue,
+  selectOptionsFromEntities,
+  selectOptionsWithSentinel,
   Skeleton,
   Table,
   TableBody,
@@ -195,6 +197,14 @@ export function SchedulesPage(): ReactElement {
   const showEmptyState = !loading && !loadError && schedules.length === 0
   const defaultTeamId = teamFilter !== ALL_TEAMS_VALUE ? teamFilter : visibleTeams[0]?.id
 
+  const teamFilterItems = useMemo(() => {
+    const teamOptions = selectOptionsFromEntities(visibleTeams)
+    if (isAdmin) {
+      return selectOptionsWithSentinel(t('schedules.filter.allTeams'), ALL_TEAMS_VALUE, teamOptions)
+    }
+    return teamOptions
+  }, [isAdmin, visibleTeams])
+
   const createDialog = (
     <ScheduleFormDialog
       defaultTeamId={defaultTeamId}
@@ -264,6 +274,7 @@ export function SchedulesPage(): ReactElement {
                 </label>
                 <Select
                   disabled={!isAdmin && visibleTeams.length <= 1}
+                  items={teamFilterItems}
                   onValueChange={(value) => setTeamFilter(value ?? ALL_TEAMS_VALUE)}
                   value={teamFilter}
                 >
@@ -271,12 +282,9 @@ export function SchedulesPage(): ReactElement {
                     <SelectValue placeholder={t('schedules.filter.teamPlaceholder')} />
                   </SelectTrigger>
                   <SelectPopup>
-                    {isAdmin ? (
-                      <SelectItem value={ALL_TEAMS_VALUE}>{t('schedules.filter.allTeams')}</SelectItem>
-                    ) : null}
-                    {visibleTeams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
+                    {teamFilterItems.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
                       </SelectItem>
                     ))}
                   </SelectPopup>

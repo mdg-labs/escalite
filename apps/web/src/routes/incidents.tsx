@@ -54,6 +54,7 @@ import {
   SelectPopup,
   SelectTrigger,
   SelectValue,
+  selectOptionsFromEntities,
   Skeleton,
   Table,
   TableBody,
@@ -85,6 +86,13 @@ const INCIDENT_STATUSES: IncidentStatus[] = [
   IncidentStatus.Monitoring,
   IncidentStatus.Resolved,
 ]
+
+function incidentStatusSelectItems(): Array<{ label: string; value: IncidentStatus }> {
+  return INCIDENT_STATUSES.map((status) => ({
+    label: t(incidentStatusLabel(status) as Parameters<typeof t>[0]),
+    value: status,
+  }))
+}
 
 function statusPagePublicAppUrl(slug: string): string {
   const configured = import.meta.env.VITE_STATUS_PAGE_PUBLIC_URL?.trim()
@@ -193,7 +201,10 @@ function CreateIncidentDialog({
   const [, createIncident] = useCreateIncidentMutation()
   const [, promoteAlertToIncident] = usePromoteAlertToIncidentMutation()
 
-  const teams = teamsData?.teams ?? []
+  const teamItems = useMemo(
+    () => selectOptionsFromEntities(teamsData?.teams ?? []),
+    [teamsData?.teams],
+  )
   const serviceTeamById = useMemo(() => {
     const map = new Map<string, string>()
     for (const service of servicesData?.services ?? []) {
@@ -338,6 +349,7 @@ function CreateIncidentDialog({
               {t('incidents.field.team')}
             </label>
             <Select
+              items={teamItems}
               onValueChange={(value) => {
                 setTeamId(value ?? '')
               }}
@@ -347,9 +359,9 @@ function CreateIncidentDialog({
                 <SelectValue placeholder={t('incidents.field.teamPlaceholder')} />
               </SelectTrigger>
               <SelectPopup>
-                {teams.map((team) => (
-                  <SelectItem key={team.id} value={team.id}>
-                    {team.name}
+                {teamItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectPopup>
@@ -973,6 +985,7 @@ export function IncidentsPage(): ReactElement {
                     {t('incidents.column.status')}
                   </label>
                   <Select
+                    items={incidentStatusSelectItems()}
                     onValueChange={(value) => {
                       setIncidentStatus(value as IncidentStatus)
                     }}
@@ -982,9 +995,9 @@ export function IncidentsPage(): ReactElement {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectPopup>
-                      {INCIDENT_STATUSES.map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {t(incidentStatusLabel(status) as Parameters<typeof t>[0])}
+                      {incidentStatusSelectItems().map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
                         </SelectItem>
                       ))}
                     </SelectPopup>

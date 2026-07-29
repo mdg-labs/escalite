@@ -81,6 +81,13 @@ const COMPONENT_STATUS_LABEL_KEYS: Record<StatusPageComponentStatus, MessageKey>
   [StatusPageComponentStatus.MajorOutage]: 'statusPages.components.status.majorOutage',
 }
 
+function componentStatusSelectItems(): Array<{ label: string; value: StatusPageComponentStatus }> {
+  return COMPONENT_STATUS_OPTIONS.map((option) => ({
+    label: t(COMPONENT_STATUS_LABEL_KEYS[option]),
+    value: option,
+  }))
+}
+
 function componentStatusBadgeVariant(
   status: StatusPageComponentStatus,
 ): 'success' | 'warning' | 'error' | 'destructive' {
@@ -365,6 +372,7 @@ export function StatusPageComponentsPanel(): ReactElement {
                   {t('statusPages.components.field.status')}
                 </label>
                 <Select
+                  items={componentStatusSelectItems()}
                   onValueChange={(value) =>
                     setStatus((value as StatusPageComponentStatus) ?? StatusPageComponentStatus.Operational)
                   }
@@ -374,9 +382,9 @@ export function StatusPageComponentsPanel(): ReactElement {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectPopup>
-                    {COMPONENT_STATUS_OPTIONS.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {t(COMPONENT_STATUS_LABEL_KEYS[option])}
+                    {componentStatusSelectItems().map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
                       </SelectItem>
                     ))}
                   </SelectPopup>

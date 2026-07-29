@@ -248,7 +248,14 @@ function PriorityRuleEditor({
         <p className="text-sm text-muted-foreground">{t('settings.notificationRules.empty')}</p>
       ) : (
         <ol className="space-y-3">
-          {steps.map((step, index) => (
+          {steps.map((step, index) => {
+            const channelItems = channels.map((channel) => ({
+              label: channelLabel(channel.name),
+              value: channel.name,
+              disabled: channel.name !== step.channel && usedChannels.has(channel.name),
+            }))
+
+            return (
             <li
               className="space-y-4 rounded-lg border border-border bg-muted/30 p-4"
               key={step.id}
@@ -306,6 +313,7 @@ function PriorityRuleEditor({
                     {t('settings.notificationRules.step.channel')}
                   </label>
                   <Select
+                    items={channelItems}
                     onValueChange={(value) => updateStep(step.id, { channel: value ?? '' })}
                     value={step.channel || null}
                   >
@@ -313,15 +321,9 @@ function PriorityRuleEditor({
                       <SelectValue placeholder={t('settings.notificationRules.step.channelPlaceholder')} />
                     </SelectTrigger>
                     <SelectPopup>
-                      {channels.map((channel) => (
-                        <SelectItem
-                          disabled={
-                            channel.name !== step.channel && usedChannels.has(channel.name)
-                          }
-                          key={channel.name}
-                          value={channel.name}
-                        >
-                          {channelLabel(channel.name)}
+                      {channelItems.map((item) => (
+                        <SelectItem disabled={item.disabled} key={item.value} value={item.value}>
+                          {item.label}
                         </SelectItem>
                       ))}
                     </SelectPopup>
@@ -353,7 +355,8 @@ function PriorityRuleEditor({
                 </div>
               </div>
             </li>
-          ))}
+            )
+          })}
         </ol>
       )}
 

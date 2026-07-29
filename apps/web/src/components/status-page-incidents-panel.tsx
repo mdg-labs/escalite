@@ -43,6 +43,13 @@ const INCIDENT_STATUS_OPTIONS: IncidentStatus[] = [
   IncidentStatus.Resolved,
 ]
 
+function incidentStatusSelectItems(): Array<{ label: string; value: IncidentStatus }> {
+  return INCIDENT_STATUS_OPTIONS.map((option) => ({
+    label: t(incidentStatusLabel(option) as Parameters<typeof t>[0]),
+    value: option,
+  }))
+}
+
 function incidentStatusBadgeVariant(
   status: IncidentStatus,
 ): 'secondary' | 'info' | 'warning' | 'destructive' {
@@ -344,6 +351,7 @@ export function StatusPageIncidentsPanel(): ReactElement {
                 {t('statusPages.incidents.update.field.status')}
               </label>
               <Select
+                items={incidentStatusSelectItems()}
                 onValueChange={(value) =>
                   setUpdateStatus((value as IncidentStatus) ?? IncidentStatus.Investigating)
                 }
@@ -353,9 +361,9 @@ export function StatusPageIncidentsPanel(): ReactElement {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectPopup>
-                  {INCIDENT_STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {t(incidentStatusLabel(option) as Parameters<typeof t>[0])}
+                  {incidentStatusSelectItems().map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectPopup>

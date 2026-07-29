@@ -127,6 +127,24 @@ export function RotationForm({
     return buildRRule(frequency, interval)
   }, [customRrule, frequency, interval, useCustomRrule])
 
+  const layerItems = useMemo(
+    () =>
+      availableLayers.map((option) => ({
+        label: option === 1 ? labels.rotationLayerPrimary : labels.rotationLayerSecondary,
+        value: String(option),
+      })),
+    [availableLayers, labels.rotationLayerPrimary, labels.rotationLayerSecondary],
+  )
+
+  const frequencyItems = useMemo(
+    () => [
+      { label: labels.rotationFrequencyHourly, value: 'HOURLY' },
+      { label: labels.rotationFrequencyDaily, value: 'DAILY' },
+      { label: labels.rotationFrequencyWeekly, value: 'WEEKLY' },
+    ],
+    [labels.rotationFrequencyDaily, labels.rotationFrequencyHourly, labels.rotationFrequencyWeekly],
+  )
+
   function toggleParticipant(userId: string): void {
     setParticipantIds((current) =>
       current.includes(userId)
@@ -193,6 +211,7 @@ export function RotationForm({
           {labels.rotationLayer}
         </label>
         <Select
+          items={layerItems}
           onValueChange={(value) => setLayer(Number(value ?? 1))}
           value={String(layer)}
         >
@@ -200,9 +219,9 @@ export function RotationForm({
             <SelectValue placeholder={labels.rotationLayer} />
           </SelectTrigger>
           <SelectPopup>
-            {availableLayers.map((option) => (
-              <SelectItem key={option} value={String(option)}>
-                {option === 1 ? labels.rotationLayerPrimary : labels.rotationLayerSecondary}
+            {layerItems.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
               </SelectItem>
             ))}
           </SelectPopup>
@@ -214,6 +233,7 @@ export function RotationForm({
         <div className="flex flex-col gap-3 sm:flex-row">
           <Select
             disabled={useCustomRrule}
+            items={frequencyItems}
             onValueChange={(value) => setFrequency((value as RotationFrequency) ?? 'WEEKLY')}
             value={frequency}
           >
@@ -221,9 +241,11 @@ export function RotationForm({
               <SelectValue placeholder={labels.rotationFrequency} />
             </SelectTrigger>
             <SelectPopup>
-              <SelectItem value="HOURLY">{labels.rotationFrequencyHourly}</SelectItem>
-              <SelectItem value="DAILY">{labels.rotationFrequencyDaily}</SelectItem>
-              <SelectItem value="WEEKLY">{labels.rotationFrequencyWeekly}</SelectItem>
+              {frequencyItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
             </SelectPopup>
           </Select>
 

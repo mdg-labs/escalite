@@ -177,6 +177,15 @@ function OverrideFormPanel({
   const [range, setRange] = useState<DateRange | undefined>()
   const [error, setError] = useState<string | null>(null)
 
+  const rotationItems = useMemo(
+    () =>
+      rotations.map((rotation) => ({
+        label: `${rotation.name} (L${rotation.layer})`,
+        value: rotation.id,
+      })),
+    [rotations],
+  )
+
   async function handleSubmit(): Promise<void> {
     const isoRange = toIsoRange(range)
     if (!rotationId.trim()) {
@@ -211,6 +220,7 @@ function OverrideFormPanel({
             {labels.rotation}
           </label>
           <Select
+            items={rotationItems}
             onValueChange={(value) => setRotationId(value ?? '')}
             value={rotationId || null}
           >
@@ -218,9 +228,9 @@ function OverrideFormPanel({
               <SelectValue placeholder={labels.rotation} />
             </SelectTrigger>
             <SelectPopup>
-              {rotations.map((rotation) => (
-                <SelectItem key={rotation.id} value={rotation.id}>
-                  {rotation.name} (L{rotation.layer})
+              {rotationItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
                 </SelectItem>
               ))}
             </SelectPopup>

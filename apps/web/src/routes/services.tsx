@@ -41,6 +41,7 @@ import {
   SelectPopup,
   SelectTrigger,
   SelectValue,
+  selectOptionsFromEntities,
   Skeleton,
   Table,
   TableBody,
@@ -98,7 +99,10 @@ export function ServicesPage(): ReactElement {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
 
-  const teams = teamsData?.teams ?? []
+  const teamItems = useMemo(
+    () => selectOptionsFromEntities(teamsData?.teams ?? []),
+    [teamsData?.teams],
+  )
   const services = useMemo(() => {
     const items = data?.services ?? []
     const query = search.trim().toLowerCase()
@@ -177,14 +181,14 @@ export function ServicesPage(): ReactElement {
             <label className="text-sm font-medium text-foreground" htmlFor="service-team">
               {t('services.field.team')}
             </label>
-            <Select onValueChange={(value) => setNewTeamId(value ?? '')} value={newTeamId}>
+            <Select items={teamItems} onValueChange={(value) => setNewTeamId(value ?? '')} value={newTeamId}>
               <SelectTrigger id="service-team">
                 <SelectValue placeholder={t('services.field.teamPlaceholder')} />
               </SelectTrigger>
               <SelectPopup>
-                {teams.map((team) => (
-                  <SelectItem key={team.id} value={team.id}>
-                    {team.name}
+                {teamItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectPopup>
@@ -282,7 +286,8 @@ export function ServicesPage(): ReactElement {
                 ) : (
                   services.map((service) => {
                     const teamName =
-                      teams.find((team) => team.id === service.teamId)?.name ?? service.teamId
+                      (teamsData?.teams ?? []).find((team) => team.id === service.teamId)?.name ??
+                      service.teamId
 
                     return (
                       <TableRow key={service.id}>

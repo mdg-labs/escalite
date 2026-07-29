@@ -43,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../primitives/select'
+import { selectOptionsFromLabeledEntities } from '../../src/select-options'
 import {
   AlertDialog,
   AlertDialogClose,
@@ -69,6 +70,13 @@ const TARGET_TYPE_LABELS: Record<EscalationTargetType, string> = {
   rotation: 'Rotation schedule',
   webhook: 'Webhook URL',
 }
+
+const TARGET_TYPE_ITEMS = (Object.keys(TARGET_TYPE_LABELS) as EscalationTargetType[]).map(
+  (targetType) => ({
+    label: TARGET_TYPE_LABELS[targetType],
+    value: targetType,
+  }),
+)
 
 export type EscalationPolicyEditorProps = {
   policy: EscalationEditorPolicy
@@ -126,6 +134,15 @@ function SortableStepCard({
       targets: [...step.targets, createEmptyTarget()],
     })
   }
+
+  const userItems = useMemo(
+    () => selectOptionsFromLabeledEntities(options.users),
+    [options.users],
+  )
+  const scheduleItems = useMemo(
+    () => selectOptionsFromLabeledEntities(options.schedules),
+    [options.schedules],
+  )
 
   return (
     <div ref={setNodeRef} style={style} className={isDragging ? 'opacity-70' : undefined}>
@@ -213,6 +230,7 @@ function SortableStepCard({
                         <div className="min-w-0 flex-1 space-y-2">
                           <label className="text-sm font-medium text-foreground">Target type</label>
                           <Select
+                            items={TARGET_TYPE_ITEMS}
                             onValueChange={(value) =>
                               updateTarget(target.id, {
                                 targetType: value as EscalationTargetType,
@@ -227,13 +245,11 @@ function SortableStepCard({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectPopup>
-                              {(Object.keys(TARGET_TYPE_LABELS) as EscalationTargetType[]).map(
-                                (targetType) => (
-                                  <SelectItem key={targetType} value={targetType}>
-                                    {TARGET_TYPE_LABELS[targetType]}
-                                  </SelectItem>
-                                ),
-                              )}
+                              {TARGET_TYPE_ITEMS.map((item) => (
+                                <SelectItem key={item.value} value={item.value}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
                             </SelectPopup>
                           </Select>
                         </div>
@@ -252,6 +268,7 @@ function SortableStepCard({
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-foreground">User</label>
                           <Select
+                            items={userItems}
                             onValueChange={(value) =>
                               updateTarget(target.id, { userId: value ?? undefined })
                             }
@@ -261,9 +278,9 @@ function SortableStepCard({
                               <SelectValue placeholder="Select a user" />
                             </SelectTrigger>
                             <SelectPopup>
-                              {options.users.map((user) => (
-                                <SelectItem key={user.id} value={user.id}>
-                                  {user.label}
+                              {userItems.map((item) => (
+                                <SelectItem key={item.value} value={item.value}>
+                                  {item.label}
                                 </SelectItem>
                               ))}
                             </SelectPopup>
@@ -275,6 +292,7 @@ function SortableStepCard({
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-foreground">Schedule</label>
                           <Select
+                            items={scheduleItems}
                             onValueChange={(value) =>
                               updateTarget(target.id, { scheduleId: value ?? undefined })
                             }
@@ -284,9 +302,9 @@ function SortableStepCard({
                               <SelectValue placeholder="Select a schedule" />
                             </SelectTrigger>
                             <SelectPopup>
-                              {options.schedules.map((schedule) => (
-                                <SelectItem key={schedule.id} value={schedule.id}>
-                                  {schedule.label}
+                              {scheduleItems.map((item) => (
+                                <SelectItem key={item.value} value={item.value}>
+                                  {item.label}
                                 </SelectItem>
                               ))}
                             </SelectPopup>
