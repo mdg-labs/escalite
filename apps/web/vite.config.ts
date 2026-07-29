@@ -8,6 +8,11 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    resolve: {
+      // ts-types + mobile peer graph can install a second urql/react pair; dedupe
+      // so Provider and hooks share one UrqlContext (avoids executeQuery errors).
+      dedupe: ['react', 'react-dom', 'urql'],
+    },
     server: {
       host: '0.0.0.0',
       port: 5173,

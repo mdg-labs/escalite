@@ -39,7 +39,7 @@ test.describe('teams and schedules', () => {
     await rotationDialog.getByRole('checkbox', { name: e2eAdminEmail }).check()
     await rotationDialog.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Rotation added.')).toBeVisible()
-    await expect(page.getByText(rotationName)).toBeVisible()
+    await expect(page.getByText(rotationName).first()).toBeVisible()
 
     await page.getByRole('button', { name: 'Create override' }).click()
     const overrideDialog = page.getByRole('dialog', { name: 'Create override' })
