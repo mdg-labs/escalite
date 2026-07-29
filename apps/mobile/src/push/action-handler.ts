@@ -1,4 +1,4 @@
-import * as Notifications from 'expo-notifications'
+import type * as Notifications from 'expo-notifications'
 import { router } from 'expo-router'
 
 import { acknowledgeAlert } from '@/api/alerts'
@@ -7,12 +7,14 @@ import {
   NOTIFICATION_ACTION_ESCALATE,
 } from '@/push/categories'
 import { extractAlertIdFromNotification } from '@/push/notifications'
+import { loadNotificationsModule } from '@/push/notifications-loader'
 
 export type NotificationActionResult = 'handled' | 'navigate' | 'ignored'
 
 export async function handleNotificationActionResponse(
   response: Notifications.NotificationResponse,
 ): Promise<NotificationActionResult> {
+  const Notifications = await loadNotificationsModule()
   const actionId = response.actionIdentifier
   if (actionId === Notifications.DEFAULT_ACTION_IDENTIFIER) {
     return 'navigate'

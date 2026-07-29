@@ -1,5 +1,6 @@
-import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
+
+import { loadNotificationsModule } from '@/push/notifications-loader'
 
 export type AlertInterruptionLevel = 'critical' | 'timeSensitive'
 
@@ -8,6 +9,7 @@ export async function hasCriticalAlertsPermission(): Promise<boolean> {
     return true
   }
 
+  const Notifications = await loadNotificationsModule()
   const permissions = await Notifications.getPermissionsAsync()
   return permissions.ios?.allowsCriticalAlerts === true
 }

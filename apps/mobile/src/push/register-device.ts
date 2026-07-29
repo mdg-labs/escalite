@@ -1,7 +1,8 @@
 import * as Device from 'expo-device'
-import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
 
+import { isExpoGo, logExpoGoPushSkipped } from '@/push/expo-go'
+import { loadNotificationsModule } from '@/push/notifications-loader'
 import { getServerEndpoints } from '@/server/endpoints'
 
 type RegisterMobileDeviceResponse = {
@@ -17,6 +18,8 @@ export async function obtainExpoPushToken(): Promise<string | null> {
   if (!Device.isDevice) {
     return null
   }
+
+  const Notifications = await loadNotificationsModule()
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync()
   let finalStatus = existingStatus
@@ -81,6 +84,11 @@ export async function registerMobileDevicePushToken(
 }
 
 export async function syncMobileDevicePushToken(refreshToken: string): Promise<void> {
+  if (isExpoGo()) {
+    logExpoGoPushSkipped('syncMobileDevicePushToken')
+    return
+  }
+
   const expoPushToken = await obtainExpoPushToken()
   if (!expoPushToken) {
     return

@@ -10,7 +10,7 @@ test('push registration uses bearer GraphQL mutation', () => {
   const source = readFileSync(join(root, 'src/push/register-device.ts'), 'utf8')
   assert.match(source, /registerMobileDevice/)
   assert.match(source, /Authorization: `Bearer \$\{refreshToken\}`/)
-  assert.match(source, /expo-notifications/)
+  assert.match(source, /loadNotificationsModule/)
 })
 
 test('auth context syncs push token after sign-in', () => {
@@ -56,11 +56,44 @@ test('app.json declares Android full-screen intent permission', () => {
 
 test('foreground notification handler shows title and body', () => {
   const source = readFileSync(join(root, 'src/push/notifications.ts'), 'utf8')
+  assert.match(source, /initNotificationHandler/)
   assert.match(source, /setNotificationHandler/)
   assert.match(source, /shouldShowAlert/)
   assert.match(source, /shouldShowBanner/)
   assert.match(source, /navigateToAlertDetailFromNotification/)
   assert.match(source, /router\.push\(`\/alerts\/\$\{alertId\}`\)/)
+})
+
+test('push modules skip Expo Go and avoid static expo-notifications imports', () => {
+  const expoGoSource = readFileSync(join(root, 'src/push/expo-go.ts'), 'utf8')
+  assert.match(expoGoSource, /appOwnership/)
+  assert.match(expoGoSource, /=== ['"]expo['"]/)
+
+  const hookSource = readFileSync(join(root, 'src/push/use-push-notifications.ts'), 'utf8')
+  assert.match(hookSource, /isExpoGo/)
+  assert.match(hookSource, /logExpoGoPushSkipped/)
+
+  const registerSource = readFileSync(join(root, 'src/push/register-device.ts'), 'utf8')
+  assert.match(registerSource, /isExpoGo/)
+  assert.match(registerSource, /logExpoGoPushSkipped/)
+
+  const pushModules = [
+    'notifications.ts',
+    'use-push-notifications.ts',
+    'register-device.ts',
+    'action-handler.ts',
+    'categories.ts',
+    'critical-alerts.ts',
+  ]
+
+  for (const file of pushModules) {
+    const source = readFileSync(join(root, 'src/push', file), 'utf8')
+    assert.doesNotMatch(
+      source,
+      /^import \* as Notifications from 'expo-notifications'/m,
+      `${file} must not statically import expo-notifications`,
+    )
+  }
 })
 
 test('notification tap navigates to alert detail route', () => {

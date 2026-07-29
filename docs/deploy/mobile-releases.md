@@ -58,3 +58,12 @@ APK assets are named `escalite-mobile-<semver>.apk` (for example `escalite-mobil
 ## Local development
 
 Use `EXPO_PUBLIC_ESCALITE_API_URL` / `EXPO_PUBLIC_ESCALITE_WEB_URL` for `expo start`, or configure the server in-app after installing a dev build.
+
+### Expo Go vs development builds
+
+**Expo Go** (store app, SDK 54) is suitable for UI and auth flows during local development. Remote push notifications were removed from Expo Go in SDK 53+, so push alert delivery, token registration, and notification action buttons require a **development build** instead:
+
+- `eas build --profile development` (EAS dev client)
+- `expo run:android` / `expo run:ios` (local native build)
+
+The app detects Expo Go at runtime (`expo-constants` `appOwnership === 'expo'`) and skips push bootstrap and device token sync with a dev-only log. Use a dev build or EAS beta APK to test end-to-end push alerts.
