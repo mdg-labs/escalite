@@ -24,6 +24,16 @@ export const severityColors = {
   severityInfoForeground: '#d4ecff',
 } as const
 
+/**
+ * Escalite logo amber — restrained brand accent (matches web `--brand` tokens).
+ * `brandForeground` is dark on amber fills for WCAG AA contrast (~8.5:1 on #F5A623).
+ */
+export const brandColors = {
+  brand: '#F5A623',
+  brandForeground: '#171717',
+  brandMuted: 'rgba(245, 166, 35, 0.16)',
+} as const
+
 /** Core surface tokens — dark mode default for on-call tooling. */
 export const surfaceColors = {
   background: '#0a0a0b',
@@ -36,5 +46,6 @@ export const surfaceColors = {
 
 export const escaliteTokens = {
   ...severityColors,
+  ...brandColors,
   ...surfaceColors,
 } as const

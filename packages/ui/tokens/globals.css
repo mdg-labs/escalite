@@ -37,6 +37,9 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-brand-muted: var(--brand-muted);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand: var(--brand);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -163,6 +166,9 @@
   --muted-foreground: color-mix(in srgb, var(--color-neutral-500) 90%, var(--color-black));
   --accent: --alpha(var(--color-black) / 4%);
   --accent-foreground: var(--color-neutral-800);
+  --brand: #f5a623;
+  --brand-foreground: var(--color-neutral-900);
+  --brand-muted: color-mix(in srgb, var(--brand) 12%, var(--background));
   --destructive: var(--color-red-500);
   --destructive-foreground: var(--color-red-700);
   --info: var(--color-blue-500);
@@ -204,6 +210,9 @@
   --muted-foreground: color-mix(in srgb, var(--color-neutral-500) 90%, var(--color-white));
   --accent: --alpha(var(--color-white) / 4%);
   --accent-foreground: var(--color-neutral-100);
+  --brand: #f5a623;
+  --brand-foreground: var(--color-neutral-950);
+  --brand-muted: color-mix(in srgb, var(--brand) 16%, var(--background));
   --destructive: color-mix(in srgb, var(--color-red-500) 90%, var(--color-white));
   --destructive-foreground: var(--color-red-400);
   --info: var(--color-blue-500);
