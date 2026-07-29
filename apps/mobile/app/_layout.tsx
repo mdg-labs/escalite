@@ -1,7 +1,11 @@
 import { StatusBar } from 'expo-status-bar'
-import { Spinner, TamaguiProvider, Theme, YStack } from 'tamagui'
+import { Spinner, TamaguiProvider, Theme, useTheme, YStack } from 'tamagui'
 
-import { HeaderMenuButton, NavigationShellProvider } from '@/components/navigation-shell'
+import {
+  HeaderBrandTitle,
+  HeaderMenuButton,
+  NavigationShellProvider,
+} from '@/components/navigation-shell'
 import { ServerSetupScreen } from '@/screens/server-setup-screen'
 import { PushNotificationBootstrap } from '@/push/push-notification-bootstrap'
 import { AppProviders } from '@/providers/app-providers'
@@ -16,6 +20,7 @@ const rootScreenOptions = {
 
 function RootNavigation() {
   const { status } = useServerConfig()
+  const theme = useTheme()
 
   if (status === 'loading') {
     return (
@@ -41,16 +46,16 @@ function RootNavigation() {
           <StatusBar style="light" />
           <Stack
             screenOptions={{
-              headerStyle: { backgroundColor: '#0a0a0b' },
-              headerTintColor: '#f5f5f5',
-              contentStyle: { backgroundColor: '#0a0a0b' },
+              contentStyle: { backgroundColor: theme.background.val },
+              headerStyle: { backgroundColor: theme.background.val },
+              headerTintColor: theme.color.val,
             }}
           >
             <Stack.Screen
               name="index"
               options={{
                 ...rootScreenOptions,
-                title: 'Escalite',
+                headerTitle: () => <HeaderBrandTitle />,
                 headerLeft: () => <HeaderMenuButton />,
               }}
             />

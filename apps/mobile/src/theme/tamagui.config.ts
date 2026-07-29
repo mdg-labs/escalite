@@ -1,7 +1,13 @@
 import { config as defaultConfig } from '@tamagui/config/v3'
 import { createTamagui } from 'tamagui'
 
-import { DEFAULT_THEME, escaliteTokens, severityColors, surfaceColors } from '@escalite/tokens'
+import {
+  brandColors,
+  DEFAULT_THEME,
+  escaliteTokens,
+  severityColors,
+  surfaceColors,
+} from '@escalite/tokens'
 
 export const tamaguiConfig = createTamagui({
   ...defaultConfig,
@@ -23,10 +29,12 @@ export const tamaguiConfig = createTamagui({
       borderColor: surfaceColors.borderColor,
       shadowColor: surfaceColors.shadowColor,
       ...severityColors,
+      ...brandColors,
     },
     light: {
       ...defaultConfig.themes.light,
       ...severityColors,
+      ...brandColors,
     },
   },
   defaultTheme: DEFAULT_THEME,

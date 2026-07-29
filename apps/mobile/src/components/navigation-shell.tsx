@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { Pressable } from 'react-native'
-import { YStack } from 'tamagui'
+import { Text, YStack } from 'tamagui'
 
 import { useAuth } from '@/auth/context'
 import { NavigationDrawer } from '@/components/navigation-drawer'
@@ -87,6 +87,14 @@ export function useNavigationShell(): NavigationShellContextValue {
     throw new Error('useNavigationShell must be used within NavigationShellProvider')
   }
   return context
+}
+
+export function HeaderBrandTitle() {
+  return (
+    <Text color="$brand" fontSize="$6" fontWeight="700">
+      Escalite
+    </Text>
+  )
 }
 
 export function HeaderMenuButton() {

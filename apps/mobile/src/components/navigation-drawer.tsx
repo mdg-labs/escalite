@@ -1,4 +1,4 @@
-import { Button, Paragraph, Separator, Sheet, Text, YStack } from 'tamagui'
+import { Button, Paragraph, Separator, Sheet, Text, XStack, YStack } from 'tamagui'
 
 type NavigationDrawerProps = {
   open: boolean
@@ -34,6 +34,7 @@ export function NavigationDrawer({
       />
       <Sheet.Frame
         padding="$4"
+        paddingTop={0}
         gap="$4"
         backgroundColor="$background"
         position="absolute"
@@ -44,9 +45,11 @@ export function NavigationDrawer({
         maxWidth="85%"
         borderTopRightRadius="$4"
         borderBottomRightRadius="$4"
+        overflow="hidden"
       >
+        <YStack aria-hidden height={2} backgroundColor="$brand" marginHorizontal="$-4" />
         <Sheet.ScrollView>
-          <YStack gap="$4" paddingTop="$6">
+          <YStack gap="$4" paddingTop="$4">
             {email ? (
               <Text color="$color" fontSize="$6" fontWeight="700">
                 {email}
@@ -55,6 +58,22 @@ export function NavigationDrawer({
             {serverOrigin ? (
               <Paragraph color="$colorMuted">{serverOrigin}</Paragraph>
             ) : null}
+            <Separator />
+            <XStack
+              accessibilityRole="text"
+              accessibilityState={{ selected: true }}
+              alignItems="center"
+              backgroundColor="$brandMuted"
+              borderLeftColor="$brand"
+              borderLeftWidth={3}
+              borderRadius="$2"
+              paddingHorizontal="$3"
+              paddingVertical="$2.5"
+            >
+              <Text color="$color" fontSize="$4" fontWeight="600">
+                Home
+              </Text>
+            </XStack>
             <Separator />
             <Button onPress={() => void onSignOut()}>Sign out</Button>
             <Button chromeless onPress={() => void onChangeServer()}>
