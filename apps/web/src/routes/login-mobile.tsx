@@ -3,8 +3,7 @@ import { useLocation } from 'react-router'
 
 import { appConfig } from '../lib/config'
 import { t } from '../lib/i18n'
-
-const mobileDeepLinkScheme = 'escalite://auth'
+import { buildMobileAuthRedirectUrl, resolveMobileAuthRedirectUri } from '../lib/mobile-auth-redirect'
 
 export function LoginMobilePage(): ReactElement {
   const location = useLocation()
@@ -12,6 +11,7 @@ export function LoginMobilePage(): ReactElement {
 
   useEffect(() => {
     let cancelled = false
+    const redirectUri = resolveMobileAuthRedirectUri(new URLSearchParams(location.search).get('redirect_uri'))
 
     async function issueCodeAndRedirect(): Promise<void> {
       try {
@@ -39,7 +39,7 @@ export function LoginMobilePage(): ReactElement {
         }
 
         if (!cancelled) {
-          window.location.replace(`${mobileDeepLinkScheme}?code=${encodeURIComponent(body.code)}`)
+          window.location.replace(buildMobileAuthRedirectUrl(redirectUri, body.code))
         }
       } catch (err) {
         if (!cancelled) {

@@ -5,10 +5,9 @@ export const mobileAuthConstants = {
   refreshTokenStorageKey: 'escalite.mobile.refresh_token',
 } as const
 
-export function mobileLoginUrl(webBaseUrl: string): string {
-  return `${webBaseUrl}${mobileAuthConstants.mobileLoginPath}`
-}
-
-export function mobileAuthDeepLink(): string {
-  return `${mobileAuthConstants.deepLinkScheme}://${mobileAuthConstants.deepLinkAuthPath}`
+export function mobileLoginUrl(webBaseUrl: string, redirectUri: string): string {
+  const base = webBaseUrl.replace(/\/$/, '')
+  const url = new URL(`${base}${mobileAuthConstants.mobileLoginPath}`)
+  url.searchParams.set('redirect_uri', redirectUri)
+  return url.toString()
 }

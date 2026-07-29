@@ -1,31 +1,12 @@
 import * as Linking from 'expo-linking'
-import type { ParsedURL } from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
 
-import { mobileAuthConstants, mobileAuthDeepLink, mobileLoginUrl } from '@/auth/config'
+import { mobileLoginUrl } from '@/auth/config'
+import { isParsedAuthCallback, mobileAuthRedirectUri } from '@/auth/redirect-uri'
 import { getServerEndpoints } from '@/server/endpoints'
-
-function normalizeAuthPath(path: string | null | undefined): string {
-  if (!path) {
-    return ''
-  }
-  return path.replace(/^\/+|\/+$/g, '')
-}
 
 export function isAuthCallbackUrl(url: string): boolean {
   return isParsedAuthCallback(Linking.parse(url))
-}
-
-function isParsedAuthCallback(parsed: ParsedURL): boolean {
-  const authSegment = mobileAuthConstants.deepLinkAuthPath
-  if (parsed.scheme && parsed.scheme !== mobileAuthConstants.deepLinkScheme) {
-    return false
-  }
-  if (parsed.hostname === authSegment) {
-    return true
-  }
-  const normalizedPath = normalizeAuthPath(parsed.path)
-  return normalizedPath === authSegment || normalizedPath.endsWith(`/${authSegment}`)
 }
 
 export function parseAuthCodeFromUrl(url: string): string | null {
@@ -48,7 +29,8 @@ export async function openMobileLoginSession(): Promise<string | null> {
   WebBrowser.maybeCompleteAuthSession()
 
   const { webBaseUrl } = getServerEndpoints()
-  const result = await WebBrowser.openAuthSessionAsync(mobileLoginUrl(webBaseUrl), mobileAuthDeepLink())
+  const redirectUri = mobileAuthRedirectUri()
+  const result = await WebBrowser.openAuthSessionAsync(mobileLoginUrl(webBaseUrl, redirectUri), redirectUri)
   if (result.type !== 'success' || !result.url) {
     return null
   }

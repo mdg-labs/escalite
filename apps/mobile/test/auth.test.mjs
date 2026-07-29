@@ -29,12 +29,22 @@ test('auth api maps UNAUTHENTICATED refresh failures', () => {
   assert.match(contextSource, /UNAUTHENTICATED/)
 })
 
-test('deep link parser reads auth code from escalite scheme', () => {
+test('deep link parser reads auth code from escalite and exp schemes', () => {
   const source = readFileSync(join(root, 'src/auth/deep-link.ts'), 'utf8')
   assert.match(source, /parseAuthCodeFromUrl/)
   assert.match(source, /isAuthCallbackUrl/)
   assert.match(source, /openAuthSessionAsync/)
-  assert.match(source, /normalizeAuthPath/)
+  assert.match(source, /mobileAuthRedirectUri/)
+  const redirectSource = readFileSync(join(root, 'src/auth/redirect-uri.ts'), 'utf8')
+  assert.match(redirectSource, /parsed\.scheme === 'exp'/)
+  assert.match(redirectSource, /Linking\.createURL/)
+})
+
+test('mobile login URL forwards redirect_uri to web', () => {
+  const configSource = readFileSync(join(root, 'src/auth/config.ts'), 'utf8')
+  assert.match(configSource, /redirect_uri/)
+  const deepLinkSource = readFileSync(join(root, 'src/auth/deep-link.ts'), 'utf8')
+  assert.match(deepLinkSource, /mobileLoginUrl\(webBaseUrl, redirectUri\)/)
 })
 
 test('auth callback route completes sign-in via AuthProvider', () => {
