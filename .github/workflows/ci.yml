@@ -3,9 +3,6 @@ name: CI
 on:
   workflow_call:
 
-permissions:
-  contents: read
-
 jobs:
   js:
     name: JavaScript
@@ -208,10 +205,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [js, go, e2e]
     if: always()
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
     steps:
       - uses: actions/checkout@v5
 
