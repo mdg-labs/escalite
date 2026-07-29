@@ -40,6 +40,7 @@ function RootNavigation() {
           }}
         >
           <Stack.Screen name="index" options={{ title: 'Escalite' }} />
+          <Stack.Screen name="auth" options={{ headerShown: false, title: 'Signing in' }} />
           <Stack.Screen name="alerts/[alertId]" options={{ title: 'Alert' }} />
         </Stack>
       </PushNotificationBootstrap>

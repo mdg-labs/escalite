@@ -32,5 +32,21 @@ test('auth api maps UNAUTHENTICATED refresh failures', () => {
 test('deep link parser reads auth code from escalite scheme', () => {
   const source = readFileSync(join(root, 'src/auth/deep-link.ts'), 'utf8')
   assert.match(source, /parseAuthCodeFromUrl/)
+  assert.match(source, /isAuthCallbackUrl/)
   assert.match(source, /openAuthSessionAsync/)
+  assert.match(source, /normalizeAuthPath/)
+})
+
+test('auth callback route completes sign-in via AuthProvider', () => {
+  const source = readFileSync(join(root, 'app/auth.tsx'), 'utf8')
+  assert.match(source, /signInWithCode/)
+  assert.match(source, /router\.replace\('\/'\)/)
+  const layoutSource = readFileSync(join(root, 'app/_layout.tsx'), 'utf8')
+  assert.match(layoutSource, /name="auth"/)
+})
+
+test('auth context exposes signInWithCode without Linking listener', () => {
+  const source = readFileSync(join(root, 'src/auth/context.tsx'), 'utf8')
+  assert.match(source, /signInWithCode/)
+  assert.doesNotMatch(source, /Linking\.addEventListener/)
 })

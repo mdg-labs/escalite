@@ -1,4 +1,3 @@
-import * as Linking from 'expo-linking'
 import {
   createContext,
   useCallback,
@@ -10,7 +9,7 @@ import {
 } from 'react'
 
 import { MobileAuthError, exchangeMobileAuthCode, refreshMobileSession } from '@/auth/api'
-import { openMobileLoginSession, parseAuthCodeFromUrl } from '@/auth/deep-link'
+import { openMobileLoginSession } from '@/auth/deep-link'
 import {
   clearStoredRefreshToken,
   getStoredRefreshToken,
@@ -26,6 +25,7 @@ type AuthContextValue = {
   user: MobileAuthUser | null
   error: string | null
   signIn: () => Promise<void>
+  signInWithCode: (code: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -83,32 +83,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     void restoreSession()
   }, [restoreSession])
 
-  useEffect(() => {
-    const handleUrl = (url: string) => {
-      const code = parseAuthCodeFromUrl(url)
-      if (!code) {
-        return
-      }
-      void completeSignIn(code).catch((err: unknown) => {
+  const signInWithCode = useCallback(
+    async (code: string) => {
+      setError(null)
+      setStatus('loading')
+      try {
+        await completeSignIn(code)
+      } catch (err) {
         setStatus('unauthenticated')
         setError(err instanceof Error ? err.message : 'Sign in failed')
-      })
-    }
-
-    const subscription = Linking.addEventListener('url', ({ url }) => {
-      handleUrl(url)
-    })
-
-    void Linking.getInitialURL().then((url) => {
-      if (url) {
-        handleUrl(url)
+        throw err
       }
-    })
-
-    return () => {
-      subscription.remove()
-    }
-  }, [completeSignIn])
+    },
+    [completeSignIn],
+  )
 
   const signIn = useCallback(async () => {
     setError(null)
@@ -140,9 +128,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       user,
       error,
       signIn,
+      signInWithCode,
       signOut,
     }),
-    [status, user, error, signIn, signOut],
+    [status, user, error, signIn, signInWithCode, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

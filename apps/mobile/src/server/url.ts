@@ -32,6 +32,9 @@ export function normalizeServerOrigin(input: string): string {
   return `${parsed.protocol}//${parsed.host}`
 }
 
+// API and web share one origin here. Split-host deployments (API on a different
+// public host than the frontend) require the frontend to proxy /api and /graphql,
+// or a future server-setup field for a separate API URL.
 export function deriveServerEndpoints(origin: string): ServerEndpoints {
   const normalizedOrigin = normalizeServerOrigin(origin)
   return {

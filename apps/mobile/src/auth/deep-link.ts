@@ -1,15 +1,36 @@
 import * as Linking from 'expo-linking'
+import type { ParsedURL } from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
 
 import { mobileAuthConstants, mobileAuthDeepLink, mobileLoginUrl } from '@/auth/config'
 import { getServerEndpoints } from '@/server/endpoints'
 
+function normalizeAuthPath(path: string | null | undefined): string {
+  if (!path) {
+    return ''
+  }
+  return path.replace(/^\/+|\/+$/g, '')
+}
+
+export function isAuthCallbackUrl(url: string): boolean {
+  return isParsedAuthCallback(Linking.parse(url))
+}
+
+function isParsedAuthCallback(parsed: ParsedURL): boolean {
+  const authSegment = mobileAuthConstants.deepLinkAuthPath
+  if (parsed.scheme && parsed.scheme !== mobileAuthConstants.deepLinkScheme) {
+    return false
+  }
+  if (parsed.hostname === authSegment) {
+    return true
+  }
+  const normalizedPath = normalizeAuthPath(parsed.path)
+  return normalizedPath === authSegment || normalizedPath.endsWith(`/${authSegment}`)
+}
+
 export function parseAuthCodeFromUrl(url: string): string | null {
   const parsed = Linking.parse(url)
-  if (
-    parsed.hostname !== mobileAuthConstants.deepLinkAuthPath &&
-    parsed.path !== mobileAuthConstants.deepLinkAuthPath
-  ) {
+  if (!isParsedAuthCallback(parsed)) {
     return null
   }
 
