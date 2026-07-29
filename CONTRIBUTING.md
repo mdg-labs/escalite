@@ -206,6 +206,10 @@ source is configured automatically (`gh-pages` branch, `/` root).
 
 **Published report:** [https://mdg-labs.github.io/escalite/](https://mdg-labs.github.io/escalite/)
 
+GitHub Pages serves only the **latest** report from the most recent `dev` push
+(`keep_files: false` on publish). Per-run HTML snapshots are available as workflow
+artifacts (30-day retention for `allure-report`).
+
 In CI, `allurerc.mjs` reads history from the checked-out `gh-pages` tree via the
 `ALLURE_HISTORY_PATH` environment variable (default locally: `./.allure/history.jsonl`).
 
