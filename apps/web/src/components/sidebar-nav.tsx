@@ -50,7 +50,7 @@ export function SidebarNav({
           to="/dashboard"
         >
           <EscaliteLogo variant="mark" />
-          <span>Escalite</span>
+          <span className="text-brand">Escalite</span>
         </Link>
       </div>
 
@@ -70,10 +70,10 @@ export function SidebarNav({
                       <Link
                         aria-current={active ? 'page' : undefined}
                         className={cn(
-                          'block rounded-md px-2 py-1.5 text-sm transition-colors',
+                          'block rounded-md border-s-2 px-2 py-1.5 text-sm transition-colors',
                           active
-                            ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
-                            : 'text-sidebar-foreground hover:bg-sidebar-accent/60',
+                            ? 'border-brand bg-brand-muted font-medium text-sidebar-accent-foreground'
+                            : 'border-transparent text-sidebar-foreground hover:bg-sidebar-accent/60',
                         )}
                         onClick={onNavigate}
                         to={item.path}

@@ -26,6 +26,7 @@ export function AppShell({ title, children }: AppShellProps): ReactElement {
         className="hidden w-56 shrink-0 border-e border-sidebar-border bg-sidebar md:flex md:flex-col"
         data-slot="app-sidebar"
       >
+        <div aria-hidden className="h-0.5 shrink-0 bg-brand" />
         <SidebarNav className="min-h-0 flex-1" />
       </aside>
 
