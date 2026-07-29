@@ -272,7 +272,7 @@ jobs:
             cp .gh-pages/history.jsonl allure-report/history.jsonl
           fi
           ALLURE_HISTORY_PATH=./allure-report/history.jsonl \
-            pnpm exec allure generate --config ./allurerc.mjs ./allure-results
+            node scripts/allure/generate-report.mjs
 
       - name: Upload Allure report
         if: always()

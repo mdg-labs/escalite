@@ -10,7 +10,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test:unit",
     "test:allure": "pnpm test && node scripts/allure/merge-results.mjs",
-    "report:allure": "node scripts/allure/merge-results.mjs && allure generate --config ./allurerc.mjs ./allure-results",
+    "report:allure": "node scripts/allure/merge-results.mjs && node scripts/allure/generate-report.mjs",
     "open:allure": "allure open --config ./allurerc.mjs ./allure-report",
     "typecheck": "turbo run typecheck",
     "prepare": "node scripts/ci/husky-prepare.mjs"
