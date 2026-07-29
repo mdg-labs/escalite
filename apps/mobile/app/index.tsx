@@ -1,11 +1,18 @@
 import { Button, Paragraph, Spinner, Text, YStack } from 'tamagui'
+import { RefreshControl } from 'react-native'
+import { ScrollView } from 'tamagui'
 
 import { useAuth } from '@/auth/context'
+import { OnCallStatus } from '@/components/on-call-status'
+import { useMyOnCallStatus } from '@/api/use-my-on-call-status'
 import { useServerConfig } from '@/server/context'
 
 export default function HomeScreen() {
-  const { status, user, error, signIn, signOut } = useAuth()
+  const { status, error, signIn, signOut } = useAuth()
   const { endpoints, clearServer } = useServerConfig()
+  const { assignments, loading, refreshing, error: onCallError, refresh } = useMyOnCallStatus(
+    status === 'authenticated',
+  )
 
   async function handleChangeServer(): Promise<void> {
     await signOut()
@@ -23,21 +30,18 @@ export default function HomeScreen() {
     )
   }
 
-  if (status === 'authenticated' && user) {
+  if (status === 'authenticated') {
     return (
-      <YStack flex={1} alignItems="center" justifyContent="center" backgroundColor="$background" padding="$4" gap="$4">
-        <Text color="$color" fontSize="$6" fontWeight="600" textAlign="center">
-          Signed in
-        </Text>
-        <Paragraph color="$color" textAlign="center">
-          {user.email}
-        </Paragraph>
-        {endpoints ? (
-          <Paragraph color="$color" textAlign="center">
-            Server: {endpoints.origin}
-          </Paragraph>
-        ) : null}
-      </YStack>
+      <ScrollView
+        flex={1}
+        backgroundColor="$background"
+        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />}
+      >
+        <YStack flex={1} justifyContent="center" gap="$4">
+          <OnCallStatus assignments={assignments} loading={loading} error={onCallError} />
+        </YStack>
+      </ScrollView>
     )
   }
 
