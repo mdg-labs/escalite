@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { Image } from 'react-native'
 import { Button, Input, Paragraph, Text, YStack } from 'tamagui'
 
+import { escaliteLogo } from '@/assets/images'
 import { useServerConfig } from '@/server/context'
 
 export function ServerSetupScreen() {
@@ -24,9 +26,16 @@ export function ServerSetupScreen() {
 
   return (
     <YStack flex={1} backgroundColor="$background" padding="$4" gap="$4" justifyContent="center">
-      <Text color="$color" fontSize="$8" fontWeight="700" textAlign="center">
-        Connect to Escalite
-      </Text>
+      <YStack alignItems="center" gap="$3">
+        <Image
+          accessibilityLabel="Escalite"
+          source={escaliteLogo}
+          style={{ width: 72, height: 72 }}
+        />
+        <Text color="$color" fontSize="$8" fontWeight="700" textAlign="center">
+          Connect to Escalite
+        </Text>
+      </YStack>
       <Paragraph color="$color" textAlign="center">
         Enter the public URL of your Escalite instance, such as https://escalite.example.com.
       </Paragraph>

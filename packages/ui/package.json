@@ -36,6 +36,7 @@
     "./domain/ScheduleCalendar": "./domain/ScheduleCalendar/index.ts",
     "./domain/OnCallWidget": "./domain/OnCallWidget/index.ts",
     "./domain/AlertCard": "./domain/AlertCard/index.ts",
+    "./domain/EscaliteLogo": "./domain/EscaliteLogo/index.ts",
     "./charts": "./charts/index.ts"
   },
   "scripts": {

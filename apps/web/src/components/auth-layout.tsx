@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from 'react'
+import { EscaliteLogo } from '@escalite/ui'
 
 type AuthLayoutProps = {
   title: string
@@ -11,9 +12,12 @@ export function AuthLayout({ title, description, children }: AuthLayoutProps): R
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="space-y-2 text-center">
-          <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Escalite
-          </p>
+          <div className="flex flex-col items-center gap-3">
+            <EscaliteLogo className="h-16 w-16" variant="mark-lg" />
+            <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+              Escalite
+            </p>
+          </div>
           <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>

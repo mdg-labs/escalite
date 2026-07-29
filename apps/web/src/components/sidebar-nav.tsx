@@ -7,6 +7,7 @@ import {
   DrawerPopup,
   DrawerTitle,
   DrawerTrigger,
+  EscaliteLogo,
   ScrollArea,
   cn,
 } from '@escalite/ui'
@@ -44,11 +45,12 @@ export function SidebarNav({
     <div className={cn('flex h-full min-h-0 flex-col', className)} data-slot="sidebar-nav">
       <div className="flex h-14 shrink-0 items-center border-b border-sidebar-border px-4">
         <Link
-          className="text-sm font-semibold tracking-wide text-sidebar-foreground"
+          className="flex items-center gap-2 text-sm font-semibold tracking-wide text-sidebar-foreground"
           onClick={onNavigate}
           to="/dashboard"
         >
-          Escalite
+          <EscaliteLogo variant="mark" />
+          <span>Escalite</span>
         </Link>
       </div>
 

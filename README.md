@@ -1,6 +1,33 @@
-# Escalite
+<p align="center">
+  <img src="assets/escalite_app_icon_w_dark_blue_bg.svg" width="120" alt="Escalite app icon" />
+</p>
 
-Open-core, self-hostable on-call, alerting, and incident-response platform (AGPL Community Edition).
+<h1 align="center">Escalite</h1>
+
+<p align="center">
+  Open-core, self-hostable on-call, alerting, and incident-response platform.<br />
+  Community Edition · AGPL · built for teams who want GoAlert-grade reliability with a modern operator experience.
+</p>
+
+<p align="center">
+  <a href="docs/specs/README.md">Specs</a> ·
+  <a href="docs/deploy/production.md">Deploy</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="LICENSE">License</a>
+</p>
+
+---
+
+## Why Escalite
+
+Escalite targets platform and SRE teams that need **reliable paging**, **on-call scheduling**, and **incident workflows** without surrendering control to a SaaS-only vendor. Run it on your own infrastructure with Docker Compose, integrate via GraphQL, and extend through an open-core model.
+
+| Pillar | What you get |
+| ------ | -------------- |
+| Alerting | Escalation policies, dedup, heartbeats, inbound integrations |
+| On-call | Schedules, rotations, overrides, mobile push (incl. iOS Critical Alerts path) |
+| Incidents | Timeline, roles, postmortem export |
+| Ops UX | Dense dark-mode web console, status pages, self-hosted from day one |
 
 ## Deployment
 
@@ -39,9 +66,18 @@ Operator guides:
 - [Coolify deployment (env vars, TLS, validation)](docs/deploy/coolify.md)
 - [Compose profiles and digest-pinned release images](deploy/docker-compose/README.md)
 
-## Prerequisites
+## Quick start (developers)
 
-Install these tools before developing locally:
+```bash
+git clone https://github.com/mdg-labs/escalite.git
+cd escalite
+pnpm install
+task dev
+```
+
+`task dev` starts Turborepo `dev` tasks across JS workspaces. For the full stack (Postgres, API, engine, web), use `task compose:dev`.
+
+### Prerequisites
 
 | Tool | Version | Notes |
 | ---- | ------- | ----- |
@@ -55,7 +91,7 @@ Install these tools before developing locally:
 
 Docker is required for the full local stack via `deploy/docker-compose/` (see [Deployment](#deployment)).
 
-## Docker Compose stack (development)
+### Docker Compose stack (development)
 
 ```bash
 cp .env.example deploy/docker-compose/.env
@@ -71,25 +107,27 @@ task compose:prod
 
 Release deployments with digest-pinned registry images: see [`deploy/docker-compose/README.md`](deploy/docker-compose/README.md) and [production ops](docs/deploy/production.md).
 
-## Quick start
-
-```bash
-git clone https://github.com/mdg-labs/escalite.git
-cd escalite
-pnpm install
-task dev
-```
-
-`task dev` starts Turborepo `dev` tasks across JS workspaces. For the full stack (Postgres, API, engine, web), use `task compose:dev`.
-
 ## Monorepo layout
 
 | Path | Purpose |
 | ---- | ------- |
-| `apps/` | User-facing applications (`apps/web`, later `apps/mobile`) |
-| `services/` | Go microservices (`api`, `engine`, `integrations`) |
-| `packages/` | Shared libraries (schema, config, TypeScript types) |
+| `apps/web` | Operator web console (React, Vite, COSS UI) |
+| `apps/mobile` | Minimal Expo app — push, ack, escalate |
+| `apps/status-page` | Public status page frontend |
+| `services/api` | GraphQL API (Go, chi, pgx, sqlc) |
+| `services/engine` | Alerting engine and on-call compute |
+| `services/integrations` | Inbound/outbound integration workers |
+| `packages/` | Shared schema, types, UI primitives, tokens |
 | `deploy/` | Docker Compose and deployment assets |
+| `assets/` | Canonical branding (app icon, logo marks) |
+
+Regenerate raster icons and favicons from SVG sources:
+
+```bash
+node scripts/generate-branding-assets.mjs
+```
+
+See [`assets/README.md`](assets/README.md) for which file to use where.
 
 ## Common tasks
 
@@ -97,7 +135,7 @@ task dev
 task dev       # Start JS dev workflows (Turborepo)
 task build     # Build JS workspaces and Go services
 task test      # Run JS and Go tests
-task lint       # Lint JS workspaces
+task lint      # Lint JS workspaces
 task migrate   # Apply Postgres migrations with goose (requires DATABASE_URL)
 task schema:diff -- <name>  # Generate migration from schema/sql (pg-schema-diff)
 task compose:dev        # Docker Compose dev profile
@@ -111,4 +149,9 @@ Set `DATABASE_URL` or `ESCALITE_DATABASE_URL` before running `task migrate`.
 ## Documentation
 
 - Spec index: [`docs/specs/README.md`](docs/specs/README.md)
-- Frontend refactor plan: [`docs/frontend-refactor-plan.md`](docs/frontend-refactor-plan.md) (Phasical import via `docs/import-frontend-refactor-plan.py`)
+- Frontend refactor plan: [`docs/frontend-refactor-plan.md`](docs/frontend-refactor-plan.md)
+- Mobile releases: [`docs/deploy/mobile-releases.md`](docs/deploy/mobile-releases.md)
+
+## Repository activity
+
+![Repobeats analytics](https://repobeats.axiom.co/api/embed/1227279aebf7b43b60bddb00b675e5f853fe4fa4.svg)

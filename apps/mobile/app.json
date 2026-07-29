@@ -6,6 +6,12 @@
     "orientation": "portrait",
     "scheme": "escalite",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000010"
+    },
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
@@ -16,12 +22,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0a0a0b"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000010"
       },
       "package": "dev.mdglabs.escalite",
       "permissions": [
         "android.permission.USE_FULL_SCREEN_INTENT"
-      ]
+      ],
+      "versionCode": 2
     },
     "web": {
       "bundler": "metro",
