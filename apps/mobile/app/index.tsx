@@ -37,10 +37,6 @@ export default function HomeScreen() {
             Server: {endpoints.origin}
           </Paragraph>
         ) : null}
-        <Button onPress={() => void signOut()}>Sign out</Button>
-        <Button chromeless onPress={() => void handleChangeServer()}>
-          Change server
-        </Button>
       </YStack>
     )
   }
