@@ -1,8 +1,16 @@
-import type { ReactElement } from 'react'
-import { Metric as TremorMetric, type MetricProps } from '@tremor/react'
+import type { ReactElement, ReactNode } from 'react'
 
-export type { MetricProps }
+import { cn } from '../lib/utils'
 
-export function Metric(props: MetricProps): ReactElement {
-  return <TremorMetric {...props} />
+export type MetricProps = {
+  children?: ReactNode
+  className?: string
+}
+
+export function Metric({ children, className }: MetricProps): ReactElement {
+  return (
+    <p className={cn('text-3xl font-semibold tracking-tight text-foreground', className)}>
+      {children}
+    </p>
+  )
 }
