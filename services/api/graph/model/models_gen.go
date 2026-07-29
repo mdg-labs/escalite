@@ -355,6 +355,15 @@ type MobileDevice struct {
 type Mutation struct {
 }
 
+// Active on-call assignment for the authenticated viewer on one schedule layer.
+type MyOnCallAssignment struct {
+	ScheduleID   string    `json:"scheduleId"`
+	ScheduleName string    `json:"scheduleName"`
+	TeamName     string    `json:"teamName"`
+	Layer        int       `json:"layer"`
+	Until        time.Time `json:"until"`
+}
+
 // Read-only notification delivery attempt for an alert.
 type NotificationAttempt struct {
 	ID        string     `json:"id"`

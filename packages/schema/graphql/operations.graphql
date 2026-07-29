@@ -93,6 +93,12 @@ type Query {
   onCallNow(scheduleId: ID!, at: DateTime): OnCallNow
 
   """
+  Active on-call assignments for the authenticated viewer across team schedules.
+  Empty list means the viewer is not currently on call.
+  """
+  myOnCallStatus: [MyOnCallAssignment!]!
+
+  """
   List active overrides for a schedule (org admin only).
   Soft-deleted overrides are excluded.
   """

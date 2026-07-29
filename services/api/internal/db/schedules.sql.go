@@ -142,6 +142,61 @@ func (q *Queries) ListSchedulesByTeamID(ctx context.Context, arg ListSchedulesBy
 	return items, nil
 }
 
+const listSchedulesForUserTeams = `-- name: ListSchedulesForUserTeams :many
+SELECT
+    s.id, s.organization_id, s.team_id, s.name, s.timezone, s.created_at, s.updated_at,
+    t.name AS team_name
+FROM schedules s
+INNER JOIN teams t
+  ON t.id = s.team_id
+ AND t.organization_id = s.organization_id
+INNER JOIN team_memberships tm
+  ON tm.team_id = s.team_id
+ AND tm.user_id = $1
+ AND tm.organization_id = s.organization_id
+WHERE s.organization_id = $2
+ORDER BY t.name, s.name
+`
+
+type ListSchedulesForUserTeamsParams struct {
+	UserID         uuid.UUID `json:"user_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+}
+
+type ListSchedulesForUserTeamsRow struct {
+	Schedule Schedule `json:"schedule"`
+	TeamName string   `json:"team_name"`
+}
+
+func (q *Queries) ListSchedulesForUserTeams(ctx context.Context, arg ListSchedulesForUserTeamsParams) ([]ListSchedulesForUserTeamsRow, error) {
+	rows, err := q.db.Query(ctx, listSchedulesForUserTeams, arg.UserID, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSchedulesForUserTeamsRow{}
+	for rows.Next() {
+		var i ListSchedulesForUserTeamsRow
+		if err := rows.Scan(
+			&i.Schedule.ID,
+			&i.Schedule.OrganizationID,
+			&i.Schedule.TeamID,
+			&i.Schedule.Name,
+			&i.Schedule.Timezone,
+			&i.Schedule.CreatedAt,
+			&i.Schedule.UpdatedAt,
+			&i.TeamName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateSchedule = `-- name: UpdateSchedule :one
 UPDATE schedules
 SET name = $3,

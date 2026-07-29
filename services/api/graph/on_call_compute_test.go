@@ -64,3 +64,15 @@ func TestCurrentOnCallUserBeforeAnchor(t *testing.T) {
 		require.True(a, oncall.IsNoActiveShift(err))
 	})
 }
+
+func TestCurrentShiftEndAtDailyRotation(t *testing.T) {
+	allure.Wrap(t, func(a *allure.Context) {
+		loc := time.UTC
+		anchor := time.Date(2026, 1, 1, 9, 0, 0, 0, loc)
+		at := time.Date(2026, 1, 3, 12, 0, 0, 0, loc)
+
+		until, err := oncall.CurrentShiftEndAt("FREQ=DAILY;INTERVAL=1", anchor, loc, at)
+		require.NoError(a, err)
+		require.Equal(a, time.Date(2026, 1, 4, 9, 0, 0, 0, loc).UTC(), until)
+	})
+}

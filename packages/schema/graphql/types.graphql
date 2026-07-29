@@ -232,6 +232,15 @@ type OnCallLayer {
   userId: ID!
 }
 
+"""Active on-call assignment for the authenticated viewer on one schedule layer."""
+type MyOnCallAssignment {
+  scheduleId: ID!
+  scheduleName: String!
+  teamName: String!
+  layer: Int!
+  until: DateTime!
+}
+
 """One-off on-call swap that takes precedence over rotation for a time window."""
 type Override {
   id: ID!

@@ -168,6 +168,7 @@ type Querier interface {
 	ListRecentUnassignedAlertsByService(ctx context.Context, arg ListRecentUnassignedAlertsByServiceParams) ([]Alert, error)
 	ListRotationsByScheduleID(ctx context.Context, arg ListRotationsByScheduleIDParams) ([]Rotation, error)
 	ListSchedulesByTeamID(ctx context.Context, arg ListSchedulesByTeamIDParams) ([]Schedule, error)
+	ListSchedulesForUserTeams(ctx context.Context, arg ListSchedulesForUserTeamsParams) ([]ListSchedulesForUserTeamsRow, error)
 	ListScimGroupMemberUserIDs(ctx context.Context, arg ListScimGroupMemberUserIDsParams) ([]uuid.UUID, error)
 	ListScimGroupsByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]ScimGroup, error)
 	ListScimUsersByOrganizationID(ctx context.Context, organizationID uuid.UUID) ([]User, error)

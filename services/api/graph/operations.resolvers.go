@@ -3768,6 +3768,45 @@ func (r *queryResolver) OnCallNow(ctx context.Context, scheduleID string, at *ti
 	}, nil
 }
 
+// MyOnCallStatus is the resolver for the myOnCallStatus field.
+func (r *queryResolver) MyOnCallStatus(ctx context.Context) ([]*model.MyOnCallAssignment, error) {
+	sc, err := requireAuthSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := db.New(r.pool)
+	schedules, err := queries.ListSchedulesForUserTeams(ctx, db.ListSchedulesForUserTeamsParams{
+		UserID:         sc.User.ID,
+		OrganizationID: sc.User.OrganizationID,
+	})
+	if err != nil {
+		r.logger.Error("list schedules for user teams failed", "error", err)
+		return nil, gqlerr.New(handlers.CodeInternal, "internal error")
+	}
+
+	evalAt := time.Now().UTC()
+	result := make([]*model.MyOnCallAssignment, 0)
+
+	for _, row := range schedules {
+		assignments, err := viewerAssignmentsForSchedule(ctx, queries, sc, row, evalAt)
+		if err != nil {
+			return nil, err
+		}
+		for _, assignment := range assignments {
+			result = append(result, &model.MyOnCallAssignment{
+				ScheduleID:   assignment.ScheduleID.String(),
+				ScheduleName: assignment.ScheduleName,
+				TeamName:     assignment.TeamName,
+				Layer:        assignment.Layer,
+				Until:        assignment.Until,
+			})
+		}
+	}
+
+	return result, nil
+}
+
 // Overrides is the resolver for the overrides field.
 func (r *queryResolver) Overrides(ctx context.Context, scheduleID string) ([]*model.Override, error) {
 	sc, err := requireAdminSession(ctx)

@@ -311,6 +311,14 @@ type ComplexityRoot struct {
 		UpdateUserRole                 func(childComplexity int, input model.UpdateUserRoleInput) int
 	}
 
+	MyOnCallAssignment struct {
+		Layer        func(childComplexity int) int
+		ScheduleID   func(childComplexity int) int
+		ScheduleName func(childComplexity int) int
+		TeamName     func(childComplexity int) int
+		Until        func(childComplexity int) int
+	}
+
 	NotificationAttempt struct {
 		Channel   func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
@@ -406,6 +414,7 @@ type ComplexityRoot struct {
 		MaintenanceWindows      func(childComplexity int, serviceID string) int
 		Me                      func(childComplexity int) int
 		MobileDevices           func(childComplexity int) int
+		MyOnCallStatus          func(childComplexity int) int
 		MyOrganizations         func(childComplexity int) int
 		NotificationChannels    func(childComplexity int) int
 		NotificationRules       func(childComplexity int) int
@@ -711,6 +720,7 @@ type QueryResolver interface {
 	Schedule(ctx context.Context, id string) (*model.Schedule, error)
 	Schedules(ctx context.Context, teamID string) ([]*model.Schedule, error)
 	OnCallNow(ctx context.Context, scheduleID string, at *time.Time) (*model.OnCallNow, error)
+	MyOnCallStatus(ctx context.Context) ([]*model.MyOnCallAssignment, error)
 	Overrides(ctx context.Context, scheduleID string) ([]*model.Override, error)
 	NotificationChannels(ctx context.Context) ([]*model.NotificationChannelDefinition, error)
 	InboundIntegrations(ctx context.Context) ([]*model.IntegrationPluginDefinition, error)
@@ -2317,6 +2327,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.UpdateUserRole(childComplexity, args["input"].(model.UpdateUserRoleInput)), true
 
+	case "MyOnCallAssignment.layer":
+		if e.ComplexityRoot.MyOnCallAssignment.Layer == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MyOnCallAssignment.Layer(childComplexity), true
+	case "MyOnCallAssignment.scheduleId":
+		if e.ComplexityRoot.MyOnCallAssignment.ScheduleID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MyOnCallAssignment.ScheduleID(childComplexity), true
+	case "MyOnCallAssignment.scheduleName":
+		if e.ComplexityRoot.MyOnCallAssignment.ScheduleName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MyOnCallAssignment.ScheduleName(childComplexity), true
+	case "MyOnCallAssignment.teamName":
+		if e.ComplexityRoot.MyOnCallAssignment.TeamName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MyOnCallAssignment.TeamName(childComplexity), true
+	case "MyOnCallAssignment.until":
+		if e.ComplexityRoot.MyOnCallAssignment.Until == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MyOnCallAssignment.Until(childComplexity), true
+
 	case "NotificationAttempt.channel":
 		if e.ComplexityRoot.NotificationAttempt.Channel == nil {
 			break
@@ -2760,6 +2801,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.MobileDevices(childComplexity), true
+	case "Query.myOnCallStatus":
+		if e.ComplexityRoot.Query.MyOnCallStatus == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.MyOnCallStatus(childComplexity), true
 	case "Query.myOrganizations":
 		if e.ComplexityRoot.Query.MyOrganizations == nil {
 			break
@@ -4232,6 +4279,12 @@ type Query {
   onCallNow(scheduleId: ID!, at: DateTime): OnCallNow
 
   """
+  Active on-call assignments for the authenticated viewer across team schedules.
+  Empty list means the viewer is not currently on call.
+  """
+  myOnCallStatus: [MyOnCallAssignment!]!
+
+  """
   List active overrides for a schedule (org admin only).
   Soft-deleted overrides are excluded.
   """
@@ -4937,6 +4990,15 @@ type OnCallLayer {
   userId: ID!
 }
 
+"""Active on-call assignment for the authenticated viewer on one schedule layer."""
+type MyOnCallAssignment {
+  scheduleId: ID!
+  scheduleName: String!
+  teamName: String!
+  layer: Int!
+  until: DateTime!
+}
+
 """One-off on-call swap that takes precedence over rotation for a time window."""
 type Override {
   id: ID!
@@ -5625,6 +5687,22 @@ func (ec *executionContext) childFields_MobileDevice(ctx context.Context, field 
 		return ec.fieldContext_MobileDevice_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type MobileDevice", field.Name)
+}
+
+func (ec *executionContext) childFields_MyOnCallAssignment(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "scheduleId":
+		return ec.fieldContext_MyOnCallAssignment_scheduleId(ctx, field)
+	case "scheduleName":
+		return ec.fieldContext_MyOnCallAssignment_scheduleName(ctx, field)
+	case "teamName":
+		return ec.fieldContext_MyOnCallAssignment_teamName(ctx, field)
+	case "layer":
+		return ec.fieldContext_MyOnCallAssignment_layer(ctx, field)
+	case "until":
+		return ec.fieldContext_MyOnCallAssignment_until(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type MyOnCallAssignment", field.Name)
 }
 
 func (ec *executionContext) childFields_NotificationAttempt(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -13773,6 +13851,121 @@ func (ec *executionContext) fieldContext_Mutation_updateUserRole(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _MyOnCallAssignment_scheduleId(ctx context.Context, field graphql.CollectedField, obj *model.MyOnCallAssignment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MyOnCallAssignment_scheduleId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ScheduleID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MyOnCallAssignment_scheduleId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MyOnCallAssignment", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _MyOnCallAssignment_scheduleName(ctx context.Context, field graphql.CollectedField, obj *model.MyOnCallAssignment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MyOnCallAssignment_scheduleName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ScheduleName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MyOnCallAssignment_scheduleName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MyOnCallAssignment", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _MyOnCallAssignment_teamName(ctx context.Context, field graphql.CollectedField, obj *model.MyOnCallAssignment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MyOnCallAssignment_teamName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TeamName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MyOnCallAssignment_teamName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MyOnCallAssignment", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _MyOnCallAssignment_layer(ctx context.Context, field graphql.CollectedField, obj *model.MyOnCallAssignment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MyOnCallAssignment_layer(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Layer, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MyOnCallAssignment_layer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MyOnCallAssignment", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _MyOnCallAssignment_until(ctx context.Context, field graphql.CollectedField, obj *model.MyOnCallAssignment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_MyOnCallAssignment_until(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Until, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNDateTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_MyOnCallAssignment_until(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("MyOnCallAssignment", field, false, false, errors.New("field of type DateTime does not have child fields"))
+}
+
 func (ec *executionContext) _NotificationAttempt_id(ctx context.Context, field graphql.CollectedField, obj *model.NotificationAttempt) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -15328,6 +15521,38 @@ func (ec *executionContext) fieldContext_Query_onCallNow(ctx context.Context, fi
 	if fc.Args, err = ec.field_Query_onCallNow_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_myOnCallStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_myOnCallStatus(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().MyOnCallStatus(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.MyOnCallAssignment) graphql.Marshaler {
+			return ec.marshalNMyOnCallAssignment2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMyOnCallAssignmentᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_myOnCallStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_MyOnCallAssignment(ctx, field)
+		},
 	}
 	return fc, nil
 }
@@ -24386,6 +24611,64 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
+var myOnCallAssignmentImplementors = []string{"MyOnCallAssignment"}
+
+func (ec *executionContext) _MyOnCallAssignment(ctx context.Context, sel ast.SelectionSet, obj *model.MyOnCallAssignment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, myOnCallAssignmentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MyOnCallAssignment")
+		case "scheduleId":
+			out.Values[i] = ec._MyOnCallAssignment_scheduleId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "scheduleName":
+			out.Values[i] = ec._MyOnCallAssignment_scheduleName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "teamName":
+			out.Values[i] = ec._MyOnCallAssignment_teamName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "layer":
+			out.Values[i] = ec._MyOnCallAssignment_layer(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "until":
+			out.Values[i] = ec._MyOnCallAssignment_until(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var notificationAttemptImplementors = []string{"NotificationAttempt"}
 
 func (ec *executionContext) _NotificationAttempt(ctx context.Context, sel ast.SelectionSet, obj *model.NotificationAttempt) graphql.Marshaler {
@@ -25288,6 +25571,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}()
 				res = ec._Query_onCallNow(ctx, field)
 				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "myOnCallStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_myOnCallStatus(ctx, field)
+				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
 				return res
@@ -28323,6 +28628,32 @@ func (ec *executionContext) marshalNMobileDevice2ᚖgithubᚗcomᚋmdgᚑlabsᚋ
 		return graphql.Null
 	}
 	return ec._MobileDevice(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMyOnCallAssignment2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMyOnCallAssignmentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MyOnCallAssignment) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNMyOnCallAssignment2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMyOnCallAssignment(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMyOnCallAssignment2ᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐMyOnCallAssignment(ctx context.Context, sel ast.SelectionSet, v *model.MyOnCallAssignment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MyOnCallAssignment(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNNotificationAttempt2ᚕᚖgithubᚗcomᚋmdgᚑlabsᚋescaliteᚋservicesᚋapiᚋgraphᚋmodelᚐNotificationAttemptᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.NotificationAttempt) graphql.Marshaler {

@@ -47,3 +47,32 @@ func CurrentOnCallUser(rruleText string, anchor time.Time, loc *time.Location, a
 func IsNoActiveShift(err error) bool {
 	return errors.Is(err, errNoActiveShift)
 }
+
+// CurrentShiftEndAt returns when the active shift that contains at ends.
+// Shift boundaries use loc, matching CurrentOnCallUser.
+func CurrentShiftEndAt(rruleText string, anchor time.Time, loc *time.Location, at time.Time) (time.Time, error) {
+	rule, err := rrule.StrToRRule(rruleText)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	anchorInLoc := anchor.In(loc)
+	rule.DTStart(anchorInLoc)
+
+	atInLoc := at.In(loc)
+	shiftStart := rule.Before(atInLoc, true)
+	if shiftStart.IsZero() {
+		dtStart := rule.GetDTStart()
+		if atInLoc.Before(dtStart) {
+			return time.Time{}, errNoActiveShift
+		}
+		shiftStart = dtStart
+	}
+
+	next := rule.After(shiftStart, false)
+	if next.IsZero() {
+		return time.Time{}, errNoActiveShift
+	}
+
+	return next.UTC(), nil
+}
