@@ -42,6 +42,10 @@ type graphqlWSClient struct {
 }
 
 func dialGraphQLWS(t *testing.T, handler http.Handler, cookie *http.Cookie) *graphqlWSClient {
+	return dialGraphQLWSWithOrigin(t, handler, cookie, "")
+}
+
+func dialGraphQLWSWithOrigin(t *testing.T, handler http.Handler, cookie *http.Cookie, origin string) *graphqlWSClient {
 	t.Helper()
 
 	server := httptest.NewServer(handler)
@@ -51,6 +55,9 @@ func dialGraphQLWS(t *testing.T, handler http.Handler, cookie *http.Cookie) *gra
 	headers := http.Header{}
 	if cookie != nil {
 		headers.Set("Cookie", cookie.String())
+	}
+	if origin != "" {
+		headers.Set("Origin", origin)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -250,6 +257,60 @@ func TestGraphQLAlertUpdatedSubscriptionRejectsUnauthenticated(t *testing.T) {
 		}
 
 		t.Fatal("timed out waiting for unauthenticated subscription rejection")
+	})
+}
+
+func TestGraphQLWebSocketSubscriptionAllowsSplitHostAppOrigin(t *testing.T) {
+	const (
+		appOrigin  = "https://staging.escalite.app"
+		apiPublic  = "https://staging-api.escalite.app"
+	)
+
+	allure.Wrap(t, func(a *allure.Context) {
+		handler, pool, cleanup := newTestHandlerWithOptions(t, testServerOptions{
+			PublicURL: apiPublic,
+			AppOrigin: appOrigin,
+		})
+		defer cleanup()
+
+		adminCookie := bootstrapAdmin(t, handler)
+
+		queries := db.New(pool)
+		admin, err := queries.GetUserByEmailForAuth(context.Background(), "admin@example.com")
+		require.NoError(a, err)
+
+		team := seedTeam(t, pool, admin.OrganizationID, "Platform")
+		service := seedService(t, pool, admin.OrganizationID, team.ID, "checkout-api")
+		alert := seedTriggeredAlert(t, pool, admin.OrganizationID, service.ID, "cpu-high")
+
+		client := dialGraphQLWSWithOrigin(t, handler, adminCookie, appOrigin)
+		client.subscribe(t, "1", fmt.Sprintf(`subscription {
+		alertUpdated(orgId: "%s") {
+			id
+			status
+		}
+	}`, admin.OrganizationID), nil)
+
+		ackRec := postGraphQL(t, handler, `mutation {
+		acknowledgeAlert(id: "`+alert.ID.String()+`") {
+			id
+			status
+		}
+	}`, adminCookie)
+		require.Equal(a, http.StatusOK, ackRec.Code)
+
+		payload := client.waitForNext(t, "1", 2*time.Second)
+
+		var data struct {
+			AlertUpdated struct {
+				ID     string `json:"id"`
+				Status string `json:"status"`
+			} `json:"alertUpdated"`
+		}
+		require.NoError(a, json.Unmarshal(payload.Data, &data))
+		require.Empty(a, payload.Errors)
+		require.Equal(a, alert.ID.String(), data.AlertUpdated.ID)
+		require.Equal(a, "ACKNOWLEDGED", data.AlertUpdated.Status)
 	})
 }
 

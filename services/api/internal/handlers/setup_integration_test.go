@@ -32,6 +32,7 @@ import (
 type testServerOptions struct {
 	Mail             email.Sender
 	PublicURL        string
+	AppOrigin        string
 	PasswordReset    *server.PasswordResetOptions
 	HeartbeatPing    *server.HeartbeatPingOptions
 	InboundWebhook   *server.InboundWebhookOptions
@@ -97,6 +98,7 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 		EncryptionKey:    mustDecodeTestEncryptionKey(t),
 		Mail:             opts.Mail,
 		PublicURL:        publicURL,
+		AppOrigin:        opts.AppOrigin,
 		PasswordReset:    opts.PasswordReset,
 		HeartbeatPing:    opts.HeartbeatPing,
 		InboundWebhook:   opts.InboundWebhook,
@@ -104,7 +106,8 @@ func newTestHandlerWithOptions(t *testing.T, opts testServerOptions) (http.Handl
 		SlackInteractive: opts.SlackInteractive,
 		SAML:             server.NewSAMLServices(pool, slog.Default(), secrets, publicURL, "http://localhost:3000"),
 		GraphQL: graphql.Options{
-			PublicURL: publicURL,
+			PublicURL:   publicURL,
+			AppOrigin:   opts.AppOrigin,
 		},
 		Realtime: realtimeBridge.Hub,
 	})

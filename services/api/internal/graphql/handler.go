@@ -3,12 +3,15 @@ package graphql
 import (
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	gqlhandler "github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	coderws "github.com/coder/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vektah/gqlparser/v2/ast"
 
@@ -33,6 +36,7 @@ type Options struct {
 	MaxDepth                         int
 	MaxComplexity                    int
 	PublicURL                        string
+	AppOrigin                        string
 	OIDCEnabled                      bool
 	SlackOAuthInstallURL             string
 	SlackIncidentChannelNameTemplate string
@@ -73,9 +77,7 @@ func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, s
 		),
 	}))
 
-	srv.AddTransport(transport.Websocket{
-		KeepAlivePingInterval: 10 * time.Second,
-	})
+	srv.AddTransport(websocketTransport(opts.AppOrigin))
 	srv.AddTransport(transport.POST{})
 	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
 	srv.Use(extension.FixedComplexityLimit(maxComplexity))
@@ -84,4 +86,32 @@ func NewHandler(pool *pgxpool.Pool, logger *slog.Logger, jobs *queue.Producer, s
 	srv.SetErrorPresenter(gqlerr.Present)
 
 	return handlers.GraphQLHTTPContextMiddleware(srv)
+}
+
+func websocketTransport(appOrigin string) transport.Websocket {
+	ws := transport.Websocket{
+		KeepAlivePingInterval: 10 * time.Second,
+	}
+	if host := appOriginHost(appOrigin); host != "" {
+		ws.Implementation = transport.CoderWebsocketImplementation{
+			AcceptOptions: coderws.AcceptOptions{
+				OriginPatterns: []string{host},
+			},
+		}
+	}
+	return ws
+}
+
+func appOriginHost(appOrigin string) string {
+	appOrigin = strings.TrimSuffix(strings.TrimSpace(appOrigin), "/")
+	if appOrigin == "" {
+		return ""
+	}
+
+	u, err := url.Parse(appOrigin)
+	if err != nil || u.Host == "" {
+		return ""
+	}
+
+	return u.Host
 }
